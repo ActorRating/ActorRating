@@ -1,0 +1,13 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+scenarios:
+  - flow:
+      - post:
+          url: "/api/ratings"
+          json:
+            actorId: "cmejn5v6r020ykextbtui7bwq"
+            movieId: "cmejn5tso002mkextmkqolify"
+            weightedScore: 85.3

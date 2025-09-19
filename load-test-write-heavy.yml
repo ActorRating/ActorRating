@@ -1,0 +1,43 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 1
+      rampTo: 50
+    - duration: 30
+      arrivalRate: 50
+  headers:
+    Content-Type: "application/json"
+processor: |
+  function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function generatePayload(req, ctx, ee, next) {
+    ctx.vars.movieId = uuidv4();
+    ctx.vars.userId = uuidv4();
+    ctx.vars.acting = Math.floor(Math.random() * 101);
+    ctx.vars.story = Math.floor(Math.random() * 101);
+    ctx.vars.direction = Math.floor(Math.random() * 101);
+    ctx.vars.visuals = Math.floor(Math.random() * 101);
+    ctx.vars.sound = Math.floor(Math.random() * 101);
+    return next();
+  }
+scenarios:
+  - name: write-heavy-post-ratings
+    flow:
+      - function: generatePayload
+      - post:
+          url: "/api/test/ratings"
+          json:
+            movieId: "{{ movieId }}"
+            userId: "{{ userId }}"
+            acting: "{{ acting }}"
+            story: "{{ story }}"
+            direction: "{{ direction }}"
+            visuals: "{{ visuals }}"
+            sound: "{{ sound }}"
