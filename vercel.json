@@ -1,0 +1,20 @@
+{
+  "buildCommand": "prisma generate && npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "DATABASE_URL": "@database_url"
+  },
+  "build": {
+    "env": {
+      "SKIP_ENV_VALIDATION": "1",
+      "PRISMA_SKIP_POSTINSTALL_GENERATE": "true",
+      "NODE_ENV": "production"
+    }
+  }
+}

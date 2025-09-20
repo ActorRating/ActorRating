@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed.ts",
@@ -18,7 +19,8 @@
     "export:summary": "tsx scripts/view-export-summary.ts",
     "perf:lighthouse": "lighthouse-ci http://localhost:3000 --config=.lighthouserc.json || true",
     "backfill:tmdb": "tsx scripts/backfill-characters-from-tmdb.ts",
-    "backfill:tmdb:goodfellas": "tsx scripts/backfill-characters-from-tmdb.ts --movie=Goodfellas --year=1990"
+    "backfill:tmdb:goodfellas": "tsx scripts/backfill-characters-from-tmdb.ts --movie=Goodfellas --year=1990",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
