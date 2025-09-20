@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 
-export async function GET(req: NextRequest, { params }: { params: { code: string } }) {
-  const code = params.code
+export async function GET(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params
   const link = await prisma.shortLink.findUnique({ where: { code } })
   if (!link) return new NextResponse('Not found', { status: 404 })
 

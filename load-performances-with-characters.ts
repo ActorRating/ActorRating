@@ -85,7 +85,7 @@ async function getCharacterName(actorName: string, movieTmdbId: number): Promise
       actorName.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])
     );
     
-    const characterName = castMember?.character || `Character in ${credits.title || 'Movie'}`;
+    const characterName = castMember?.character || 'Character in Movie';
     characterCache.set(cacheKey, characterName);
     return characterName;
   } catch (error) {

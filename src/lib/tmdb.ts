@@ -58,11 +58,11 @@ export async function getMovieCredits(movieId: number): Promise<MovieCredits> {
     const { crew, cast } = response.data;
 
     // Find the director
-    const director = crew?.find((member: any) => member.job === 'Director')?.name || 'Unknown';
+    const director = crew?.find((member: { job?: string; name?: string }) => member.job === 'Director')?.name || 'Unknown';
 
     // Filter cast according to criteria
     const filteredCast: Actor[] = cast
-      ?.filter((member: any) => {
+      ?.filter((member: { order?: number; character?: string; name?: string; id?: number }) => {
         // Allow a broader set of credited cast (raise order threshold significantly)
         if (typeof member.order === 'number' && member.order >= 50) return false;
         // Check character is defined
@@ -72,7 +72,7 @@ export async function getMovieCredits(movieId: number): Promise<MovieCredits> {
         const excludedTerms = ['uncredited', 'himself', 'herself', 'background', 'crowd', '#'];
         return !excludedTerms.some(term => characterLower.includes(term));
       })
-      .map((member: any) => ({
+      .map((member: { id?: number; name: string; character: string }) => ({
         id: typeof member.id === 'number' ? member.id : undefined,
         name: member.name,
         character: member.character

@@ -23,7 +23,7 @@ async function columnExists(table: string, column: string): Promise<boolean> {
   return !!rows?.[0]?.exists
 }
 
-async function fetchCandidates(tx: PrismaClient): Promise<CandidatePerf[]> {
+async function fetchCandidates(tx: any): Promise<CandidatePerf[]> {
   // Find performances where character is NULL/empty/'Unknown'
   const rows = await tx.$queryRaw<CandidatePerf[]>`
     SELECT "id", "userId", "actorId", "movieId"
@@ -36,7 +36,7 @@ async function fetchCandidates(tx: PrismaClient): Promise<CandidatePerf[]> {
   return rows
 }
 
-async function findBestRoleNameFor(tx: PrismaClient, perf: CandidatePerf): Promise<string | null> {
+async function findBestRoleNameFor(tx: any, perf: CandidatePerf): Promise<string | null> {
   // Aggregate most frequent across all users for same (actorId, movieId)
   const agg = await tx.$queryRaw<{ roleName: string; cnt: number }[]>`
     SELECT "roleName", COUNT(*)::int AS cnt

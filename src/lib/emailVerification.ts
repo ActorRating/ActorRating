@@ -15,7 +15,7 @@ export async function generateVerificationToken(userId: string): Promise<string>
         verificationExpiry: expiresAt,
       }
     })
-  } catch (_e) {
+  } catch (error: unknown) {
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -38,7 +38,7 @@ export async function verifyEmailToken(token: string): Promise<{ success: boolea
     return { success: false, error: "Invalid verification token" }
   }
 
-  const expiry: Date | null = (user as any).verificationExpiry || (user as any).verificationTokenExpires || null
+  const expiry: Date | null = (user as { verificationExpiry?: Date | null; verificationTokenExpires?: Date | null }).verificationExpiry || (user as { verificationExpiry?: Date | null; verificationTokenExpires?: Date | null }).verificationTokenExpires || null
   if (!expiry || expiry < new Date()) {
     return { success: false, error: "Verification token has expired" }
   }
@@ -54,7 +54,7 @@ export async function verifyEmailToken(token: string): Promise<{ success: boolea
         verificationExpiry: null
       }
     })
-  } catch (_e) {
+  } catch (error: unknown) {
     await prisma.user.update({
       where: { id: user.id },
       data: {

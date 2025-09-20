@@ -71,7 +71,7 @@ export default function AboutPage() {
                   <h3 className="text-xl sm:text-2xl font-semibold text-foreground">Performance-Focused</h3>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  We rate individual performances, not entire movies. This allows for precise evaluation of each actor's contribution to their role.
+                  We rate individual performances, not entire movies. This allows for precise evaluation of each actor&apos;s contribution to their role.
                 </p>
               </div>
 
@@ -132,7 +132,7 @@ export default function AboutPage() {
               <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
                 <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-4">Continuous Improvement</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Our platform evolves based on community feedback and the changing landscape of cinema. We're committed to maintaining the highest standards of data quality and user experience.
+                  Our platform evolves based on community feedback and the changing landscape of cinema. We&apos;re committed to maintaining the highest standards of data quality and user experience.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   As the film industry grows and new talents emerge, our community-driven approach ensures we stay relevant and valuable.

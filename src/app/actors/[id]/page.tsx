@@ -11,6 +11,7 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { ActorRatingSection } from '@/components/rating/ActorRatingSection'
 import { resolveCharacterDisplay } from '@/lib/character'
+import { Rating } from '@/types'
 
 interface Actor {
   id: string
@@ -190,7 +191,7 @@ export default function ActorDetailPage() {
 
   // Pre-calculate criteria data from ratings to avoid heavy calculations during render
   const performanceCriteriaData = useMemo(() => {
-    const ratings = (actor as any)?.ratings as Array<{
+    const ratings = (actor as Actor & { ratings?: Rating[] })?.ratings as Array<{
       movieId: string
       emotionalRangeDepth: number
       characterBelievability: number
@@ -241,7 +242,7 @@ export default function ActorDetailPage() {
 
   // Calculate highest rated performance
   const highestRatedPerformance: { movieId: string, score: number, movie?: { title: string, year: number } } | null = useMemo(() => {
-    const ratings = (actor as any)?.ratings as Array<{
+    const ratings = (actor as Actor & { ratings?: Rating[] })?.ratings as Array<{
       movieId: string
       weightedScore?: number | null
       emotionalRangeDepth: number
@@ -320,7 +321,7 @@ export default function ActorDetailPage() {
 
   // Average across ratings table if available; falls back to deduped performances
   const averageActorRating = useMemo(() => {
-    const ratings = (actor as any)?.ratings as Array<{
+    const ratings = (actor as Actor & { ratings?: Rating[] })?.ratings as Array<{
       weightedScore?: number | null
       emotionalRangeDepth: number
       characterBelievability: number
@@ -353,7 +354,7 @@ export default function ActorDetailPage() {
 
   // Calculate career statistics for each criteria
   const careerStats = useMemo(() => {
-    const ratings = (actor as any)?.ratings as Array<{
+    const ratings = (actor as Actor & { ratings?: Rating[] })?.ratings as Array<{
       weightedScore?: number | null
       emotionalRangeDepth: number
       characterBelievability: number
@@ -433,7 +434,7 @@ export default function ActorDetailPage() {
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white mb-4">Actor Not Found</h1>
             <p className="text-gray-400 mb-8">
-              The actor you're looking for doesn't exist or has been removed.
+              The actor you&apos;re looking for doesn&apos;t exist or has been removed.
             </p>
             <Button asChild variant="premium">
               <Link href="/">
@@ -688,7 +689,7 @@ export default function ActorDetailPage() {
         ) : (
           <div className="space-y-6">
             {chronologicalPerformances.map((performance, index) => {
-              const ratings = (actor as any)?.ratings as Array<{
+              const ratings = (actor as Actor & { ratings?: Rating[] })?.ratings as Array<{
                 movieId: string
                 weightedScore?: number | null
                 emotionalRangeDepth: number
@@ -863,7 +864,7 @@ export default function ActorDetailPage() {
                               const criteriaData = performanceCriteriaData.get(performance.movie.id)
                               if (!criteriaData) return null
                               
-                              return criteriaData.criteria.map((criterion: any) => (
+                              return criteriaData.criteria.map((criterion: { key: string; label: string; value: number; color: string }) => (
                                 <div 
                                   key={criterion.key} 
                                   className="bg-muted rounded-lg p-3 text-center"

@@ -18,7 +18,7 @@ function getRedis(): Redis | null {
 // Fallback in-memory cache if Redis is not configured
 const memoryStore = new Map<string, { value: CacheValue; expiresAt: number }>()
 
-export async function cacheGet<T = any>(key: string): Promise<T | null> {
+export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
   const r = getRedis()
   if (r) {
     const val = await r.get<T>(key)
