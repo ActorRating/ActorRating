@@ -7,7 +7,7 @@ interface Movie {
   id: string;
   title: string;
   year: number;
-  director: string;
+  director: string | null;
   overview: string | null;
   tmdbId: number | null;
   _count: {
@@ -92,7 +92,7 @@ async function getMovies(searchParams: SearchParams) {
 
   // Get actor counts for each movie
   const moviesWithActorCounts = await Promise.all(
-    movies.map(async (movie: Movie) => {
+    movies.map(async (movie) => {
       const actorCount = await prisma.performance.groupBy({
         by: ['actorId'],
         where: { movieId: movie.id },
@@ -119,6 +119,27 @@ async function getMovies(searchParams: SearchParams) {
       totalCount,
       totalPages: Math.ceil(totalCount / limit)
     }
+  };
+}
+
+async function getFilters() {
+  // Get unique directors
+  const directors = await prisma.movie.findMany({
+    select: { director: true },
+    distinct: ['director'],
+    orderBy: { director: 'asc' }
+  });
+
+  // Get unique years
+  const years = await prisma.movie.findMany({
+    select: { year: true },
+    distinct: ['year'],
+    orderBy: { year: 'desc' }
+  });
+
+  return {
+    directors: directors.map(d => d.director).filter(Boolean),
+    years: years.map(y => y.year).filter(Boolean)
   };
 }
 
@@ -168,6 +189,7 @@ export default async function AdminMoviesPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const { movies, pagination } = await getMovies(resolvedSearchParams);
+  const filters = await getFilters();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -180,11 +202,15 @@ export default async function AdminMoviesPage({
 
       <div className="space-y-6">
         <Suspense fallback={<div>Loading search form...</div>}>
-          <SearchForm />
+          <SearchForm searchParams={resolvedSearchParams} filters={filters} />
         </Suspense>
 
         <Suspense fallback={<div>Loading movies table...</div>}>
-          <MoviesTable movies={movies} />
+          <MoviesTable 
+            movies={movies} 
+            sortBy={resolvedSearchParams.sortBy || 'title'} 
+            sortOrder={resolvedSearchParams.sortOrder || 'asc'} 
+          />
         </Suspense>
 
         <Pagination pagination={pagination} searchParams={resolvedSearchParams} />

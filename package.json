@@ -14,7 +14,6 @@
     "demo:seed": "tsx scripts/demo-seed-share.ts",
     "demo:cleanup": "tsx scripts/cleanup-demo-data.ts",
     "export:data": "tsx scripts/export-data.ts",
-    "backfill:usernames": "tsx scripts/backfill-usernames.ts",
     "import:data": "tsx scripts/import-data.ts",
     "export:summary": "tsx scripts/view-export-summary.ts",
     "perf:lighthouse": "lighthouse-ci http://localhost:3000 --config=.lighthouserc.json || true",

@@ -14,7 +14,7 @@ async function main() {
 
   const rating = await prisma.rating.create({
     data: {
-      userId: (await prisma.user.upsert({ where: { email: 'demo@local.test' }, update: {}, create: { email: 'demo@local.test' } })).id,
+      userId: (await prisma.user.upsert({ where: { email: 'demo@local.test' }, update: {}, create: { email: 'demo@local.test', password: 'demo-password-hash' } })).id,
       actorId: actor.id,
       movieId: movie.id,
       emotionalRangeDepth: 80,

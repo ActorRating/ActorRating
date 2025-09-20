@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         password: hashedPassword,
-        updatedAt: new Date(),
       },
       select: { id: true, email: true }
     })

@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     // Get export history (placeholder for now)
-    const exports = []
+    const exports: any[] = []
 
     return NextResponse.json({ exports })
   } catch (error) {
@@ -69,20 +69,8 @@ export async function POST(request: NextRequest) {
       exportDate: new Date().toISOString(),
       user: {
         id: user.id,
-        name: user.name,
         email: user.email,
-        image: user.image,
-        bio: user.bio,
-        location: user.location,
-        website: user.website,
-        profilePublic: user.profilePublic,
-        showEmail: user.showEmail,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        lastLoginAt: user.lastLoginAt,
-        acceptedTerms: user.acceptedTerms,
-        kvkkAccepted: user.kvkkAccepted,
-        onboardingCompleted: user.onboardingCompleted,
       },
       ratings: user.ratings.map(rating => ({
         id: rating.id,

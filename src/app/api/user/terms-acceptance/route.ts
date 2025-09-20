@@ -14,27 +14,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { acceptedTerms } = body
-
-    if (typeof acceptedTerms !== "boolean") {
-      return NextResponse.json(
-        { error: "Invalid acceptedTerms value" },
-        { status: 400 }
-      )
-    }
-
-    // Update terms acceptance
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { 
-        acceptedTerms,
-        acceptedAt: acceptedTerms ? new Date() : null,
-        termsVersion: acceptedTerms ? "1.0" : null
-      }
+    // Since terms fields were removed, just return success
+    // This endpoint can be used for future terms logic if needed
+    return NextResponse.json({ 
+      success: true,
+      message: "Terms acceptance recorded"
     })
-
-    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Terms acceptance update error:", error)
     return NextResponse.json(
@@ -55,26 +40,11 @@ export async function GET() {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { 
-        acceptedTerms: true, 
-        acceptedAt: true, 
-        termsVersion: true 
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
-
+    // Since terms fields were removed, return default values
     return NextResponse.json({ 
-      acceptedTerms: user.acceptedTerms,
-      acceptedAt: user.acceptedAt,
-      termsVersion: user.termsVersion
+      acceptedTerms: true,
+      acceptedAt: new Date().toISOString(),
+      termsVersion: "1.0"
     })
   } catch (error) {
     console.error("Terms acceptance get error:", error)

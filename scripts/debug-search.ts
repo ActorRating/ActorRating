@@ -15,8 +15,8 @@ async function debugSearch() {
       FROM "Actor"
       WHERE to_tsvector('english', name) @@ plainto_tsquery('english', ${searchTerm})
     `
-    console.log(`   Found ${fullTextResults.length} results`)
-    fullTextResults.forEach((result: any) => {
+    console.log(`   Found ${(fullTextResults as any[]).length} results`)
+    ;(fullTextResults as any[]).forEach((result: any) => {
       console.log(`   - ${result.name}`)
     })
     
@@ -32,8 +32,8 @@ async function debugSearch() {
       ORDER BY sim DESC
       LIMIT 10
     `
-    console.log(`   Found ${trigramResults.length} results`)
-    trigramResults.forEach((result: any) => {
+    console.log(`   Found ${(trigramResults as any[]).length} results`)
+    ;(trigramResults as any[]).forEach((result: any) => {
       console.log(`   - ${result.name} (similarity: ${result.sim})`)
     })
     
@@ -49,8 +49,8 @@ async function debugSearch() {
         )
       LIMIT 10
     `
-    console.log(`   Found ${ilikeResults.length} results`)
-    ilikeResults.forEach((result: any) => {
+    console.log(`   Found ${(ilikeResults as any[]).length} results`)
+    ;(ilikeResults as any[]).forEach((result: any) => {
       console.log(`   - ${result.name}`)
     })
     
@@ -58,9 +58,9 @@ async function debugSearch() {
     console.log('\n4. Checking for Christian Bale specifically:')
     const christianBaleId = 'cmdr9ixq1004wke76bj8yy3vw'
     
-    const inFullText = fullTextResults.some((r: any) => r.id === christianBaleId)
-    const inTrigram = trigramResults.some((r: any) => r.id === christianBaleId)
-    const inIlike = ilikeResults.some((r: any) => r.id === christianBaleId)
+    const inFullText = (fullTextResults as any[]).some((r: any) => r.id === christianBaleId)
+    const inTrigram = (trigramResults as any[]).some((r: any) => r.id === christianBaleId)
+    const inIlike = (ilikeResults as any[]).some((r: any) => r.id === christianBaleId)
     
     console.log(`   In full-text results: ${inFullText}`)
     console.log(`   In trigram results: ${inTrigram}`)
@@ -91,12 +91,12 @@ async function debugSearch() {
         )
       LIMIT 10
     `
-    console.log(`   Found ${combinedResults.length} results`)
-    combinedResults.forEach((result: any) => {
+    console.log(`   Found ${(combinedResults as any[]).length} results`)
+    ;(combinedResults as any[]).forEach((result: any) => {
       console.log(`   - ${result.name}`)
     })
     
-    const inCombined = combinedResults.some((r: any) => r.id === christianBaleId)
+    const inCombined = (combinedResults as any[]).some((r: any) => r.id === christianBaleId)
     console.log(`   Christian Bale in combined results: ${inCombined}`)
     
   } catch (error) {

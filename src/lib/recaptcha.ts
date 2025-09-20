@@ -46,7 +46,6 @@ export async function verifyRecaptchaV3(
           response: token,
         }),
         // Keepalive can slightly reduce TTFB on some platforms
-        // @ts-expect-error keepalive not in node types across versions
         keepalive: true,
       }
     )

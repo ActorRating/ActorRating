@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     if (!defaultUser) {
       defaultUser = await prisma.user.create({
         data: {
-          name: 'Bulk Import User',
-          email: 'bulk-import@example.com'
+          email: 'bulk-import@example.com',
+          password: 'bulk-import-password'
         }
       });
     }

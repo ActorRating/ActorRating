@@ -4,93 +4,21 @@ import { Resend } from "resend"
 
 export async function generateVerificationToken(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex')
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
-  // Try new column first; fall back to legacy column if needed (during migration windows)
-  try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationToken: token,
-        verificationExpiry: expiresAt,
-      }
-    })
-  } catch (error: unknown) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationToken: token,
-        // @ts-expect-error legacy field for backward-compat
-        verificationTokenExpires: expiresAt,
-      }
-    })
-  }
-
+  // Since verification fields were removed, just return the token
+  // This can be stored in a separate table or handled differently in the future
   return token
 }
 
 export async function verifyEmailToken(token: string): Promise<{ success: boolean; userId?: string; error?: string }> {
-  const user = await prisma.user.findUnique({
-    where: { verificationToken: token }
-  })
-
-  if (!user) {
-    return { success: false, error: "Invalid verification token" }
-  }
-
-  const expiry: Date | null = (user as { verificationExpiry?: Date | null; verificationTokenExpires?: Date | null }).verificationExpiry || (user as { verificationExpiry?: Date | null; verificationTokenExpires?: Date | null }).verificationTokenExpires || null
-  if (!expiry || expiry < new Date()) {
-    return { success: false, error: "Verification token has expired" }
-  }
-
-  // Mark email as verified (try new columns, fall back to legacy)
-  try {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerified: true,
-        emailVerifiedAt: new Date(),
-        verificationToken: null,
-        verificationExpiry: null
-      }
-    })
-  } catch (error: unknown) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerified: true,
-        emailVerifiedAt: new Date(),
-        verificationToken: null,
-        // @ts-expect-error legacy field for backward-compat
-        verificationTokenExpires: null
-      }
-    })
-  }
-
-  return { success: true, userId: user.id }
+  // Since verification fields were removed, this function is no longer functional
+  // Return an error indicating the feature is not available
+  return { success: false, error: "Email verification is not currently available" }
 }
 
 export async function checkVerifiedRaterStatus(userId: string): Promise<void> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      _count: {
-        select: { ratings: true }
-      }
-    }
-  })
-
-  if (!user) return
-
-  // Check if user qualifies as verified rater
-  const isVerified = user.emailVerifiedAt && user._count.ratings >= 3
-
-  if (isVerified && !user.isVerifiedRater) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isVerifiedRater: true }
-    })
-  }
+  // Since isVerifiedRater field was removed, this function is no longer functional
+  // This can be implemented differently in the future if needed
+  return
 }
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {

@@ -40,7 +40,7 @@ export function UserMenu() {
       >
         <User className="w-6 h-6" />
         <span className="hidden sm:block text-sm font-medium">
-          {session.user.name || "User"}
+          {session.user.email || "User"}
         </span>
       </Button>
 
@@ -49,7 +49,7 @@ export function UserMenu() {
           <div className="py-1">
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">
-                {session.user.name}
+                {session.user.email}
               </p>
               <p className="text-sm text-gray-500">{session.user.email}</p>
             </div>

@@ -21,7 +21,7 @@ export async function GET() {
     // Fetch performances and left-join ratings to capture roleName if present
     const performances = await prisma.performance.findMany({
       include: {
-        user: { select: { name: true, email: true } },
+        user: { select: { email: true } },
         actor: { select: { name: true, imageUrl: true } },
         movie: { select: { title: true, year: true, director: true } },
       },
@@ -170,7 +170,6 @@ export async function POST(request: NextRequest) {
         include: {
           user: {
             select: {
-              name: true,
               email: true,
             },
           },
@@ -222,7 +221,7 @@ export async function POST(request: NextRequest) {
             comment,
           },
           include: {
-            user: { select: { name: true, email: true } },
+            user: { select: { email: true } },
             actor: { select: { name: true, imageUrl: true } },
             movie: { select: { title: true, year: true, director: true } },
           },
@@ -245,7 +244,7 @@ export async function POST(request: NextRequest) {
           comment,
         },
         include: {
-          user: { select: { name: true, email: true } },
+          user: { select: { email: true } },
           actor: { select: { name: true, imageUrl: true } },
           movie: { select: { title: true, year: true, director: true } },
         },

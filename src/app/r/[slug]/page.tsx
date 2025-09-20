@@ -7,7 +7,14 @@ import { SuccessShare } from './successShare'
 export const revalidate = 60
 
 async function getData(slug: string) {
-  const rating = await prisma.rating.findFirst({ where: { OR: [{ slug }, { id: slug }] }, include: { actor: true, movie: true, shareImage: true } as any })
+  const rating = await prisma.rating.findFirst({ 
+    where: { OR: [{ slug }, { id: slug }] }, 
+    include: { 
+      actor: true, 
+      movie: true, 
+      shareImage: true 
+    } 
+  })
   if (!rating) return null
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
   const dynamicOg = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`

@@ -4,7 +4,7 @@ interface Movie {
   id: string;
   title: string;
   year: number;
-  director: string;
+  director: string | null;
   overview: string | null;
   tmdbId: number | null;
   _count: {
@@ -66,7 +66,7 @@ export default function MoviesTable({ movies, sortBy, sortOrder }: { movies: Mov
                 {movie.year}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                {movie.director}
+                {movie.director || 'Unknown'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                 <div className="flex flex-col gap-1">

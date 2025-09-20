@@ -164,9 +164,7 @@ export async function POST(request: NextRequest) {
         include: {
           user: {
             select: {
-              name: true,
               email: true,
-              isVerifiedRater: true,
             },
           },
           actor: {
@@ -212,9 +210,7 @@ export async function POST(request: NextRequest) {
       include: {
         user: {
           select: {
-            name: true,
             email: true,
-            isVerifiedRater: true,
           },
         },
         actor: {

@@ -36,8 +36,8 @@ async function checkTimothee() {
         ORDER BY sim DESC
         LIMIT 5
       `
-      console.log(`   Trigram matches: ${trigramMatches.length}`)
-      trigramMatches.forEach((match: any) => {
+      console.log(`   Trigram matches: ${(trigramMatches as any[]).length}`)
+      ;(trigramMatches as any[]).forEach((match: any) => {
         console.log(`   - ${match.name} (similarity: ${match.sim})`)
       })
       

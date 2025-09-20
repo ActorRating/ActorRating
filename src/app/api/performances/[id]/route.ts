@@ -98,7 +98,6 @@ export async function PUT(
       include: {
         user: {
           select: {
-            name: true,
             email: true,
           },
         },

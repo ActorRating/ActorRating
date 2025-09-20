@@ -31,7 +31,7 @@ async function testSearch() {
           FROM "Actor"
           WHERE to_tsvector('english', name) @@ plainto_tsquery('english', ${term})
         `
-        console.log(`   Full-text results: ${fullTextResults.length}`)
+        console.log(`   Full-text results: ${(fullTextResults as any[]).length}`)
         
         // Test trigram similarity
         const trigramResults = await prisma.$queryRaw`
@@ -41,9 +41,9 @@ async function testSearch() {
           ORDER BY sim DESC
           LIMIT 5
         `
-        console.log(`   Trigram results: ${trigramResults.length}`)
-        if (trigramResults.length > 0) {
-          console.log(`   Best match: ${trigramResults[0].name} (similarity: ${trigramResults[0].sim})`)
+        console.log(`   Trigram results: ${(trigramResults as any[]).length}`)
+        if ((trigramResults as any[]).length > 0) {
+          console.log(`   Best match: ${(trigramResults as any[])[0].name} (similarity: ${(trigramResults as any[])[0].sim})`)
         }
         
         // Test ILIKE
@@ -53,9 +53,9 @@ async function testSearch() {
           WHERE name ILIKE ${`%${term}%`}
           LIMIT 5
         `
-        console.log(`   ILIKE results: ${ilikeResults.length}`)
-        if (ilikeResults.length > 0) {
-          console.log(`   First match: ${ilikeResults[0].name}`)
+        console.log(`   ILIKE results: ${(ilikeResults as any[]).length}`)
+        if ((ilikeResults as any[]).length > 0) {
+          console.log(`   First match: ${(ilikeResults as any[])[0].name}`)
         }
       }
       

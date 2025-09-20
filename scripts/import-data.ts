@@ -55,13 +55,13 @@ async function ensureUser(email?: string | null, name?: string | null) {
     return prisma.user.upsert({
       where: { email: generated },
       update: {},
-      create: { email: generated, name: name ?? "Imported User", acceptedTerms: true },
+      create: { email: generated, password: 'imported-user-password' },
     })
   }
   return prisma.user.upsert({
     where: { email: fallbackEmail },
-    update: { name: name ?? undefined },
-    create: { email: fallbackEmail, name: name ?? undefined, acceptedTerms: true },
+    update: {},
+    create: { email: fallbackEmail, password: 'imported-user-password' },
   })
 }
 

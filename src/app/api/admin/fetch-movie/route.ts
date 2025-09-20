@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     if (!defaultUser) {
       defaultUser = await prisma.user.create({
         data: {
-          name: 'Default User',
-          email: 'default@example.com'
+          email: 'default@example.com',
+          password: 'default-password'
         }
       });
     }

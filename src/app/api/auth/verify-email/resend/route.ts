@@ -14,9 +14,6 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ success: true })
     }
-    if (user.emailVerified) {
-      return NextResponse.json({ success: true })
-    }
 
     const token = await generateVerificationToken(user.id)
     await sendVerificationEmail(email, token)

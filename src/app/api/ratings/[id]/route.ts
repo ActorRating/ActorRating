@@ -18,7 +18,6 @@ export async function GET(
       include: {
         user: {
           select: {
-            name: true,
             email: true,
           },
         },
@@ -124,7 +123,6 @@ export async function PUT(
       include: {
         user: {
           select: {
-            name: true,
             email: true,
           },
         },

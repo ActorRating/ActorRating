@@ -77,9 +77,6 @@ export async function PUT(request: NextRequest) {
       // Do not reveal existence
       return NextResponse.json({ success: true })
     }
-    if (user.emailVerified) {
-      return NextResponse.json({ success: true })
-    }
     const { generateVerificationToken, sendVerificationEmail } = await import("@/lib/emailVerification")
     const token = await generateVerificationToken(user.id)
     await sendVerificationEmail(email, token)

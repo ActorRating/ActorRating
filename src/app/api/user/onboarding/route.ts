@@ -14,32 +14,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { onboardingCompleted } = body
-
-    if (typeof onboardingCompleted !== "boolean") {
-      return NextResponse.json(
-        { error: "Invalid onboarding status" },
-        { status: 400 }
-      )
-    }
-
-    // Update user's onboarding status
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        onboardingCompleted,
-        acceptedTerms: true, // Mark terms as accepted since they completed onboarding
-        kvkkAccepted: true,  // Mark KVKK as accepted since they completed onboarding
-      },
-    })
-
+    // Since onboarding fields were removed, just return success
+    // This endpoint can be used for future onboarding logic if needed
     return NextResponse.json({
       success: true,
-      user: {
-        id: updatedUser.id,
-        onboardingCompleted: updatedUser.onboardingCompleted,
-      },
+      message: "Onboarding completed",
     })
   } catch (error) {
     console.error("Onboarding API error:", error)

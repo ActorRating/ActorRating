@@ -64,7 +64,7 @@ export function SearchNavbar() {
             ) : session ? (
               <>
                 <span className="text-sm text-muted-foreground hidden sm:block select-none">
-                  {session.user?.name || session.user?.email}
+                  {session.user?.email}
                 </span>
                 <Button 
                   noMotion
