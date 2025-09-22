@@ -30,7 +30,7 @@ export const PerformanceSlider = memo(function PerformanceSlider({
 
   return (
     <div
-      className="group relative p-4 bg-muted/50 rounded-xl border border-border/50 hover:border-primary/50 transition-all duration-300 min-h-[140px] flex flex-col rating-card-mobile"
+      className="group relative p-4 bg-muted/50 rounded-xl border border-border/50 hover:border-primary/50 transition-all duration-300 flex flex-col"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

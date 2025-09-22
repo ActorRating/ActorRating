@@ -217,7 +217,6 @@ export default function Home() {
                   variants={fadeInUp}
                   className="relative group safari-blur-fix"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                   <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <GiHeartWings className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -231,7 +230,6 @@ export default function Home() {
                   variants={fadeInUp}
                   className="relative group safari-blur-fix"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                   <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaTheaterMasks className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -245,7 +243,6 @@ export default function Home() {
                   variants={fadeInUp}
                   className="relative group sm:col-span-2 lg:col-span-1"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                   <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <GiClapperboard className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -261,7 +258,6 @@ export default function Home() {
                   variants={fadeInUp}
                   className="relative group safari-blur-fix"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                   <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaStar className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -275,7 +271,6 @@ export default function Home() {
                   variants={fadeInUp}
                   className="relative group safari-blur-fix"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                   <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaHandshake className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -327,7 +322,6 @@ export default function Home() {
                   <motion.div variants={staggerContainer} {...getMotionProps()} className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 max-w-4xl mx-auto mb-8 sm:mb-12">
                     <motion.div variants={fadeInUp} className="text-center group safari-blur-fix">
                       <div className="relative mb-4 sm:mb-6">
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-300 safari-safe-transition"></div>
                         <div className="relative bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full mx-auto flex items-center justify-center border border-primary/30 group-hover:border-primary/50 transition-colors duration-300">
                           <FaUsers className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-primary group-hover:scale-110 transition-transform duration-300" />
                         </div>
@@ -341,7 +335,6 @@ export default function Home() {
                     
                     <motion.div variants={fadeInUp} className="text-center group safari-blur-fix">
                       <div className="relative mb-4 sm:mb-6">
-                        <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-300 safari-safe-transition"></div>
                         <div className="relative bg-accent/10 w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full mx-auto flex items-center justify-center border border-accent/30 group-hover:border-accent/50 transition-colors duration-300">
                           <FaChartLine className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-accent group-hover:scale-110 transition-transform duration-300" />
                         </div>

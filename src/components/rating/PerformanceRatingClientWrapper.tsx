@@ -98,7 +98,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   return (
     <motion.div 
       layout
-      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation min-h-[180px] flex flex-col rating-card-mobile"
+      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation flex flex-col"
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
@@ -138,7 +138,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-base sm:text-lg font-semibold text-white truncate">{label}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-white leading-tight">{label}</h3>
               <qualityZone.icon className={`w-4 h-4 flex-shrink-0 ${qualityZone.color}`} />
             </div>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>

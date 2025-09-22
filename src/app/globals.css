@@ -248,3 +248,10 @@ img, video {
   opacity: 1;
 }
 
+/* Hide reCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
