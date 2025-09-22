@@ -47,12 +47,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
   return (
     <motion.div 
       layout
-      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation"
+      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation min-h-[180px] flex flex-col rating-card-mobile"
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       <div className={`absolute inset-0 ${qualityZone.bg} opacity-20 blur-xl`} />
-      <div className="relative">
+      <div className="relative flex-1 flex flex-col">
         <div className="flex items-center gap-3 sm:gap-4 mb-4">
           <motion.div 
             className={`flex items-center justify-center w-12 h-12 rounded-xl text-primary relative ${qualityZone.bg}`}
@@ -86,7 +86,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
             </div>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="text-right flex-shrink-0 min-w-[80px]">
             <motion.div 
               className={`text-2xl sm:text-3xl font-bold ${qualityZone.color}`}
               animate={{ scale: isChanging ? [1, 1.1, 1] : 1 }}
@@ -94,10 +94,10 @@ const RatingSliderCard = memo(function RatingSliderCard({
             >
               {value}
             </motion.div>
-            <div className={`text-xs font-medium ${qualityZone.color}`}>{qualityZone.label}</div>
+            <div className={`text-xs font-medium ${qualityZone.color} h-4 flex items-center justify-end`}>{qualityZone.label}</div>
           </div>
         </div>
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4 mt-auto">
           <div className="px-1">
             <SmoothSlider
               value={value}

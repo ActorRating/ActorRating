@@ -30,7 +30,7 @@ export const PerformanceSlider = memo(function PerformanceSlider({
 
   return (
     <div
-      className="group relative p-4 bg-muted/50 rounded-xl border border-border/50 hover:border-primary/50 transition-all duration-300"
+      className="group relative p-4 bg-muted/50 rounded-xl border border-border/50 hover:border-primary/50 transition-all duration-300 min-h-[140px] flex flex-col rating-card-mobile"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -42,13 +42,13 @@ export const PerformanceSlider = memo(function PerformanceSlider({
           <h3 className="text-lg font-semibold text-foreground">{label}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right min-w-[80px]">
           <div className="text-2xl font-bold text-primary">{value}</div>
-          <div className="text-xs text-muted-foreground">out of 100</div>
+          <div className="text-xs text-muted-foreground h-4 flex items-center justify-end">out of 100</div>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 mt-auto">
         <div className="relative">
           <SmoothSlider
             value={value}

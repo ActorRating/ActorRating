@@ -6,13 +6,17 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
 import { Button } from "@/components/ui/Button"
+import { motion } from "framer-motion"
+import { fadeInUp, getMotionProps } from "@/lib/animations"
 import { 
   User, 
   Mail, 
   Shield, 
   Download, 
   Trash2, 
-  TriangleAlert
+  TriangleAlert,
+  LogOut,
+  Settings
 } from "lucide-react"
 
 export default function ProfilePage() {
@@ -149,127 +153,178 @@ export default function ProfilePage() {
 
   return (
     <SignedInLayout>
-      <div className="min-h-screen bg-background py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 profile-mobile">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Profile Settings</h1>
-            <p className="text-muted-foreground">Manage your account settings and preferences</p>
-          </div>
+          <motion.div 
+            variants={fadeInUp}
+            {...getMotionProps()}
+            className="text-center mb-8 sm:mb-12"
+          >
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4">
+              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                Your Profile
+              </span>
+            </h1>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              Manage your account settings and data
+            </p>
+          </motion.div>
 
-          <div className="space-y-8">
-            {/* Basic Information */}
-            <section className="bg-secondary rounded-lg border border-border p-4 sm:p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-foreground flex items-center">
-                  <User className="w-5 h-5 mr-2" />
-                  Basic Information
-                </h2>
-              </div>
-
-
-              <div className="grid grid-cols-1 gap-5">
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    <Mail className="w-4 h-4 inline mr-1" />
-                    Email Address
-                  </label>
-                  <p className="text-foreground">{profile.email}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Email cannot be changed
-                  </p>
-                </div>
-
-                {/* Account Type */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    <Shield className="w-4 h-4 inline mr-1" />
-                    Account Type
-                  </label>
-                  <p className="text-foreground">{getAccountType()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    How you signed up for this account
-                  </p>
-                </div>
-              </div>
-            </section>
-
-
-            {/* Data & Privacy */}
-            <section className="bg-secondary rounded-lg border border-border p-4 sm:p-6">
-              <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center">
-                <Download className="w-5 h-5 mr-2" />
-                Data & Privacy
-              </h2>
-
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-foreground">Download Your Data</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Get a copy of all your data including ratings and profile information
-                    </p>
+          <div className="space-y-6 sm:space-y-8">
+            {/* Profile Card */}
+            <motion.div 
+              variants={fadeInUp}
+              {...getMotionProps()}
+              className="relative group safari-blur-fix"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl sm:rounded-3xl blur opacity-30 safari-safe-transition"></div>
+              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-border/50">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center">
+                      <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                    </div>
                   </div>
-                  <Button noMotion onClick={handleExportData} variant="outline" size="sm">
+                  
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">
+                      {profile.email?.split('@')[0] || 'User'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm sm:text-base mb-2">
+                      {profile.email}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      <span className="text-sm text-muted-foreground">{getAccountType()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Action Cards Grid */}
+            <motion.div 
+              variants={fadeInUp}
+              {...getMotionProps()}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
+            >
+              {/* Download Data Card */}
+              <div className="relative group safari-blur-fix">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
+                <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                      <Download className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">Download Data</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4 flex-1">
+                    Export all your ratings and profile information
+                  </p>
+                  <Button 
+                    onClick={handleExportData} 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full group-hover:border-primary/50"
+                  >
                     <Download className="w-4 h-4 mr-2" />
-                    Download Data
+                    Download
                   </Button>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                      <h3 className="font-medium text-foreground flex items-center">
-                      <TriangleAlert className="w-4 h-4 mr-2 text-red-400" />
-                      Delete Account
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Permanently delete your account and all associated data
-                    </p>
+              {/* Sign Out Card */}
+              <div className="relative group safari-blur-fix">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
+                <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                      <LogOut className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">Sign Out</h3>
                   </div>
+                  <p className="text-sm text-muted-foreground mb-4 flex-1">
+                    Sign out of your account on this device
+                  </p>
+                  <Button 
+                    onClick={() => signOut({ callbackUrl: "/" })} 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full group-hover:border-primary/50"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Danger Zone */}
+            <motion.div 
+              variants={fadeInUp}
+              {...getMotionProps()}
+              className="relative group safari-blur-fix"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-2xl blur opacity-30 safari-safe-transition"></div>
+              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-red-500/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <TriangleAlert className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-red-400">Danger Zone</h3>
+                </div>
+                
+                <p className="text-sm text-muted-foreground mb-6">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+
+                {!showDeleteConfirm ? (
                   <Button
-                    noMotion
                     onClick={() => setShowDeleteConfirm(true)}
                     variant="outline"
                     size="sm"
-                    className="text-red-400 border-red-400 hover:bg-red-900/20"
+                    className="text-red-400 border-red-400 hover:bg-red-900/20 hover:border-red-300"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Account
                   </Button>
-                </div>
-
-                {showDeleteConfirm && (
-                  <div className="p-4 bg-red-900/20 border border-red-900/30 rounded-lg">
-                    <h4 className="font-medium text-red-400 mb-2">Confirm Account Deletion</h4>
-                    <p className="text-sm text-red-300 mb-4">
-                      This action cannot be undone. All your ratings, profile data, and account information will be permanently deleted.
-                    </p>
-                    <div className="flex gap-2">
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-red-900/20 border border-red-900/30 rounded-lg">
+                      <h4 className="font-medium text-red-400 mb-2">Confirm Account Deletion</h4>
+                      <p className="text-sm text-red-300 mb-4">
+                        This will permanently delete your account, all ratings, and profile data. This action cannot be undone.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <Button
-                        noMotion
                         onClick={handleDeleteAccount}
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className="bg-red-600 hover:bg-red-700 text-white flex-1"
                         size="sm"
                       >
                         Yes, Delete My Account
                       </Button>
                       <Button
-                        noMotion
                         onClick={() => setShowDeleteConfirm(false)}
                         variant="outline"
                         size="sm"
+                        className="flex-1"
                       >
                         Cancel
-                        
                       </Button>
                     </div>
                   </div>
                 )}
               </div>
-            </section>
-
-            {/* Legal Compliance removed for simplification */}
+            </motion.div>
           </div>
         </div>
       </div>

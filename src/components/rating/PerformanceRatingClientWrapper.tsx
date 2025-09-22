@@ -98,14 +98,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
   return (
     <motion.div 
       layout
-      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation"
+      className="p-4 sm:p-6 border border-border/30 hover:border-primary/50 transition-all duration-300 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 hover:from-muted/70 hover:to-muted/50 relative overflow-hidden touch-manipulation min-h-[180px] flex flex-col rating-card-mobile"
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
       {/* Background glow effect based on score */}
       <div className={`absolute inset-0 ${qualityZone.bg} opacity-20 blur-xl`} />
       
-      <div className="relative">
+      <div className="relative flex-1 flex flex-col">
         {/* Header with icon and feedback */}
         <div className="flex items-center gap-3 sm:gap-4 mb-4">
           <motion.div 
@@ -145,7 +145,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
           </div>
           
           {/* Score display with quality zone */}
-          <div className="text-right flex-shrink-0">
+          <div className="text-right flex-shrink-0 min-w-[80px]">
             <motion.div 
               className={`text-2xl sm:text-3xl font-bold ${qualityZone.color}`}
               animate={{ 
@@ -155,14 +155,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
             >
               {value}
             </motion.div>
-            <div className={`text-xs font-medium ${qualityZone.color}`}>
+            <div className={`text-xs font-medium ${qualityZone.color} h-4 flex items-center justify-end`}>
               {qualityZone.label}
             </div>
           </div>
         </div>
         
         {/* Enhanced slider with haptic-like feedback */}
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3 sm:space-y-4 mt-auto">
           <div className="px-1"> {/* Add padding to prevent touch target cutoff */}
             <SmoothSlider
               value={value}

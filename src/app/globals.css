@@ -110,6 +110,30 @@ img, video {
   display: block;
 }
 
+/* Safari-specific fixes for blur and animation issues */
+@supports (-webkit-backdrop-filter: blur(1px)) {
+  /* Safari-specific blur optimizations */
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+  
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Fix Safari rendering issues with blur + opacity transitions */
+.safari-blur-fix {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
 /* Optimize animations for better performance */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -119,10 +143,108 @@ img, video {
   }
 }
 
+/* Safari-specific animation fixes */
+@supports (-webkit-appearance: none) {
+  /* Disable problematic blur animations on Safari */
+  .group:hover .blur {
+    opacity: 0 !important;
+  }
+  
+  /* Use simpler transitions for Safari */
+  .safari-safe-transition {
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+  }
+  
+  /* Fix Safari rendering issues with complex gradients */
+  .bg-gradient-to-r {
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+  }
+  
+  /* Optimize backdrop-filter for Safari */
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+  
+  /* Reduce blur intensity on Safari for better performance */
+  .blur {
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+  }
+  
+  /* Fix Safari transform issues */
+  .group:hover .group-hover\:scale-110 {
+    -webkit-transform: scale(1.05);
+    transform: scale(1.05);
+  }
+}
+
 /* Improve touch targets on mobile */
 @media (max-width: 768px) {
   button, a, [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
+  
+  /* Ensure rating cards maintain consistent heights on mobile */
+  .rating-card-mobile {
+    min-height: 160px !important;
+  }
 }
+
+/* Extra small screens - further reduce card heights */
+@media (max-width: 480px) {
+  .rating-card-mobile {
+    min-height: 140px !important;
+  }
+  
+  /* Profile page mobile optimizations */
+  .profile-mobile {
+    padding: 1rem !important;
+  }
+  
+  .profile-mobile .text-3xl {
+    font-size: 1.875rem !important;
+  }
+  
+  .profile-mobile .text-4xl {
+    font-size: 2rem !important;
+  }
+}
+
+/* Enhanced feedback button shadow */
+.feedback-button-shadow {
+  box-shadow: 
+    0 25px 50px -12px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(139, 92, 246, 0.1),
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 0 20px rgba(139, 92, 246, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.feedback-button-shadow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.feedback-button-shadow:hover {
+  box-shadow: 
+    0 35px 70px -12px rgba(139, 92, 246, 0.6),
+    0 0 0 1px rgba(139, 92, 246, 0.2),
+    0 20px 40px -5px rgba(0, 0, 0, 0.15),
+    0 0 30px rgba(139, 92, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.feedback-button-shadow:hover::before {
+  opacity: 1;
+}
+

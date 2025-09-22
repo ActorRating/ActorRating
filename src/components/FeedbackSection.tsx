@@ -75,7 +75,7 @@ export function FeedbackSection() {
           onClick={() => setIsOpen(true)}
           variant="premium"
           size="lg"
-          className="rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+          className="rounded-full px-6 py-3 feedback-button-shadow relative group"
         >
           <MessageSquare className="w-5 h-5 mr-2" />
           Feedback

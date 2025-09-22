@@ -261,9 +261,9 @@ export default function SignIn() {
             {/* Sign In Form */}
             <motion.div
               variants={fadeInUp}
-              className="relative group"
+              className="relative group safari-blur-fix"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-50"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-30 safari-safe-transition"></div>
               <div className="relative bg-secondary/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 sm:p-8">
                 <div className="hidden lg:block mb-6">
                   <h2 className="text-2xl xl:text-3xl font-bold text-foreground mb-2">Sign In</h2>
