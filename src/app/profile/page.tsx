@@ -183,7 +183,6 @@ export default function ProfilePage() {
               {...getMotionProps()}
               className="relative group safari-blur-fix"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl sm:rounded-3xl blur opacity-30 safari-safe-transition"></div>
               <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-border/50">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                   {/* Avatar */}
@@ -218,7 +217,6 @@ export default function ProfilePage() {
             >
               {/* Download Data Card */}
               <div className="relative group safari-blur-fix">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                 <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -232,8 +230,8 @@ export default function ProfilePage() {
                   <Button 
                     onClick={handleExportData} 
                     variant="outline" 
-                    size="sm"
-                    className="w-full group-hover:border-primary/50"
+                    size="lg"
+                    className="w-full h-12 group-hover:border-primary/50"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download
@@ -243,7 +241,6 @@ export default function ProfilePage() {
 
               {/* Sign Out Card */}
               <div className="relative group safari-blur-fix">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 safari-safe-transition"></div>
                 <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -257,8 +254,8 @@ export default function ProfilePage() {
                   <Button 
                     onClick={() => signOut({ callbackUrl: "/" })} 
                     variant="outline" 
-                    size="sm"
-                    className="w-full group-hover:border-primary/50"
+                    size="lg"
+                    className="w-full h-12 group-hover:border-primary/50"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
@@ -290,8 +287,8 @@ export default function ProfilePage() {
                   <Button
                     onClick={() => setShowDeleteConfirm(true)}
                     variant="outline"
-                    size="sm"
-                    className="text-red-400 border-red-400 hover:bg-red-900/20 hover:border-red-300"
+                    size="lg"
+                    className="text-red-400 border-red-400 hover:bg-red-900/20 hover:border-red-300 h-12"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Account
@@ -307,16 +304,16 @@ export default function ProfilePage() {
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
                         onClick={handleDeleteAccount}
-                        className="bg-red-600 hover:bg-red-700 text-white flex-1"
-                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white flex-1 h-12"
+                        size="lg"
                       >
                         Yes, Delete My Account
                       </Button>
                       <Button
                         onClick={() => setShowDeleteConfirm(false)}
                         variant="outline"
-                        size="sm"
-                        className="flex-1"
+                        size="lg"
+                        className="flex-1 h-12"
                       >
                         Cancel
                       </Button>

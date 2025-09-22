@@ -289,7 +289,6 @@ export default function Home() {
               {...getMotionProps()}
               className="relative group mx-4"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl sm:rounded-3xl blur-xl opacity-50"></div>
               <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 border border-border/50 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />

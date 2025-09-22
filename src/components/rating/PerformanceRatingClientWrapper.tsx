@@ -136,10 +136,10 @@ const RatingSliderCard = memo(function RatingSliderCard({
             </AnimatePresence>
           </motion.div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-base sm:text-lg font-semibold text-white leading-tight">{label}</h3>
-              <qualityZone.icon className={`w-4 h-4 flex-shrink-0 ${qualityZone.color}`} />
+          <div className="flex-1">
+            <div className="mb-1">
+              <h3 className="text-base sm:text-lg font-semibold text-white leading-tight mb-1">{label}</h3>
+              <qualityZone.icon className={`w-4 h-4 ${qualityZone.color}`} />
             </div>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>
           </div>
