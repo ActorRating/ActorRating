@@ -92,7 +92,7 @@ export default function Home() {
               {...getMotionProps()}
               className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-bold text-foreground mb-6 sm:mb-8 px-2 leading-tight"
             >
-              <div className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+              <div className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Rate Acting
               </div>
               <div className="mt-3 sm:mt-4">
