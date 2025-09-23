@@ -210,7 +210,7 @@ export default function SignIn() {
               
               <h1 className="text-4xl xl:text-5xl font-bold text-foreground mb-6 leading-tight">
                 Welcome Back to
-                <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   ActorRating
                 </span>
               </h1>

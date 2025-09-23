@@ -174,7 +174,7 @@ export default function Home() {
           <motion.div variants={fadeInUp} {...getMotionProps()} className="py-8 sm:py-10 px-4">
             <div className="text-center mb-6 sm:mb-8 lg:mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Try Our
                 </span>
                 <br />
@@ -200,7 +200,7 @@ export default function Home() {
               className="text-center mb-6 sm:mb-8 lg:mb-12 px-4"
             >
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Oscar-Inspired
                 </span>
                 <br />
@@ -305,7 +305,7 @@ export default function Home() {
                       </span>
                     </motion.div>
                     <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
-                      <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                      <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                         Revolutionizing
                       </span>
                       <br />

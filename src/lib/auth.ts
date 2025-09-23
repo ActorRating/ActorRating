@@ -64,12 +64,15 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
+          console.log("Google sign-in attempt for:", user.email)
+          
           // Check if user exists
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! }
           })
 
           if (!existingUser) {
+            console.log("Creating new user for Google sign-in:", user.email)
             // Create new user for Google sign-in
             await prisma.user.create({
               data: {
@@ -77,10 +80,17 @@ export const authOptions: NextAuthOptions = {
                 password: "", // No password for OAuth users
               }
             })
+            console.log("User created successfully")
+          } else {
+            console.log("Existing user found:", existingUser.id)
           }
           return true
         } catch (error) {
           console.error("Error in Google sign-in:", error)
+          console.error("Error details:", {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          })
           return false
         }
       }

@@ -231,7 +231,7 @@ export default function SignUp() {
               
               <h1 className="text-4xl xl:text-5xl font-bold text-foreground mb-6 leading-tight">
                 Start Your Journey with
-                <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   ActorRating
                 </span>
               </h1>
