@@ -23,6 +23,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
 }) {
   const [lastValue, setLastValue] = useState(value)
   const [isChanging, setIsChanging] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   const getQualityZone = useCallback((score: number) => {
     if (score >= 90) return { zone: 'exceptional', color: 'text-amber-400', bg: 'bg-amber-400/10', label: 'Exceptional', icon: Trophy }
@@ -81,7 +82,19 @@ const RatingSliderCard = memo(function RatingSliderCard({
           </motion.div>
           <div className="flex-1">
             <div className="mb-1">
-              <h3 className="text-base sm:text-lg font-semibold text-white leading-tight mb-1">{label}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-semibold text-white leading-tight">{label}</h3>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowTooltip(!showTooltip)}
+                  aria-label="Show criteria details"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <qualityZone.icon className={`w-4 h-4 ${qualityZone.color}`} />
             </div>
             {/* Description is now only shown in tooltip */}
@@ -121,6 +134,13 @@ const RatingSliderCard = memo(function RatingSliderCard({
           </div>
         </div>
       </div>
+
+      {/* Tooltip */}
+      {showTooltip && description && (
+        <div className="absolute top-16 left-4 right-4 z-10 p-3 bg-background border border-border rounded-lg shadow-lg">
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+      )}
     </motion.div>
   )
 })
