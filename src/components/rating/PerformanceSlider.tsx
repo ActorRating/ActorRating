@@ -40,7 +40,7 @@ export const PerformanceSlider = memo(function PerformanceSlider({
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-foreground">{label}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          {/* Description is now only shown in tooltip */}
         </div>
         <div className="text-right min-w-[80px]">
           <div className="text-2xl font-bold text-primary">{value}</div>

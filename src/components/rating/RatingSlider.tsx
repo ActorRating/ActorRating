@@ -117,9 +117,7 @@ export const RatingSlider = memo(function RatingSlider({
                 {weight}%
               </span>
             </div>
-            {description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
-            )}
+            {/* Description is now only shown in tooltip */}
           </div>
         </div>
         
