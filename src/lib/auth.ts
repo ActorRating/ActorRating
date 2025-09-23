@@ -84,6 +84,7 @@ export const authOptions: NextAuthOptions = {
           return false
         }
       }
+      // For credentials provider, always return true
       return true
     },
     async session({ session, token }) {
