@@ -54,12 +54,12 @@
     "react-instantsearch": "^7.16.2",
     "resend": "^4.0.0",
     "swr": "^2.3.4",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@lhci/cli": "^0.14.0",
-    "@tailwindcss/postcss": "^4.1.13",
     "@types/dotenv": "^6.1.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
