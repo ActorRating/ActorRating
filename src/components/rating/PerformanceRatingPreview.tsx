@@ -84,7 +84,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
               <h3 className="text-base sm:text-lg font-semibold text-white leading-tight mb-1">{label}</h3>
               <qualityZone.icon className={`w-4 h-4 ${qualityZone.color}`} />
             </div>
-            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>
+            {/* Description is now only shown in tooltip */}
           </div>
           <div className="text-right flex-shrink-0 min-w-[80px]">
             <motion.div 
