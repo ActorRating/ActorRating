@@ -1,5 +1,5 @@
 {
-  "buildCommand": "prisma generate && npm run build",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
   "functions": {
@@ -13,7 +13,6 @@
   "build": {
     "env": {
       "SKIP_ENV_VALIDATION": "1",
-      "PRISMA_SKIP_POSTINSTALL_GENERATE": "true",
       "NODE_ENV": "production"
     }
   }
