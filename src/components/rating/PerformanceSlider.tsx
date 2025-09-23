@@ -22,6 +22,7 @@ export const PerformanceSlider = memo(function PerformanceSlider({
   description,
 }: PerformanceSliderProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Memoize the onChange handler to prevent unnecessary re-renders
   const handleValueChange = useCallback((newValue: number) => {
@@ -39,7 +40,21 @@ export const PerformanceSlider = memo(function PerformanceSlider({
           {icon}
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-foreground">{label}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground">{label}</h3>
+            {description && (
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowTooltip(!showTooltip)}
+                aria-label="Show criteria details"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
           {/* Description is now only shown in tooltip */}
         </div>
         <div className="text-right min-w-[80px]">
@@ -72,6 +87,13 @@ export const PerformanceSlider = memo(function PerformanceSlider({
           <span>Outstanding</span>
         </div>
       </div>
+
+      {/* Tooltip */}
+      {showTooltip && description && (
+        <div className="absolute top-16 left-4 right-4 z-10 p-3 bg-background border border-border rounded-lg shadow-lg">
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+      )}
 
       {/* Hover effect */}
       {isHovered && (
