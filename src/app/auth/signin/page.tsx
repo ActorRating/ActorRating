@@ -1,10 +1,9 @@
 "use client"
-
-import { signIn, getSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
+import { supabase } from "../../../../lib/supabaseClient"
 import { validateEmail, validatePassword } from "@/lib/validation"
 import { motion } from "framer-motion"
 import { fadeInUp, scaleIn } from "@/lib/animations"
@@ -41,9 +40,9 @@ export default function SignIn() {
   }, [searchParams])
 
   useEffect(() => {
-    // Check if user is already signed in
-    getSession().then((session) => {
-      if (session) {
+    // Check if user is already signed in (Supabase)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
         router.push("/")
       }
     })
@@ -82,35 +81,16 @@ export default function SignIn() {
     setApiError("")
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      // Supabase email/password sign-in
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       })
 
-        const data = await response.json()
-
-        if (!response.ok) {
-          setApiError(data.error || "Sign in failed")
-          return
-        }
-
-        // Use NextAuth for session management
-        const result = await signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
-          redirect: false,
-        })
-
-        if (result?.error) {
-          setApiError("Invalid email or password")
-          return
-        }
+      if (error) {
+        setApiError(error.message || "Sign in failed")
+        return
+      }
 
         // Check if there's a pending rating to submit
         const pendingRating = localStorage.getItem('pendingRating')
@@ -165,11 +145,15 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
     try {
-      // Check if there's a pending rating to handle after Google signin
       const pendingRating = localStorage.getItem('pendingRating')
-      const callbackUrl = pendingRating ? '/auth/signin-success' : '/onboarding'
-      
-      await signIn("google", { callbackUrl })
+      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signin-success' : '/onboarding'}`
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      })
+      if (error) {
+        console.error("Google sign in error:", error)
+      }
     } catch (error) {
       console.error("Google sign in error:", error)
     } finally {

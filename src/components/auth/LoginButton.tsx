@@ -1,9 +1,8 @@
 "use client"
-
-import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
+import { supabase } from "../../../lib/supabaseClient"
 
 interface LoginButtonProps {
   className?: string
@@ -32,7 +31,13 @@ export function LoginButton({
 
     setIsLoading(true)
     try {
-      await signIn("google", { callbackUrl: "/onboarding" })
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/onboarding` }
+      })
+      if (error) {
+        console.error("Login error:", error)
+      }
     } catch (error) {
       console.error("Login error:", error)
       setIsLoading(false)
