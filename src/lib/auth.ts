@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth"
+// Deprecated NextAuth config removed after migration to Supabase Auth
 import { prisma } from "@/lib/prisma"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"

@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn } from "next-auth/react"
+import { supabase } from "../../../../lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/Button"
@@ -33,15 +33,9 @@ export default function SignUp() {
   }, [])
 
   useEffect(() => {
-    // Check if user is already signed in
-    const checkSession = async () => {
-      const { getSession } = await import("next-auth/react")
-      const session = await getSession()
-      if (session) {
-        router.push("/")
-      }
-    }
-    checkSession()
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.push("/")
+    })
   }, [router])
 
   const handleInputChange = async (field: string, value: string) => {
@@ -122,13 +116,8 @@ export default function SignUp() {
       }
 
       // Sign in the user after successful signup
-      const result = await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
-
-      if (result?.error) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password })
+      if (signInError) {
         setApiError("Account created but failed to sign in. Please try signing in manually.")
         return
       }
@@ -188,9 +177,9 @@ export default function SignUp() {
     try {
       // Check if there's a pending rating to handle after Google signup
       const pendingRating = localStorage.getItem('pendingRating')
-      const callbackUrl = pendingRating ? '/auth/signup-success' : '/onboarding'
-      
-      await signIn("google", { callbackUrl })
+      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signup-success' : '/onboarding'}`
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+      if (error) console.error(error)
     } catch (error) {
       console.error("Google sign in error:", error)
     } finally {

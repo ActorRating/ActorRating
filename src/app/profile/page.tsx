@@ -1,7 +1,7 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
-import { signIn } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
+import { supabase } from "../../../lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 
 export default function ProfilePage() {
-  const { data: session, status, update } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -29,17 +29,13 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (status === "loading") return
-    
-    if (!session) {
+    if (isLoading) return
+    if (!user) {
       router.push("/auth/signin")
       return
     }
-
-    // Load user profile data
     loadProfile()
-    // terms acceptance removed
-  }, [session, status, router])
+  }, [user, isLoading, router])
 
   const loadProfile = async () => {
     try {
@@ -48,7 +44,7 @@ export default function ProfilePage() {
         const data = await response.json()
         setProfile({
           ...data.user,
-          email: session?.user?.email || "",
+          email: user?.email || "",
         })
       }
     } catch (error) {
@@ -134,7 +130,7 @@ export default function ProfilePage() {
     })
   }
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <SignedInLayout>
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -147,7 +143,7 @@ export default function ProfilePage() {
     )
   }
 
-  if (!session) {
+  if (!user) {
     return null
   }
 
@@ -252,7 +248,7 @@ export default function ProfilePage() {
                     Sign out of your account on this device
                   </p>
                   <Button 
-                    onClick={() => signOut({ callbackUrl: "/" })} 
+                    onClick={async () => { await supabase.auth.signOut(); window.location.href = "/" }} 
                     variant="outline" 
                     size="lg"
                     className="w-full h-12 group-hover:border-primary/50"

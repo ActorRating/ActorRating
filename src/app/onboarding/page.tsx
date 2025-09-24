@@ -1,14 +1,14 @@
 "use client"
 
 import React from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/Button"
 import { User, Star, Heart, CheckCircle } from "lucide-react"
 
 export default function OnboardingPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -16,18 +16,13 @@ export default function OnboardingPage() {
   const [isCheckingUser, setIsCheckingUser] = useState(true)
 
   useEffect(() => {
-    if (status === "loading") return
-    
-    if (!session) {
+    if (isLoading) return
+    if (!user) {
       router.push("/auth/signin")
       return
     }
-
-    // Simplified: no onboardingCompleted flag in session
-
-    // Check if this is a new user or existing user
     checkUserStatus()
-  }, [session, status, router])
+  }, [user, isLoading, router])
 
   const checkUserStatus = async () => {
     try {
@@ -91,7 +86,7 @@ export default function OnboardingPage() {
     },
   ]
 
-  if (status === "loading" || isCheckingUser) {
+  if (isLoading || isCheckingUser) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -106,7 +101,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
-          {isNewUser ? `Welcome, ${session?.user?.email}!` : `Welcome back, ${session?.user?.email}!`}
+          {isNewUser ? `Welcome, ${user?.email}!` : `Welcome back, ${user?.email}!`}
         </h2>
         <p className="mt-2 text-center text-sm text-muted-foreground">
           {isNewUser ? "Let's start exploring ActorRating" : "Let's get you back to rating performances"}

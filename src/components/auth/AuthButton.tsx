@@ -1,12 +1,13 @@
 "use client"
 
-import { signIn, signOut, useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
+import { supabase } from "../../../lib/supabaseClient"
 import { Button } from "@/components/ui/Button"
 
 export function AuthButton() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <Button disabled>
         Loading...
@@ -14,11 +15,11 @@ export function AuthButton() {
     )
   }
 
-  if (session) {
+  if (user) {
     return (
       <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-600">Welcome, {session.user.email}</span>
-        <Button onClick={() => signOut({ callbackUrl: "/" })}>
+        <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+        <Button onClick={async () => { await supabase.auth.signOut(); window.location.href = "/" }}>
           Sign Out
         </Button>
       </div>
@@ -26,7 +27,10 @@ export function AuthButton() {
   }
 
   return (
-    <Button onClick={() => signIn()}>
+    <Button onClick={async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/onboarding` } })
+      if (error) console.error(error)
+    }}>
       Sign In
     </Button>
   )

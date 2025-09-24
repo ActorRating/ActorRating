@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { Button } from "@/components/ui/Button"
 import { RatingSlider } from "./RatingSlider"
 import { OverallScore } from "./RatingDisplay"
@@ -105,7 +105,7 @@ export function RatingForm({
   initialRating,
   isEditing = false
 }: RatingFormProps) {
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [formState, setFormState] = useState<RatingFormState>({
     criteria: {
       technicalSkill: 50,
@@ -230,7 +230,7 @@ export function RatingForm({
         overallScore,
         comment: formState.comment || undefined,
         performanceId: performance.id,
-        userId: session?.user?.id || "",
+        userId: user?.id || "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -249,7 +249,7 @@ export function RatingForm({
       console.error('Rating submission failed:', error)
       setFormState(prev => ({ ...prev, isSubmitting: false }))
     }
-  }, [formState, overallScore, performance.id, session?.user?.id, onSubmit])
+  }, [formState, overallScore, performance.id, user?.id, onSubmit])
 
   // Oscar criteria configuration
   const criteriaConfig = [
@@ -493,7 +493,7 @@ export function RatingForm({
           overallScore,
           comment: formState.comment || undefined,
           performanceId: performance.id,
-          userId: session?.user?.id || "",
+          userId: user?.id || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }}

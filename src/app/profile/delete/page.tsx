@@ -1,6 +1,7 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
+import { supabase } from "../../../../lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
@@ -8,7 +9,7 @@ import { TriangleAlert, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function DeleteAccountPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [confirmation, setConfirmation] = useState("")
@@ -30,8 +31,7 @@ export default function DeleteAccountPage() {
       })
 
       if (response.ok) {
-        // Account deleted successfully, sign out and redirect to landing page
-        await signOut({ redirect: false })
+        await supabase.auth.signOut()
         window.location.href = "/"
       } else {
         const errorData = await response.json()
@@ -45,7 +45,7 @@ export default function DeleteAccountPage() {
     }
   }
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -56,7 +56,7 @@ export default function DeleteAccountPage() {
     )
   }
 
-  if (!session) {
+  if (!user) {
     router.push("/auth/signin")
     return null
   }

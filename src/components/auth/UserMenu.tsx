@@ -1,13 +1,14 @@
 "use client"
 
-import { signOut, useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
+import { supabase } from "../../../lib/supabaseClient"
 import { useState, useRef, useEffect } from "react"
 import { User, LogOut, Settings, Shield, Download } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 
 export function UserMenu() {
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -22,12 +23,13 @@ export function UserMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  if (!session?.user) {
+  if (!user) {
     return null
   }
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" })
+    await supabase.auth.signOut()
+    window.location.href = "/"
   }
 
   return (
@@ -40,7 +42,7 @@ export function UserMenu() {
       >
         <User className="w-6 h-6" />
         <span className="hidden sm:block text-sm font-medium">
-          {session.user.email || "User"}
+          {user.email || "User"}
         </span>
       </Button>
 
@@ -49,9 +51,9 @@ export function UserMenu() {
           <div className="py-1">
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">
-                {session.user.email}
+                {user.email}
               </p>
-              <p className="text-sm text-gray-500">{session.user.email}</p>
+              <p className="text-sm text-gray-500">{user.email}</p>
             </div>
             
             <Link

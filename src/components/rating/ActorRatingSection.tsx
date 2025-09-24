@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -22,16 +22,16 @@ interface UserRatingForActor {
 }
 
 export function ActorRatingSection({ actorId, actorName }: { actorId: string; actorName: string }) {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const [userRatings, setUserRatings] = useState<UserRatingForActor[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (session?.user && actorId) {
+    if (user && actorId) {
       fetchUserRatings()
     }
-  }, [session, actorId])
+  }, [user, actorId])
 
   const fetchUserRatings = async () => {
     try {
@@ -62,11 +62,11 @@ export function ActorRatingSection({ actorId, actorName }: { actorId: string; ac
     )
   }
 
-  if (status === 'loading') {
+  if (isLoading) {
     return null
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-muted/60 rounded-2xl border border-gray-800 p-6">
         <h2 className="text-2xl font-bold text-white mb-4">Your Ratings for {actorName}</h2>

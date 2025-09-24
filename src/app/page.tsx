@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SearchBar } from "@/components/SearchBar"
@@ -14,7 +14,7 @@ import Link from "next/link"
 import { PerformanceRatingPreview } from "@/components/rating/PerformanceRatingPreview"
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
@@ -60,12 +60,12 @@ export default function Home() {
 
   useEffect(() => {
     if (!mounted) return
-    if (status === "authenticated") {
+    if (user) {
       router.replace("/dashboard")
     }
-  }, [mounted, status, router])
+  }, [mounted, user, router])
 
-  if (!mounted || status === "loading") {
+  if (!mounted || isLoading) {
     return (
       <HomeLayout>
         <div className="min-h-screen bg-background" />
@@ -73,7 +73,7 @@ export default function Home() {
     )
   }
 
-  if (status === "authenticated") {
+  if (user) {
     return null
   }
   return (

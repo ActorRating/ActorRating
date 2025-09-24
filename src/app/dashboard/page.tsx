@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { useRouter } from "next/navigation"
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { SignedInLayout } from "@/components/layout"
@@ -50,7 +50,7 @@ interface Rating {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -75,14 +75,14 @@ export default function DashboardPage() {
   const [showAllRecent, setShowAllRecent] = useState(false)
 
   useEffect(() => {
-    if (status === "loading") return
-    if (!session) {
+    if (isLoading) return
+    if (!user) {
       router.push("/auth/signin")
       return
     }
     fetchUserRatings()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, status])
+  }, [user, isLoading])
 
   const fetchUserRatings = async () => {
     try {
@@ -242,7 +242,7 @@ export default function DashboardPage() {
   const recentRatings = ratings
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
-  if (status === "loading" || isLoading) {
+  if (isLoading || isLoading) {
     return (
       <SignedInLayout>
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
@@ -259,7 +259,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!session) return null
+  if (!user) return null
 
   return (
     <SignedInLayout>

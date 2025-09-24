@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { Button } from "@/components/ui/Button"
 import { PerformanceRatingForm } from "./PerformanceRatingForm"
 import { PerformanceSlider } from "./PerformanceSlider"
@@ -42,7 +42,7 @@ export function MovieRatingSection({
   movieYear, 
   actors 
 }: MovieRatingSectionProps) {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const [userPerformances, setUserPerformances] = useState<UserPerformance[]>([])
   const [selectedActor, setSelectedActor] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -51,10 +51,10 @@ export function MovieRatingSection({
 
   // Fetch user's existing ratings for this movie
   useEffect(() => {
-    if (session?.user && movieId) {
+    if (user && movieId) {
       fetchUserPerformances()
     }
-  }, [session, movieId])
+  }, [user, movieId])
 
   const fetchUserPerformances = async () => {
     try {
@@ -132,7 +132,7 @@ export function MovieRatingSection({
     )
   }
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="bg-muted/60 rounded-2xl border border-gray-800 p-6">
         <div className="animate-pulse">
@@ -148,7 +148,7 @@ export function MovieRatingSection({
     )
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

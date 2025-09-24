@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
@@ -8,7 +8,7 @@ import { Download, ArrowLeft, FileText, Clock } from "lucide-react"
 import Link from "next/link"
 
 export default function ExportDataPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoading } = useUser()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [exportHistory, setExportHistory] = useState<any[]>([])
@@ -59,7 +59,7 @@ export default function ExportDataPage() {
     }
   }
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -70,7 +70,7 @@ export default function ExportDataPage() {
     )
   }
 
-  if (!session) {
+  if (!user) {
     router.push("/auth/signin")
     return null
   }
