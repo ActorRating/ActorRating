@@ -181,7 +181,7 @@ curl "http://localhost:3000/api/search?q=Leonardo"
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Styling**: Tailwind CSS, Framer Motion
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
+- **Authentication**: Supabase Auth
 - **Deployment**: Vercel-ready
 - **Search**: PostgreSQL full-text search with trigram similarity
 
@@ -270,6 +270,13 @@ curl -X POST 'http://localhost:3000/api/generate-share' \
 - `REDIS_URL` (optional)
 - `USE_PUPPETEER` (optional fallback)
 - `TMDB_API_KEY` (optional, not needed for share pipeline)
+
+## Supabase Auth Deployment Notes
+
+- Set Vercel envs: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- In Supabase dashboard: enable Google provider and set Google client ID/secret.
+- In Google Cloud Console: set Authorized redirect URI to the Supabase callback URL: `https://<supabase-project-ref>.supabase.co/auth/v1/callback`.
+- Redeploy.
 
 ### Storage
 
