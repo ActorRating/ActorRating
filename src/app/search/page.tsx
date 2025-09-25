@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+// Server-side auth removed - using client-side Supabase auth"
 import { redirect } from "next/navigation"
 import { SignedInLayout } from "@/components/layout"
 import { SearchBar } from "@/components/SearchBar"
