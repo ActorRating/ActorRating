@@ -16,7 +16,7 @@ export function Breadcrumb() {
 
   // Generate breadcrumb items based on current path
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    const segments = pathname.split('/').filter(Boolean)
+    const segments = pathname?.split('/').filter(Boolean) || []
     const breadcrumbs: BreadcrumbItem[] = [
       { label: 'Home', href: '/' }
     ]

@@ -55,7 +55,7 @@ export default function OnboardingPage() {
       })
 
       if (response.ok) {
-        router.push("/")
+        router.push("/dashboard")
       } else {
         throw new Error("Failed to complete onboarding")
       }

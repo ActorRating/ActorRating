@@ -31,7 +31,7 @@ export default function SignIn() {
 
   // Handle messages/errors from URL params
   useEffect(() => {
-    const error = searchParams.get('error')
+    const error = searchParams?.get('error')
     if (error === 'OAuthAccountNotLinked') {
       setApiError("An account with this email already exists. Please sign in with your original authentication method.")
     } else if (error) {
@@ -43,7 +43,7 @@ export default function SignIn() {
     // Check if user is already signed in (Supabase)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        router.push("/")
+        router.push("/dashboard")
       }
     })
   }, [router])
@@ -128,12 +128,12 @@ export default function SignIn() {
             }
           } catch (error) {
             console.error('Failed to submit pending rating:', error)
-            // Continue to onboarding even if rating submission fails
+            // Continue to dashboard even if rating submission fails
           }
         }
 
-        // Redirect to onboarding or home
-        router.push("/onboarding")
+        // Redirect to dashboard
+        router.push("/dashboard")
     } catch (error) {
       console.error("Signin error:", error)
       setApiError("Sign in failed. Please try again.")
@@ -146,7 +146,7 @@ export default function SignIn() {
     setIsGoogleLoading(true)
     try {
       const pendingRating = localStorage.getItem('pendingRating')
-      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signin-success' : '/onboarding'}`
+      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signin-success' : '/dashboard'}`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo }

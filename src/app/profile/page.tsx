@@ -84,7 +84,7 @@ export default function ProfilePage() {
       
       if (response.ok) {
         // Account deleted successfully, sign out and redirect to landing page
-        await signOut({ redirect: false })
+        await supabase.auth.signOut()
         window.location.href = "/"
       } else {
         const errorData = await response.json()

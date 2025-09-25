@@ -22,9 +22,9 @@ export default function RatePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const user = useUser()
-  const actorId = searchParams.get('actor')
-  const movieId = searchParams.get('movie')
-  const ratingId = searchParams.get('rating') // For editing existing ratings
+  const actorId = searchParams?.get('actor')
+  const movieId = searchParams?.get('movie')
+  const ratingId = searchParams?.get('rating') // For editing existing ratings
   
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)

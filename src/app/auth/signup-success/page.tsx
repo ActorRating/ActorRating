@@ -71,9 +71,9 @@ export default function SignupSuccessPage() {
     }
 
     handlePendingRating()
-  }, [session, status, router])
+  }, [user, router])
 
-  if (status === 'loading' || isSubmittingRating) {
+  if (user === undefined || isSubmittingRating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

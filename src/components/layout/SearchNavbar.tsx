@@ -69,7 +69,7 @@ export function SearchNavbar() {
                 </span>
                 <Button 
                   noMotion
-                  onClick={() => supabase.auth.signOut({ callbackUrl: '/' })} 
+                  onClick={() => supabase.auth.signOut()} 
                   variant="outline" 
                   size="sm"
                   className="text-foreground text-white border-border"

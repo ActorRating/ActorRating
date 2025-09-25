@@ -20,15 +20,15 @@ export default function RatingSuccessPage() {
 
   useEffect(() => {
     // Get rating data from URL parameters
-    const actorName = searchParams.get('actorName')
-    const movieTitle = searchParams.get('movieTitle')
-    const movieYear = searchParams.get('movieYear')
-    const comment = searchParams.get('comment')
-    const emotionalRangeDepth = parseInt(searchParams.get('emotionalRangeDepth') || '0')
-    const characterBelievability = parseInt(searchParams.get('characterBelievability') || '0')
-    const technicalSkill = parseInt(searchParams.get('technicalSkill') || '0')
-    const screenPresence = parseInt(searchParams.get('screenPresence') || '0')
-    const chemistryInteraction = parseInt(searchParams.get('chemistryInteraction') || '0')
+    const actorName = searchParams?.get('actorName')
+    const movieTitle = searchParams?.get('movieTitle')
+    const movieYear = searchParams?.get('movieYear')
+    const comment = searchParams?.get('comment')
+    const emotionalRangeDepth = parseInt(searchParams?.get('emotionalRangeDepth') || '0')
+    const characterBelievability = parseInt(searchParams?.get('characterBelievability') || '0')
+    const technicalSkill = parseInt(searchParams?.get('technicalSkill') || '0')
+    const screenPresence = parseInt(searchParams?.get('screenPresence') || '0')
+    const chemistryInteraction = parseInt(searchParams?.get('chemistryInteraction') || '0')
 
     if (actorName && movieTitle && movieYear) {
       const data = {
@@ -304,7 +304,7 @@ export default function RatingSuccessPage() {
     </div>
   )
 
-  return session ? (
+  return user ? (
     <SignedInLayout>
       <SuccessContent />
     </SignedInLayout>

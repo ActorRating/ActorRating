@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { prisma } from "@/lib/prisma"
+import { getServerSession, authOptions } from "@/lib/auth"
 
 export async function DELETE(request: NextRequest) {
   try {

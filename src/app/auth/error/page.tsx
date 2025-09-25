@@ -8,7 +8,7 @@ import { TriangleAlert, ArrowLeft } from "lucide-react"
 
 export default function AuthErrorPage() {
   const searchParams = useSearchParams()
-  const error = searchParams.get("error")
+  const error = searchParams?.get("error")
 
   const getErrorMessage = (errorCode: string | null) => {
     switch (errorCode) {
@@ -61,7 +61,7 @@ export default function AuthErrorPage() {
           <div className="text-center">
             <div className="mb-6">
               <p className="text-sm text-gray-700">
-                {getErrorMessage(error)}
+                {getErrorMessage(error || null)}
               </p>
             </div>
 

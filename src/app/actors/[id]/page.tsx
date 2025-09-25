@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, User, Star, Film, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Calendar, Star, Film, Award, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@supabase/auth-helpers-react'
 import { HomeLayout } from '@/components/layout/HomeLayout'
@@ -53,11 +53,12 @@ interface Performance {
   updatedAt: string
 }
 
+
 export default function ActorDetailPage() {
   const params = useParams()
   const router = useRouter()
   const user = useUser()
-  const actorId = params.id as string
+  const actorId = params?.id as string
   
   const [actor, setActor] = useState<Actor | null>(null)
   const [loading, setLoading] = useState(true)
@@ -399,7 +400,19 @@ export default function ActorDetailPage() {
     }
   }, [actor])
 
-  if (loading || status === "loading") {
+  // Early return for invalid actorId after all hooks are defined
+  if (!actorId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white mb-4">Invalid Actor</h1>
+          <p className="text-gray-400 mb-8">No actor ID provided.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
     const LoadingContent = () => (
       <div className="min-h-screen">
         <div className="max-w-4xl mx-auto px-8 py-12">
@@ -907,7 +920,7 @@ export default function ActorDetailPage() {
     </div>
   )
 
-  return session ? (
+  return user ? (
     <SignedInLayout>
       {actorContent}
     </SignedInLayout>

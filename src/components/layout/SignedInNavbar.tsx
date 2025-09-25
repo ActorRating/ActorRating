@@ -146,7 +146,7 @@ export function SignedInNavbar() {
                     <button
                       onClick={() => {
                         setIsMenuOpen(false)
-                        supabase.auth.signOut({ callbackUrl: '/' })
+                        supabase.auth.signOut()
                       }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >

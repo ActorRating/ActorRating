@@ -34,7 +34,7 @@ export default function SignUp() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.user) router.push("/")
+      if (data.session) router.push("/dashboard")
     })
   }, [router])
 
@@ -177,7 +177,7 @@ export default function SignUp() {
     try {
       // Check if there's a pending rating to handle after Google signup
       const pendingRating = localStorage.getItem('pendingRating')
-      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signup-success' : '/onboarding'}`
+      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signup-success' : '/dashboard'}`
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
       if (error) console.error(error)
     } catch (error) {

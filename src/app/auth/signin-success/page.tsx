@@ -71,9 +71,9 @@ export default function SigninSuccessPage() {
     }
 
     handlePendingRating()
-  }, [session, status, router])
+  }, [user, router])
 
-  if (status === 'loading' || isSubmittingRating) {
+  if (user === undefined || isSubmittingRating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -97,7 +97,7 @@ export default function SigninSuccessPage() {
           <p className="text-muted-foreground mb-6">{error}</p>
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/onboarding')}
+              onClick={() => router.push('/dashboard')}
               className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Continue to App

@@ -57,7 +57,7 @@ export default function MovieDetailPage() {
   const params = useParams()
   const router = useRouter()
   const user = useUser()
-  const movieId = params.id as string
+  const movieId = params?.id as string
   
   const [movie, setMovie] = useState<Movie | null>(null)
   const [loading, setLoading] = useState(true)
@@ -124,10 +124,10 @@ export default function MovieDetailPage() {
         setUserRatings([])
       }
     }
-    if (movieId && session) {
+    if (movieId && user) {
       fetchUserRatings()
     }
-  }, [movieId, session])
+  }, [movieId, user])
 
   // Avoid layout flicker: wait until auth status resolves before choosing layout
   if (status === 'loading') {
@@ -231,7 +231,7 @@ export default function MovieDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <LoadingContent />
       </SignedInLayout>
@@ -261,7 +261,7 @@ export default function MovieDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <ErrorContent />
       </SignedInLayout>
@@ -283,9 +283,9 @@ export default function MovieDetailPage() {
             className="mb-8"
           >
             <Button asChild variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200">
-              <Link href={session ? "/search" : "/"} className="flex items-center gap-2">
+              <Link href={user ? "/search" : "/"} className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                {session ? "Back to Search" : "Back to Home"}
+                {user ? "Back to Search" : "Back to Home"}
               </Link>
             </Button>
           </motion.div>
@@ -631,7 +631,7 @@ export default function MovieDetailPage() {
     </div>
   )
 
-  return session ? (
+  return user ? (
     <SignedInLayout>
       {movieContent}
     </SignedInLayout>

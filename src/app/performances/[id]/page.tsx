@@ -42,8 +42,8 @@ export default function PerformanceDetailPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const user = useUser()
-  const performanceId = params.id as string
-  const submittedFromQuery = searchParams.get('submitted') === 'true'
+  const performanceId = params?.id as string
+  const submittedFromQuery = searchParams?.get('submitted') === 'true'
   
   const [performance, setPerformance] = useState<Performance | null>(null)
   const [loading, setLoading] = useState(true)

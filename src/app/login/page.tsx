@@ -8,7 +8,7 @@ export default function Login() {
   const search = useSearchParams()
 
   useEffect(() => {
-    const verified = search.get("verified")
+    const verified = search?.get("verified")
     const target = verified === "true" ? "/auth/signin?verified=true" : "/auth/signin"
     router.replace(target)
   }, [router, search])

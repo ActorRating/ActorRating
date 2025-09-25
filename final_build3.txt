@@ -1,0 +1,480 @@
+
+> actor-rating@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.16.2) to ./node_modules/@prisma/client in 56ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+   ▲ Next.js 15.4.4
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2000ms
+   Linting and checking validity of types ...
+
+./src/app/about/page.tsx
+5:27  Warning: 'FaHandshake' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/actors/[id]/page.tsx
+59:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+69:10  Warning: 'detailHeights' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+70:10  Warning: 'mounted' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+526:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+575:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+575:130  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+704:58  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+734:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+779:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+780:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+781:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/movies/page.tsx
+6:11  Warning: 'Movie' is defined but never used.  @typescript-eslint/no-unused-vars
+38:9  Warning: 'dataStatus' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+41:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+70:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+146:65  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/actors/[id]/route.ts
+71:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+121:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+121:75  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+122:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+122:132  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/actors/route.ts
+8:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/auth/verify-email/resend/route.ts
+21:12  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/verify-email/route.ts
+84:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/generate-share/route.ts
+61:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/movies/[id]/route.ts
+114:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+114:132  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/movies/route.ts
+8:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/og/route.ts
+13:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+14:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:15  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/performances/[id]/route.ts
+3:10  Warning: 'cookies' is defined but never used.  @typescript-eslint/no-unused-vars
+4:10  Warning: 'createRouteHandlerClient' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/performances/route.ts
+14:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:68  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+52:116  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/ratings/[id]/route.ts
+4:10  Warning: 'makeCacheKey' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/ratings/route.ts
+14:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+125:11  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/search/route.ts
+21:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+21:60  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/suggestions/performances/route.ts
+86:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+110:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+152:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+209:27  Warning: '_req' is defined but never used.  @typescript-eslint/no-unused-vars
+218:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+302:9  Warning: 'selection' is never reassigned. Use 'const' instead.  prefer-const
+321:9  Warning: 'enriched' is never reassigned. Use 'const' instead.  prefer-const
+
+./src/app/api/user/change-password/route.ts
+2:10  Warning: 'cookies' is defined but never used.  @typescript-eslint/no-unused-vars
+3:10  Warning: 'createRouteHandlerClient' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/delete/route.ts
+2:10  Warning: 'cookies' is defined but never used.  @typescript-eslint/no-unused-vars
+3:10  Warning: 'createRouteHandlerClient' is defined but never used.  @typescript-eslint/no-unused-vars
+7:30  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+25:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/user/export/route.ts
+20:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:28  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/onboarding/route.ts
+4:10  Warning: 'prisma' is defined but never used.  @typescript-eslint/no-unused-vars
+6:28  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/profile/route.ts
+2:10  Warning: 'cookies' is defined but never used.  @typescript-eslint/no-unused-vars
+3:10  Warning: 'createRouteHandlerClient' is defined but never used.  @typescript-eslint/no-unused-vars
+18:9  Warning: 'user' is never reassigned. Use 'const' instead.  prefer-const
+
+./src/app/api/user/ratings/route.ts
+2:10  Warning: 'cookies' is defined but never used.  @typescript-eslint/no-unused-vars
+3:10  Warning: 'createRouteHandlerClient' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/terms-acceptance/route.ts
+4:10  Warning: 'prisma' is defined but never used.  @typescript-eslint/no-unused-vars
+6:28  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/verify/route.ts
+26:12  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/auth/signin/page.tsx
+23:23  Warning: 'setInfoMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+203:51  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+402:24  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/auth/signup/page.tsx
+28:10  Warning: 'errors' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+229:76  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/auth/signup-success/page.tsx
+74:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array. Outer scope values like 'session' aren't valid dependencies because mutating them doesn't re-render the component.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/error.tsx
+16:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-console').
+
+./src/app/dashboard/page.tsx
+98:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:16  Warning: '_' is defined but never used.  @typescript-eslint/no-unused-vars
+188:16  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+427:54  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+447:38  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+447:59  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+467:29  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+467:50  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+619:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+622:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+622:98  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+623:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/layout.tsx
+46:9  Warning: `rel="preconnect"` is missing from Google Font. See: https://nextjs.org/docs/messages/google-font-preconnect  @next/next/google-font-preconnect
+
+./src/app/movies/[id]/page.tsx
+58:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+59:9  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+68:10  Warning: 'detailHeights' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+69:10  Warning: 'mounted' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+87:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+90:18  Warning: '_' is defined but never used.  @typescript-eslint/no-unused-vars
+130:6  Warning: React Hook useEffect has an unnecessary dependency: 'session'. Either exclude it or remove the dependency array. Outer scope values like 'session' aren't valid dependencies because mutating them doesn't re-render the component.  react-hooks/exhaustive-deps
+137:9  Warning: 'calculateAverageFromPerformance' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+215:9  Warning: 'userRatedActorIds' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+215:29  Warning: React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+252:28  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+252:49  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+434:51  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+486:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+487:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+488:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/onboarding/page.tsx
+32:15  Warning: 'data' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+211:46  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/page.tsx
+111:24  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+316:25  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+316:47  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/performances/[id]/page.tsx
+189:39  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+190:22  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+237:60  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+237:78  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+237:104  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/profile/delete/page.tsx
+125:23  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+148:33  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+148:37  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/profile/export/page.tsx
+15:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:25  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/profile/page.tsx
+13:3  Warning: 'Mail' is defined but never used.  @typescript-eslint/no-unused-vars
+19:3  Warning: 'Settings' is defined but never used.  @typescript-eslint/no-unused-vars
+26:10  Warning: 'isLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+26:21  Warning: 'setIsLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+30:10  Warning: 'errors' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+30:18  Warning: 'setErrors' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+39:6  Warning: React Hook useEffect has a missing dependency: 'loadProfile'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+99:9  Warning: 'handleTermsAcceptance' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+121:9  Warning: 'isGoogleAccount' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+123:9  Warning: 'formatDate' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/r/[slug]/ShareButton.tsx
+19:61  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+20:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/r/[slug]/page.tsx
+2:8  Warning: 'Image' is defined but never used.  @typescript-eslint/no-unused-vars
+3:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+5:10  Warning: 'SuccessShare' is defined but never used.  @typescript-eslint/no-unused-vars
+54:19  Warning: 'ogUrl' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+54:26  Warning: 'feedUrl' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+54:35  Warning: 'storyUrl' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+57:9  Warning: 'intent' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/r/[slug]/successShare.tsx
+7:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+8:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/rate/page.tsx
+6:18  Warning: 'AnimatePresence' is defined but never used.  @typescript-eslint/no-unused-vars
+13:24  Warning: 'OscarRating' is defined but never used.  @typescript-eslint/no-unused-vars
+15:39  Warning: 'Search' is defined but never used.  @typescript-eslint/no-unused-vars
+19:10  Warning: 'CelebrationConfetti' is defined but never used.  @typescript-eslint/no-unused-vars
+35:10  Warning: 'lastRatingId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+87:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:77  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+128:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+139:9  Warning: 'handleSubmit' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+139:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+170:9  Warning: 'handleError' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+263:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+450:69  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+450:84  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+494:81  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+495:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+548:61  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+548:76  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+673:58  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+673:85  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+727:29  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+727:43  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/rating-success/page.tsx
+15:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+16:9  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+18:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+163:106  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+164:57  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+164:81  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+298:18  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/search/page.tsx
+56:38  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+56:46  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/app/test-star-score/page.tsx
+52:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/LegacyPerformanceCard.tsx
+5:10  Warning: 'Star' is defined but never used.  @typescript-eslint/no-unused-vars
+43:112  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:162  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+43:199  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/SearchBar.tsx
+8:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+10:38  Warning: 'getMotionProps' is defined but never used.  @typescript-eslint/no-unused-vars
+75:27  Warning: React Hook useCallback received a function whose dependencies are unknown. Pass an inline function instead.  react-hooks/exhaustive-deps
+100:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+120:6  Warning: React Hook useEffect has missing dependencies: 'showSuggestions' and 'throttledSearch'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+338:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+338:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/admin/SearchForm.tsx
+14:102  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/auth/ReCaptcha.tsx
+71:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+82:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+83:90  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+91:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/cookies/CookieBanner.tsx
+20:52  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+20:63  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/layout/ChunkErrorReload.tsx
+33:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+42:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/layout/Header.tsx
+9:3  Warning: 'X' is defined but never used.  @typescript-eslint/no-unused-vars
+10:3  Warning: 'ChevronDown' is defined but never used.  @typescript-eslint/no-unused-vars
+11:3  Warning: 'User' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'LogOut' is defined but never used.  @typescript-eslint/no-unused-vars
+42:10  Warning: 'isUserMenuOpen' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+63:9  Warning: 'handleUserAction' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/HomeNavbar.tsx
+12:33  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+16:3  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/rules-of-hooks').
+17:3  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+19:3  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-var-requires').
+20:25  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+39:6  Warning: React Hook useEffect has a missing dependency: 'setMounted'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/layout/MainLayout.tsx
+5:10  Warning: 'ChevronRight' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/SearchNavbar.tsx
+13:33  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+16:3  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/rules-of-hooks').
+17:3  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+18:3  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-var-requires').
+19:25  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+38:6  Warning: React Hook useEffect has a missing dependency: 'setMounted'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/layout/Sidebar.tsx
+20:3  Warning: 'X' is defined but never used.  @typescript-eslint/no-unused-vars
+49:9  Warning: 'pathname' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+53:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+54:50  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/layout/SignedInNavbar.tsx
+40:11  Warning: 'menuWidth' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/performance/FeaturedPerformanceCard.tsx
+5:51  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+127:120  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+127:170  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+127:207  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/performance/PerformanceCard.tsx
+7:29  Warning: 'TrendingUp' is defined but never used.  @typescript-eslint/no-unused-vars
+7:41  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+13:20  Warning: 'getMotionProps' is defined but never used.  @typescript-eslint/no-unused-vars
+13:36  Warning: 'scaleIn' is defined but never used.  @typescript-eslint/no-unused-vars
+36:3  Warning: 'confidenceLevel' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+55:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+55:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+64:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+64:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+65:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+66:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+69:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+123:9  Warning: 'getConfidenceColor' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+187:118  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+187:168  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+187:205  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/performance/PerformanceGrid.tsx
+136:62  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+227:104  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+290:50  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/performance/PerformanceListItem.tsx
+5:39  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+92:112  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:162  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+92:199  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/rating/ActorRatingSection.tsx
+29:10  Warning: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+35:6  Warning: React Hook useEffect has a missing dependency: 'fetchUserRatings'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/rating/MovieRatingSection.tsx
+7:10  Warning: 'PerformanceSlider' is defined but never used.  @typescript-eslint/no-unused-vars
+8:10  Warning: 'GiClapperboard' is defined but never used.  @typescript-eslint/no-unused-vars
+8:26  Warning: 'GiHeartWings' is defined but never used.  @typescript-eslint/no-unused-vars
+9:10  Warning: 'FaStar' is defined but never used.  @typescript-eslint/no-unused-vars
+9:18  Warning: 'FaHandshake' is defined but never used.  @typescript-eslint/no-unused-vars
+9:31  Warning: 'FaUserSecret' is defined but never used.  @typescript-eslint/no-unused-vars
+10:18  Warning: 'AnimatePresence' is defined but never used.  @typescript-eslint/no-unused-vars
+49:10  Warning: 'isLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+49:21  Warning: 'setIsLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+58:6  Warning: React Hook useEffect has a missing dependency: 'fetchUserPerformances'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+72:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+84:13  Warning: 'existingPerformance' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+122:9  Warning: 'getExistingRating' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+181:25  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+181:38  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+198:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+256:24  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/components/rating/PerformanceRatingForm.tsx
+10:20  Warning: 'staggerContainer' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/rating/PerformanceSlider.tsx
+4:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+6:10  Warning: 'motion' is defined but never used.  @typescript-eslint/no-unused-vars
+7:10  Warning: 'fadeInUp' is defined but never used.  @typescript-eslint/no-unused-vars
+7:20  Warning: 'getMotionProps' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/rating/RatingDisplay.tsx
+17:3  Warning: 'calculateOverallScore' is defined but never used.  @typescript-eslint/no-unused-vars
+161:9  Warning: 'isLower' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+276:3  Warning: 'performanceId' is defined but never used.  @typescript-eslint/no-unused-vars
+354:3  Warning: 'showComparison' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/rating/RatingForm.tsx
+34:3  Warning: 'FaSave' is defined but never used.  @typescript-eslint/no-unused-vars
+62:41  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+62:67  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+124:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+301:39  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+301:65  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+308:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/rating/RatingSlider.tsx
+21:21  Warning: 'setIsFocused' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+33:9  Warning: 'handleKeyDown' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/Button.tsx
+5:10  Warning: 'scaleIn' is defined but never used.  @typescript-eslint/no-unused-vars
+33:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+79:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/Logo.tsx
+15:3  Warning: 'showText' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+16:3  Warning: 'textClassName' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/StarScoreVisualizer.tsx
+22:10  Warning: 'isAnimating' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/hooks/useCookieConsent.ts
+41:6  Warning: React Hook useEffect has a missing dependency: 'applyConsentSettings'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/lib/auth.ts
+5:37  Warning: 'args' is defined but never used.  @typescript-eslint/no-unused-vars
+5:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/emailVerification.ts
+1:10  Warning: 'prisma' is defined but never used.  @typescript-eslint/no-unused-vars
+5:49  Warning: 'userId' is defined but never used.  @typescript-eslint/no-unused-vars
+12:40  Warning: 'token' is defined but never used.  @typescript-eslint/no-unused-vars
+18:48  Warning: 'userId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/utils/ratingCalculator.ts
+120:71  Warning: 'totalRatings' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./src/app/auth/signup-success/page.tsx:74:7
+Type error: Cannot find name 'session'.
+
+[0m [90m 72 |[39m
+ [90m 73 |[39m     handlePendingRating()
+[31m[1m>[22m[39m[90m 74 |[39m   }[33m,[39m [session[33m,[39m status[33m,[39m router])
+ [90m    |[39m       [31m[1m^[22m[39m
+ [90m 75 |[39m
+ [90m 76 |[39m   [36mif[39m (status [33m===[39m [32m'loading'[39m [33m||[39m isSubmittingRating) {
+ [90m 77 |[39m     [36mreturn[39m ([0m
+Next.js build worker exited with code: 1 and signal: null
