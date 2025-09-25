@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Award
 } from 'lucide-react'
-import { useSession, signOut } from 'next-auth/react'
+import { useUser } from '@supabase/auth-helpers-react'
+import { supabase } from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { cn } from '@/lib/utils'
 import { UserMenu } from '../auth/UserMenu'
@@ -69,7 +70,7 @@ export function Header({
         window.location.href = '/profile/settings'
         break
       case 'logout':
-        signOut({ callbackUrl: '/' })
+        supabase.auth.signOut({ callbackUrl: '/' })
         break
     }
   }

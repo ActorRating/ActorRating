@@ -1,10 +1,10 @@
 // Deprecated NextAuth config removed after migration to Supabase Auth
 import { prisma } from "@/lib/prisma"
-import CredentialsProvider from "next-auth/providers/credentials"
-import GoogleProvider from "next-auth/providers/google"
+// NextAuth removed - using Supabase Auth instead
 import bcrypt from "bcrypt"
 
-declare module "next-auth" {
+// NextAuth types removed - using Supabase Auth types instead
+/* declare module "next-auth" {
   interface Session {
     user: {
       id: string

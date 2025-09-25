@@ -1,7 +1,8 @@
 "use client"
 
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
+import { useUser } from '@supabase/auth-helpers-react'
+import { supabase } from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { usePathname } from 'next/navigation'
 import { Logo } from '../ui/Logo'
@@ -145,7 +146,7 @@ export function SignedInNavbar() {
                     <button
                       onClick={() => {
                         setIsMenuOpen(false)
-                        signOut({ callbackUrl: '/' })
+                        supabase.auth.signOut({ callbackUrl: '/' })
                       }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useUser } from '@supabase/auth-helpers-react'
 import { CheckCircle, Loader2 } from 'lucide-react'
 
 export default function SigninSuccessPage() {

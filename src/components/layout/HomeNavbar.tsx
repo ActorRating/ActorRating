@@ -1,7 +1,8 @@
 "use client"
 
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
+import { useUser } from '@supabase/auth-helpers-react'
+import { supabase } from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { Logo } from '../ui/Logo'
 
@@ -62,7 +63,7 @@ export function HomeNavbar() {
                 </Link>
                 <Button 
                   noMotion
-                  onClick={() => signOut({ callbackUrl: '/' })} 
+                  onClick={() => supabase.auth.signOut({ callbackUrl: '/' })} 
                   variant="outline" 
                   size="sm"
                   className="text-foreground text-white border-border"
