@@ -56,7 +56,7 @@ interface Performance {
 export default function ActorDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const user = useUser()
   const actorId = params.id as string
   
   const [actor, setActor] = useState<Actor | null>(null)

@@ -38,7 +38,7 @@ export function Header({
   isMobileSidebarOpen = false
 }: HeaderProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const user = useUser()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('dark')

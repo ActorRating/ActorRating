@@ -14,7 +14,7 @@ interface HomeLayoutProps {
 }
 
 export function HomeLayout({ children }: HomeLayoutProps) {
-  const { status } = useSession()
+  const user = useUser()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   return (

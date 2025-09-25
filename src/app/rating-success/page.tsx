@@ -13,7 +13,7 @@ import { motion } from 'framer-motion'
 export default function RatingSuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session } = useSession()
+  const user = useUser()
   
   const [ratingData, setRatingData] = useState<any>(null)
   const [totalScore, setTotalScore] = useState(0)

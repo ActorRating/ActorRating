@@ -56,7 +56,7 @@ interface Performance {
 export default function MovieDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const user = useUser()
   const movieId = params.id as string
   
   const [movie, setMovie] = useState<Movie | null>(null)

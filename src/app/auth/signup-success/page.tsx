@@ -7,7 +7,7 @@ import { CheckCircle, Loader2 } from 'lucide-react'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const user = useUser()
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

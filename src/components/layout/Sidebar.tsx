@@ -47,7 +47,7 @@ interface CategorySection {
 
 export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const user = useUser()
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set())
   const [recentPerformances, setRecentPerformances] = useState<any[]>([])

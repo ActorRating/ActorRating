@@ -8,7 +8,7 @@ import { Home } from 'lucide-react'
 import { Logo } from '../ui/Logo'
 
 export function SearchNavbar() {
-  const { data: session, status } = useSession()
+  const user = useUser()
   const navKey = `${status}-${session?.user?.id || 'anon'}`
   const [mounted, setMounted] = require('react').useState(false) as [boolean, (v: boolean) => void]
   

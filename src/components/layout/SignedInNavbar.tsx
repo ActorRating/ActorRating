@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom'
 import { User, Settings, LogOut, Home, Search } from 'lucide-react'
 
 export function SignedInNavbar() {
-  const { data: session, status } = useSession()
+  const user = useUser()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)

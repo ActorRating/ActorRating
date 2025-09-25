@@ -21,7 +21,7 @@ import { CelebrationConfetti } from '@/components/ui/Confetti'
 export default function RatePage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { data: session } = useSession()
+  const user = useUser()
   const actorId = searchParams.get('actor')
   const movieId = searchParams.get('movie')
   const ratingId = searchParams.get('rating') // For editing existing ratings
