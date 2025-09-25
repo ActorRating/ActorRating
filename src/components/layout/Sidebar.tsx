@@ -138,7 +138,7 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
 
   // Load user data
   useEffect(() => {
-    if (session) {
+    if (user) {
       // Mock data - replace with actual API calls
       setRecentPerformances([
         { id: 1, title: 'The Dark Knight', actor: 'Heath Ledger', rating: 9.2 },
@@ -152,7 +152,7 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
         { id: 3, title: 'Joker', actor: 'Joaquin Phoenix', rating: 8.8, date: '2024-01-05' },
       ])
     }
-  }, [session])
+  }, [user])
 
   const sidebarWidth = isOpen ? 'w-80' : 'w-16'
   const isCollapsed = !isOpen
@@ -295,7 +295,7 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
           </div>
 
           {/* Recently Viewed */}
-          {session && recentPerformances.length > 0 && (
+          {user && recentPerformances.length > 0 && (
             <div className={cn(
               "transition-opacity",
               isCollapsed ? "opacity-0" : "opacity-100"
@@ -322,7 +322,7 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
           )}
 
           {/* User's Rating History */}
-          {session && userRatings.length > 0 && (
+          {user && userRatings.length > 0 && (
             <div className={cn(
               "transition-opacity",
               isCollapsed ? "opacity-0" : "opacity-100"
@@ -359,7 +359,7 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
       </div>
 
       {/* Sidebar Footer */}
-      {session && (
+      {user && (
         <div className={cn(
           "p-4 border-t border-border transition-opacity",
           isCollapsed ? "opacity-0" : "opacity-100"

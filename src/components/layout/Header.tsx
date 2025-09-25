@@ -199,7 +199,7 @@ export function Header({
             </button>
 
             {/* User Menu */}
-            {session ? (
+            {user ? (
               <UserMenu />
             ) : (
               <Link href="/auth/signin">

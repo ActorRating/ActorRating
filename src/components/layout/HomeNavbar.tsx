@@ -49,12 +49,12 @@ export function HomeNavbar() {
 
           {/* Right side - keep stable width so layout never collapses */}
           <div className="flex items-center space-x-3 min-w-[220px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal">
-            {status === "loading" || !mounted ? (
+            {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse hidden sm:block" />
               </div>
-            ) : session ? (
+            ) : user ? (
               <div className="flex items-center gap-2">
                 <Link href="/dashboard">
                   <Button noMotion variant="outline" size="sm" className="text-foreground text-white border-border">

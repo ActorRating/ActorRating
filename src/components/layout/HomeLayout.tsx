@@ -20,7 +20,7 @@ export function HomeLayout({ children }: HomeLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Navbar switches based on auth status for consistency across pages */}
-      {!mounted ? <HomeNavbar /> : (status === 'authenticated' ? <SignedInNavbar /> : <HomeNavbar />)}
+      {!mounted ? <HomeNavbar /> : (user ? <SignedInNavbar /> : <HomeNavbar />)}
 
       {/* Main content */}
       <motion.main

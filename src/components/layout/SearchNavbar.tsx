@@ -57,15 +57,15 @@ export function SearchNavbar() {
 
           {/* Right - keep stable width */}
           <div className="flex items-center gap-2 min-w-[260px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal">
-            {status === "loading" || !mounted ? (
+            {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-24 rounded-md bg-muted animate-pulse" />
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse hidden sm:block" />
               </div>
-            ) : session ? (
+            ) : user ? (
               <>
                 <span className="text-sm text-muted-foreground hidden sm:block select-none">
-                  {session.user?.email}
+                  {user?.email}
                 </span>
                 <Button 
                   noMotion
