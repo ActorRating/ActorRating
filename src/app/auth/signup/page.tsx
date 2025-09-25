@@ -34,7 +34,7 @@ export default function SignUp() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.push("/")
+      if (data.user) router.push("/")
     })
   }, [router])
 

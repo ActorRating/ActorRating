@@ -93,7 +93,7 @@ export default function PerformanceDetailPage() {
     if (!performance) return
 
     // If user is not signed in, redirect to signup with rating data
-    if (!session) {
+    if (!user) {
       // Store rating data in localStorage for after signup
       const ratingDataToStore = {
         ...ratingData,
@@ -137,7 +137,7 @@ export default function PerformanceDetailPage() {
     }
   }
 
-  if (loading || status === "loading") {
+  if (loading) {
     const LoadingContent = () => (
       <div className="min-h-screen">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16 lg:py-20">
@@ -159,7 +159,7 @@ export default function PerformanceDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <LoadingContent />
       </SignedInLayout>
@@ -212,7 +212,7 @@ export default function PerformanceDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <ErrorContent />
       </SignedInLayout>
@@ -253,7 +253,7 @@ export default function PerformanceDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <SuccessContent />
       </SignedInLayout>
@@ -273,7 +273,7 @@ export default function PerformanceDetailPage() {
     />
   )
 
-  return session ? (
+  return user ? (
     <SignedInLayout>
       <PerformanceContent />
     </SignedInLayout>

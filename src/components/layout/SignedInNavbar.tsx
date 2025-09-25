@@ -58,7 +58,7 @@ export function SignedInNavbar() {
     setMounted(true)
   }, [])
 
-  if (status === "loading" || !mounted) {
+  if (!mounted) {
     return (
       <nav className="bg-secondary/70 border-b border-border sticky top-0 z-50 isolate" suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +77,7 @@ export function SignedInNavbar() {
     )
   }
 
-  if (!session) {
+  if (!user) {
     return null
   }
 

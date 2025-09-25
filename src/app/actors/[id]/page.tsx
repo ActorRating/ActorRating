@@ -149,10 +149,10 @@ export default function ActorDetailPage() {
         setUserRatings([])
       }
     }
-    if (actorId && session) {
+    if (actorId && user) {
       fetchUserRatings()
     }
-  }, [actorId, session])
+  }, [actorId, user])
 
   // Avoid layout flicker: we already handle loading state later; don't switch layouts mid-load
 
@@ -416,7 +416,7 @@ export default function ActorDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <LoadingContent />
       </SignedInLayout>
@@ -446,7 +446,7 @@ export default function ActorDetailPage() {
       </div>
     )
 
-    return session ? (
+    return user ? (
       <SignedInLayout>
         <ErrorContent />
       </SignedInLayout>
@@ -472,9 +472,9 @@ export default function ActorDetailPage() {
             className="mb-8"
           >
             <Button asChild variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200">
-              <Link href={session ? "/search" : "/"} className="flex items-center gap-2">
+              <Link href={user ? "/search" : "/"} className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                {session ? "Back to Search" : "Back to Home"}
+                {user ? "Back to Search" : "Back to Home"}
               </Link>
             </Button>
           </motion.div>

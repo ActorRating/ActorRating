@@ -13,10 +13,7 @@ export default function SignupSuccessPage() {
 
   useEffect(() => {
     const handlePendingRating = async () => {
-      // Wait for session to be available
-      if (status === 'loading') return
-      
-      if (!session) {
+      if (!user) {
         // If no session, redirect to signin
         router.push('/auth/signin')
         return

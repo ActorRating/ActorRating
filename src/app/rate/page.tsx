@@ -173,7 +173,7 @@ export default function RatePage() {
 
   // Helper function to get the appropriate layout
   const getLayout = (children: React.ReactNode) => {
-    return session ? (
+    return user ? (
       <SignedInLayout>{children}</SignedInLayout>
     ) : (
       <HomeLayout>{children}</HomeLayout>
@@ -191,7 +191,7 @@ export default function RatePage() {
     if (!actor || !movie) return
 
     // If user is not signed in, redirect to signup with rating data
-    if (!session) {
+    if (!user) {
       // Store rating data in localStorage for after signup
       const ratingDataToStore = {
         ...ratingData,
