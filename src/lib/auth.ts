@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma"
 // NextAuth removed - using Supabase Auth instead
 import bcrypt from "bcrypt"
 
-// NextAuth types removed - using Supabase Auth types instead
-/* declare module "next-auth" {
+// NextAuth completely removed - using Supabase Auth instead
+/* REMOVED: NextAuth types
   interface Session {
     user: {
       id: string
