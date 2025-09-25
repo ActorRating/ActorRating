@@ -53,8 +53,6 @@ interface Performance {
   updatedAt: string
 }
 
-"use client"
-
 export default function ActorDetailPage() {
   const params = useParams()
   const router = useRouter()
