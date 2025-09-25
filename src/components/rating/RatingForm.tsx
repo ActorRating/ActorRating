@@ -105,7 +105,7 @@ export function RatingForm({
   initialRating,
   isEditing = false
 }: RatingFormProps) {
-  const { user } = useUser()
+  const user = useUser()
   const [formState, setFormState] = useState<RatingFormState>({
     criteria: {
       technicalSkill: 50,

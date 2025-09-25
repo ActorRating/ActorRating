@@ -14,7 +14,8 @@ import Link from "next/link"
 import { PerformanceRatingPreview } from "@/components/rating/PerformanceRatingPreview"
 
 export default function Home() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoading = user === undefined
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
 

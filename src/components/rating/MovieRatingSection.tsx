@@ -42,7 +42,8 @@ export function MovieRatingSection({
   movieYear, 
   actors 
 }: MovieRatingSectionProps) {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const [userPerformances, setUserPerformances] = useState<UserPerformance[]>([])
   const [selectedActor, setSelectedActor] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -132,7 +133,7 @@ export function MovieRatingSection({
     )
   }
 
-  if (isLoading) {
+  if (isLoadingUser) {
     return (
       <div className="bg-muted/60 rounded-2xl border border-gray-800 p-6">
         <div className="animate-pulse">

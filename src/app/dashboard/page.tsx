@@ -50,7 +50,8 @@ interface Rating {
 }
 
 export default function DashboardPage() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -75,14 +76,14 @@ export default function DashboardPage() {
   const [showAllRecent, setShowAllRecent] = useState(false)
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoadingUser) return
     if (!user) {
       router.push("/auth/signin")
       return
     }
     fetchUserRatings()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isLoading])
+  }, [user, isLoadingUser])
 
   const fetchUserRatings = async () => {
     try {
@@ -242,7 +243,7 @@ export default function DashboardPage() {
   const recentRatings = ratings
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
-  if (isLoading || isLoading) {
+  if (isLoadingUser || isLoading) {
     return (
       <SignedInLayout>
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">

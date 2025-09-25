@@ -20,7 +20,8 @@ import {
 } from "lucide-react"
 
 export default function ProfilePage() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -29,13 +30,13 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoadingUser) return
     if (!user) {
       router.push("/auth/signin")
       return
     }
     loadProfile()
-  }, [user, isLoading, router])
+  }, [user, isLoadingUser, router])
 
   const loadProfile = async () => {
     try {
@@ -130,7 +131,7 @@ export default function ProfilePage() {
     })
   }
 
-  if (isLoading) {
+  if (isLoadingUser) {
     return (
       <SignedInLayout>
         <div className="min-h-screen bg-background flex items-center justify-center">

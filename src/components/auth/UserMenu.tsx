@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 
 export function UserMenu() {
-  const { user } = useUser()
+  const user = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 

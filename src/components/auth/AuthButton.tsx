@@ -5,7 +5,8 @@ import { supabase } from "../../../lib/supabaseClient"
 import { Button } from "@/components/ui/Button"
 
 export function AuthButton() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoading = !user && user !== null
 
   if (isLoading) {
     return (

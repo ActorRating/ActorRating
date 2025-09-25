@@ -22,7 +22,8 @@ interface UserRatingForActor {
 }
 
 export function ActorRatingSection({ actorId, actorName }: { actorId: string; actorName: string }) {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const [userRatings, setUserRatings] = useState<UserRatingForActor[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,7 +63,7 @@ export function ActorRatingSection({ actorId, actorName }: { actorId: string; ac
     )
   }
 
-  if (isLoading) {
+  if (isLoadingUser) {
     return null
   }
 

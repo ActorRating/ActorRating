@@ -9,7 +9,8 @@ import { TriangleAlert, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function DeleteAccountPage() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [confirmation, setConfirmation] = useState("")
@@ -45,7 +46,7 @@ export default function DeleteAccountPage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

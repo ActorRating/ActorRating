@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/Button"
 import { User, Star, Heart, CheckCircle } from "lucide-react"
 
 export default function OnboardingPage() {
-  const { user, isLoading } = useUser()
+  const user = useUser()
+  const isLoadingUser = user === undefined
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -16,13 +17,13 @@ export default function OnboardingPage() {
   const [isCheckingUser, setIsCheckingUser] = useState(true)
 
   useEffect(() => {
-    if (isLoading) return
+    if (isLoadingUser) return
     if (!user) {
       router.push("/auth/signin")
       return
     }
     checkUserStatus()
-  }, [user, isLoading, router])
+  }, [user, isLoadingUser, router])
 
   const checkUserStatus = async () => {
     try {
@@ -86,7 +87,7 @@ export default function OnboardingPage() {
     },
   ]
 
-  if (isLoading || isCheckingUser) {
+  if (isLoadingUser || isCheckingUser) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

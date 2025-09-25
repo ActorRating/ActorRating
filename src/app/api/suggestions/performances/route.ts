@@ -208,7 +208,9 @@ function pairKey(p: { actorId: string; movieId: string }): string {
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session } } = await supabase.auth.getSession()
     const currentUserId = session?.user?.id || null
 
     // Debug: ignore all filters and return random unique-by-movie performances
