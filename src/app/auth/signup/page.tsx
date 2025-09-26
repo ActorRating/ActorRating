@@ -175,10 +175,12 @@ export default function SignUp() {
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true)
     try {
-      // Check if there's a pending rating to handle after Google signup
-      const pendingRating = localStorage.getItem('pendingRating')
-      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signup-success' : '/dashboard'}`
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
       if (error) console.error(error)
     } catch (error) {
       console.error("Google sign in error:", error)

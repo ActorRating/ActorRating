@@ -145,11 +145,11 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
     try {
-      const pendingRating = localStorage.getItem('pendingRating')
-      const redirectTo = `${window.location.origin}${pendingRating ? '/auth/signin-success' : '/dashboard'}`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo }
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
       })
       if (error) {
         console.error("Google sign in error:", error)
