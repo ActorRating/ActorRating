@@ -51,7 +51,6 @@ interface Rating {
 
 export default function DashboardPage() {
   const user = useUser()
-  const isLoading = user === undefined
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -75,6 +74,7 @@ export default function DashboardPage() {
   const [suggestionsAnimKey, setSuggestionsAnimKey] = useState(0)
   const [showAllRecent, setShowAllRecent] = useState(false)
 
+  // Wait until Supabase resolves the session
   useEffect(() => {
     if (user === undefined) return // still loading, do nothing
     if (user === null) {
@@ -83,11 +83,11 @@ export default function DashboardPage() {
   }, [user, router])
 
   useEffect(() => {
-    if (!isLoading && user) {
+    if (user) {
       fetchUserRatings()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isLoading])
+  }, [user])
 
   const fetchUserRatings = async () => {
     try {

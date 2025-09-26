@@ -10,8 +10,8 @@ interface SessionProviderProps {
 
 export function SessionProvider({ children }: SessionProviderProps) {
   return (
-    <UserProvider supabaseClient={supabase}>
+    <SessionContextProvider supabaseClient={supabase}>
       {children}
-    </UserProvider>
+    </SessionContextProvider>
   )
 }
