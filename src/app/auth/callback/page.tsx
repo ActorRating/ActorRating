@@ -18,8 +18,13 @@ export default function AuthCallback() {
       }
 
       if (data.session) {
-        // Successfully authenticated
-        router.push('/dashboard')
+        // Successfully authenticated - check for pending rating first
+        const pendingRating = localStorage.getItem('pendingRating')
+        if (pendingRating) {
+          router.push('/auth/signin-success')
+        } else {
+          router.push('/dashboard')
+        }
       } else {
         // No session, redirect to signin
         router.push('/auth/signin')
