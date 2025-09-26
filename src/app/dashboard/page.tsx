@@ -51,10 +51,10 @@ interface Rating {
 
 export default function DashboardPage() {
   const user = useUser()
-  const isLoadingUser = user === undefined
+  const isLoading = user === undefined
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // Pagination state
   const [cursor, setCursor] = useState<string | null>(null)
@@ -76,18 +76,21 @@ export default function DashboardPage() {
   const [showAllRecent, setShowAllRecent] = useState(false)
 
   useEffect(() => {
-    if (isLoadingUser) return
-    if (!user) {
-      router.push("/auth/signin")
-      return
+    if (!isLoading && !user) {
+      router.push('/auth/signin')
     }
-    fetchUserRatings()
+  }, [user, isLoading, router])
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      fetchUserRatings()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isLoadingUser])
+  }, [user, isLoading])
 
   const fetchUserRatings = async () => {
     try {
-      setIsLoading(true)
+      setIsLoadingData(true)
       const response = await fetch("/api/user/ratings?limit=20", { cache: "no-store" })
 
       if (response.status === 401) {
@@ -125,7 +128,7 @@ export default function DashboardPage() {
       console.error("Error fetching ratings:", err)
       setError("We couldn’t load your data. Please try again.")
     } finally {
-      setIsLoading(false)
+      setIsLoadingData(false)
     }
   }
 
@@ -243,7 +246,15 @@ export default function DashboardPage() {
   const recentRatings = ratings
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
-  if (isLoadingUser || isLoading) {
+  if (isLoading) {
+    return <p>Loading...</p>
+  }
+
+  if (!user) {
+    return null // waiting for redirect
+  }
+
+  if (isLoadingData) {
     return (
       <SignedInLayout>
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
@@ -260,7 +271,6 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user) return null
 
   return (
     <SignedInLayout>
