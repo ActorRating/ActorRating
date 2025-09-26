@@ -76,12 +76,9 @@ export default function DashboardPage() {
   const [showAllRecent, setShowAllRecent] = useState(false)
 
   useEffect(() => {
-    if (user === undefined) {
-      // Still loading, do nothing
-      return
-    }
-    if (!user) {
-      router.replace("/")
+    if (user === undefined) return // still loading, do nothing
+    if (user === null) {
+      router.replace("/auth/signin")
     }
   }, [user, router])
 
@@ -251,11 +248,11 @@ export default function DashboardPage() {
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
   if (user === undefined) {
-    return <p>Loading...</p>
+    return <p>Loading session...</p>
   }
 
-  if (!user) {
-    return null
+  if (user === null) {
+    return null // will redirect
   }
 
   if (isLoadingData) {
