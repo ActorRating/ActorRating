@@ -1,6 +1,7 @@
 "use client"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useUser } from "@supabase/auth-helpers-react"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
 import { supabase } from "../../../../lib/supabaseClient"
@@ -12,6 +13,7 @@ import Link from "next/link"
 
 export default function SignIn() {
   const router = useRouter()
+  const user = useUser()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -41,12 +43,10 @@ export default function SignIn() {
 
   useEffect(() => {
     // Check if user is already signed in (Supabase)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.push("/dashboard")
-      }
-    })
-  }, [router])
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user, router])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
