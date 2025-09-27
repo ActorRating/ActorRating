@@ -63,15 +63,9 @@ export async function POST(request: NextRequest) {
     const createdPerformances = [];
 
     // Get or create a default user for performances
-    let defaultUser = await prisma.user.findFirst();
-    if (!defaultUser) {
-      defaultUser = await prisma.user.create({
-        data: {
-          email: 'bulk-import@example.com',
-          password: 'bulk-import-password'
-        }
-      });
-    }
+    // NEW (Supabase-managed user id hardcoded from auth.users table)
+    const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+    const userId = DEFAULT_USER_ID;
 
     for (const castMember of credits.cast) {
       // Check for existing actor
@@ -93,7 +87,7 @@ export async function POST(request: NextRequest) {
       // Check if performance already exists
       const existingPerformance = await prisma.performance.findFirst({
         where: {
-          userId: defaultUser.id,
+          userId: userId,
           actorId: actor.id,
           movieId: movie.id,
         }
@@ -103,7 +97,7 @@ export async function POST(request: NextRequest) {
         // Create performance only if it doesn't exist
         const performance = await prisma.performance.create({
           data: {
-            userId: defaultUser.id,
+            userId: userId,
             actorId: actor.id,
             movieId: movie.id,
             emotionalRangeDepth: 0,

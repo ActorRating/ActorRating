@@ -82,21 +82,14 @@ async function main() {
 
         // Create Performance only if it doesn't exist (by userId + actorId + movieId)
         // Note: We need a userId for the Performance model
-        let defaultUser = await prisma.user.findFirst();
-        if (!defaultUser) {
-          defaultUser = await prisma.user.create({
-            data: {
-              email: 'default@example.com',
-              password: 'defaultpassword123'
-            }
-          });
-          console.log(`🆕 Created default user for seeding`);
-        }
+        // NEW (Supabase-managed user id hardcoded from auth.users table)
+        const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+        let defaultUserId = DEFAULT_USER_ID;
 
         const existingPerformance = await prisma.performance.findUnique({
           where: {
             userId_actorId_movieId: {
-              userId: defaultUser.id,
+              userId: defaultUserId,
               actorId: actor.id,
               movieId: movie.id
             }
@@ -107,7 +100,7 @@ async function main() {
           // Create performance if it doesn't exist
           const performance = await prisma.performance.create({
             data: {
-              userId: defaultUser.id,
+              userId: defaultUserId,
               actorId: actor.id,
               movieId: movie.id,
               emotionalRangeDepth: 0,

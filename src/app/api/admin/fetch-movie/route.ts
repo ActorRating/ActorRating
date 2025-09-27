@@ -64,16 +64,9 @@ export async function POST(request: NextRequest) {
     const createdPerformances = [];
 
     // Get or create a default user for performances
-    let defaultUser = await prisma.user.findFirst();
-    if (!defaultUser) {
-      defaultUser = await prisma.user.create({
-        data: {
-          email: 'default@example.com',
-          password: 'default-password'
-        }
-      });
-    }
-    const userId = defaultUser.id;
+    // NEW (Supabase-managed user id hardcoded from auth.users table)
+    const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+    const userId = DEFAULT_USER_ID;
 
     for (const castMember of credits.cast) {
       // Check for existing actor

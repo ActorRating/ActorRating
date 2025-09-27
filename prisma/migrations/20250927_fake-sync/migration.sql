@@ -1,0 +1,1 @@
+-- This is a fake migration to mark Prisma as in sync with the DB

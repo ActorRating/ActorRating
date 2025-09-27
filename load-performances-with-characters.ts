@@ -110,17 +110,10 @@ async function main() {
 
     // 2. Get default user
     console.log('\n👤 Setting up default user...');
-    let defaultUser = await prisma.user.findFirst();
-    if (!defaultUser) {
-      const hashedPassword = await bcrypt.hash('defaultpassword123', 10);
-      defaultUser = await prisma.user.create({
-        data: {
-          email: 'default@example.com',
-          password: hashedPassword
-        }
-      });
-    }
-    console.log(`✅ Using user: ${defaultUser.email}`);
+    // NEW (Supabase-managed user id hardcoded from auth.users table)
+    const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+    let defaultUserId = DEFAULT_USER_ID;
+    console.log(`✅ Using hardcoded user ID: ${defaultUserId}`);
 
     // 3. Clear existing performances
     console.log('\n🗑️ Clearing existing performance data...');
@@ -155,7 +148,7 @@ async function main() {
 
     // 7. Create users to handle unique constraints
     console.log('\n👥 Creating users for unique constraint handling...');
-    const users = [defaultUser];
+    const users = [{ id: defaultUserId }];
     const userCount = Math.min(50, Math.ceil(validPerformances.length / 200));
     
     for (let i = 1; i < userCount; i++) {
