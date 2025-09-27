@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"

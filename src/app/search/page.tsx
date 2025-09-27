@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useSearchParams } from "next/navigation"
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { SignedInLayout, HomeLayout } from "@/components/layout"
 import { SearchBar } from "@/components/SearchBar"
 

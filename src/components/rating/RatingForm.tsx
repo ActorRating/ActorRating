@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { RatingSlider } from "./RatingSlider"
 import { OverallScore } from "./RatingDisplay"

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createServerSupabase } from "@/lib/supabaseServer"
 import { validateSignUpData } from "@/lib/validation"
 import { checkRateLimit } from "@/lib/rateLimit"
 import dns from "dns/promises"
@@ -55,8 +54,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
 
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {

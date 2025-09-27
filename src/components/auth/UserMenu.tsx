@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { supabase } from "../../../lib/supabaseClient"
 import { useState, useRef, useEffect } from "react"
 import { User, LogOut, Settings, Shield, Download } from "lucide-react"

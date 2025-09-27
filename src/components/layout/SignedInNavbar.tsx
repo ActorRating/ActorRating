@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useUser } from '@supabase/auth-helpers-react'
+import { useUser } from '@/components/providers/SessionProvider'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { usePathname } from 'next/navigation'

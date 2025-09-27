@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createServerSupabase } from "@/lib/supabaseServer"
 
 export async function GET(request: NextRequest) {
   // Handle OAuth error redirects
@@ -30,8 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 401 })

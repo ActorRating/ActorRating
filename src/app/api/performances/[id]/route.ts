@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { cookies } from "next/headers"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { createServerSupabase } from "@/lib/supabaseServer"
 // Removed NextAuth imports - using Supabase Auth
 
 export async function GET(
@@ -53,8 +52,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
     
     const { data: { user }, error } = await supabase.auth.getUser()
     
@@ -133,8 +131,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
     
     const { data: { user }, error } = await supabase.auth.getUser()
     

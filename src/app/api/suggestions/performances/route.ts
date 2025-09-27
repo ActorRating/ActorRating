@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { cookies } from "next/headers"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { createServerSupabase } from "@/lib/supabaseServer"
 
 type AggregatedPair = {
   actorId: string
@@ -208,8 +207,7 @@ function pairKey(p: { actorId: string; movieId: string }): string {
 
 export async function GET(_req: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     const currentUserId = session?.user?.id || null
 

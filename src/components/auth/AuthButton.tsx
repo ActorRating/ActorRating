@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { supabase } from "../../../lib/supabaseClient"
 import { Button } from "@/components/ui/Button"
 

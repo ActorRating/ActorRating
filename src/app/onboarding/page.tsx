@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import React from "react"
-import { useUser } from "@supabase/auth-helpers-react"
+import { useUser } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/Button"

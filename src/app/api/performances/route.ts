@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
 import { resolveCharacterDisplay } from "@/lib/character"
-import { cookies } from "next/headers"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { createServerSupabase } from "@/lib/supabaseServer"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { checkRateLimit } from "@/lib/rateLimit"
 
@@ -67,8 +66,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {

@@ -20,7 +20,7 @@ import {
   X,
   Settings
 } from 'lucide-react'
-import { useUser } from '@supabase/auth-helpers-react'
+import { useUser } from '@/components/providers/SessionProvider'
 import { Button } from '../ui/Button'
 import { cn } from '@/lib/utils'
 

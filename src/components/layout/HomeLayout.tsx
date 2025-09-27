@@ -6,7 +6,7 @@ import { Footer } from './Footer'
 import { FeedbackSection } from '../FeedbackSection'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
-import { useUser } from '@supabase/auth-helpers-react'
+import { useUser } from '@/components/providers/SessionProvider'
 import { useEffect, useState } from 'react'
 
 interface HomeLayoutProps {

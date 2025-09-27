@@ -89,9 +89,31 @@ A minimalist, premium platform for rating actors' performances in specific movie
    cp .env.example .env.local
    ```
 
-   Configure your database and authentication settings in `.env.local`
+   Configure your database and Supabase Auth settings in `.env.local`:
 
-4. **Set up the database**
+   ```env
+   # Database
+   DATABASE_URL="postgresql://user:password@localhost:5432/actor_rating_db"
+   
+   # Supabase Auth (required)
+   NEXT_PUBLIC_SUPABASE_URL="your_supabase_project_url"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
+   SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
+   
+   # Optional: Redis caching
+   UPSTASH_REDIS_REST_URL="your_redis_url"
+   UPSTASH_REDIS_REST_TOKEN="your_redis_token"
+   ```
+
+4. **Set up Supabase Auth**
+
+   - Create a new project at [supabase.com](https://supabase.com)
+   - Go to Authentication > Settings in your Supabase dashboard
+   - Enable Google OAuth provider and configure with your Google OAuth credentials
+   - Set the redirect URL to: `https://your-project-ref.supabase.co/auth/v1/callback`
+   - Copy your project URL and anon key to your `.env.local`
+
+5. **Set up the database**
 
    ```bash
    npx prisma generate
@@ -99,13 +121,13 @@ A minimalist, premium platform for rating actors' performances in specific movie
    npx prisma db seed
    ```
 
-5. **Start the development server**
+6. **Start the development server**
 
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
+7. **Open your browser**
    Navigate to `http://localhost:3000`
 
 ## Usage
@@ -178,12 +200,13 @@ curl "http://localhost:3000/api/search?q=Leonardo"
 
 ## Technology Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript
+- **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS, Framer Motion
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: Supabase Auth
+- **Authentication**: Supabase Auth with SSR support
 - **Deployment**: Vercel-ready
 - **Search**: PostgreSQL full-text search with trigram similarity
+- **Caching**: Redis (optional) with in-memory fallback
 
 ## Database Schema
 

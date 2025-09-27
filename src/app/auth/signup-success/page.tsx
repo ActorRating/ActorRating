@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser } from '@supabase/auth-helpers-react'
+import { useUser } from '@/components/providers/SessionProvider'
 import { CheckCircle, Loader2 } from 'lucide-react'
 
 export default function SignupSuccessPage() {
