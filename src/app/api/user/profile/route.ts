@@ -18,23 +18,8 @@ export async function GET() {
       )
     }
 
-    let dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: {
-        id: true,
-        email: true,
-        createdAt: true,
-      },
-    })
-
-    if (!dbUser) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json({ user: dbUser })
+    // Return Supabase user basic info; app data tied to user.id is fetched via other routes
+    return NextResponse.json({ user: { id: user.id, email: user.email } })
   } catch (error) {
     console.error("Profile GET error:", error)
     return NextResponse.json(
@@ -64,16 +49,7 @@ export async function PUT(request: NextRequest) {
     // Validate input
     // No editable fields in simplified profile
 
-    // Update user profile
-    const updatedUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { id: true, email: true }
-    })
-
-    return NextResponse.json({
-      success: true,
-      user: updatedUser,
-    })
+    return NextResponse.json({ success: true, user: { id: user.id, email: user.email } })
   } catch (error) {
     console.error("Profile PUT error:", error)
     return NextResponse.json(

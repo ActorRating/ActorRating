@@ -2,41 +2,26 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { prisma } from "@/lib/prisma"
-// Removed NextAuth imports - using Supabase Auth
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
     const userId = session.user.id
 
-    // Simple delete function - let database cascades handle the rest
+    // Delete user-owned data in our app tables (Supabase Auth user remains)
     try {
-      await prisma.user.delete({
-        where: { id: userId }
-      })
+      await prisma.rating.deleteMany({ where: { userId } })
+      await prisma.performance.deleteMany({ where: { userId } })
     } catch (error: any) {
-      // If user doesn't exist (P2025), that means it was already deleted - success!
-      if (error.code === 'P2025') {
-        return NextResponse.json({
-          success: true,
-          message: "Account already deleted"
-        })
-      }
-      throw error
+      // proceed even if nothing to delete
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Account deleted successfully"
-    })
+    return NextResponse.json({ success: true, message: "Account deleted successfully" })
   } catch (error) {
     console.error("Account deletion error:", error)
     

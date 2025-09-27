@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { generateVerificationToken, sendVerificationEmail } from "@/lib/emailVerification"
 
 export async function POST(request: NextRequest) {
@@ -9,13 +8,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { email } })
     // Always respond success to avoid account enumeration
-    if (!user) {
-      return NextResponse.json({ success: true })
-    }
-
-    const token = await generateVerificationToken(user.id)
+    const token = await generateVerificationToken(email)
     await sendVerificationEmail(email, token)
     return NextResponse.json({ success: true })
   } catch (err) {

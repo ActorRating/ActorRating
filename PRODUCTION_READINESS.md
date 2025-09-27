@@ -110,7 +110,9 @@ Created comprehensive load test (`load-test.js`) covering:
 
 ### Environment Variables Required
 
-- `NEXTAUTH_SECRET`: Session encryption
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `DATABASE_URL`: PostgreSQL connection
 - `RECAPTCHA_SECRET_KEY`: Server-side validation
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: OAuth

@@ -21,12 +21,11 @@ export async function GET() {
     // Fetch performances and left-join ratings to capture roleName if present
     const performances = await prisma.performance.findMany({
       include: {
-        user: { select: { email: true } },
         actor: { select: { name: true, imageUrl: true } },
         movie: { select: { title: true, year: true, director: true } },
       },
       orderBy: { createdAt: "desc" },
-      take: 100, // Limit results for better performance
+      take: 100,
     })
 
     // Fetch role names for these performance triplets (userId, actorId, movieId)
@@ -144,8 +143,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if a row exists for this user/actor/movie
-    const existingPerformance = await prisma.performance.findUnique({
+    // Upsert by unique compound key
+    const performance = await prisma.performance.upsert({
       where: {
         userId_actorId_movieId: {
           userId: session.user.id,
@@ -153,105 +152,30 @@ export async function POST(request: NextRequest) {
           movieId,
         },
       },
+      update: {
+        emotionalRangeDepth,
+        characterBelievability,
+        technicalSkill,
+        screenPresence,
+        chemistryInteraction,
+        comment,
+      },
+      create: {
+        userId: session.user.id,
+        actorId,
+        movieId,
+        emotionalRangeDepth,
+        characterBelievability,
+        technicalSkill,
+        screenPresence,
+        chemistryInteraction,
+        comment,
+      },
+      include: {
+        actor: { select: { name: true, imageUrl: true } },
+        movie: { select: { title: true, year: true, director: true } },
+      },
     })
-
-    if (existingPerformance) {
-      // Update existing performance rating
-      const performance = await prisma.performance.update({
-        where: {
-          id: existingPerformance.id,
-        },
-        data: {
-          emotionalRangeDepth,
-          characterBelievability,
-          technicalSkill,
-          screenPresence,
-          chemistryInteraction,
-          comment,
-        },
-        include: {
-          user: {
-            select: {
-              email: true,
-            },
-          },
-          actor: {
-            select: {
-              name: true,
-              imageUrl: true,
-            },
-          },
-          movie: {
-            select: {
-              title: true,
-              year: true,
-              director: true,
-            },
-          },
-        },
-      })
-
-      return NextResponse.json(performance)
-    }
-
-    // If no row exists for this user, try to claim a seeded row (seed user) if present
-    const seedEmail = process.env.SEED_USER_EMAIL || "seed_user@example.com"
-    const seedUser = await prisma.user.findUnique({ where: { email: seedEmail } })
-
-    let performance
-    if (seedUser) {
-      const seeded = await prisma.performance.findUnique({
-        where: {
-          userId_actorId_movieId: {
-            userId: seedUser.id,
-            actorId,
-            movieId,
-          },
-        },
-      })
-
-      if (seeded) {
-        performance = await prisma.performance.update({
-          where: { id: seeded.id },
-          data: {
-            userId: session.user.id,
-            emotionalRangeDepth,
-            characterBelievability,
-            technicalSkill,
-            screenPresence,
-            chemistryInteraction,
-            comment,
-          },
-          include: {
-            user: { select: { email: true } },
-            actor: { select: { name: true, imageUrl: true } },
-            movie: { select: { title: true, year: true, director: true } },
-          },
-        })
-      }
-    }
-
-    // Fallback: Create new performance rating if no seeded row to claim
-    if (!performance) {
-      performance = await prisma.performance.create({
-        data: {
-          userId: session.user.id,
-          actorId,
-          movieId,
-          emotionalRangeDepth,
-          characterBelievability,
-          technicalSkill,
-          screenPresence,
-          chemistryInteraction,
-          comment,
-        },
-        include: {
-          user: { select: { email: true } },
-          actor: { select: { name: true, imageUrl: true } },
-          movie: { select: { title: true, year: true, director: true } },
-        },
-      })
-    }
 
     return NextResponse.json(performance, { status: 201 })
   } catch (error) {

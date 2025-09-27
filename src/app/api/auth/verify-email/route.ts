@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to login with verified flag
-    const base = process.env.APP_URL || ""
-    return NextResponse.redirect(`${base}/login?verified=true`)
+    const base = process.env.NEXT_PUBLIC_BASE_URL || new URL(request.url).origin
+    return NextResponse.redirect(`${base}/auth/signin?verified=true`)
   } catch (error) {
     console.error("Email verification error:", error)
     return NextResponse.json(
@@ -72,13 +72,8 @@ export async function PUT(request: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
-    const user = await (await import("@/lib/prisma")).prisma.user.findUnique({ where: { email } })
-    if (!user) {
-      // Do not reveal existence
-      return NextResponse.json({ success: true })
-    }
     const { generateVerificationToken, sendVerificationEmail } = await import("@/lib/emailVerification")
-    const token = await generateVerificationToken(user.id)
+    const token = await generateVerificationToken(email)
     await sendVerificationEmail(email, token)
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+// No DB lookups to avoid account enumeration
 import { validateEmail } from "@/lib/validation"
 
 export async function POST(request: NextRequest) {
@@ -23,15 +23,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    return NextResponse.json({
-      available: !existingUser,
-      email
-    })
+    // Do not reveal existence; validate only format, always say available
+    return NextResponse.json({ available: true, email })
 
   } catch (error) {
     console.error("Check email error:", error)

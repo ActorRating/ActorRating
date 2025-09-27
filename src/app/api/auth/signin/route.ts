@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcrypt"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 
 export async function GET(request: NextRequest) {
   // Handle OAuth error redirects
@@ -30,32 +30,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (!user || !user.password) {
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 }
-      )
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password)
-
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 }
-      )
-    }
-
-    // No email verification gating
-
-    return NextResponse.json({
-      success: true,
-      user: { id: user.id, email: user.email }
-    })
+    return NextResponse.json({ success: true, user: data.user })
 
   } catch (error) {
     console.error("Signin error:", error)

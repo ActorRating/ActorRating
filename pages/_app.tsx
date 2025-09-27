@@ -5,7 +5,7 @@ import type { AppProps } from 'next/app'
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <SessionContextProvider supabaseClient={supabase} initialSession={pageProps.initialSession}>
+    <SessionContextProvider supabaseClient={supabase} initialSession={(pageProps as any).initialSession}>
       <Component {...pageProps} />
     </SessionContextProvider>
   )

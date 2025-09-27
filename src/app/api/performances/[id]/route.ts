@@ -100,11 +100,6 @@ export async function PUT(
         comment,
       },
       include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
         actor: {
           select: {
             id: true,

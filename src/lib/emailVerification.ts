@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
 import { Resend } from "resend"
 
-export async function generateVerificationToken(userId: string): Promise<string> {
+export async function generateVerificationToken(identifier: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex')
   // Since verification fields were removed, just return the token
   // This can be stored in a separate table or handled differently in the future

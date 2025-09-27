@@ -42,41 +42,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get all user data
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        ratings: {
-          include: {
-            actor: true,
-            movie: true,
-          },
-        },
-        performances: {
-          include: {
-            actor: true,
-            movie: true,
-          },
-        },
-      },
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
+    // Get all app data tied to user id
+    const [ratings, performances] = await Promise.all([
+      prisma.rating.findMany({
+        where: { userId: session.user.id },
+        include: { actor: true, movie: true },
+      }),
+      prisma.performance.findMany({
+        where: { userId: session.user.id },
+        include: { actor: true, movie: true },
+      }),
+    ])
 
     // Prepare export data
     const exportData = {
       exportDate: new Date().toISOString(),
       user: {
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
+        id: session.user.id,
+        email: session.user.email,
       },
-      ratings: user.ratings.map(rating => ({
+      ratings: ratings.map(rating => ({
         id: rating.id,
         actorName: rating.actor.name,
         movieTitle: rating.movie.title,
@@ -91,7 +76,7 @@ export async function POST(request: NextRequest) {
         createdAt: rating.createdAt,
         updatedAt: rating.updatedAt,
       })),
-      performances: user.performances.map(performance => ({
+      performances: performances.map(performance => ({
         id: performance.id,
         actorName: performance.actor.name,
         movieTitle: performance.movie.title,
@@ -106,8 +91,8 @@ export async function POST(request: NextRequest) {
         updatedAt: performance.updatedAt,
       })),
       metadata: {
-        totalRatings: user.ratings.length,
-        totalPerformances: user.performances.length,
+        totalRatings: ratings.length,
+        totalPerformances: performances.length,
         exportFormat: "JSON",
         exportVersion: "1.0",
         kvkkCompliant: true,

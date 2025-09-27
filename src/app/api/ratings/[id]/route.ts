@@ -16,11 +16,6 @@ export async function GET(
         id: id,
       },
       include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
         actor: {
           select: {
             name: true,
@@ -123,11 +118,6 @@ export async function PUT(
         comment,
       },
       include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
         actor: {
           select: {
             name: true,

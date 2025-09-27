@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import * as bcrypt from "bcrypt"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { validateSignUpData } from "@/lib/validation"
 import { checkRateLimit } from "@/lib/rateLimit"
 import dns from "dns/promises"
@@ -55,31 +55,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email already exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email }
-    })
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 400 }
-      )
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
-      select: { id: true, email: true }
-    })
-
-    return NextResponse.json({ success: true, user })
+    return NextResponse.json({ success: true, user: data.user })
 
   } catch (error) {
     console.error("Signup error:", error)

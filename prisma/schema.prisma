@@ -7,42 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  createdAt    DateTime      @default(now())
-  password     String
-  accounts     Account[]
-  performances Performance[]
-  ratings      Rating[]
-  sessions     Session[]
-}
+// Removed NextAuth user/account/session models. Users are managed by Supabase Auth.
 
 model RateLimit {
   id          String   @id @default(cuid())
@@ -107,7 +72,6 @@ model Performance {
   character              String?
   actor                  Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
   movie                  Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, actorId, movieId])
   @@index([actorId])
@@ -135,7 +99,6 @@ model Rating {
   breakdown              Json?
   actor                  Actor       @relation(fields: [actorId], references: [id], onDelete: Cascade)
   movie                  Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  user                   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   shareImage             ShareImage?
   shortLinks             ShortLink[]
 

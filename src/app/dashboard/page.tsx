@@ -76,10 +76,8 @@ export default function DashboardPage() {
 
   // Wait until Supabase resolves the session
   useEffect(() => {
-    if (user === undefined) return // still loading, do nothing
-    if (user === null) {
-      router.replace("/auth/signin")
-    }
+    if (user === undefined) return
+    if (user === null) router.replace("/auth/signin")
   }, [user, router])
 
   useEffect(() => {
@@ -247,13 +245,8 @@ export default function DashboardPage() {
   const recentRatings = ratings
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
-  if (user === undefined) {
-    return <p>Loading session...</p>
-  }
-
-  if (user === null) {
-    return null // will redirect
-  }
+  if (user === undefined) return <p>Loading...</p>
+  if (user === null) return null
 
   if (isLoadingData) {
     return (

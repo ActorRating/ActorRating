@@ -1,8 +1,9 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs'
-import { NextApiRequest, NextApiResponse } from 'next'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
-export function createServerSupabase(req: NextApiRequest, res: NextApiResponse) {
-  return createServerSupabaseClient({ req, res })
+export function createServerSupabase() {
+  const cookieStore = cookies()
+  return createRouteHandlerClient({ cookies: () => cookieStore })
 }
 
 

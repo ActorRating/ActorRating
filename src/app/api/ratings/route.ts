@@ -164,11 +164,6 @@ export async function POST(request: NextRequest) {
           comment,
         },
         include: {
-          user: {
-            select: {
-              email: true,
-            },
-          },
           actor: {
             select: {
               name: true,
@@ -210,11 +205,6 @@ export async function POST(request: NextRequest) {
         comment,
       },
       include: {
-        user: {
-          select: {
-            email: true,
-          },
-        },
         actor: {
           select: {
             name: true,

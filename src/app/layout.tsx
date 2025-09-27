@@ -46,7 +46,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        {/* SessionProvider is client-only; wrap in Suspense already below */}
+        {/* Supabase Session Provider */}
         <SessionProvider>
           <CookieConsentProvider>
             <Suspense fallback={null}>
