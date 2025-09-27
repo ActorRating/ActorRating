@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import { supabase } from "../../../../lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useUser } from "@supabase/auth-helpers-react"

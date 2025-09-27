@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { OptimizedSliders } from '@/components/rating/OptimizedSliders'
 
 export default function TestOptimizedPage() {

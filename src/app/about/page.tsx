@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import { HomeLayout } from "@/components/layout"
 import { motion } from "framer-motion"
 import { FaUsers, FaStar, FaHandshake, FaChartLine } from "react-icons/fa"

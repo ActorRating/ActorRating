@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import React, { useState } from 'react'
 import { StarScoreVisualizer } from '@/components/ui/StarScoreVisualizer'
 import { HomeLayout } from '@/components/layout/HomeLayout'

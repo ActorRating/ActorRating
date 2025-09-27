@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { prisma } from "@/lib/prisma";
 import MoviesTable from "@/components/admin/MoviesTable";
 import SearchForm from "@/components/admin/SearchForm";
