@@ -1,6 +1,6 @@
 "use client"
 
-import { UserProvider } from "@supabase/auth-helpers-react"
+import { SessionContextProvider } from "@supabase/auth-helpers-react"
 import { supabase } from "../../../lib/supabaseClient"
 import { ReactNode } from "react"
 
@@ -10,8 +10,8 @@ interface SessionProviderProps {
 
 export function SessionProvider({ children }: SessionProviderProps) {
   return (
-    <UserProvider supabaseClient={supabase}>
+    <SessionContextProvider supabaseClient={supabase}>
       {children}
-    </UserProvider>
+    </SessionContextProvider>
   )
 }
