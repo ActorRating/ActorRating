@@ -2,10 +2,10 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function Login() {
+function LoginContent() {
   const router = useRouter()
   const search = useSearchParams()
 
@@ -21,5 +21,20 @@ export default function Login() {
         <p className="text-gray-300">Redirecting to sign in...</p>
       </div>
     </div>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-300">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 } 

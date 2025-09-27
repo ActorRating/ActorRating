@@ -8,7 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { TriangleAlert, ArrowLeft } from "lucide-react"
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams?.get("error")
 
@@ -44,7 +44,7 @@ export default function AuthErrorPage() {
     }
   }
 
-  const content = (
+  return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
@@ -94,5 +94,19 @@ export default function AuthErrorPage() {
       </div>
     </div>
   )
-  return <Suspense fallback={null}>{content}</Suspense>
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    }>
+      <AuthErrorContent />
+    </Suspense>
+  )
 } 

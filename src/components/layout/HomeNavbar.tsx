@@ -5,19 +5,12 @@ import { useUser } from '@supabase/auth-helpers-react'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { Logo } from '../ui/Logo'
+import { useState, useEffect } from 'react'
 
 export function HomeNavbar() {
   const user = useUser()
   const navKey = `${user?.id || 'anon'}`
-  const [mounted, setMounted] = require('react').useState(false) as [boolean, (v: boolean) => void]
-  // Defensively clear any leftover overlays that might cover the right actions
-  // on mount and on status changes
-  
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  require('react');
-  // dynamic import to avoid SSR issues
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { useEffect } = require('react') as typeof import('react')
+  const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
     const clearOverlays = () => {

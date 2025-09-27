@@ -3,18 +3,18 @@
 export const dynamic = "force-dynamic"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useUser } from "@supabase/auth-helpers-react"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
-import { supabase } from "../../../../lib/supabaseClient"
+import { supabase } from "@/lib/supabaseClient"
 import { validateEmail, validatePassword } from "@/lib/validation"
 import { motion } from "framer-motion"
 import { fadeInUp, scaleIn } from "@/lib/animations"
 import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket } from "react-icons/fa"
 import Link from "next/link"
 
-export default function SignIn() {
+function SignInContent() {
   const router = useRouter()
   const user = useUser()
   const [isLoading, setIsLoading] = useState(false)
@@ -417,5 +417,20 @@ export default function SignIn() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 } 
