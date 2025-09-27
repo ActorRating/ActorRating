@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
-import { getServerSession, authOptions } from "@/lib/auth"
+// Removed NextAuth imports - using Supabase Auth
 
 export async function POST(request: NextRequest) {
   try {

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const base = process.env.APP_URL || process.env.NEXTAUTH_URL || ""
+    const base = process.env.APP_URL || ""
     return NextResponse.redirect(`${base}/login?verified=true`)
   } catch (err) {
     return NextResponse.json(

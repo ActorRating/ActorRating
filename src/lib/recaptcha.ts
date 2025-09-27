@@ -16,7 +16,7 @@ export async function verifyRecaptchaV3(
     // Development mode: bypass reCAPTCHA verification for localhost
     if (
       process.env.NODE_ENV === 'development' &&
-      (process.env.NEXTAUTH_URL?.includes('localhost') || process.env.VERCEL !== '1')
+      (process.env.VERCEL !== '1')
     ) {
       return {
         success: true,

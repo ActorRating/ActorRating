@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
 
 export async function GET(request: NextRequest) {
-  // Handle OAuth error redirects from NextAuth
+  // Handle OAuth error redirects
   const searchParams = request.nextUrl.searchParams
   const error = searchParams.get('error')
   

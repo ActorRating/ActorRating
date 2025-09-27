@@ -22,7 +22,7 @@ export async function checkVerifiedRaterStatus(userId: string): Promise<void> {
 }
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || ""
+  const baseUrl = process.env.APP_URL || ""
   const verificationUrl = `${baseUrl}/verify?token=${token}`
 
   const from = process.env.EMAIL_FROM || "ActorRating <noreply@actorrating.com>"

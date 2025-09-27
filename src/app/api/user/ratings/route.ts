@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { prisma } from "@/lib/prisma"
-import { getServerSession, authOptions } from "@/lib/auth"
+// Removed NextAuth imports - using Supabase Auth
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
-    if (!session?.user?.id) {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const items = await prisma.rating.findMany({
       where: {
-        userId: session.user.id,
+        userId: user.id,
       },
       include: {
         actor: {

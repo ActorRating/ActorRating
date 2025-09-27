@@ -2,21 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { prisma } from "@/lib/prisma"
-import { getServerSession, authOptions } from "@/lib/auth"
+// Removed NextAuth imports - using Supabase Auth
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
-    if (!session?.user?.id) {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    let user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    let dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
       select: {
         id: true,
         email: true,
@@ -24,16 +27,14 @@ export async function GET() {
       },
     })
 
-    if (!user) {
+    if (!dbUser) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
     }
 
-    // No username in simplified model
-
-    return NextResponse.json({ user })
+    return NextResponse.json({ user: dbUser })
   } catch (error) {
     console.error("Profile GET error:", error)
     return NextResponse.json(
@@ -45,9 +46,12 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
-    if (!session?.user?.id) {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -62,11 +66,9 @@ export async function PUT(request: NextRequest) {
 
     // Update user profile
     const updatedUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: user.id },
       select: { id: true, email: true }
     })
-
-    // No username logic
 
     return NextResponse.json({
       success: true,
