@@ -8,9 +8,6 @@ const nextConfig = {
   },
   output: 'standalone',
   outputFileTracingRoot: __dirname,
-  experimental: {
-    serverComponentsExternalPackages: ['lucide-react'],
-  },
 }
 
 module.exports = nextConfig

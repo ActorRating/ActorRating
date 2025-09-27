@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
-// import { TriangleAlert, ArrowLeft } from "lucide-react"
+import { TriangleAlert, ArrowLeft } from "lucide-react"
 
 export default function AuthErrorPage() {
   const searchParams = useSearchParams()
@@ -48,7 +48,7 @@ export default function AuthErrorPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-red-600 text-4xl">⚠</div>
+          <TriangleAlert className="mx-auto h-12 w-12 text-red-600" />
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
             Giriş Hatası
           </h2>
@@ -76,7 +76,7 @@ export default function AuthErrorPage() {
 
               <Link href="/">
                 <Button variant="outline" className="w-full">
-                  <span className="w-4 h-4 mr-2">←</span>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   Ana Sayfaya Dön
                 </Button>
               </Link>

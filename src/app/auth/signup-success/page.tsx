@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@supabase/auth-helpers-react'
-// import { CheckCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, Loader2 } from 'lucide-react'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
@@ -79,7 +79,7 @@ export default function SignupSuccessPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 animate-spin mx-auto mb-4 text-primary border-2 border-primary border-t-transparent rounded-full" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">
             {isSubmittingRating ? 'Submitting your rating...' : 'Setting up your account...'}
           </p>
@@ -93,7 +93,7 @@ export default function SignupSuccessPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="text-red-500 mb-4">
-            <div className="w-16 h-16 mx-auto text-4xl text-green-500">✓</div>
+            <CheckCircle className="w-16 h-16 mx-auto" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-4">Account Created Successfully!</h1>
           <p className="text-muted-foreground mb-6">{error}</p>
@@ -119,7 +119,7 @@ export default function SignupSuccessPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <div className="w-8 h-8 animate-spin mx-auto mb-4 text-primary border-2 border-primary border-t-transparent rounded-full" />
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
         <p className="text-muted-foreground">Redirecting...</p>
       </div>
     </div>
