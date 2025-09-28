@@ -48,21 +48,10 @@ export default function SignUp() {
       setEmailTouched(true)
       const valid = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(value)
       setErrors(prev => ({ ...prev, email: valid ? "" : "Please enter a valid email address" }))
-      // Live MX check after basic format passes
+      // Skip domain validation for now - Supabase will handle email validation
       if (valid) {
+        setEmailDomainValid(true)
         setEmailDomainError("")
-        setEmailDomainValid(null)
-        try {
-          const mxResp = await fetch(`/api/auth/verify-email-domain?email=${encodeURIComponent(value)}`)
-          const mxJson = await mxResp.json()
-          setEmailDomainValid(mxJson.valid === true)
-          if (!mxJson.valid) {
-            setEmailDomainError("Email domain is not accepting mail")
-          }
-        } catch {
-          setEmailDomainValid(false)
-          setEmailDomainError("Failed to validate email domain")
-        }
       } else {
         setEmailDomainValid(null)
         setEmailDomainError("")
@@ -100,29 +89,19 @@ export default function SignUp() {
     setApiError("")
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      // Direct Supabase signup
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (data.details) {
-          setErrors(data.details)
-        } else {
-          setApiError(data.error || "Failed to create account")
-        }
+      if (error) {
+        setApiError(error.message || "Failed to create account")
         return
       }
 
-      // Sign in the user after successful signup
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: formData.email, password: formData.password })
-      if (signInError) {
-        setApiError("Account created but failed to sign in. Please try signing in manually.")
+      if (!data.user) {
+        setApiError("Account creation failed. Please try again.")
         return
       }
 

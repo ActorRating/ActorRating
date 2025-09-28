@@ -34,7 +34,6 @@ A minimalist, premium platform for rating actors' performances in specific movie
 ### ⭐ **Performance Rating System**
 
 - **5 Oscar-Inspired Criteria**:
-
   - **Technical Skill** (20% weight): Voice control, physical presence, technique mastery
   - **Emotional Depth** (25% weight): Range of emotions, authenticity, vulnerability
   - **Character Transformation** (25% weight): Physical/mental transformation, believability
@@ -94,19 +93,18 @@ A minimalist, premium platform for rating actors' performances in specific movie
    ```env
    # Database
    DATABASE_URL="postgresql://user:password@localhost:5432/actor_rating_db"
-   
+
    # Supabase Auth (required)
    NEXT_PUBLIC_SUPABASE_URL="your_supabase_project_url"
    NEXT_PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
    SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
-   
+
    # Optional: Redis caching
    UPSTASH_REDIS_REST_URL="your_redis_url"
    UPSTASH_REDIS_REST_TOKEN="your_redis_token"
    ```
 
 4. **Set up Supabase Auth**
-
    - Create a new project at [supabase.com](https://supabase.com)
    - Go to Authentication > Settings in your Supabase dashboard
    - Enable Google OAuth provider and configure with your Google OAuth credentials
@@ -135,13 +133,11 @@ A minimalist, premium platform for rating actors' performances in specific movie
 ### Rating a Performance
 
 1. **Search for a Performance**
-
    - Use the search bar on the homepage
    - Type an actor name, movie title, or character name
    - Click on a performance result to view details
 
 2. **Rate the Performance**
-
    - Click "Rate Performance" on the performance detail page
    - Adjust the 5 sliders based on Oscar-inspired criteria
    - Add optional comments about the performance
@@ -331,5 +327,7 @@ GitHub Actions CI runs migrations, seeds demo, and tests on each push.
 - Inspired by Oscar voting criteria
 - Built with modern web technologies
 - Designed for performance enthusiasts and critics
+
 # Deployment trigger Tue Sep 23 06:58:13 +03 2025
+
 # Trigger deployment Tue Sep 23 19:39:46 +03 2025

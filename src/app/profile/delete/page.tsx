@@ -26,6 +26,10 @@ export default function DeleteAccountPage() {
 
     setIsLoading(true)
     try {
+      // Sign out from Supabase first
+      await supabase.auth.signOut()
+      
+      // Then call the delete API
       const response = await fetch("/api/user/delete", {
         method: "DELETE",
         headers: {
@@ -34,7 +38,6 @@ export default function DeleteAccountPage() {
       })
 
       if (response.ok) {
-        await supabase.auth.signOut()
         window.location.href = "/"
       } else {
         const errorData = await response.json()

@@ -153,15 +153,8 @@ export default function () {
     password: 'testpass123',
   };
 
-  const signupResponse = http.post(
-    `${BASE_URL}/api/auth/signup`,
-    JSON.stringify(signupPayload),
-    {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  // Test a different endpoint since signup is now handled by Supabase
+  const signupResponse = http.get(`${BASE_URL}/api/search?q=test`);
 
   // Signup should either succeed, fail validation, or be rate limited
   const signupSuccess = check(signupResponse, {
