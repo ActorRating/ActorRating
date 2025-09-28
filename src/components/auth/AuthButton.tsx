@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import { supabase } from "../../../lib/supabaseClient"
+import supabase from "../../../lib/supabaseClient"
 import { Button } from "@/components/ui/Button"
 
 export function AuthButton() {

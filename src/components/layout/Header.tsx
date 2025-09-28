@@ -18,7 +18,7 @@ import {
   Award
 } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
-import { supabase } from '@/lib/supabaseClient'
+import supabase from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { cn } from '@/lib/utils'
 import { UserMenu } from '../auth/UserMenu'

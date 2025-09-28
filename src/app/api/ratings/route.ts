@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
-import { createServerSupabase } from "@/lib/supabaseServer"
+import supabaseServer from "@/lib/supabaseServer"
 import { checkRateLimit } from "@/lib/rateLimit"
 // email verification logic removed
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
@@ -42,7 +42,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {

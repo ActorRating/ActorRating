@@ -32,8 +32,18 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Refresh session if necessary
-  await supabase.auth.getSession()
+  // Get the session and validate it
+  const { data: { session }, error } = await supabase.auth.getSession()
+  
+  // If there's an error or no session, and the user is trying to access protected routes
+  if ((error || !session) && req.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/auth/signin', req.url))
+  }
+
+  // If user is authenticated and trying to access auth pages, redirect to dashboard
+  if (session && (req.nextUrl.pathname.startsWith('/auth/signin') || req.nextUrl.pathname.startsWith('/auth/signup'))) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
 
   return response
 }

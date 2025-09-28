@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabase } from "@/lib/supabaseServer"
+import supabaseServer from "@/lib/supabaseServer"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {

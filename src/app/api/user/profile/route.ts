@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     
     const { data: { user }, error } = await supabase.auth.getUser()
     
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     
     const { data: { user }, error } = await supabase.auth.getUser()
     

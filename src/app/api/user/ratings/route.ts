@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabase } from "@/lib/supabaseServer"
+import supabaseServer from "@/lib/supabaseServer"
 import { prisma } from "@/lib/prisma"
 // Removed NextAuth imports - using Supabase Auth
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     
     const { data: { user }, error } = await supabase.auth.getUser()
     

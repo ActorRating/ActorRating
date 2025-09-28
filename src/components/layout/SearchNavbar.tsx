@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useUser } from '@/components/providers/SessionProvider'
-import { supabase } from '@/lib/supabaseClient'
+import supabase from '@/lib/supabaseClient'
 import { Button } from '../ui/Button'
 import { Home } from 'lucide-react'
 import { Logo } from '../ui/Logo'

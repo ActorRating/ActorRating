@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabase } from "@/lib/supabaseServer"
+import supabaseServer from "@/lib/supabaseServer"
 import bcrypt from "bcrypt"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 

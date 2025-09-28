@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { supabase } from "@/lib/supabaseClient"
+import supabase from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"
 import { useEffect, useState } from "react"

@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
-import { supabase } from "../../../lib/supabaseClient"
+import supabase from "../../../lib/supabaseClient"
 
 interface LoginButtonProps {
   className?: string

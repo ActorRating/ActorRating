@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {
@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabase()
+    const supabase = supabaseServer
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {
