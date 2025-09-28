@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
-import supabase from "../../../lib/supabaseClient"
+import supabase from "@/lib/supabaseClient"
 
 interface LoginButtonProps {
   className?: string
@@ -33,7 +33,7 @@ export function LoginButton({
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` }
+        options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback` }
       })
       if (error) {
         console.error("Login error:", error)

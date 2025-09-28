@@ -105,6 +105,17 @@ export default function SignUp() {
         return
       }
 
+      // Immediately sign in after successful signup
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (signInError) {
+        console.error("Auto sign-in failed:", signInError)
+        // Continue to onboarding even if auto sign-in fails
+      }
+
       // Check if there's a pending rating to submit
       const pendingRating = localStorage.getItem('pendingRating')
       if (pendingRating) {
@@ -161,7 +172,7 @@ export default function SignUp() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
         }
       })
       if (error) console.error(error)

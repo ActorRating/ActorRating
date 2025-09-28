@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import supabase from "../../../lib/supabaseClient"
+import supabase from "@/lib/supabaseClient"
 import { useState, useRef, useEffect } from "react"
 import { User, LogOut, Settings, Shield, Download } from "lucide-react"
 import { Button } from "@/components/ui/Button"

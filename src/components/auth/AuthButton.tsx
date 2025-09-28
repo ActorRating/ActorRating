@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import supabase from "../../../lib/supabaseClient"
+import supabase from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/Button"
 
 export function AuthButton() {
@@ -32,7 +32,7 @@ export function AuthButton() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
         }
       })
       if (error) console.error(error)
