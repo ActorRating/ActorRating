@@ -1,28 +1,58 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import supabase from '@/lib/supabaseClient'
 
 export default function AuthCallback() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the session from the URL
-        const { data, error } = await supabase.auth.getSessionFromUrl()
+        // Check if there are auth parameters in the URL
+        const code = searchParams.get('code')
+        const error = searchParams.get('error')
         
         if (error) {
-          console.error('Auth callback error:', error)
-          setError(error.message)
+          console.error('OAuth error:', error)
+          setError('Authentication failed. Please try again.')
           setIsLoading(false)
           return
         }
 
-        if (data.session) {
+        if (code) {
+          // Exchange the code for a session
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          
+          if (exchangeError) {
+            console.error('Code exchange error:', exchangeError)
+            setError('Failed to complete authentication. Please try again.')
+            setIsLoading(false)
+            return
+          }
+
+          if (data.session) {
+            // Successfully authenticated, redirect to dashboard
+            router.push('/dashboard')
+            return
+          }
+        }
+
+        // If no code or session, check current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          setError('Failed to verify authentication. Please try again.')
+          setIsLoading(false)
+          return
+        }
+
+        if (session) {
           // Successfully authenticated, redirect to dashboard
           router.push('/dashboard')
         } else {
@@ -37,7 +67,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
-  }, [router])
+  }, [router, searchParams])
 
   if (error) {
     return (
