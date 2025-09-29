@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { User, Session } from "@supabase/supabase-js"
+import { useRouter, usePathname } from "next/navigation"
 import supabase from "@/lib/supabaseClient"
 
 interface SessionContextType {
@@ -19,6 +20,8 @@ const SessionContext = createContext<SessionContextType>({
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Get initial session
@@ -30,13 +33,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setLoading(false)
+
+      // Handle automatic redirects for logged-in users
+      if (session?.user && event === 'SIGNED_IN') {
+        // If user is on auth pages, redirect to dashboard
+        if (pathname?.startsWith('/auth/') || pathname === '/') {
+          router.push('/dashboard')
+        }
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [router, pathname])
 
   return (
     <SessionContext.Provider value={{ session, user: session?.user ?? null, loading }}>
