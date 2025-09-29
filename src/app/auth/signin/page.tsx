@@ -95,6 +95,10 @@ function SignInContent() {
         return
       }
 
+      // Successfully signed in - redirect to dashboard
+      router.push("/dashboard")
+      return
+
         // Check if there's a pending rating to submit
         const pendingRating = localStorage.getItem('pendingRating')
         if (pendingRating) {
@@ -156,9 +160,11 @@ function SignInContent() {
       })
       if (error) {
         console.error("Google sign in error:", error)
+        setApiError("Google sign in failed. Please try again.")
       }
     } catch (error) {
       console.error("Google sign in error:", error)
+      setApiError("Google sign in failed. Please try again.")
     } finally {
       setIsGoogleLoading(false)
     }
