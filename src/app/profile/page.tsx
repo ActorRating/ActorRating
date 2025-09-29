@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import supabase from "@/lib/supabaseClient"
+import { handleLogout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
@@ -86,8 +86,7 @@ export default function ProfilePage() {
       
       if (response.ok) {
         // Account deleted successfully, sign out and redirect to landing page
-        await supabase.auth.signOut()
-        window.location.href = "/"
+        await handleLogout(router)
       } else {
         const errorData = await response.json()
         alert(`Account deletion failed: ${errorData.error || "Unknown error"}`)
@@ -251,7 +250,7 @@ export default function ProfilePage() {
                     Sign out of your account on this device
                   </p>
                   <Button 
-                    onClick={async () => { await supabase.auth.signOut(); window.location.href = "/" }} 
+                    onClick={() => handleLogout(router)} 
                     variant="outline" 
                     size="lg"
                     className="w-full h-12 group-hover:border-primary/50"

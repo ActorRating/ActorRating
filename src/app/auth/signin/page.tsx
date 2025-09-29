@@ -85,7 +85,7 @@ function SignInContent() {
 
     try {
       // Supabase email/password sign-in
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       })
@@ -95,8 +95,14 @@ function SignInContent() {
         return
       }
 
-      // Successfully signed in - SessionProvider will handle redirect
-      // No manual redirect needed to prevent race conditions
+      if (data.session) {
+        // Successfully signed in - wait a moment for session to be established
+        // then redirect to dashboard
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 100)
+        return
+      }
 
         // Check if there's a pending rating to submit
         const pendingRating = localStorage.getItem('pendingRating')

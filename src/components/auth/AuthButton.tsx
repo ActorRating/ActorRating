@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import supabase from "@/lib/supabaseClient"
+import { handleLogoutWithRedirect } from "@/lib/auth"
 import { Button } from "@/components/ui/Button"
 
 export function AuthButton() {
@@ -20,7 +20,7 @@ export function AuthButton() {
     return (
       <div className="flex items-center gap-4">
         <span className="text-sm text-gray-600">Welcome, {user.email}</span>
-        <Button onClick={async () => { await supabase.auth.signOut(); window.location.href = "/" }}>
+        <Button onClick={handleLogoutWithRedirect}>
           Sign Out
         </Button>
       </div>
