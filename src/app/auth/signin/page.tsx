@@ -95,9 +95,8 @@ function SignInContent() {
         return
       }
 
-      // Successfully signed in - redirect to dashboard
-      router.push("/dashboard")
-      return
+      // Successfully signed in - SessionProvider will handle redirect
+      // No manual redirect needed to prevent race conditions
 
         // Check if there's a pending rating to submit
         const pendingRating = localStorage.getItem('pendingRating')

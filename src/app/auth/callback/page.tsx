@@ -9,9 +9,13 @@ export default function AuthCallback() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      if (isProcessing) return
+      setIsProcessing(true)
+
       try {
         // Check if there are auth parameters in the URL
         const code = searchParams.get('code')
@@ -42,7 +46,7 @@ export default function AuthCallback() {
           }
         }
 
-        // If no code or session, check current session
+        // If no code, check current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
@@ -63,11 +67,13 @@ export default function AuthCallback() {
         console.error('Unexpected error during auth callback:', err)
         setError('An unexpected error occurred')
         setIsLoading(false)
+      } finally {
+        setIsProcessing(false)
       }
     }
 
     handleAuthCallback()
-  }, [router, searchParams])
+  }, [router, searchParams, isProcessing])
 
   if (error) {
     return (

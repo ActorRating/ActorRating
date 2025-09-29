@@ -6,6 +6,7 @@ import { useUser } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { SignedInLayout } from "@/components/layout"
+import { AuthGuard } from "@/components/auth/AuthGuard"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 import { SearchBar } from "@/components/SearchBar"
@@ -269,7 +270,8 @@ export default function DashboardPage() {
 
 
   return (
-    <SignedInLayout>
+    <AuthGuard requireAuth={true}>
+      <SignedInLayout>
       <div className="min-h-screen">
         <div className="relative overflow-hidden">
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -645,5 +647,6 @@ export default function DashboardPage() {
         <div className="h-16 sm:h-20"></div>
       </div>
     </SignedInLayout>
+    </AuthGuard>
   )
 }
