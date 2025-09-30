@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useUser } from "@/components/providers/SessionProvider"
+import { useUser, useSession } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { SignedInLayout } from "@/components/layout"
@@ -54,6 +54,7 @@ interface Rating {
 
 export default function DashboardPage() {
   const user = useUser()
+  const { session, loading: sessionLoading, isInitialized } = useSession()
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -77,18 +78,22 @@ export default function DashboardPage() {
   const [suggestionsAnimKey, setSuggestionsAnimKey] = useState(0)
   const [showAllRecent, setShowAllRecent] = useState(false)
 
-  // Wait until Supabase resolves the session
+  // Wait until session is fully initialized and user is available
   useEffect(() => {
-    if (user === undefined) return
-    if (user === null) router.replace("/auth/signin")
-  }, [user, router])
+    if (!isInitialized) return
+    if (!user || !session) {
+      router.replace("/auth/signin")
+      return
+    }
+  }, [user, session, isInitialized, router])
 
+  // Only fetch data when session is fully loaded and user exists
   useEffect(() => {
-    if (user) {
+    if (isInitialized && user && session) {
       fetchUserRatings()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [isInitialized, user, session])
 
   const fetchUserRatings = async () => {
     try {
@@ -248,9 +253,25 @@ export default function DashboardPage() {
   const recentRatings = ratings
   const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
 
-  if (user === undefined) return <p>Loading...</p>
-  if (user === null) return null
+  // Show loading state while session is being initialized
+  if (!isInitialized || sessionLoading) {
+    return (
+      <SignedInLayout>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
+          <div className="text-center">
+            <div className="relative">
+              <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto mb-4" />
+              <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-primary/10 mx-auto" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground mb-2">Initializing session</h2>
+            <p className="text-sm text-muted-foreground">Please wait while we verify your authentication...</p>
+          </div>
+        </div>
+      </SignedInLayout>
+    )
+  }
 
+  // Show loading state while data is being fetched
   if (isLoadingData) {
     return (
       <SignedInLayout>
