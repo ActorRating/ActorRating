@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { useUser } from "@/components/providers/SessionProvider"
+import { useUser, useSession } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
 import supabase from "@/lib/supabaseClient"
@@ -17,6 +17,7 @@ import Link from "next/link"
 function SignInContent() {
   const router = useRouter()
   const user = useUser()
+  const { session, loading: sessionLoading, isInitialized } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -96,11 +97,8 @@ function SignInContent() {
       }
 
       if (data.session) {
-        // Successfully signed in - wait a moment for session to be established
-        // then redirect to dashboard
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 100)
+        // Successfully signed in - SessionProvider will handle redirect automatically
+        // No manual redirect needed to prevent race conditions
         return
       }
 
@@ -179,6 +177,22 @@ function SignInContent() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  // Show loading state while session is being established after sign-in
+  if (isLoading && session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto mb-4" />
+            <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-primary/10 mx-auto" />
+          </div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Signing you in...</h2>
+          <p className="text-sm text-muted-foreground">Please wait while we establish your session.</p>
+        </div>
       </div>
     )
   }
