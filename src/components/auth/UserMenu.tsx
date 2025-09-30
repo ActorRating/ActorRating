@@ -1,16 +1,14 @@
 "use client"
 
 import { useUser } from "@/components/providers/SessionProvider"
-import { handleLogout } from "@/lib/auth"
+import { LogoutButton } from "@/components/auth/LogoutButton"
 import { useState, useRef, useEffect } from "react"
-import { User, LogOut, Settings, Shield, Download } from "lucide-react"
+import { User, Settings, Shield, Download } from "lucide-react"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 export function UserMenu() {
   const user = useUser()
-  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -29,9 +27,6 @@ export function UserMenu() {
     return null
   }
 
-  const handleLogoutClick = async () => {
-    await handleLogout(router)
-  }
 
   return (
     <div className="relative" ref={menuRef}>
@@ -94,13 +89,11 @@ export function UserMenu() {
             </Link>
             
             <div className="border-t border-gray-100">
-              <button
-                onClick={handleLogoutClick}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <LogOut className="w-4 h-4 mr-3" />
-                Sign Out
-              </button>
+              <LogoutButton 
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              />
             </div>
           </div>
         </div>

@@ -23,6 +23,12 @@ export default function AuthCallback() {
         
         if (error) {
           console.error('OAuth error:', error)
+          // Don't show error immediately, try to get session first
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            router.push('/dashboard')
+            return
+          }
           setError('Authentication failed. Please try again.')
           setIsLoading(false)
           return
@@ -34,6 +40,12 @@ export default function AuthCallback() {
           
           if (exchangeError) {
             console.error('Code exchange error:', exchangeError)
+            // Try to get existing session before showing error
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+              router.push('/dashboard')
+              return
+            }
             setError('Failed to complete authentication. Please try again.')
             setIsLoading(false)
             return
@@ -65,6 +77,16 @@ export default function AuthCallback() {
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err)
+        // Try to get session before showing error
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            router.push('/dashboard')
+            return
+          }
+        } catch {
+          // Ignore session check errors
+        }
         setError('An unexpected error occurred')
         setIsLoading(false)
       } finally {

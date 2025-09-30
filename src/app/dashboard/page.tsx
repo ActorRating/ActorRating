@@ -88,8 +88,9 @@ export default function DashboardPage() {
   }, [user, session, isInitialized, router])
 
   // Only fetch data when session is fully loaded and user exists
+  // This prevents 401 errors by ensuring session is established before API calls
   useEffect(() => {
-    if (isInitialized && user && session) {
+    if (isInitialized && user && session && session.access_token) {
       fetchUserRatings()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
