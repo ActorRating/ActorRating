@@ -330,9 +330,9 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Button asChild variant="premium" size="lg" className="bg-purple-600 text-white hover:bg-purple-700">
-                  <Link href="/search">
-                    <Star className="w-5 h-5 mr-2" />
+                <Button asChild variant="premium" size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl">
+                  <Link href="/search" className="flex items-center justify-center gap-2">
+                    <Star className="w-5 h-5" />
                     Rate a Performance
                   </Link>
                 </Button>
@@ -415,9 +415,9 @@ export default function DashboardPage() {
               <p className="text-gray-300 mb-8 max-w-md mx-auto text-lg">
                 Discover incredible performances and share your perspective with the community.
               </p>
-              <Button asChild variant="premium" size="lg" className="bg-purple-600 hover:bg-purple-700">
-                <Link href="/search">
-                  <Star className="w-5 h-5 mr-2" />
+              <Button asChild variant="premium" size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl">
+                <Link href="/search" className="flex items-center justify-center gap-2">
+                  <Star className="w-5 h-5" />
                   Start Rating Performances
                 </Link>
               </Button>

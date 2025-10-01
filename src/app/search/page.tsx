@@ -29,7 +29,7 @@ export default function SearchPage() {
                 </span>
                 <span className="text-foreground"> & Discover</span>
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
                 Find actors and movies to rate with our comprehensive database
               </p>
             </div>
@@ -76,7 +76,7 @@ export default function SearchPage() {
                 </span>
                 <span className="text-foreground"> & Discover</span>
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
                 Find actors and movies to rate with our comprehensive database
               </p>
             </div>
