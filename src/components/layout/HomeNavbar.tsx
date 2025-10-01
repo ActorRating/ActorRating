@@ -56,7 +56,10 @@ export function HomeNavbar() {
                 </Link>
                 <Button 
                   noMotion
-                  onClick={() => supabase.auth.signOut()} 
+                  onClick={async () => {
+                    await supabase.auth.signOut()
+                    window.location.href = '/'
+                  }} 
                   variant="outline" 
                   size="sm"
                   className="text-foreground text-white border-border"

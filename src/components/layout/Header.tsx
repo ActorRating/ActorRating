@@ -70,7 +70,9 @@ export function Header({
         window.location.href = '/profile/settings'
         break
       case 'logout':
-        supabase.auth.signOut()
+        supabase.auth.signOut().then(() => {
+          window.location.href = '/'
+        })
         break
     }
   }

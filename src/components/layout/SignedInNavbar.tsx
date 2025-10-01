@@ -144,9 +144,10 @@ export function SignedInNavbar() {
                       Settings
                     </Link>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsMenuOpen(false)
-                        supabase.auth.signOut()
+                        await supabase.auth.signOut()
+                        window.location.href = '/'
                       }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >
