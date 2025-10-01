@@ -18,7 +18,7 @@ import {
   Award
 } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
-import supabase from '@/lib/supabaseClient'
+import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { cn } from '@/lib/utils'
 import { UserMenu } from '../auth/UserMenu'
@@ -70,9 +70,7 @@ export function Header({
         window.location.href = '/profile/settings'
         break
       case 'logout':
-        supabase.auth.signOut().then(() => {
-          window.location.href = '/'
-        })
+        handleLogout()
         break
     }
   }

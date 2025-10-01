@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useUser } from '@/components/providers/SessionProvider'
-import supabase from '@/lib/supabaseClient'
+import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { usePathname } from 'next/navigation'
 import { Logo } from '../ui/Logo'
@@ -144,10 +144,9 @@ export function SignedInNavbar() {
                       Settings
                     </Link>
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         setIsMenuOpen(false)
-                        await supabase.auth.signOut()
-                        window.location.href = '/'
+                        handleLogout()
                       }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                     >

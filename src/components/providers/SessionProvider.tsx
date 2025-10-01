@@ -80,10 +80,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         // Handle sign out
         if (!session?.user && event === 'SIGNED_OUT') {
           redirectHandled.current = false
-          // Redirect to landing page on sign out
-          if (pathname?.startsWith('/dashboard') || pathname?.startsWith('/profile')) {
-            router.push('/')
-          }
+          // Always redirect to landing page on sign out from any page
+          router.push('/')
         }
       }
     })

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useUser } from '@/components/providers/SessionProvider'
-import supabase from '@/lib/supabaseClient'
+import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { Home } from 'lucide-react'
 import { Logo } from '../ui/Logo'
@@ -64,10 +64,7 @@ export function SearchNavbar() {
                 </span>
                 <Button 
                   noMotion
-                  onClick={async () => {
-                    await supabase.auth.signOut()
-                    window.location.href = '/'
-                  }} 
+                  onClick={() => handleLogout()} 
                   variant="outline" 
                   size="sm"
                   className="text-foreground text-white border-border"

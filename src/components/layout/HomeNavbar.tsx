@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useUser } from '@/components/providers/SessionProvider'
-import supabase from '@/lib/supabaseClient'
+import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { Logo } from '../ui/Logo'
 import { useState, useEffect } from 'react'
@@ -56,10 +56,7 @@ export function HomeNavbar() {
                 </Link>
                 <Button 
                   noMotion
-                  onClick={async () => {
-                    await supabase.auth.signOut()
-                    window.location.href = '/'
-                  }} 
+                  onClick={() => handleLogout()} 
                   variant="outline" 
                   size="sm"
                   className="text-foreground text-white border-border"
