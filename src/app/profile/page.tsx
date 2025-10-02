@@ -165,9 +165,7 @@ export default function ProfilePage() {
             className="text-center mb-8 sm:mb-12"
           >
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4">
-              <span className="bg-gradient-to-r from-purple-500 to-white bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Your Profile
-              </span>
+              Your Profile
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
               Manage your account settings and data
