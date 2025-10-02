@@ -24,7 +24,7 @@ export default function SearchPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8 sm:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-                <span className="text-purple-400">
+                <span className="text-primary">
                   Search
                 </span>
                 <span className="text-white"> & Discover</span>
@@ -71,7 +71,7 @@ export default function SearchPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8 sm:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-                <span className="text-purple-400">
+                <span className="text-primary">
                   Search
                 </span>
                 <span className="text-white"> & Discover</span>
