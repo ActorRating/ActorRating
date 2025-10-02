@@ -322,7 +322,7 @@ export function SearchBar({
                   </motion.div>
                 </div>
               </motion.div>
-            ) : query.trim() && !loading ? (
+            ) : query.trim() && !loading && !hasResults ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-white">No results found</p>
                 <p className="text-xs text-gray-300 mt-1">Try different keywords</p>
