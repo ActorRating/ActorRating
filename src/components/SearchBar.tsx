@@ -91,10 +91,12 @@ export function SearchBar({
         controllerRef.current = controller
         const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
         if (!response.ok) {
+          console.error('Search API error:', response.status, response.statusText)
           setSuggestions(null)
           return
         }
         const data = await response.json()
+        console.log('Search results:', data)
         setSuggestions(data)
         if (!hasFetchedOnce) setHasFetchedOnce(true)
       } catch (error: any) {
@@ -117,7 +119,7 @@ export function SearchBar({
       setSuggestions(null)
       setShowSuggestionsDropdown(false)
     }
-  }, [query])
+  }, [query, throttledSearch, showSuggestions])
 
   // Mark that we've animated once when the dropdown is first shown
   useEffect(() => {
@@ -184,6 +186,16 @@ export function SearchBar({
 
   const hasResults = totalSuggestions > 0
 
+  // Debug logging
+  console.log('SearchBar state:', {
+    query,
+    showSuggestionsDropdown,
+    loading,
+    suggestions,
+    hasResults,
+    totalSuggestions
+  })
+
   return (
     <div className={cn("relative", className)}>
       <form onSubmit={handleSubmit}>
@@ -201,7 +213,10 @@ export function SearchBar({
                 throttledSearch(query, showSuggestions)
               }
             }}
-            onBlur={() => setIsFocused(false)}
+            onBlur={() => {
+              // Delay blur to allow clicking on dropdown items
+              setTimeout(() => setIsFocused(false), 150)
+            }}
             placeholder={placeholder}
             autoFocus={autoFocus}
             className={cn(
@@ -234,12 +249,10 @@ export function SearchBar({
             initial={hasAnimatedOnce ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 border border-border rounded-xl shadow-2xl max-h-96 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-2 border border-border rounded-xl shadow-2xl max-h-96 overflow-y-auto bg-black"
             style={{ 
-              backgroundColor: '#000000',
               zIndex: 999999,
-              position: 'absolute',
-              isolation: 'isolate'
+              position: 'absolute'
             }}
           >
             {loading && !hasFetchedOnce ? (

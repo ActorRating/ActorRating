@@ -23,7 +23,7 @@ export default function SearchPage() {
         <div className="relative z-10 min-h-screen flex flex-col justify-start pt-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Search
                 </span>
@@ -70,7 +70,7 @@ export default function SearchPage() {
         <div className="relative z-10 min-h-screen flex flex-col justify-start pt-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Search
                 </span>
