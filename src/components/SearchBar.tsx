@@ -91,12 +91,10 @@ export function SearchBar({
         controllerRef.current = controller
         const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
         if (!response.ok) {
-          console.error('Search API error:', response.status, response.statusText)
           setSuggestions(null)
           return
         }
         const data = await response.json()
-        console.log('Search results:', data)
         setSuggestions(data)
         if (!hasFetchedOnce) setHasFetchedOnce(true)
       } catch (error: any) {
@@ -186,16 +184,6 @@ export function SearchBar({
 
   const hasResults = totalSuggestions > 0
 
-  // Debug logging
-  console.log('SearchBar state:', {
-    query,
-    showSuggestionsDropdown,
-    loading,
-    suggestions,
-    hasResults,
-    totalSuggestions
-  })
-
   return (
     <div className={cn("relative", className)}>
       <form onSubmit={handleSubmit}>
@@ -243,7 +231,7 @@ export function SearchBar({
 
             {/* Suggestions Dropdown */}
       <AnimatePresence>
-        {showSuggestionsDropdown && (suggestions || loading) && (
+        {showSuggestionsDropdown && query.trim().length >= 2 && (
           <motion.div
             ref={dropdownRef}
             initial={hasAnimatedOnce ? false : { opacity: 0, y: -10 }}

@@ -27,7 +27,7 @@ export default function SearchPage() {
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Search
                 </span>
-                <span className="text-foreground"> & Discover</span>
+                <span className="text-white"> & Discover</span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
                 Find actors and movies to rate with our comprehensive database
@@ -74,7 +74,7 @@ export default function SearchPage() {
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Search
                 </span>
-                <span className="text-foreground"> & Discover</span>
+                <span className="text-white"> & Discover</span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
                 Find actors and movies to rate with our comprehensive database
