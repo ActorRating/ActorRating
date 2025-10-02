@@ -539,7 +539,7 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-6 inline-block leading-snug pb-1"
+                  className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-snug"
                 >
                   {actor.name}
                 </motion.h1>
@@ -636,7 +636,7 @@ export default function ActorDetailPage() {
             transition={{ delay: 1.0 }}
             className="bg-secondary rounded-3xl border border-border p-4 sm:p-8 mb-12 shadow-lg"
           >
-            <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-4 sm:mb-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">
               Career Performance Breakdown
             </h3>
             
@@ -678,7 +678,7 @@ export default function ActorDetailPage() {
           transition={{ delay: 1.0 }}
           className="mb-8"
         >
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+          <h2 className="text-3xl font-bold text-white mb-2">
             Filmography
           </h2>
           <p className="text-gray-400">Chronological order • {performanceCount} performances</p>
@@ -912,7 +912,7 @@ export default function ActorDetailPage() {
           className="mt-16"
         >
           <div className="bg-secondary rounded-3xl border border-border p-8">
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-6">
+            <h3 className="text-2xl font-bold text-white mb-6">
               Your Ratings for {actor.name}
             </h3>
             <ActorRatingSection actorId={actor.id} actorName={actor.name} />

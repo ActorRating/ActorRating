@@ -321,7 +321,7 @@ export default function MovieDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="text-2xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent mb-6 inline-block leading-snug pb-1"
+                  className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-snug"
                 >
                   {movie.title}
                 </motion.h1>
@@ -408,7 +408,7 @@ export default function MovieDetailPage() {
           transition={{ delay: 0.8 }}
           className="mb-8"
         >
-          <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Cast Ratings
           </h2>
           <p className="text-gray-400">Sorted by rating • {sortedPerformances.length} actors</p>
@@ -618,7 +618,7 @@ export default function MovieDetailPage() {
           className="mt-16"
         >
           <div className="bg-secondary rounded-3xl border border-border p-8">
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-6">
+            <h3 className="text-2xl font-bold text-white mb-6">
               Your Ratings for {movie.title}
             </h3>
             <MovieRatingSection
