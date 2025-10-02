@@ -165,7 +165,7 @@ export default function ProfilePage() {
             className="text-center mb-8 sm:mb-12"
           >
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4">
-              <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span className="bg-gradient-to-r from-purple-500 to-white bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Your Profile
               </span>
             </h1>
@@ -268,13 +268,12 @@ export default function ProfilePage() {
               {...getMotionProps()}
               className="relative group safari-blur-fix"
             >
-              <div className="absolute -inset-1 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-2xl blur opacity-30 safari-safe-transition"></div>
-              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-red-500/30">
+              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-border/50">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                    <TriangleAlert className="w-5 h-5 text-red-400" />
+                  <div className="w-10 h-10 bg-muted/50 rounded-lg flex items-center justify-center">
+                    <TriangleAlert className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-red-400">Danger Zone</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground">Account Management</h3>
                 </div>
                 
                 <p className="text-sm text-muted-foreground mb-6">
@@ -286,16 +285,16 @@ export default function ProfilePage() {
                     onClick={() => setShowDeleteConfirm(true)}
                     variant="outline"
                     size="lg"
-                    className="text-red-400 border-red-400 hover:bg-red-900/20 hover:border-red-300 h-12"
+                    className="text-muted-foreground border-border hover:bg-muted/50 hover:border-muted-foreground h-12"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Account
                   </Button>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-red-900/20 border border-red-900/30 rounded-lg">
-                      <h4 className="font-medium text-red-400 mb-2">Confirm Account Deletion</h4>
-                      <p className="text-sm text-red-300 mb-4">
+                    <div className="p-4 bg-muted/20 border border-border/30 rounded-lg">
+                      <h4 className="font-medium text-foreground mb-2">Confirm Account Deletion</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
                         This will permanently delete your account, all ratings, and profile data. This action cannot be undone.
                       </p>
                     </div>

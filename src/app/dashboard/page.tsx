@@ -306,7 +306,7 @@ export default function DashboardPage() {
               className="text-center mb-12 sm:mb-16 px-4 sm:px-6"
             >
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 sm:mb-8">
-                Welcome back
+                Dashboard
               </h1>
               <p className="text-gray-400 text-lg sm:text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
                 Rate performances and discover exceptional acting
