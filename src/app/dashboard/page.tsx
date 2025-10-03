@@ -416,8 +416,8 @@ export default function DashboardPage() {
                 Discover incredible performances and share your perspective with the community.
               </p>
               <div className="px-4">
-                <Button asChild variant="premium" size="lg" className="feedback-button-shadow w-full sm:w-auto">
-                  <Link href="/search" className="flex items-center justify-center gap-2">
+                <Button asChild variant="premium" size="lg" className="w-full sm:w-auto max-w-sm mx-auto sm:mx-0">
+                  <Link href="/search" className="flex items-center justify-center gap-2 px-6 py-3">
                     <Star className="w-5 h-5" />
                     Start Rating Performances
                   </Link>
