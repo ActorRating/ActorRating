@@ -305,10 +305,10 @@ export default function DashboardPage() {
               transition={{ delay: 0.2 }}
               className="text-center mb-16 sm:mb-20 lg:mb-24"
             >
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8">
+              <h1 className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8">
                 Dashboard
               </h1>
-              <p className="text-gray-400 text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 lg:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
+              <p className="text-gray-400 text-lg sm:text-lg lg:text-xl mb-6 sm:mb-8 lg:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
                 Rate performances and discover exceptional acting
               </p>
               
