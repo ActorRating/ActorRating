@@ -406,21 +406,23 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 }}
-              className="text-center py-20 bg-gradient-to-br from-secondary/80 via-secondary/60 to-secondary/40 border border-border/50 rounded-2xl backdrop-blur-sm mx-4 sm:mx-6"
+              className="text-center py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-secondary/80 via-secondary/60 to-secondary/40 border border-border/50 rounded-2xl backdrop-blur-sm mx-2 sm:mx-4 lg:mx-6"
             >
-              <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <Star className="w-10 h-10 text-yellow-400 fill-current" />
+              <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <Star className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400 fill-current" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Ready to start rating?</h3>
-              <p className="text-gray-300 mb-8 max-w-md mx-auto text-lg">
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 px-4">Ready to start rating?</h3>
+              <p className="text-gray-300 mb-6 sm:mb-8 max-w-md mx-auto text-base sm:text-lg px-4">
                 Discover incredible performances and share your perspective with the community.
               </p>
-              <Button asChild variant="premium" size="lg" className="feedback-button-shadow">
-                <Link href="/search" className="flex items-center justify-center gap-2">
-                  <Star className="w-5 h-5" />
-                  Start Rating Performances
-                </Link>
-              </Button>
+              <div className="px-4">
+                <Button asChild variant="premium" size="lg" className="feedback-button-shadow w-full sm:w-auto">
+                  <Link href="/search" className="flex items-center justify-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Start Rating Performances
+                  </Link>
+                </Button>
+              </div>
             </motion.div>
           ) : (
             <section className="px-4 sm:px-6">
