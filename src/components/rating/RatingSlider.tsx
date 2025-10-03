@@ -100,16 +100,9 @@ export const RatingSlider = memo(function RatingSlider({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Header with icon, label, and weight */}
+      {/* Header with label and weight */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3 flex-1">
-          <div className={cn(
-            "flex items-center justify-center w-12 h-12 rounded-lg transition-colors",
-            qualityZone.color.replace('bg-', 'bg-').replace('-500', '-500/20'),
-            qualityZone.textColor
-          )}>
-            {icon}
-          </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold text-foreground">{label}</h3>

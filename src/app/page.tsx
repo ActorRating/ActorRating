@@ -95,11 +95,11 @@ export default function Home() {
               {...getMotionProps()}
               className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-bold text-foreground mb-6 sm:mb-8 px-2 leading-tight"
             >
-              <div className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <div className="text-primary">
                 Rate Acting
               </div>
               <div className="mt-3 sm:mt-4">
-                <span className="text-foreground">Performances</span>
+                <span className="text-primary">Performances</span>
                 <br />
                 <span className="text-muted-foreground text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl">Not Just Movies</span>
               </div>
@@ -171,10 +171,38 @@ export default function Home() {
                 <div className="text-xs sm:text-sm text-muted-foreground">Free</div>
               </motion.div>
             </motion.div>
+            
+            {/* Scroll Down Arrow - Only on smaller screens */}
+            <motion.div 
+              variants={fadeInUp}
+              {...getMotionProps()}
+              className="flex justify-center mt-8 sm:hidden"
+            >
+              <button
+                onClick={() => {
+                  const nextSection = document.querySelector('.interactive-sliders-preview')
+                  if (nextSection) {
+                    nextSection.scrollIntoView({ behavior: 'smooth' })
+                  }
+                }}
+                className="group flex flex-col items-center text-muted-foreground hover:text-primary transition-colors duration-300"
+              >
+                <span className="text-sm mb-2">Scroll to explore</span>
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-6 h-6 border-2 border-current rounded-full flex items-center justify-center"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </motion.div>
+              </button>
+            </motion.div>
           </div>
 
           {/* Interactive Sliders Preview (same style as rating page) */}
-          <motion.div variants={fadeInUp} {...getMotionProps()} className="py-8 sm:py-10 px-4">
+          <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4">
             <div className="text-center mb-6 sm:mb-8 lg:mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
