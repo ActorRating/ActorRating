@@ -101,49 +101,6 @@ function SignInContent() {
         // No manual redirect needed to prevent race conditions
         return
       }
-
-        // Check if there's a pending rating to submit
-        const pendingRating = localStorage.getItem('pendingRating')
-        if (pendingRating) {
-          try {
-            const ratingData = JSON.parse(pendingRating)
-            
-            // Submit the pending rating
-            const ratingResponse = await fetch('/api/ratings', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                actorId: ratingData.actorId,
-                movieId: ratingData.movieId,
-                emotionalRangeDepth: ratingData.emotionalRangeDepth,
-                characterBelievability: ratingData.characterBelievability,
-                technicalSkill: ratingData.technicalSkill,
-                screenPresence: ratingData.screenPresence,
-                chemistryInteraction: ratingData.chemistryInteraction,
-                comment: ratingData.comment,
-                recaptchaToken: 'bypass' // Skip reCAPTCHA for post-signin submission
-              }),
-            })
-
-            if (ratingResponse.ok) {
-              // Clear the pending rating
-              localStorage.removeItem('pendingRating')
-              
-              // Redirect to the rating success page
-              const successUrl = `/rating-success?actorName=${encodeURIComponent(ratingData.actorName)}&movieTitle=${encodeURIComponent(ratingData.movieTitle)}&movieYear=${ratingData.movieYear}&emotionalRangeDepth=${ratingData.emotionalRangeDepth}&characterBelievability=${ratingData.characterBelievability}&technicalSkill=${ratingData.technicalSkill}&screenPresence=${ratingData.screenPresence}&chemistryInteraction=${ratingData.chemistryInteraction}${ratingData.comment ? `&comment=${encodeURIComponent(ratingData.comment)}` : ''}`
-              router.push(successUrl)
-              return
-            }
-          } catch (error) {
-            console.error('Failed to submit pending rating:', error)
-            // Continue to dashboard even if rating submission fails
-          }
-        }
-
-        // Redirect to dashboard
-        router.push("/dashboard")
     } catch (error) {
       console.error("Signin error:", error)
       setApiError("Sign in failed. Please try again.")
@@ -181,8 +138,8 @@ function SignInContent() {
     )
   }
 
-  // Show loading state while session is being established after sign-in
-  if (isLoading && session) {
+  // Show loading state while form is being submitted
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
