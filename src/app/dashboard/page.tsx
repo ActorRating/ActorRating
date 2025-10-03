@@ -296,24 +296,24 @@ export default function DashboardPage() {
       <SignedInLayout>
       <div className="min-h-screen">
         <div className="relative overflow-hidden">
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16 lg:py-20">
             
             {/* Welcome Section */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-center mb-12 sm:mb-16 px-4 sm:px-6"
+              className="text-center mb-16 sm:mb-20 lg:mb-24"
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 sm:mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8">
                 Dashboard
               </h1>
-              <p className="text-gray-400 text-lg sm:text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-gray-400 text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 lg:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
                 Rate performances and discover exceptional acting
               </p>
               
               {/* Search Bar */}
-              <div className="max-w-lg mx-auto mb-8">
+              <div className="max-w-lg mx-auto mb-6 sm:mb-8 px-4">
                 <SearchBar 
                   placeholder="Search actors, movies..." 
                   onSearch={(query) => {
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="grid grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16 px-4 sm:px-6"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16 lg:mb-20"
               >
                 {/* Average Score */}
                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">

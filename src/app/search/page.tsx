@@ -20,24 +20,24 @@ export default function SearchPage() {
         <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
         
-        <div className="relative z-10 min-h-screen flex flex-col justify-start pt-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+        <div className="relative z-10 min-h-screen flex flex-col justify-start pt-12 sm:pt-16">
+          <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+            <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 lg:mb-6">
                 <span className="text-primary">
                   Search
                 </span>
                 <span className="text-white"> & Discover</span>
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
                 Find actors and movies to rate with our comprehensive database
               </p>
             </div>
             
-            <div className="max-w-2xl mx-auto mb-12 sm:mb-16">
+            <div className="max-w-2xl mx-auto mb-8 sm:mb-12 lg:mb-16 px-4">
               <SearchBar 
                 placeholder="Search for actors, movies, or performances..." 
-                className="text-lg shadow-2xl" 
+                className="text-base sm:text-lg shadow-2xl" 
                 autoFocus 
                 initialValue={query}
               />
@@ -67,24 +67,24 @@ export default function SearchPage() {
         <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
         
-        <div className="relative z-10 min-h-screen flex flex-col justify-start pt-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+        <div className="relative z-10 min-h-screen flex flex-col justify-start pt-12 sm:pt-16">
+          <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+            <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 lg:mb-6">
                 <span className="text-primary">
                   Search
                 </span>
                 <span className="text-white"> & Discover</span>
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left sm:text-center">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
                 Find actors and movies to rate with our comprehensive database
               </p>
             </div>
             
-            <div className="max-w-2xl mx-auto mb-12 sm:mb-16">
+            <div className="max-w-2xl mx-auto mb-8 sm:mb-12 lg:mb-16 px-4">
               <SearchBar 
                 placeholder="Search for actors, movies, or performances..." 
-                className="text-lg shadow-2xl" 
+                className="text-base sm:text-lg shadow-2xl" 
                 autoFocus 
                 initialValue={query}
               />
