@@ -416,10 +416,10 @@ export default function DashboardPage() {
                 Discover incredible performances and share your perspective with the community.
               </p>
               <div className="px-4">
-                <Button asChild variant="premium" size="lg" className="w-full sm:w-auto max-w-sm mx-auto sm:mx-0">
-                  <Link href="/search" className="flex items-center justify-center gap-2 px-6 py-3">
-                    <Star className="w-5 h-5" />
-                    Start Rating Performances
+                <Button asChild variant="premium" size="lg" className="w-full sm:w-auto max-w-xs mx-auto sm:mx-0">
+                  <Link href="/search" className="flex items-center justify-center gap-2 px-4 py-3 text-sm sm:text-base">
+                    <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+                    Start Rating
                   </Link>
                 </Button>
               </div>
