@@ -99,7 +99,7 @@ export default function Home() {
                 Rate Acting
               </div>
               <div className="mt-3 sm:mt-4">
-                <span className="text-primary">Performances</span>
+                <span className="text-foreground">Performances</span>
                 <br />
                 <span className="text-muted-foreground text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl">Not Just Movies</span>
               </div>
@@ -185,7 +185,7 @@ export default function Home() {
                     nextSection.scrollIntoView({ behavior: 'smooth' })
                   }
                 }}
-                className="group flex flex-col items-center text-muted-foreground hover:text-primary transition-colors duration-300"
+                className="group flex flex-col items-center text-muted-foreground hover:text-primary transition-colors duration-300 focus:outline-none focus:ring-0"
               >
                 <span className="text-sm mb-2">Scroll to explore</span>
                 <motion.div

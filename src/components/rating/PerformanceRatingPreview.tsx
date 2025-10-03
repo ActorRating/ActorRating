@@ -55,31 +55,6 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className={`absolute inset-0 ${qualityZone.bg} opacity-20 blur-xl`} />
       <div className="relative flex-1 flex flex-col">
         <div className="flex items-center gap-3 sm:gap-4 mb-4">
-          <motion.div 
-            className={`flex items-center justify-center w-12 h-12 rounded-xl text-primary relative ${qualityZone.bg}`}
-            animate={{ 
-              scale: isChanging ? [1, 1.05, 1] : 1
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <Icon className="w-6 h-6" />
-            <AnimatePresence>
-              {isChanging && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className="absolute -top-1 -right-1"
-                >
-                  {isImproving ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  ) : isDecreasing ? (
-                    <TrendingUp className="w-4 h-4 text-red-400 rotate-180" />
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
           <div className="flex-1">
             <div className="mb-1">
               <div className="flex items-center gap-2">
