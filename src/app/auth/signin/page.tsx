@@ -45,12 +45,8 @@ function SignInContent() {
     }
   }, [searchParams])
 
-  useEffect(() => {
-    // Check if user is already signed in (Supabase)
-    if (user) {
-      router.push("/dashboard")
-    }
-  }, [user, router])
+  // Remove this useEffect to prevent redirect conflicts with SessionProvider
+  // The SessionProvider will handle redirects automatically
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -97,11 +93,8 @@ function SignInContent() {
       }
 
       if (data.session) {
-        // Successfully signed in - ensure redirect happens
-        // Add a small delay to ensure session is properly set
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 100)
+        // Successfully signed in - SessionProvider will handle redirect automatically
+        // No manual redirect needed to prevent race conditions
         return
       }
     } catch (error) {

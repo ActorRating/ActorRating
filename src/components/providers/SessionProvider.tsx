@@ -44,10 +44,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           if (session?.user && !redirectHandled.current) {
             if (pathname?.startsWith('/auth/') || pathname === '/') {
               redirectHandled.current = true
-              // Use setTimeout to ensure the redirect happens after the component is fully mounted
-              setTimeout(() => {
-                router.push('/dashboard')
-              }, 100)
+              router.push('/dashboard')
             }
           }
         }
@@ -84,9 +81,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (!session?.user && event === 'SIGNED_OUT') {
           redirectHandled.current = false
           // Always redirect to landing page on sign out from any page
-          setTimeout(() => {
-            router.push('/')
-          }, 100)
+          router.push('/')
         }
       }
     })
