@@ -97,8 +97,11 @@ function SignInContent() {
       }
 
       if (data.session) {
-        // Successfully signed in - SessionProvider will handle redirect automatically
-        // No manual redirect needed to prevent race conditions
+        // Successfully signed in - ensure redirect happens
+        // Add a small delay to ensure session is properly set
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 100)
         return
       }
     } catch (error) {
