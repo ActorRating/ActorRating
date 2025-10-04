@@ -40,9 +40,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           setIsInitialized(true)
           
-          // Handle initial redirect for logged-in users
+          // Handle initial redirect for logged-in users (skip for sign-in page)
           if (session?.user && !redirectHandled.current) {
             if (pathname?.startsWith('/auth/') || pathname === '/') {
+              // Skip redirect if we're on sign-in page (handled by sign-in page)
+              if (pathname === '/auth/signin') {
+                return
+              }
               // console.log('Initial redirect to dashboard from SessionProvider')
               redirectHandled.current = true
               router.push('/dashboard')
@@ -70,10 +74,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
         setIsInitialized(true)
 
-        // Handle redirects for auth events
+        // Handle redirects for auth events (skip for email sign-in to prevent conflicts)
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !redirectHandled.current) {
-          // Only redirect if on auth pages or home
+          // Only redirect if on auth pages or home, but not if we're already redirecting
           if (pathname?.startsWith('/auth/') || pathname === '/') {
+            // Skip redirect if we're on sign-in page and using email auth (handled by sign-in page)
+            if (pathname === '/auth/signin') {
+              return
+            }
             // console.log('Redirecting to dashboard from SessionProvider')
             redirectHandled.current = true
             router.push('/dashboard')
