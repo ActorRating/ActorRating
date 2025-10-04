@@ -93,12 +93,10 @@ function SignInContent() {
       }
 
       if (data.session) {
-        // Successfully signed in - add fallback redirect for email sign-in
-        // SessionProvider should handle this, but add fallback for reliability
+        // Successfully signed in - refresh the page to ensure session is properly set
         console.log('Email sign-in successful, session:', data.session)
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 500)
+        // Force a page refresh to ensure session cookies are properly set
+        window.location.href = '/dashboard'
         return
       }
     } catch (error) {

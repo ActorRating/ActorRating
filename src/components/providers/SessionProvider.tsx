@@ -43,7 +43,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           // Handle initial redirect for logged-in users
           if (session?.user && !redirectHandled.current) {
             if (pathname?.startsWith('/auth/') || pathname === '/') {
-              console.log('Initial redirect to dashboard from SessionProvider')
+              // console.log('Initial redirect to dashboard from SessionProvider')
               redirectHandled.current = true
               router.push('/dashboard')
             }
@@ -65,7 +65,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
-        console.log('Auth state change:', { event, session: !!session, user: !!session?.user, pathname })
+        // console.log('Auth state change:', { event, session: !!session, user: !!session?.user, pathname })
         setSession(session)
         setLoading(false)
         setIsInitialized(true)
@@ -74,7 +74,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !redirectHandled.current) {
           // Only redirect if on auth pages or home
           if (pathname?.startsWith('/auth/') || pathname === '/') {
-            console.log('Redirecting to dashboard from SessionProvider')
+            // console.log('Redirecting to dashboard from SessionProvider')
             redirectHandled.current = true
             router.push('/dashboard')
           }
