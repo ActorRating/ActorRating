@@ -93,8 +93,12 @@ function SignInContent() {
       }
 
       if (data.session) {
-        // Successfully signed in - SessionProvider will handle redirect automatically
-        // No manual redirect needed to prevent race conditions
+        // Successfully signed in - add fallback redirect for email sign-in
+        // SessionProvider should handle this, but add fallback for reliability
+        console.log('Email sign-in successful, session:', data.session)
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 500)
         return
       }
     } catch (error) {
