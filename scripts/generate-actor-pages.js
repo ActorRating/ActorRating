@@ -6,12 +6,12 @@ const path = require('path');
 require('dotenv').config({ path: '.env.local' });
 
 // Actor page template
-const actorPageTemplate = `"use client"
+const actorPageTemplate = (actorId) => `"use client"
 
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Star, Film, Award, ChevronDown, ChevronUp } from 'lucide-react'
@@ -64,10 +64,9 @@ interface Performance {
 }
 
 export default function ActorDetailPage() {
-  const params = useParams()
   const router = useRouter()
   const user = useUser()
-  const actorId = params?.id as string
+  const actorId = "${actorId}"
   
   const [actor, setActor] = useState<Actor | null>(null)
   const [loading, setLoading] = useState(true)
@@ -434,7 +433,7 @@ async function generateActorPages() {
       
       // Write the page.tsx file
       const pagePath = path.join(actorDir, 'page.tsx');
-      fs.writeFileSync(pagePath, actorPageTemplate);
+      fs.writeFileSync(pagePath, actorPageTemplate(actor.id));
       
       generatedCount++;
       console.log(`✅ Generated page for: ${actor.name} (${actor.performances.length} performances)`);
