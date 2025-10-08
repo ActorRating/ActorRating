@@ -30,13 +30,13 @@ export default function SearchPage() {
                 <span className="text-white"> & Discover</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
-                Find actors and movies to rate with our comprehensive database
+                Find actors to rate with our comprehensive database
               </p>
             </div>
             
             <div className="max-w-2xl mx-auto mb-8 sm:mb-12 lg:mb-16 px-4">
               <SearchBar 
-                placeholder="Search for actors, movies, or performances..." 
+                placeholder="Search for actors..." 
                 className="text-base sm:text-lg shadow-2xl" 
                 autoFocus 
                 initialValue={query}
@@ -77,13 +77,13 @@ export default function SearchPage() {
                 <span className="text-white"> & Discover</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
-                Find actors and movies to rate with our comprehensive database
+                Find actors to rate with our comprehensive database
               </p>
             </div>
             
             <div className="max-w-2xl mx-auto mb-8 sm:mb-12 lg:mb-16 px-4">
               <SearchBar 
-                placeholder="Search for actors, movies, or performances..." 
+                placeholder="Search for actors..." 
                 className="text-base sm:text-lg shadow-2xl" 
                 autoFocus 
                 initialValue={query}

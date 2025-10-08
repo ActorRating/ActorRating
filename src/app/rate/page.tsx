@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import { SearchBar } from '@/components/SearchBar'
 import { SignedInLayout, HomeLayout } from '@/components/layout'
-import { actorsApi, moviesApi, ratingsApi, searchApi } from '@/lib/api'
+import { actorsApi, ratingsApi, searchApi } from '@/lib/api'
 import { useUser } from '@/components/providers/SessionProvider'
 import { useRouter } from 'next/navigation'
 import { Actor, Movie, OscarRating, SearchResult, Rating } from '@/types'
@@ -82,16 +82,8 @@ export default function RatePage() {
             setActor(actorData)
           }
           if (movieId) {
-            const movieData = await moviesApi.getById(movieId)
-            setMovie(movieData)
-            // If we also have an actor, try to resolve character from movie performances
-            const selectedActorId = actorId || actor?.id
-            if (selectedActorId && Array.isArray((movieData as any).performances)) {
-              const perfForActor = (movieData as any).performances.find((p: any) => p.actor?.id === selectedActorId && p.comment && p.comment.trim().length > 0)
-              if (perfForActor?.comment) {
-                setCharacterName(perfForActor.comment)
-              }
-            }
+            // Movie functionality removed - actor-only mode
+            // Movie ID is ignored in actor-only mode
           }
         }
       } catch (error) {
@@ -636,7 +628,7 @@ export default function RatePage() {
           >
             <div className="max-w-2xl mx-auto mb-8">
               <SearchBar 
-                placeholder="Search for actors, movies..."
+                placeholder="Search for actors..."
                 onSearch={handleSearch}
                 initialValue={searchQuery}
                 autoFocus
@@ -711,35 +703,9 @@ export default function RatePage() {
                   </div>
                 )}
 
-                {/* Movies */}
-                {searchResults.movies && searchResults.movies.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                      <Film className="w-5 h-5 text-accent" />
-                      Movies ({searchResults.movies.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {searchResults.movies.slice(0, 6).map((movie) => (
-                        <button
-                          key={`movie-${movie.id}`}
-                          onClick={() => setMovie(movie)}
-                          className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
-                        >
-                          <div className="font-semibold text-foreground mb-1">
-                            "{movie.title}"
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {movie.year} • {movie.director}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {searchResults.performances?.length === 0 && 
-                 searchResults.actors?.length === 0 && 
-                 searchResults.movies?.length === 0 && (
+                 searchResults.actors?.length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">No results found. Try different keywords.</p>
                   </div>

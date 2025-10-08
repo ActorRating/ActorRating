@@ -87,7 +87,7 @@ export default function ExportDataPage() {
             href="/profile"
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
           >
-            <span className="w-4 h-4 mr-2">←</span>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Profile Geri Dön
           </Link>
         </div>

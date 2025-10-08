@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Removed NextAuth user/account/session models. Users are managed by Supabase Auth.
-
 model RateLimit {
   id          String   @id @default(cuid())
   ip          String
@@ -151,4 +149,54 @@ model ServerEvent {
 
   @@index([type])
   @@index([ratingId])
+}
+
+model actors {
+  id             Int            @id @default(autoincrement())
+  tmdb_id        Int            @unique
+  name           String         @db.VarChar(255)
+  slug           String         @unique @db.VarChar(255)
+  popularity     Decimal?       @db.Decimal(8, 3)
+  biography      String?
+  birthday       DateTime?      @db.Date
+  place_of_birth String?        @db.VarChar(255)
+  created_at     DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
+  performances   performances[]
+}
+
+model performances {
+  id                Int       @id @default(autoincrement())
+  actor_id          Int?
+  movie_title       String    @db.VarChar(255)
+  character_name    String?   @db.VarChar(255)
+  director_name     String?   @db.VarChar(255)
+  release_date      DateTime? @db.Date
+  release_year      Int?
+  tmdb_movie_id     Int?
+  movie_genre_names String?   @db.VarChar(500)
+  movie_runtime     Int?
+  movie_rating      String?   @db.VarChar(10)
+  movie_overview    String?
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  actors            actors?   @relation(fields: [actor_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ratings           ratings[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ratings {
+  id              Int           @id @default(autoincrement())
+  user_id         String        @db.Uuid
+  performance_id  Int?
+  emotional_range Int?
+  believability   Int?
+  technical_skill Int?
+  screen_presence Int?
+  chemistry       Int?
+  overall_score   Decimal?      @db.Decimal(4, 2)
+  created_at      DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?     @default(now()) @db.Timestamp(6)
+  performances    performances? @relation(fields: [performance_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, performance_id])
 }

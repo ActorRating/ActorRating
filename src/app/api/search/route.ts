@@ -22,23 +22,12 @@ export async function GET(request: NextRequest) {
 
     // Cache key with short TTL to keep results hot without being stale
     const cacheKey = makeCacheKey('search', [searchTerm.toLowerCase()])
-    const cached = await cacheGet<{ movies: any[]; actors: any[] }>(cacheKey)
+    const cached = await cacheGet<{ actors: any[] }>(cacheKey)
     if (cached) {
       const res = NextResponse.json(cached)
       res.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
       return res
     }
-
-    // Search movies using Supabase
-    console.log("🎬 Searching movies for:", searchTerm)
-    const { data: movies, error: moviesError } = await supabaseServer
-      .from('Movie')
-      .select('id, title, year')
-      .ilike('title', `%${searchTerm}%`)
-      .order('title')
-      .limit(10)
-
-    console.log("🎬 Movies results:", movies, "Error:", moviesError)
 
     // Search actors using Supabase
     console.log("👤 Searching actors for:", searchTerm)
@@ -52,20 +41,16 @@ export async function GET(request: NextRequest) {
     console.log("👤 Actors results:", actors, "Error:", actorsError)
 
     // Handle errors
-    if (moviesError) {
-      console.error('❌ Movies search error:', moviesError)
-    }
     if (actorsError) {
       console.error('❌ Actors search error:', actorsError)
     }
 
     const payload = { 
-      movies: movies || [], 
       actors: actors || [] 
     }
     
     console.log("📦 Final payload:", payload)
-    console.log("📊 Total results - Movies:", (movies || []).length, "Actors:", (actors || []).length)
+    console.log("📊 Total results - Actors:", (actors || []).length)
     
     // Set small TTL in Redis to reduce database pressure
     await cacheSet(cacheKey, payload, 60)

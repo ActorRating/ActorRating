@@ -495,9 +495,7 @@ export default function DashboardPage() {
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm">
                         <Film className="w-3 h-3 text-purple-400 flex-shrink-0" />
                         <span className="font-medium text-purple-300 text-sm">
-                          <Link href={`/movies/${rating.movie.id}`} className="hover:underline">
-                            "{rating.movie.title}"
-                          </Link>
+                          "{rating.movie.title}"
                         </span>
                       </div>
                       

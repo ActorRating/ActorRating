@@ -45,7 +45,6 @@ export function PerformanceCard({
 
   const rateUrl = `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
   const actorUrl = performance.actorId ? `/actors/${performance.actorId}` : null
-  const movieUrl = performance.movieId ? `/movies/${performance.movieId}` : null
 
   const prefetchTargets = React.useCallback(() => {
     if (prefetchedRef.current) return
@@ -56,7 +55,6 @@ export function PerformanceCard({
         if (typeof r.prefetch === 'function') {
           r.prefetch(rateUrl)
           if (actorUrl) r.prefetch(actorUrl)
-          if (movieUrl) r.prefetch(movieUrl)
         }
       } catch {}
     }
@@ -74,7 +72,7 @@ export function PerformanceCard({
         doPrefetch()
       }
     })
-  }, [router, rateUrl, actorUrl, movieUrl])
+  }, [router, rateUrl, actorUrl])
 
   // Prefetch when card enters viewport
   React.useEffect(() => {

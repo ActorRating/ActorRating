@@ -51,7 +51,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({
-  placeholder = "Search actors, movies...",
+  placeholder = "Search actors...",
   className = "",
   onSearch,
   initialValue = "",
@@ -179,8 +179,7 @@ export function SearchBar({
     setQuery('')
   }
 
-  const totalSuggestions = (suggestions?.actors?.length || 0) + 
-                          (suggestions?.movies?.length || 0)
+  const totalSuggestions = (suggestions?.actors?.length || 0)
 
   const hasResults = totalSuggestions > 0
 
@@ -277,35 +276,6 @@ export function SearchBar({
                   </div>
                 )}
 
-                {/* Movies */}
-                {suggestions?.movies && suggestions.movies.length > 0 && (
-                  <div className="mb-4">
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
-                      Movies
-                    </div>
-                    <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                      {suggestions.movies.slice(0, 10).map((movie) => (
-                        <motion.div variants={fadeInUp} key={`movie-${movie.id}`}>
-                          <PrefetchLink
-                            href={`/movies/${movie.id}`}
-                            onClick={handleSuggestionClick}
-                            className="w-full text-left p-3 hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-3 cursor-pointer hover:underline"
-                          >
-                            <IconFilm className="w-4 h-4 text-accent flex-shrink-0" />
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
-                              <div className="font-medium text-white truncate">
-                                {movie.title}
-                              </div>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300 flex-shrink-0">
-                                {movie.year}
-                              </span>
-                            </div>
-                          </PrefetchLink>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </div>
-                )}
 
 
 
