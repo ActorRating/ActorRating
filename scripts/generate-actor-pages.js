@@ -5,16 +5,16 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: '.env.local' });
 
-// Actor page template
+// Mobile-first optimized actor page template
 const actorPageTemplate = (actorId) => `"use client"
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Star, Film, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, Calendar, Star, Film, Heart, Target, Zap, Eye, Users, SortAsc } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
@@ -54,7 +54,7 @@ interface Performance {
   technicalSkill: number
   screenPresence: number
   chemistryInteraction: number
-  comment?: string
+  comment?: string | null
   user: {
     name: string
     email: string
@@ -63,18 +63,18 @@ interface Performance {
   updatedAt: string
 }
 
+type SortOption = 'year-desc' | 'year-asc' | 'score-desc' | 'score-asc' | 'title-asc'
+
 export default function ActorDetailPage() {
   const router = useRouter()
   const user = useUser()
   const actorId = "${actorId}"
-  
+
   const [actor, setActor] = useState<Actor | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userRatings, setUserRatings] = useState<Array<{ id: string; movieId: string }>>([])
-  const [expandedPerformances, setExpandedPerformances] = useState<Record<string, boolean>>({})
-  const detailRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const [detailHeights, setDetailHeights] = useState<Record<string, number>>({})
+  const [sortBy, setSortBy] = useState<SortOption>('year-desc')
   const [mounted, setMounted] = useState(false)
 
   // Calculate average ratings
@@ -116,145 +116,95 @@ export default function ActorDetailPage() {
     return total / actor.performances.length
   }, [actor])
 
-  const togglePerformanceDetails = (movieId: string) => {
-    console.log('Toggling performance details for:', movieId)
-    setExpandedPerformances(prev => ({
-      ...prev,
-      [movieId]: !prev[movieId]
-    }))
-  }
-
-  const setDetailRef = useCallback((movieId: string) => (el: HTMLDivElement | null) => {
-    if (el) {
-      detailRefs.current[movieId] = el
-      // Only measure if this performance is expanded
-      if (expandedPerformances[movieId]) {
-        const next = el.scrollHeight
-        setDetailHeights(h => (h[movieId] === next ? h : { ...h, [movieId]: next }))
+  // Sort performances
+  const sortedPerformances = useMemo(() => {
+    if (!actor?.performances) return []
+    
+    const sorted = [...actor.performances].sort((a, b) => {
+      switch (sortBy) {
+        case 'year-desc':
+          return b.movie.year - a.movie.year
+        case 'year-asc':
+          return a.movie.year - b.movie.year
+        case 'score-desc':
+          const avgA = (a.emotionalRangeDepth + a.characterBelievability + a.technicalSkill + a.screenPresence + a.chemistryInteraction) / 5
+          const avgB = (b.emotionalRangeDepth + b.characterBelievability + b.technicalSkill + b.screenPresence + b.chemistryInteraction) / 5
+          return avgB - avgA
+        case 'score-asc':
+          const avgA2 = (a.emotionalRangeDepth + a.characterBelievability + a.technicalSkill + a.screenPresence + a.chemistryInteraction) / 5
+          const avgB2 = (b.emotionalRangeDepth + b.characterBelievability + b.technicalSkill + b.screenPresence + b.chemistryInteraction) / 5
+          return avgA2 - avgB2
+        case 'title-asc':
+          return a.movie.title.localeCompare(b.movie.title)
+        default:
+          return b.movie.year - a.movie.year
       }
-    } else {
-      delete detailRefs.current[movieId]
-    }
-  }, [expandedPerformances])
+    })
+    
+    return sorted
+  }, [actor?.performances, sortBy])
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    const fetchActorData = async () => {
+      if (!actorId) {
+        setError("No actor ID provided.")
+        setLoading(false)
+        return
+      }
 
-  useEffect(() => {
-    // Re-measure heights when expanded state changes
-    const timeoutId = setTimeout(() => {
-      Object.keys(expandedPerformances).forEach((id) => {
-        if (expandedPerformances[id]) {
-          const el = detailRefs.current[id]
-          if (el) {
-            const next = el.scrollHeight
-            setDetailHeights(h => (h[id] === next ? h : { ...h, [id]: next }))
-          }
-        }
-      })
-    }, 100) // Small delay to ensure DOM is ready
-    
-    return () => clearTimeout(timeoutId)
-  }, [expandedPerformances])
-
-  useEffect(() => {
-    const fetchActor = async () => {
       try {
         const response = await fetch(\`/api/actors/\${actorId}\`)
         if (!response.ok) {
-          throw new Error('Actor not found')
+          throw new Error(\`Failed to fetch actor data: \${response.statusText}\`)
         }
         const data = await response.json()
         setActor(data)
-      } catch (error) {
-        console.error('Failed to fetch actor:', error)
-        setError('Actor not found')
+
+        if (user?.id) {
+          const userRatingsResponse = await fetch(\`/api/actors/\${actorId}/user-rating?userId=\${user.id}\`)
+          if (userRatingsResponse.ok) {
+            const userRatingsData = await userRatingsResponse.json()
+            setUserRatings(userRatingsData)
+          } else {
+            console.error("Failed to fetch user ratings:", userRatingsResponse.statusText)
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching actor data:", err)
+        setError(err.message || "Failed to load actor.")
       } finally {
         setLoading(false)
       }
     }
 
-    if (actorId) {
-      fetchActor()
-    }
-  }, [actorId])
-
-  // Fetch current user's ratings for this actor to determine button label (Edit vs Rate)
-  useEffect(() => {
-    const fetchUserRatings = async () => {
-      try {
-        const res = await fetch(\`/api/actors/\${actorId}/user-rating\`, { cache: 'no-store' })
-        if (res.ok) {
-          const data = await res.json()
-          setUserRatings(Array.isArray(data) ? data : [])
-        } else {
-          setUserRatings([])
-        }
-      } catch {
-        setUserRatings([])
-      }
-    }
-    if (actorId && user) {
-      fetchUserRatings()
-    }
-  }, [actorId, user])
-
-  // Early return for invalid actorId after all hooks are defined
-  if (!actorId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-4">Invalid Actor</h1>
-          <p className="text-gray-400 mb-8">No actor ID provided.</p>
-        </div>
-      </div>
-    )
-  }
+    fetchActorData()
+  }, [actorId, user?.id])
 
   if (loading) {
-    const LoadingContent = () => (
-      <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto px-8 py-12">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-700 rounded mb-4 max-w-md"></div>
-            <div className="h-4 bg-gray-700 rounded mb-8 max-w-lg"></div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-700 rounded-lg"></div>
-              ))}
-            </div>
-          </div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-white text-base">Loading actor data...</p>
         </div>
       </div>
-    )
-
-    return user ? (
-      <SignedInLayout>
-        <LoadingContent />
-      </SignedInLayout>
-    ) : (
-      <HomeLayout>
-        <LoadingContent />
-      </HomeLayout>
     )
   }
 
   if (error || !actor) {
     const ErrorContent = () => (
-      <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-4">Actor Not Found</h1>
-            <p className="text-gray-400 mb-8">
-              The actor you&apos;re looking for doesn&apos;t exist or has been removed.
-            </p>
-            <Button asChild variant="premium">
-              <Link href="/">
-                Back to Home
-              </Link>
-            </Button>
-          </div>
+      <div className="flex items-center justify-center min-h-screen bg-background px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Invalid Actor</h1>
+          <p className="text-gray-400 mb-8 text-sm">
+            {error || "The actor you're looking for doesn't exist or has been removed."}
+          </p>
+          <Button asChild variant="premium">
+            <Link href="/">
+              Back to Home
+            </Link>
+          </Button>
         </div>
       </div>
     )
@@ -272,295 +222,193 @@ export default function ActorDetailPage() {
 
   const actorContent = (
     <div className="min-h-screen" suppressHydrationWarning>
-      <div className="relative overflow-hidden">
-        
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-8"
-          >
-            <Button asChild variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200">
+      {/* Mobile-First Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button asChild variant="ghost" size="sm" className="text-gray-300 hover:text-white">
               <Link href={user ? "/search" : "/"} className="flex items-center gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                {user ? "Back to Search" : "Back to Home"}
+                <span className="hidden sm:inline">{user ? "Back to Search" : "Back to Home"}</span>
               </Link>
             </Button>
-          </motion.div>
-
-          {/* Performance Count Badge */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-full">
-              <Film className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-300 font-medium text-sm">
-                {actor.performances.length} performance{actor.performances.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </motion.div>
-          
-          {/* Main Actor Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative bg-secondary rounded-3xl border border-border p-6 sm:p-8 mb-12 shadow-lg"
-          >
-            <div className="flex flex-col lg:flex-row items-stretch gap-8">
-              {/* Actor Image */}
-              {actor.imageUrl && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-muted p-1 shadow-xl mx-auto lg:mx-0"
-                >
-                  <img 
-                    src={actor.imageUrl} 
-                    alt={actor.name}
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                </motion.div>
-              )}
-              
-              <div className="flex-1 text-center lg:text-left">
-                {/* Actor Name */}
-                <motion.h1 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-snug"
-                >
-                  {actor.name}
-                </motion.h1>
-
-                {/* Career Rating - Hero Style */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="mb-6"
-                >
-                  <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-2xl backdrop-blur-sm">
-                    <Star className="w-8 h-8 text-yellow-400 fill-current drop-shadow-lg" />
-                    <div className="text-left">
-                      <div className="text-2xl lg:text-3xl font-bold text-yellow-400">
-                        {averageRating.toFixed(1)}/100
-                      </div>
-                      <div className="text-sm text-yellow-300 font-medium">
-                        Career Average
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Career Stats Breakdown */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
-                >
-                  {[
-                    { label: 'Emotional Range', value: emotionalRange, icon: '🎭' },
-                    { label: 'Believability', value: characterBelievability, icon: '🎯' },
-                    { label: 'Technical Skill', value: technicalSkill, icon: '🎪' },
-                    { label: 'Screen Presence', value: screenPresence, icon: '✨' },
-                    { label: 'Chemistry', value: chemistryInteraction, icon: '💫' }
-                  ].map((stat, index) => (
-                    <div key={stat.label} className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">{stat.icon}</span>
-                        <span className="text-sm font-medium text-gray-300">{stat.label}</span>
-                      </div>
-                      <div className="text-2xl font-bold text-white">
-                        {stat.value.toFixed(1)}
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-
-                {/* Actor Bio */}
-                {actor.bio && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="mb-6"
-                  >
-                    <h3 className="text-lg font-semibold text-white mb-3">About</h3>
-                    <p className="text-gray-300 leading-relaxed text-sm lg:text-base">
-                      {actor.bio}
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Actor Details */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                >
-                  {actor.birthDate && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-                      <Calendar className="w-5 h-5 text-blue-400" />
-                      <div>
-                        <div className="text-sm text-gray-400">Born</div>
-                        <div className="text-white font-medium">
-                          {new Date(actor.birthDate).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {actor.nationality && (
-                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
-                      <Award className="w-5 h-5 text-green-400" />
-                      <div>
-                        <div className="text-sm text-gray-400">Nationality</div>
-                        <div className="text-white font-medium">{actor.nationality}</div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
+            <span className="text-xs text-gray-400 bg-blue-500/20 px-2 py-1 rounded-full">
+              {actor.performances.length} films
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Performances Section */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      {/* Mobile-First Actor Header */}
+      <div className="px-4 py-6">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0 }}
-          className="mb-8"
+          className="text-center"
         >
-          <h2 className="text-3xl font-bold text-white mb-2">
-            Filmography
-          </h2>
-          <p className="text-gray-400">Chronological order • {actor.performances.length} performances</p>
-        </motion.div>
-        
-        {actor.performances.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="text-center py-16 bg-secondary rounded-3xl border border-border"
-          >
-            <Film className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-300 text-lg mb-6">
-              No performances found for this actor.
-            </p>
-          </motion.div>
-        ) : (
-          <div className="space-y-6">
-            {actor.performances.map((performance, index) => {
-              const hasUserRating = userRatings.some(rating => rating.movieId === performance.movie.id)
-              const performanceAverage = (performance.emotionalRangeDepth + performance.characterBelievability + performance.technicalSkill + performance.screenPresence + performance.chemistryInteraction) / 5
-              
+          {/* Actor Image - Smaller on mobile */}
+          {actor.imageUrl && (
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mx-auto mb-4 shadow-lg">
+              <img
+                src={actor.imageUrl}
+                alt={actor.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Actor Name - Mobile optimized */}
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
+            {actor.name}
+          </h1>
+
+          {/* Career Rating - Mobile first */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-xl backdrop-blur-sm mb-6">
+            <Star className="w-5 h-5 text-yellow-400 fill-current" />
+            <div className="text-left">
+              <div className="text-xl font-bold text-yellow-400">
+                {averageRating.toFixed(1)}/100
+              </div>
+              <div className="text-xs text-yellow-300 font-medium">
+                Career Average
+              </div>
+            </div>
+          </div>
+
+          {/* Career Stats - Mobile Grid with Icons */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+            {[
+              { label: 'Emotional', value: emotionalRange, icon: Heart },
+              { label: 'Believable', value: characterBelievability, icon: Target },
+              { label: 'Technical', value: technicalSkill, icon: Zap },
+              { label: 'Presence', value: screenPresence, icon: Eye },
+              { label: 'Chemistry', value: chemistryInteraction, icon: Users }
+            ].map((stat, index) => {
+              const IconComponent = stat.icon
               return (
-                <div
-                  key={\`performance-\${performance.id}\`}
-                  className="group relative bg-secondary rounded-2xl border border-border transition-all duration-500 md:hover:scale-[1.02] md:hover:shadow-xl hover:border-primary"
-                >
-                  <div className="relative p-4 sm:p-6 sm:min-h-[120px]">
-                    <div className="flex flex-col sm:flex-row items-start gap-4">
-                      {/* Movie Info */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center pt-2 sm:pt-3">
-                        {/* Title and Year Row */}
-                        <div className="flex flex-wrap items-center gap-3 mb-2">
-                          <h3 className="font-bold text-white group-hover:text-purple-400 transition-colors flex-shrink-0 text-2xl">
-                            {performance.movie.title}
-                          </h3>
-                          <div className="flex items-center gap-2 px-3 py-1 bg-gray-700/50 rounded-full">
-                            <Calendar className="w-3 h-3 text-blue-400" />
-                            <span className="text-gray-300 font-medium text-sm sm:text-base">{performance.movie.year}</span>
-                          </div>
-                        </div>
-
-                        {/* Character line in purple bubble */}
-                        {(() => {
-                          const display = resolveCharacterDisplay({
-                            character: (performance as any).character,
-                            roleName: performance.roleName as any,
-                            comment: performance.comment as any,
-                          })
-                          return (
-                            <div className="mb-3">
-                              <div className="inline-flex w-full sm:w-auto items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 justify-center sm:justify-start">
-                                <span className="font-medium text-purple-300 text-sm sm:text-base">Character: {display}</span>
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </div>
-
-                      {/* Rating Section */}
-                      <div className="flex flex-col items-end gap-3">
-                        {/* Performance Score */}
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-yellow-400">
-                            {performanceAverage.toFixed(1)}
-                          </div>
-                          <div className="text-xs text-gray-400">Score</div>
-                        </div>
-
-                        {/* Rate Button */}
-                        <Button
-                          asChild
-                          variant={hasUserRating ? "secondary" : "premium"}
-                          size="sm"
-                          className="whitespace-nowrap"
-                        >
-                          <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`}>
-                            {hasUserRating ? (
-                              <>
-                                <Star className="w-4 h-4 mr-2" />
-                                Edit Rating
-                              </>
-                            ) : (
-                              <>
-                                <Star className="w-4 h-4 mr-2" />
-                                Be First to Rate
-                              </>
-                            )}
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
+                <div key={stat.label} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                  <div className="flex items-center justify-center mb-1">
+                    <IconComponent className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="text-sm font-medium text-gray-300 mb-1">{stat.label}</div>
+                  <div className="text-lg font-bold text-white">
+                    {stat.value.toFixed(1)}
                   </div>
                 </div>
+              )
+            })}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Performances Section */}
+      <div className="px-4 pb-16">
+        {/* Sort Controls - Mobile optimized */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">
+              Filmography
+            </h2>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none appearance-none pr-8"
+              >
+                <option value="year-desc">Newest First</option>
+                <option value="year-asc">Oldest First</option>
+                <option value="score-desc">Highest Rated</option>
+                <option value="score-asc">Lowest Rated</option>
+                <option value="title-asc">A-Z</option>
+              </select>
+              <SortAsc className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {sortedPerformances.length === 0 ? (
+          <div className="text-center py-16 bg-secondary rounded-2xl border border-border">
+            <Film className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-300 text-base mb-6">
+              No performances found for this actor.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sortedPerformances.map((performance, index) => {
+              const hasUserRating = userRatings.some(rating => rating.movieId === performance.movie.id)
+              const performanceAverage = (performance.emotionalRangeDepth + performance.characterBelievability + performance.technicalSkill + performance.screenPresence + performance.chemistryInteraction) / 5
+
+              return (
+                <motion.div
+                  key={\`performance-\${performance.id}\`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-secondary rounded-xl border border-border p-4 hover:border-primary transition-colors"
+                >
+                  {/* Mobile-first layout */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Title and Year */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-bold text-white text-base sm:text-lg leading-tight">
+                          {performance.movie.title}
+                        </h3>
+                        <span className="text-xs text-gray-400 bg-gray-700/50 px-2 py-1 rounded-full flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {performance.movie.year}
+                        </span>
+                      </div>
+
+                      {/* Character */}
+                      <div className="mb-3">
+                        <span className="text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/30 px-2 py-1 rounded-full">
+                          {resolveCharacterDisplay({
+                            character: performance.character,
+                            roleName: performance.roleName,
+                            comment: performance.comment,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Score and Button - Mobile optimized */}
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-yellow-400">
+                          {performanceAverage.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-gray-400">Score</div>
+                      </div>
+
+                      <Button
+                        asChild
+                        variant={hasUserRating ? "secondary" : "premium"}
+                        size="sm"
+                        className="text-xs px-3 py-1"
+                      >
+                        <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`}>
+                          <Star className="w-3 h-3 mr-1" />
+                          {hasUserRating ? "Edit" : "Rate"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
               )
             })}
           </div>
         )}
 
         {/* Your Ratings Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5 }}
-          className="mt-16"
+          transition={{ delay: 0.8 }}
+          className="mt-12"
         >
-          <div className="bg-secondary rounded-3xl border border-border p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">
-              Your Ratings for {actor.name}
-            </h3>
-            <ActorRatingSection actorId={actor.id} actorName={actor.name} />
-          </div>
+          <ActorRatingSection actorId={actorId} />
         </motion.div>
       </div>
     </div>
@@ -575,75 +423,67 @@ export default function ActorDetailPage() {
       {actorContent}
     </HomeLayout>
   )
-}`;
+}
+`
 
-async function generateActorPages() {
-  const prisma = new PrismaClient();
-  
-  try {
-    console.log('🎬 Generating 300 individual actor pages...\n');
-    
-    // Get all actors from database
-    const actors = await prisma.actor.findMany({
-      include: {
-        performances: {
-          include: {
-            movie: true
-          },
-          orderBy: {
-            movie: {
-              year: 'asc'
-            }
-          }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-    
-    console.log(`📊 Found ${actors.length} actors to process\n`);
-    
-    // Create actors directory
-    const actorsDir = path.join(process.cwd(), 'src/app/actors');
-    if (!fs.existsSync(actorsDir)) {
-      fs.mkdirSync(actorsDir, { recursive: true });
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🎬 Generating 300 mobile-optimized actor pages...');
+
+  const actors = await prisma.actor.findMany({
+    select: { 
+      id: true, 
+      name: true,
+      performances: {
+        select: { id: true }
+      }
     }
-    
-    let generatedCount = 0;
-    
-    // Generate a page for each actor
-    for (const actor of actors) {
-      const actorDir = path.join(actorsDir, actor.id);
+  });
+
+  console.log(`\\n📊 Found ${actors.length} actors to process\\n`);
+
+  const actorsDir = path.join(__dirname, '..', 'src', 'app', 'actors');
+
+  // Create actors directory if it doesn't exist
+  if (!fs.existsSync(actorsDir)) {
+    fs.mkdirSync(actorsDir, { recursive: true });
+  }
+
+  let generatedCount = 0;
+
+  for (const actor of actors) {
+    try {
+      const actorPageDir = path.join(actorsDir, actor.id);
       
       // Create actor directory
-      if (!fs.existsSync(actorDir)) {
-        fs.mkdirSync(actorDir, { recursive: true });
+      if (!fs.existsSync(actorPageDir)) {
+        fs.mkdirSync(actorPageDir, { recursive: true });
       }
+
+      // Generate page.tsx
+      const pageContent = actorPageTemplate(actor.id);
+      const pagePath = path.join(actorPageDir, 'page.tsx');
       
-      // Write the page.tsx file
-      const pagePath = path.join(actorDir, 'page.tsx');
-      fs.writeFileSync(pagePath, actorPageTemplate(actor.id));
+      fs.writeFileSync(pagePath, pageContent);
       
-      generatedCount++;
       console.log(`✅ Generated page for: ${actor.name} (${actor.performances.length} performances)`);
+      generatedCount++;
+    } catch (error) {
+      console.error(`❌ Failed to generate page for ${actor.name}:`, error);
     }
-    
-    console.log(`\n🎉 Successfully generated ${generatedCount} actor pages!`);
-    console.log(`📁 Pages created in: ${actorsDir}`);
-    
-  } catch (error) {
-    console.error('❌ Script failed:', error.message);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
   }
+
+  console.log(`\\n🎉 Successfully generated ${generatedCount} mobile-optimized actor pages!`);
+  console.log(`📁 Pages created in: ${actorsDir}`);
+  console.log(`\\n✅ Script completed successfully!`);
 }
 
-// Run the script
-generateActorPages()
-  .then(() => {
-    console.log(`\n✅ Script completed successfully!`);
-  })
-  .catch(error => {
-    console.error('💥 Script failed:', error.message);
+main()
+  .catch(e => {
+    console.error('❌ Script failed:', e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
