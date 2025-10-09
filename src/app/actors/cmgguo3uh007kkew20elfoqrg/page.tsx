@@ -238,13 +238,18 @@ export default function ActorDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          {/* Actor Image - Smaller on mobile */}
+          {/* Actor Image - Optimized for mobile */}
           {actor.imageUrl && (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mx-auto mb-4 shadow-lg">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden mx-auto mb-4 shadow-xl bg-gray-800/50 border border-gray-700/50">
               <img
                 src={actor.imageUrl}
                 alt={actor.name}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.parentElement.style.display = 'none'
+                }}
               />
             </div>
           )}
@@ -278,11 +283,11 @@ export default function ActorDetailPage() {
             ].map((stat, index) => {
               const IconComponent = stat.icon
               return (
-                <div key={stat.label} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                <div key={stat.label} className="bg-gray-800/80 rounded-lg p-3 border border-gray-600/50">
                   <div className="flex items-center justify-center mb-1">
-                    <IconComponent className="w-4 h-4 text-blue-400" />
+                    <IconComponent className="w-4 h-4 text-gray-400" />
                   </div>
-                  <div className="text-sm font-medium text-gray-300 mb-1">{stat.label}</div>
+                  <div className="text-xs font-medium text-gray-300 mb-1">{stat.label}</div>
                   <div className="text-lg font-bold text-white">
                     {stat.value.toFixed(1)}
                   </div>
@@ -337,25 +342,25 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-secondary rounded-xl border border-border p-4 hover:border-primary transition-colors"
+                  className="bg-gray-800/60 rounded-xl border border-gray-700/50 p-4 hover:border-purple-500/50 transition-all duration-200"
                 >
                   {/* Mobile-first layout */}
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       {/* Title and Year */}
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
                         <h3 className="font-bold text-white text-base sm:text-lg leading-tight">
                           {performance.movie.title}
                         </h3>
-                        <span className="text-xs text-gray-400 bg-gray-700/50 px-2 py-1 rounded-full flex items-center gap-1">
+                        <span className="text-xs text-gray-400 bg-gray-700/60 px-2 py-1 rounded-full flex items-center gap-1 w-fit">
                           <Calendar className="w-3 h-3" />
                           {performance.movie.year}
                         </span>
                       </div>
 
                       {/* Character */}
-                      <div className="mb-3">
-                        <span className="text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/30 px-2 py-1 rounded-full">
+                      <div className="mb-2">
+                        <span className="text-xs font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
                           {resolveCharacterDisplay({
                             character: performance.character,
                             roleName: performance.roleName,
@@ -366,9 +371,9 @@ export default function ActorDetailPage() {
                     </div>
 
                     {/* Score and Button - Mobile optimized */}
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-3 flex-shrink-0">
                       <div className="text-right">
-                        <div className="text-lg font-bold text-yellow-400">
+                        <div className="text-xl font-bold text-yellow-400">
                           {performanceAverage.toFixed(1)}
                         </div>
                         <div className="text-xs text-gray-400">Score</div>
@@ -378,10 +383,10 @@ export default function ActorDetailPage() {
                         asChild
                         variant={hasUserRating ? "secondary" : "premium"}
                         size="sm"
-                        className="text-xs px-3 py-1"
+                        className="text-xs px-4 py-2 font-medium min-w-[70px] h-8"
                       >
-                        <Link href={`/rate?actor=${actorId}&movie=${performance.movie.id}`}>
-                          <Star className="w-3 h-3 mr-1" />
+                        <Link href={`/rate?actor=${actorId}&movie=${performance.movie.id}`} className="flex items-center justify-center gap-1">
+                          <Star className="w-3 h-3" />
                           {hasUserRating ? "Edit" : "Rate"}
                         </Link>
                       </Button>
