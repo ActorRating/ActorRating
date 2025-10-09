@@ -77,6 +77,45 @@ export default function ActorDetailPage() {
   const [detailHeights, setDetailHeights] = useState<Record<string, number>>({})
   const [mounted, setMounted] = useState(false)
 
+  // Calculate average ratings
+  const averageRating = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => {
+      return sum + (perf.emotionalRangeDepth + perf.characterBelievability + perf.technicalSkill + perf.screenPresence + perf.chemistryInteraction) / 5
+    }, 0)
+    return total / actor.performances.length
+  }, [actor])
+
+  const emotionalRange = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => sum + perf.emotionalRangeDepth, 0)
+    return total / actor.performances.length
+  }, [actor])
+
+  const characterBelievability = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => sum + perf.characterBelievability, 0)
+    return total / actor.performances.length
+  }, [actor])
+
+  const technicalSkill = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => sum + perf.technicalSkill, 0)
+    return total / actor.performances.length
+  }, [actor])
+
+  const screenPresence = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => sum + perf.screenPresence, 0)
+    return total / actor.performances.length
+  }, [actor])
+
+  const chemistryInteraction = useMemo(() => {
+    if (!actor?.performances?.length) return 0
+    const total = actor.performances.reduce((sum, perf) => sum + perf.chemistryInteraction, 0)
+    return total / actor.performances.length
+  }, [actor])
+
   const togglePerformanceDetails = (movieId: string) => {
     console.log('Toggling performance details for:', movieId)
     setExpandedPerformances(prev => ({
@@ -265,24 +304,136 @@ export default function ActorDetailPage() {
             </div>
           </motion.div>
           
-          {/* Main Actor Card - Simplified */}
+          {/* Main Actor Card */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="relative bg-secondary rounded-3xl border border-border p-6 sm:p-8 mb-12 shadow-lg"
           >
-            <div className="text-center">
-              {/* Actor Name */}
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-snug"
-              >
-                {actor.name}
-              </motion.h1>
-            </div>
+            <div className="flex flex-col lg:flex-row items-stretch gap-8">
+              {/* Actor Image */}
+              {actor.imageUrl && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="w-28 h-28 sm:w-32 sm:h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-muted p-1 shadow-xl mx-auto lg:mx-0"
+                >
+                  <img 
+                    src={actor.imageUrl} 
+                    alt={actor.name}
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                </motion.div>
+              )}
+              
+              <div className="flex-1 text-center lg:text-left">
+                {/* Actor Name */}
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-snug"
+                >
+                  {actor.name}
+                </motion.h1>
+
+                {/* Career Rating - Hero Style */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="mb-6"
+                >
+                  <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-2xl backdrop-blur-sm">
+                    <Star className="w-8 h-8 text-yellow-400 fill-current drop-shadow-lg" />
+                    <div className="text-left">
+                      <div className="text-2xl lg:text-3xl font-bold text-yellow-400">
+                        {averageRating.toFixed(1)}/100
+                      </div>
+                      <div className="text-sm text-yellow-300 font-medium">
+                        Career Average
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Career Stats Breakdown */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
+                >
+                  {[
+                    { label: 'Emotional Range', value: emotionalRange, icon: '🎭' },
+                    { label: 'Believability', value: characterBelievability, icon: '🎯' },
+                    { label: 'Technical Skill', value: technicalSkill, icon: '🎪' },
+                    { label: 'Screen Presence', value: screenPresence, icon: '✨' },
+                    { label: 'Chemistry', value: chemistryInteraction, icon: '💫' }
+                  ].map((stat, index) => (
+                    <div key={stat.label} className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{stat.icon}</span>
+                        <span className="text-sm font-medium text-gray-300">{stat.label}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">
+                        {stat.value.toFixed(1)}
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* Actor Bio */}
+                {actor.bio && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="mb-6"
+                  >
+                    <h3 className="text-lg font-semibold text-white mb-3">About</h3>
+                    <p className="text-gray-300 leading-relaxed text-sm lg:text-base">
+                      {actor.bio}
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Actor Details */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  {actor.birthDate && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
+                      <Calendar className="w-5 h-5 text-blue-400" />
+                      <div>
+                        <div className="text-sm text-gray-400">Born</div>
+                        <div className="text-white font-medium">
+                          {new Date(actor.birthDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {actor.nationality && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg">
+                      <Award className="w-5 h-5 text-green-400" />
+                      <div>
+                        <div className="text-sm text-gray-400">Nationality</div>
+                        <div className="text-white font-medium">{actor.nationality}</div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </div>
           </motion.div>
         </div>
       </div>
@@ -316,6 +467,9 @@ export default function ActorDetailPage() {
         ) : (
           <div className="space-y-6">
             {actor.performances.map((performance, index) => {
+              const hasUserRating = userRatings.some(rating => rating.movieId === performance.movie.id)
+              const performanceAverage = (performance.emotionalRangeDepth + performance.characterBelievability + performance.technicalSkill + performance.screenPresence + performance.chemistryInteraction) / 5
+              
               return (
                 <div
                   key={\`performance-\${performance.id}\`}
@@ -351,6 +505,39 @@ export default function ActorDetailPage() {
                             </div>
                           )
                         })()}
+                      </div>
+
+                      {/* Rating Section */}
+                      <div className="flex flex-col items-end gap-3">
+                        {/* Performance Score */}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-yellow-400">
+                            {performanceAverage.toFixed(1)}
+                          </div>
+                          <div className="text-xs text-gray-400">Score</div>
+                        </div>
+
+                        {/* Rate Button */}
+                        <Button
+                          asChild
+                          variant={hasUserRating ? "secondary" : "premium"}
+                          size="sm"
+                          className="whitespace-nowrap"
+                        >
+                          <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`}>
+                            {hasUserRating ? (
+                              <>
+                                <Star className="w-4 h-4 mr-2" />
+                                Edit Rating
+                              </>
+                            ) : (
+                              <>
+                                <Star className="w-4 h-4 mr-2" />
+                                Be First to Rate
+                              </>
+                            )}
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   </div>
