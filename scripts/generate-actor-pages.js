@@ -434,6 +434,7 @@ export default function ActorDetailPage() {
                   )}
                 </motion.div>
               </div>
+            </div>
           </motion.div>
         </div>
       </div>
