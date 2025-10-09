@@ -1,4 +1,12 @@
-"use client"
+#!/usr/bin/env node
+
+const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config({ path: '.env.local' });
+
+// Mobile-optimized actor page template
+const actorPageTemplate = (actorId) => `"use client"
 
 export const dynamic = "force-dynamic"
 
@@ -60,7 +68,7 @@ type SortOption = 'year-desc' | 'year-asc' | 'score-desc' | 'score-asc' | 'title
 export default function ActorDetailPage() {
   const router = useRouter()
   const user = useUser()
-  const actorId = "cmggunztc0051kew2809vpb2d"
+  const actorId = "${actorId}"
 
   const [actor, setActor] = useState<Actor | null>(null)
   const [loading, setLoading] = useState(true)
@@ -171,15 +179,15 @@ export default function ActorDetailPage() {
       }
 
       try {
-        const response = await fetch(`/api/actors/${actorId}`)
+        const response = await fetch(\`/api/actors/\${actorId}\`)
         if (!response.ok) {
-          throw new Error(`Failed to fetch actor data: ${response.statusText}`)
+          throw new Error(\`Failed to fetch actor data: \${response.statusText}\`)
         }
         const data = await response.json()
         setActor(data)
 
         if (user?.id) {
-          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating?userId=${user.id}`)
+          const userRatingsResponse = await fetch(\`/api/actors/\${actorId}/user-rating?userId=\${user.id}\`)
           if (userRatingsResponse.ok) {
             const userRatingsData = await userRatingsResponse.json()
             setUserRatings(userRatingsData)
@@ -382,7 +390,7 @@ export default function ActorDetailPage() {
 
               return (
                 <div
-                  key={`performance-${performance.id}`}
+                  key={\`performance-\${performance.id}\`}
                   className="bg-secondary rounded-xl border border-border p-4 transition-all duration-200 hover:border-primary/50"
                 >
                   <div className="flex items-start gap-3">
@@ -430,7 +438,7 @@ export default function ActorDetailPage() {
                         size="sm"
                         className="text-xs px-3 py-1"
                       >
-                        <Link href={`/rate?actor=${actorId}&movie=${performance.movie.id}`}>
+                        <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`}>
                           {hasUserRating ? (
                             <>
                               <Star className="w-3 h-3 mr-1" />
@@ -470,3 +478,72 @@ export default function ActorDetailPage() {
     </HomeLayout>
   )
 }
+`
+
+async function main() {
+  console.log('🎬 Generating 300 individual actor pages...')
+  
+  const prisma = new PrismaClient()
+  
+  try {
+    // Get all actors from database
+    const actors = await prisma.actor.findMany({
+      select: {
+        id: true,
+        name: true,
+        performances: {
+          select: {
+            id: true
+          }
+        }
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    })
+
+    console.log(`\n📊 Found ${actors.length} actors to process\n`)
+
+    // Create actors directory if it doesn't exist
+    const actorsDir = path.join(process.cwd(), 'src', 'app', 'actors')
+    if (!fs.existsSync(actorsDir)) {
+      fs.mkdirSync(actorsDir, { recursive: true })
+    }
+
+    let successCount = 0
+
+    for (const actor of actors) {
+      try {
+        const actorDir = path.join(actorsDir, actor.id)
+        
+        // Create actor directory
+        if (!fs.existsSync(actorDir)) {
+          fs.mkdirSync(actorDir, { recursive: true })
+        }
+
+        // Generate page.tsx
+        const pageContent = actorPageTemplate(actor.id)
+        const pagePath = path.join(actorDir, 'page.tsx')
+        
+        fs.writeFileSync(pagePath, pageContent)
+        
+        successCount++
+        console.log(`✅ Generated page for: ${actor.name} (${actor.performances.length} performances)`)
+      } catch (error) {
+        console.error(`❌ Failed to generate page for ${actor.name}:`, error.message)
+      }
+    }
+
+    console.log(`\n🎉 Successfully generated ${successCount} actor pages!`)
+    console.log(`📁 Pages created in: ${actorsDir}`)
+    console.log('\n✅ Script completed successfully!')
+    
+  } catch (error) {
+    console.error('❌ Script failed:', error)
+    process.exit(1)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+main()

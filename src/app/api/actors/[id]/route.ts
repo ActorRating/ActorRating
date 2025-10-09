@@ -33,7 +33,13 @@ export async function GET(
         userId,
         actorId,
         movieId,
+        character,
         comment,
+        emotionalRangeDepth,
+        characterBelievability,
+        technicalSkill,
+        screenPresence,
+        chemistryInteraction,
         createdAt,
         updatedAt,
         movie:Movie(id, title, year, director, tmdbId)
@@ -51,6 +57,7 @@ export async function GET(
       .from('Rating')
       .select(`
         movieId,
+        roleName,
         weightedScore,
         emotionalRangeDepth,
         characterBelievability,
