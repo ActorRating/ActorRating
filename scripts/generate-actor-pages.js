@@ -246,24 +246,8 @@ export default function ActorDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          {/* Actor Image - Optimized for mobile */}
-          {actor.imageUrl && (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden mx-auto mb-4 shadow-xl bg-gray-800/50 border border-gray-700/50">
-              <img
-                src={actor.imageUrl}
-                alt={actor.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  e.currentTarget.parentElement.style.display = 'none'
-                }}
-              />
-            </div>
-          )}
-
-          {/* Actor Name - Mobile optimized */}
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
+          {/* Actor Name - Bigger without image */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
             {actor.name}
           </h1>
 
@@ -291,12 +275,12 @@ export default function ActorDetailPage() {
             ].map((stat, index) => {
               const IconComponent = stat.icon
               return (
-                <div key={stat.label} className="bg-gray-800/80 rounded-lg p-3 border border-gray-600/50">
+                <div key={stat.label} className="bg-secondary rounded-lg p-3 border border-border">
                   <div className="flex items-center justify-center mb-1">
-                    <IconComponent className="w-4 h-4 text-gray-400" />
+                    <IconComponent className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <div className="text-xs font-medium text-gray-300 mb-1">{stat.label}</div>
-                  <div className="text-lg font-bold text-white">
+                  <div className="text-xs font-medium text-muted-foreground mb-1">{stat.label}</div>
+                  <div className="text-lg font-bold text-foreground">
                     {stat.value.toFixed(1)}
                   </div>
                 </div>
@@ -350,7 +334,7 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-gray-800/60 rounded-xl border border-gray-700/50 p-4 hover:border-purple-500/50 transition-all duration-200"
+                  className="bg-secondary rounded-2xl border border-border p-4 hover:border-primary transition-all duration-300"
                 >
                   {/* Mobile-first layout */}
                   <div className="flex items-start justify-between gap-4">
@@ -360,7 +344,7 @@ export default function ActorDetailPage() {
                         <h3 className="font-bold text-white text-base sm:text-lg leading-tight">
                           {performance.movie.title}
                         </h3>
-                        <span className="text-xs text-gray-400 bg-gray-700/60 px-2 py-1 rounded-full flex items-center gap-1 w-fit">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full flex items-center gap-1 w-fit">
                           <Calendar className="w-3 h-3" />
                           {performance.movie.year}
                         </span>
@@ -369,11 +353,7 @@ export default function ActorDetailPage() {
                       {/* Character */}
                       <div className="mb-2">
                         <span className="text-xs font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
-                          {resolveCharacterDisplay({
-                            character: performance.character,
-                            roleName: performance.roleName,
-                            comment: performance.comment,
-                          })}
+                          {performance.character || 'Unknown'}
                         </span>
                       </div>
                     </div>
