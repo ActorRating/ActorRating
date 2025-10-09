@@ -222,21 +222,14 @@ export default function ActorDetailPage() {
 
   const actorContent = (
     <div className="min-h-screen" suppressHydrationWarning>
-      {/* Mobile-First Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Button asChild variant="ghost" size="sm" className="text-gray-300 hover:text-white">
-              <Link href={user ? "/search" : "/"} className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">{user ? "Back to Search" : "Back to Home"}</span>
-              </Link>
-            </Button>
-            <span className="text-xs text-gray-400 bg-blue-500/20 px-2 py-1 rounded-full">
-              {actor.performances.length} films
-            </span>
-          </div>
-        </div>
+      {/* Simple Back Button - No awkward bar */}
+      <div className="px-4 pt-4 pb-2">
+        <Button asChild variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 -ml-2">
+          <Link href={user ? "/search" : "/"} className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">{user ? "Back to Search" : "Back to Home"}</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Mobile-First Actor Header */}
@@ -246,8 +239,8 @@ export default function ActorDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          {/* Actor Name - Bigger without image */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+          {/* Actor Name - Much bigger and prominent */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-8 leading-tight tracking-tight">
             {actor.name}
           </h1>
 
@@ -264,26 +257,34 @@ export default function ActorDetailPage() {
             </div>
           </div>
 
-          {/* Career Stats - Mobile Grid with Icons */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {/* Career Stats - Beautiful Purple-Accented Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
             {[
-              { label: 'Emotional', value: emotionalRange, icon: Heart },
-              { label: 'Believable', value: characterBelievability, icon: Target },
-              { label: 'Technical', value: technicalSkill, icon: Zap },
-              { label: 'Presence', value: screenPresence, icon: Eye },
-              { label: 'Chemistry', value: chemistryInteraction, icon: Users }
+              { label: 'Emotional Range', value: emotionalRange, icon: Heart, color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30' },
+              { label: 'Believability', value: characterBelievability, icon: Target, color: 'from-purple-500/20 to-indigo-500/20 border-purple-500/30' },
+              { label: 'Technical Skill', value: technicalSkill, icon: Zap, color: 'from-purple-500/20 to-blue-500/20 border-purple-500/30' },
+              { label: 'Screen Presence', value: screenPresence, icon: Eye, color: 'from-purple-500/20 to-violet-500/20 border-purple-500/30' },
+              { label: 'Chemistry', value: chemistryInteraction, icon: Users, color: 'from-purple-500/20 to-fuchsia-500/20 border-purple-500/30' }
             ].map((stat, index) => {
               const IconComponent = stat.icon
               return (
-                <div key={stat.label} className="bg-secondary rounded-lg p-3 border border-border">
-                  <div className="flex items-center justify-center mb-1">
-                    <IconComponent className="w-4 h-4 text-muted-foreground" />
+                <motion.div 
+                  key={stat.label} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  className={\`bg-gradient-to-br \${stat.color} rounded-xl p-4 border backdrop-blur-sm hover:scale-105 transition-all duration-200\`}
+                >
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <IconComponent className="w-5 h-5 text-purple-300" />
+                    </div>
                   </div>
-                  <div className="text-xs font-medium text-muted-foreground mb-1">{stat.label}</div>
-                  <div className="text-lg font-bold text-foreground">
+                  <div className="text-xs font-medium text-purple-200 mb-1 text-center">{stat.label}</div>
+                  <div className="text-xl font-bold text-white text-center">
                     {stat.value.toFixed(1)}
                   </div>
-                </div>
+                </motion.div>
               )
             })}
           </div>
@@ -336,24 +337,24 @@ export default function ActorDetailPage() {
                   transition={{ delay: index * 0.05 }}
                   className="bg-secondary rounded-2xl border border-border p-4 hover:border-primary transition-all duration-300"
                 >
-                  {/* Mobile-first layout */}
+                  {/* Mobile-first layout with bigger text */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      {/* Title and Year */}
+                      {/* Title and Year - Bigger text */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                        <h3 className="font-bold text-white text-base sm:text-lg leading-tight">
+                        <h3 className="font-bold text-white text-lg sm:text-xl leading-tight">
                           {performance.movie.title}
                         </h3>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full flex items-center gap-1 w-fit">
+                        <span className="text-sm text-white/80 bg-white/10 px-3 py-1 rounded-full flex items-center gap-1 w-fit font-medium">
                           <Calendar className="w-3 h-3" />
                           {performance.movie.year}
                         </span>
                       </div>
 
-                      {/* Character */}
+                      {/* Character - Fixed display */}
                       <div className="mb-2">
-                        <span className="text-xs font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1 rounded-full">
-                          {performance.character || 'Unknown'}
+                        <span className="text-sm font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 rounded-full">
+                          {performance.character || 'Character Unknown'}
                         </span>
                       </div>
                     </div>
@@ -361,20 +362,20 @@ export default function ActorDetailPage() {
                     {/* Score and Button - Mobile optimized */}
                     <div className="flex flex-col items-end gap-3 flex-shrink-0">
                       <div className="text-right">
-                        <div className="text-xl font-bold text-yellow-400">
+                        <div className="text-2xl font-bold text-yellow-400">
                           {performanceAverage.toFixed(1)}
                         </div>
-                        <div className="text-xs text-gray-400">Score</div>
+                        <div className="text-sm text-gray-300">Score</div>
                       </div>
 
                       <Button
                         asChild
                         variant={hasUserRating ? "secondary" : "premium"}
                         size="sm"
-                        className="text-xs px-4 py-2 font-medium min-w-[70px] h-8"
+                        className="text-sm px-4 py-2 font-medium min-w-[80px] h-9"
                       >
-                        <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`} className="flex items-center justify-center gap-1">
-                          <Star className="w-3 h-3" />
+                        <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`} className="flex items-center justify-center gap-1.5">
+                          <Star className="w-4 h-4" />
                           {hasUserRating ? "Edit" : "Rate"}
                         </Link>
                       </Button>
