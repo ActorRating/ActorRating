@@ -240,7 +240,7 @@ export default function ActorDetailPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-xl backdrop-blur-sm mb-6">
             <Star className="w-5 h-5 text-yellow-400 fill-current" />
             <div className="text-left">
-              <div className="text-xl font-bold text-yellow-400">
+              <div className="text-lg font-bold text-yellow-400">
                 {averageRating.toFixed(1)}/100
               </div>
               <div className="text-xs text-yellow-300 font-medium">
@@ -249,14 +249,14 @@ export default function ActorDetailPage() {
             </div>
           </div>
 
-          {/* Career Stats - Beautiful Purple-Accented Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          {/* Career Stats - Grey Background with Purple Accents */}
+          <div className="grid grid-cols-5 gap-3 mb-8">
             {[
-              { label: 'Emotional Range', value: emotionalRange, icon: Heart, color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30' },
-              { label: 'Believability', value: characterBelievability, icon: Target, color: 'from-purple-500/20 to-indigo-500/20 border-purple-500/30' },
-              { label: 'Technical Skill', value: technicalSkill, icon: Zap, color: 'from-purple-500/20 to-blue-500/20 border-purple-500/30' },
-              { label: 'Screen Presence', value: screenPresence, icon: Eye, color: 'from-purple-500/20 to-violet-500/20 border-purple-500/30' },
-              { label: 'Chemistry', value: chemistryInteraction, icon: Users, color: 'from-purple-500/20 to-fuchsia-500/20 border-purple-500/30' }
+              { label: 'Emotional Range', value: emotionalRange, icon: Heart },
+              { label: 'Believability', value: characterBelievability, icon: Target },
+              { label: 'Technical Skill', value: technicalSkill, icon: Zap },
+              { label: 'Screen Presence', value: screenPresence, icon: Eye },
+              { label: 'Chemistry', value: chemistryInteraction, icon: Users }
             ].map((stat, index) => {
               const IconComponent = stat.icon
               return (
@@ -265,15 +265,15 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className={`bg-gradient-to-br ${stat.color} rounded-xl p-4 border backdrop-blur-sm hover:scale-105 transition-all duration-200`}
+                  className={`bg-gray-700/50 border border-gray-600/50 rounded-lg p-3 backdrop-blur-sm hover:scale-105 transition-all duration-200`}
                 >
                   <div className="flex items-center justify-center mb-2">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <IconComponent className="w-5 h-5 text-purple-300" />
+                    <div className="p-1.5 bg-purple-500/20 rounded-md">
+                      <IconComponent className="w-4 h-4 text-purple-300" />
                     </div>
                   </div>
-                  <div className="text-xs font-medium text-purple-200 mb-1 text-center">{stat.label}</div>
-                  <div className="text-xl font-bold text-white text-center">
+                  <div className="text-xs font-medium text-gray-300 mb-1 text-center">{stat.label}</div>
+                  <div className="text-lg font-bold text-white text-center">
                     {stat.value.toFixed(1)}
                   </div>
                 </motion.div>
@@ -288,7 +288,7 @@ export default function ActorDetailPage() {
         {/* Sort Controls - Mobile optimized */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-lg font-bold text-white">
               Filmography
             </h2>
             <div className="relative">
@@ -330,7 +330,7 @@ export default function ActorDetailPage() {
                   className="bg-secondary rounded-2xl border border-border p-4 hover:border-primary transition-all duration-300"
                 >
                   {/* Mobile-first layout with bigger text */}
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       {/* Title and Year - Bigger text */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
@@ -346,7 +346,7 @@ export default function ActorDetailPage() {
                       {/* Character - Fixed display */}
                       <div className="mb-2">
                         <span className="text-sm font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 rounded-full">
-                          {performance.character || 'Character Unknown'}
+                          {resolveCharacterDisplay(performance)}
                         </span>
                       </div>
                     </div>
