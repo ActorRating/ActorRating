@@ -288,7 +288,7 @@ export default function ActorDetailPage() {
         {/* Sort Controls - Mobile optimized */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3"><div className="flex items-center gap-3"><h2 className="text-lg font-bold text-white">
+            <div className="flex items-center gap-3"><h2 className="text-lg font-bold text-white">
               Filmography
             </h2><span className="text-xs text-gray-400 bg-gray-700/50 border border-gray-600/50 px-2 py-1 rounded-full">{sortedPerformances.length} performances</span></div>
             <div className="relative">
