@@ -34,6 +34,7 @@ export async function GET(
         actorId,
         movieId,
         comment,
+        character,
         createdAt,
         updatedAt,
         movie:Movie(id, title, year, director, tmdbId)
@@ -50,7 +51,9 @@ export async function GET(
     const { data: ratings, error: ratingsError } = await supabaseServer
       .from('Rating')
       .select(`
+        userId,
         movieId,
+        roleName,
         weightedScore,
         emotionalRangeDepth,
         characterBelievability,
@@ -66,10 +69,41 @@ export async function GET(
       console.error("❌ Ratings fetch error:", ratingsError)
     }
 
+    // Create a map of rating data by (userId, movieId) for quick lookup
+    const ratingMap = new Map<string, any>()
+    if (ratings) {
+      ratings.forEach(rating => {
+        const key = `${rating.userId}:${rating.movieId}`
+        ratingMap.set(key, rating)
+      })
+    }
+
+    // Combine performances with their rating data
+    const enrichedPerformances = (performances || []).map(performance => {
+      const key = `${performance.userId}:${performance.movieId}`
+      const rating = ratingMap.get(key)
+      
+      return {
+        ...performance,
+        roleName: rating?.roleName || null,
+        // Add the rating scores to the performance for the frontend
+        emotionalRangeDepth: rating?.emotionalRangeDepth || 0,
+        characterBelievability: rating?.characterBelievability || 0,
+        technicalSkill: rating?.technicalSkill || 0,
+        screenPresence: rating?.screenPresence || 0,
+        chemistryInteraction: rating?.chemistryInteraction || 0,
+        // Add user info for display
+        user: {
+          name: `User ${performance.userId.slice(-4)}`, // Simple user display
+          email: `user@example.com` // Placeholder
+        }
+      }
+    })
+
     // Combine the data
     const actorData = {
       ...actor,
-      performances: performances || [],
+      performances: enrichedPerformances,
       ratings: ratings || []
     }
 
