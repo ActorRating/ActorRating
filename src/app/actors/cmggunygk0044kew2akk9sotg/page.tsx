@@ -240,7 +240,7 @@ export default function ActorDetailPage() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-xl backdrop-blur-sm mb-6">
             <Star className="w-5 h-5 text-yellow-400 fill-current" />
             <div className="text-left">
-              <div className="text-lg font-bold text-yellow-400">
+              <div className="text-xl font-bold text-yellow-400">
                 {averageRating.toFixed(1)}/100
               </div>
               <div className="text-xs text-yellow-300 font-medium">
@@ -265,7 +265,7 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className={`bg-secondary border border-border rounded-lg p-3 backdrop-blur-sm hover:scale-105 transition-all duration-200`}
+                  className="bg-gray-700/50 border border-gray-600/50 rounded-lg p-3 backdrop-blur-sm hover:scale-105 transition-all duration-200"
                 >
                   <div className="flex items-center justify-center mb-2">
                     <div className="p-1.5 bg-purple-500/20 rounded-md">
@@ -288,9 +288,14 @@ export default function ActorDetailPage() {
         {/* Sort Controls - Mobile optimized */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3"><h2 className="text-lg font-bold text-white">
-              Filmography
-            </h2><span className="text-xs text-gray-400 bg-gray-700/50 border border-gray-600/50 px-2 py-1 rounded-full">{sortedPerformances.length} performances</span></div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-white">
+                Filmography
+              </h2>
+              <span className="text-xs text-gray-400 bg-gray-700/50 border border-gray-600/50 px-2 py-1 rounded-full">
+                {sortedPerformances.length} performances
+              </span>
+            </div>
             <div className="relative">
               <select
                 value={sortBy}
@@ -330,7 +335,7 @@ export default function ActorDetailPage() {
                   className="bg-secondary rounded-2xl border border-border p-4 hover:border-primary transition-all duration-300"
                 >
                   {/* Mobile-first layout with bigger text */}
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       {/* Title and Year - Bigger text */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
@@ -402,4 +407,3 @@ export default function ActorDetailPage() {
     </HomeLayout>
   )
 }
-
