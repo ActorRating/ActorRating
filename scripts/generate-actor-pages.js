@@ -257,8 +257,8 @@ export default function ActorDetailPage() {
             </div>
           </div>
 
-          {/* Career Stats - Grey Background with Purple Accents */}
-          <div className="grid grid-cols-5 gap-3 mb-8">
+          {/* Career Stats - Match Performance Cards Background */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
             {[
               { label: 'Emotional Range', value: emotionalRange, icon: Heart },
               { label: 'Believability', value: characterBelievability, icon: Target },
@@ -273,14 +273,14 @@ export default function ActorDetailPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className="bg-gray-700/50 border border-gray-600/50 rounded-lg p-3 backdrop-blur-sm hover:scale-105 transition-all duration-200"
+                  className="bg-secondary border border-border rounded-lg p-3 hover:border-primary transition-all duration-200"
                 >
                   <div className="flex items-center justify-center mb-2">
                     <div className="p-1.5 bg-purple-500/20 rounded-md">
                       <IconComponent className="w-4 h-4 text-purple-300" />
                     </div>
                   </div>
-                  <div className="text-xs font-medium text-gray-300 mb-1 text-center">{stat.label}</div>
+                  <div className="text-xs font-medium text-gray-300 mb-1 text-center leading-tight">{stat.label}</div>
                   <div className="text-lg font-bold text-white text-center">
                     {stat.value.toFixed(1)}
                   </div>
@@ -295,20 +295,20 @@ export default function ActorDetailPage() {
       <div className="px-4 pb-16">
         {/* Sort Controls - Mobile optimized */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-white">
                 Filmography
               </h2>
-              <span className="text-xs text-gray-400 bg-gray-700/50 border border-gray-600/50 px-2 py-1 rounded-full">
+              <span className="text-xs text-gray-400 bg-secondary border border-border px-2 py-1 rounded-full whitespace-nowrap">
                 {sortedPerformances.length} performances
               </span>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:border-blue-500 focus:outline-none appearance-none pr-8"
+                className="w-full sm:w-auto bg-secondary text-white text-sm rounded-lg px-3 py-2 border border-border focus:border-primary focus:outline-none appearance-none pr-8"
               >
                 <option value="year-desc">Newest First</option>
                 <option value="year-asc">Oldest First</option>
@@ -356,9 +356,9 @@ export default function ActorDetailPage() {
                         </span>
                       </div>
 
-                      {/* Character - Fixed display */}
+                      {/* Character - Fixed display with proper wrapping */}
                       <div className="mb-2">
-                        <span className="text-sm font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 rounded-full">
+                        <span className="inline-block text-sm font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 rounded-full break-words max-w-full">
                           Character: {resolveCharacterDisplay(performance)}
                         </span>
                       </div>
