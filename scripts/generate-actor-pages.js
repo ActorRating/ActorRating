@@ -257,36 +257,102 @@ export default function ActorDetailPage() {
             </div>
           </div>
 
-          {/* Career Stats - Match Performance Cards Background */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
-            {[
-              { label: 'Emotional Range', value: emotionalRange, icon: Heart },
-              { label: 'Believability', value: characterBelievability, icon: Target },
-              { label: 'Technical Skill', value: technicalSkill, icon: Zap },
-              { label: 'Screen Presence', value: screenPresence, icon: Eye },
-              { label: 'Chemistry', value: chemistryInteraction, icon: Users }
-            ].map((stat, index) => {
-              const IconComponent = stat.icon
-              return (
-                <motion.div 
-                  key={stat.label} 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="bg-secondary border border-border rounded-lg p-3 hover:border-primary transition-all duration-200"
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    <div className="p-1.5 bg-purple-500/20 rounded-md">
-                      <IconComponent className="w-4 h-4 text-purple-300" />
-                    </div>
+          {/* Career Stats - Symmetrical Mobile-First Layout */}
+          <div className="mb-8">
+            {/* Mobile: 2-2-1 layout, Desktop: 3-2 layout for better symmetry */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+              {/* Top row: 2 cards on mobile, 3 cards on desktop */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-1.5 bg-purple-500/20 rounded-md">
+                    <Heart className="w-4 h-4 text-purple-300" />
                   </div>
-                  <div className="text-xs font-medium text-gray-300 mb-1 text-center leading-tight">{stat.label}</div>
-                  <div className="text-lg font-bold text-white text-center">
-                    {stat.value.toFixed(1)}
+                </div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Emotional Range</div>
+                <div className="text-lg sm:text-xl font-bold text-white text-center">
+                  {emotionalRange.toFixed(1)}
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-1.5 bg-purple-500/20 rounded-md">
+                    <Target className="w-4 h-4 text-purple-300" />
                   </div>
-                </motion.div>
-              )
-            })}
+                </div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Believability</div>
+                <div className="text-lg sm:text-xl font-bold text-white text-center">
+                  {characterBelievability.toFixed(1)}
+                </div>
+              </motion.div>
+            </div>
+            
+            {/* Middle row: 2 cards on mobile, 2 cards on desktop */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-1.5 bg-purple-500/20 rounded-md">
+                    <Zap className="w-4 h-4 text-purple-300" />
+                  </div>
+                </div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Technical Skill</div>
+                <div className="text-lg sm:text-xl font-bold text-white text-center">
+                  {technicalSkill.toFixed(1)}
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-1.5 bg-purple-500/20 rounded-md">
+                    <Eye className="w-4 h-4 text-purple-300" />
+                  </div>
+                </div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Screen Presence</div>
+                <div className="text-lg sm:text-xl font-bold text-white text-center">
+                  {screenPresence.toFixed(1)}
+                </div>
+              </motion.div>
+            </div>
+            
+            {/* Bottom row: 1 card centered on mobile, 2 cards on desktop */}
+            <div className="flex justify-center sm:grid sm:grid-cols-2 sm:gap-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200 w-full max-w-[200px] sm:max-w-none"
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-1.5 bg-purple-500/20 rounded-md">
+                    <Users className="w-4 h-4 text-purple-300" />
+                  </div>
+                </div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Chemistry</div>
+                <div className="text-lg sm:text-xl font-bold text-white text-center">
+                  {chemistryInteraction.toFixed(1)}
+                </div>
+              </motion.div>
+            </div>
           </div>
         </motion.div>
       </div>
