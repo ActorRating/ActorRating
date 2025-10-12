@@ -82,8 +82,16 @@ export default function RatePage() {
             setActor(actorData)
           }
           if (movieId) {
-            // Movie functionality removed - actor-only mode
-            // Movie ID is ignored in actor-only mode
+            // Fetch movie data using the movies API
+            try {
+              const response = await fetch(`/api/movies/${movieId}`)
+              if (response.ok) {
+                const movieData = await response.json()
+                setMovie(movieData)
+              }
+            } catch (error) {
+              console.error('Failed to fetch movie:', error)
+            }
           }
         }
       } catch (error) {

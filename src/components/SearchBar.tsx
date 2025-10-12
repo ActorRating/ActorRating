@@ -242,7 +242,7 @@ export function SearchBar({
               position: 'absolute'
             }}
           >
-            {loading && !hasFetchedOnce ? (
+            {loading ? (
               <div className="p-4 text-center">
                 <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
                 <p className="text-sm text-white">Searching...</p>
