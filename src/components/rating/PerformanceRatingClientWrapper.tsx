@@ -70,6 +70,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
 }) {
   const [lastValue, setLastValue] = useState(value)
   const [isChanging, setIsChanging] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Quality zone and feedback
   const getQualityZone = useCallback((score: number) => {
@@ -106,42 +107,26 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className={`absolute inset-0 ${qualityZone.bg} opacity-20 blur-xl`} />
       
       <div className="relative flex-1 flex flex-col">
-        {/* Header with icon and feedback */}
+        {/* Header with question mark tooltip */}
         <div className="flex items-center gap-3 sm:gap-4 mb-4">
-          <motion.div 
-            className={`flex items-center justify-center w-12 h-12 rounded-xl text-primary relative ${qualityZone.bg}`}
-            animate={{ 
-              scale: isChanging ? [1, 1.05, 1] : 1
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <Icon className="w-6 h-6" />
-            
-            {/* Quality indicator */}
-            <AnimatePresence>
-              {isChanging && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className="absolute -top-1 -right-1"
-                >
-                  {isImproving ? (
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
-                  ) : isDecreasing ? (
-                    <TrendingUp className="w-4 h-4 text-red-400 rotate-180" />
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          
           <div className="flex-1">
             <div className="mb-1">
-              <h3 className="text-base sm:text-lg font-semibold text-white leading-tight mb-1">{label}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-semibold text-white leading-tight">{label}</h3>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowTooltip(!showTooltip)}
+                  aria-label="Show criteria details"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <qualityZone.icon className={`w-4 h-4 ${qualityZone.color}`} />
             </div>
-            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{description}</p>
+            {/* Description is now only shown in tooltip */}
           </div>
           
           {/* Score display with quality zone */}
@@ -187,6 +172,13 @@ const RatingSliderCard = memo(function RatingSliderCard({
             <span className={`transition-colors duration-200 ${value >= 90 ? qualityZone.color : ''}`}>Exceptional</span>
           </div>
         </div>
+
+        {/* Tooltip */}
+        {showTooltip && description && (
+          <div className="absolute top-16 left-4 right-4 z-10 p-3 bg-background border border-border rounded-lg shadow-lg">
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+        )}
       </div>
     </motion.div>
   )

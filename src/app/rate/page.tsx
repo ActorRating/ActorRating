@@ -527,20 +527,21 @@ export default function RatePage() {
       <Suspense fallback={null}>
         {getLayout(
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            {/* Header */}
+            {/* Header with left-aligned back button */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
+              className="mb-8"
             >
-              <Button
-                variant="outline"
-                className="mb-6"
-                onClick={() => { window.location.href = ratingId ? '/dashboard' : '/search'; }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {ratingId ? 'Back to Dashboard' : 'Back to Search'}
-              </Button>
+              <div className="flex items-center justify-between mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => { window.location.href = ratingId ? '/dashboard' : '/search'; }}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  {ratingId ? 'Back to Dashboard' : 'Back to Search'}
+                </Button>
+              </div>
               {ratingId && (
                 <div className="text-center mb-4">
                   <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
