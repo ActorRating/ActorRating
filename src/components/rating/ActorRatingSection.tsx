@@ -5,6 +5,7 @@ import { useUser } from "@/components/providers/SessionProvider"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
+import { formatScore } from "@/utils/ratingCalculator"
 
 interface UserRatingForActor {
   id: string
@@ -91,7 +92,7 @@ export function ActorRatingSection({ actorId, actorName }: { actorId: string; ac
             <div key={`actor-user-rating-${r.id}`} className="flex items-center justify-between p-4 bg-gray-900 rounded-lg border border-gray-700">
               <div>
                 <div className="text-white font-medium">{r.movie.title} {r.movie.year ? `(${r.movie.year})` : ''}</div>
-                <div className="text-sm text-gray-400">{calculateAverage(r).toFixed(1)}/100 average</div>
+                <div className="text-sm text-gray-400">{formatScore(calculateAverage(r))}/100 average</div>
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link href={`/rate?actor=${actorId}&movie=${r.movie.id}`}>Edit Rating</Link>

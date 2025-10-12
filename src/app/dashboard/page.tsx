@@ -14,6 +14,7 @@ import { motion } from "framer-motion"
 import { fadeInUp } from "@/lib/animations"
 import { suggestionsApi } from "@/lib/api"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
+import { formatScore } from "@/utils/ratingCalculator"
 
 const dominoContainer = {
   hidden: {},
@@ -351,7 +352,7 @@ export default function DashboardPage() {
                 <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
                   <Star className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400 mx-auto mb-3 fill-current" />
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-yellow-400 mb-2">
-                    {overallAverage.toFixed(1)}
+                    {formatScore(overallAverage)}
                   </div>
                   <div className="text-sm sm:text-base text-yellow-300/80 font-medium">
                     Avg Score

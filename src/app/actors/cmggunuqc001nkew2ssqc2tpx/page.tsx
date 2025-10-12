@@ -14,6 +14,7 @@ import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { ActorRatingSection } from '@/components/rating/ActorRatingSection'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { Rating } from '@/types'
+import { formatScore, hasNoRating } from '@/utils/ratingCalculator'
 
 interface Actor {
   id: string
@@ -72,40 +73,100 @@ export default function ActorDetailPage() {
   // Calculate average ratings
   const averageRating = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => {
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => {
       return sum + (perf.emotionalRangeDepth + perf.characterBelievability + perf.technicalSkill + perf.screenPresence + perf.chemistryInteraction) / 5
     }, 0)
-    return total / actor.performances.length
+    return total / performancesWithRatings.length
   }, [actor])
 
   const emotionalRange = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => sum + perf.emotionalRangeDepth, 0)
-    return total / actor.performances.length
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => sum + perf.emotionalRangeDepth, 0)
+    return total / performancesWithRatings.length
   }, [actor])
 
   const characterBelievability = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => sum + perf.characterBelievability, 0)
-    return total / actor.performances.length
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => sum + perf.characterBelievability, 0)
+    return total / performancesWithRatings.length
   }, [actor])
 
   const technicalSkill = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => sum + perf.technicalSkill, 0)
-    return total / actor.performances.length
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => sum + perf.technicalSkill, 0)
+    return total / performancesWithRatings.length
   }, [actor])
 
   const screenPresence = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => sum + perf.screenPresence, 0)
-    return total / actor.performances.length
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => sum + perf.screenPresence, 0)
+    return total / performancesWithRatings.length
   }, [actor])
 
   const chemistryInteraction = useMemo(() => {
     if (!actor?.performances?.length) return 0
-    const total = actor.performances.reduce((sum, perf) => sum + perf.chemistryInteraction, 0)
-    return total / actor.performances.length
+    const performancesWithRatings = actor.performances.filter(perf => 
+      !hasNoRating(
+        perf.emotionalRangeDepth,
+        perf.characterBelievability,
+        perf.technicalSkill,
+        perf.screenPresence,
+        perf.chemistryInteraction
+      )
+    )
+    if (performancesWithRatings.length === 0) return 0
+    const total = performancesWithRatings.reduce((sum, perf) => sum + perf.chemistryInteraction, 0)
+    return total / performancesWithRatings.length
   }, [actor])
 
   // Sort performances
@@ -241,7 +302,7 @@ export default function ActorDetailPage() {
             <Star className="w-5 h-5 text-yellow-400 fill-current" />
             <div className="text-left">
               <div className="text-xl font-bold text-yellow-400">
-                {averageRating.toFixed(1)}/100
+                {formatScore(averageRating)}/100
               </div>
               <div className="text-xs text-yellow-300 font-medium">
                 Career Average
@@ -267,7 +328,7 @@ export default function ActorDetailPage() {
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Emotional Range</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
-                  {emotionalRange.toFixed(1)}
+                  {formatScore(emotionalRange)}
                 </div>
               </motion.div>
               
@@ -284,7 +345,7 @@ export default function ActorDetailPage() {
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Believability</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
-                  {characterBelievability.toFixed(1)}
+                  {formatScore(characterBelievability)}
                 </div>
               </motion.div>
             </div>
@@ -304,7 +365,7 @@ export default function ActorDetailPage() {
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Technical Skill</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
-                  {technicalSkill.toFixed(1)}
+                  {formatScore(technicalSkill)}
                 </div>
               </motion.div>
               
@@ -321,7 +382,7 @@ export default function ActorDetailPage() {
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Screen Presence</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
-                  {screenPresence.toFixed(1)}
+                  {formatScore(screenPresence)}
                 </div>
               </motion.div>
             </div>
@@ -341,7 +402,7 @@ export default function ActorDetailPage() {
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Chemistry</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
-                  {chemistryInteraction.toFixed(1)}
+                  {formatScore(chemistryInteraction)}
                 </div>
               </motion.div>
             </div>
@@ -390,7 +451,16 @@ export default function ActorDetailPage() {
           <div className="space-y-4">
             {sortedPerformances.map((performance, index) => {
               const hasUserRating = userRatings.some(rating => rating.movieId === performance.movie.id)
-              const performanceAverage = (performance.emotionalRangeDepth + performance.characterBelievability + performance.technicalSkill + performance.screenPresence + performance.chemistryInteraction) / 5
+              const hasRating = !hasNoRating(
+                performance.emotionalRangeDepth,
+                performance.characterBelievability,
+                performance.technicalSkill,
+                performance.screenPresence,
+                performance.chemistryInteraction
+              )
+              const performanceAverage = hasRating 
+                ? (performance.emotionalRangeDepth + performance.characterBelievability + performance.technicalSkill + performance.screenPresence + performance.chemistryInteraction) / 5
+                : 0
 
               return (
                 <motion.div
@@ -426,7 +496,7 @@ export default function ActorDetailPage() {
                     <div className="flex flex-col items-end gap-3 flex-shrink-0">
                       <div className="text-right">
                         <div className="text-2xl font-bold text-yellow-400">
-                          {performanceAverage.toFixed(1)}
+                          {formatScore(performanceAverage)}
                         </div>
                         <div className="text-sm text-gray-300">Score</div>
                       </div>

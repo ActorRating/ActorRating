@@ -569,20 +569,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   className={`
                     relative px-8 sm:px-12 py-4 text-base sm:text-lg font-bold rounded-2xl 
                     transition-all duration-300 min-w-[200px] sm:min-w-[240px]
-                    ${progress === 100 && !submitting ? 'animate-pulse' : ''}
                     ${submitting ? 'cursor-not-allowed' : 'cursor-pointer'}
                   `}
                 >
-                  <motion.div 
-                    className="flex items-center gap-3"
-                    animate={{
-                      x: submitting ? [0, 2, -2, 0] : 0
-                    }}
-                    transition={{
-                      duration: 0.5,
-                      repeat: submitting ? Infinity : 0
-                    }}
-                  >
+                  <div className="flex items-center gap-3">
                     {submitting ? (
                       <>
                         <motion.div
@@ -629,7 +619,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         </motion.div>
                       </>
                     )}
-                  </motion.div>
+                  </div>
                 </Button>
               </motion.div>
             </motion.div>

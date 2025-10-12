@@ -281,4 +281,31 @@ export function hasRecentDraft(performanceId: string): boolean {
   const hoursDiff = (now.getTime() - lastSaved.getTime()) / (1000 * 60 * 60)
   
   return hoursDiff < 24
+}
+
+/**
+ * Format score to display "N/A" for zero values, otherwise format with decimal places
+ */
+export function formatScore(score: number, decimalPlaces: number = 1): string {
+  if (score === 0) {
+    return "N/A"
+  }
+  return score.toFixed(decimalPlaces)
+}
+
+/**
+ * Check if a score represents "no rating" (all criteria are zero)
+ */
+export function hasNoRating(
+  emotionalRangeDepth: number,
+  characterBelievability: number,
+  technicalSkill: number,
+  screenPresence: number,
+  chemistryInteraction: number
+): boolean {
+  return emotionalRangeDepth === 0 && 
+         characterBelievability === 0 && 
+         technicalSkill === 0 && 
+         screenPresence === 0 && 
+         chemistryInteraction === 0
 } 

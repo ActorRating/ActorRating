@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerSupabase } from "@/lib/supabaseServer"
+import { createServerClient } from "@supabase/ssr"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = supabaseServer
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // No need to set cookies in API routes
+          },
+        },
+      }
+    )
+    
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {
@@ -29,7 +43,21 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = supabaseServer
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // No need to set cookies in API routes
+          },
+        },
+      }
+    )
+    
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {
