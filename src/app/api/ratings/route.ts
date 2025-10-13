@@ -57,7 +57,14 @@ export async function POST(request: NextRequest) {
       }
     )
     
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    console.log("Session check:", { 
+      hasSession: !!session, 
+      hasUser: !!session?.user, 
+      userId: session?.user?.id,
+      sessionError: sessionError?.message 
+    })
     
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -247,8 +254,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(rating, { status: 201 })
   } catch (error) {
     console.error("Error creating rating:", error)
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown'
+    })
     return NextResponse.json(
-      { error: "Failed to create rating" },
+      { error: "Failed to create rating", details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

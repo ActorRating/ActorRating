@@ -57,10 +57,11 @@ export default function RatePage() {
       const timer = setTimeout(() => {
         const actorNameElement = document.getElementById('actor-name-header')
         if (actorNameElement) {
-          actorNameElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start',
-            inline: 'nearest'
+          const elementTop = actorNameElement.offsetTop
+          const offset = 80 // Add 80px of space above the actor name
+          window.scrollTo({ 
+            top: elementTop - offset, 
+            behavior: 'smooth' 
           })
         }
       }, 100)
