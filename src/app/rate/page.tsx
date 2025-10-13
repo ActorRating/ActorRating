@@ -50,6 +50,24 @@ export default function RatePage() {
     }
   }, [submitted, submittedRating])
 
+  // Scroll to actor name when rating form loads
+  useEffect(() => {
+    if (actor && movie && !submitted) {
+      // Wait for the component to render, then scroll to actor name
+      const timer = setTimeout(() => {
+        const actorNameElement = document.getElementById('actor-name-header')
+        if (actorNameElement) {
+          actorNameElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          })
+        }
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [actor, movie, submitted])
+
   useEffect(() => {
     const fetchData = async () => {
       try {

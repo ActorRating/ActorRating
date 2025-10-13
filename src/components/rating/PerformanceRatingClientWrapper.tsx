@@ -315,7 +315,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           className="text-center mb-6 sm:mb-8 lg:mb-10"
         >
           
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 leading-tight">
+          <h1 id="actor-name-header" className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 leading-tight">
             {performance.actor.name}
           </h1>
           <h2 className="text-base sm:text-lg lg:text-xl text-gray-400 font-medium">
@@ -535,7 +535,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </motion.div>
             </motion.div>
 
-            {/* Enhanced Submit Button */}
+            {/* Submit Button */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -543,31 +543,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               className="pt-8 flex justify-center"
             >
               <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className="relative"
               >
-                {/* Glow effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-2xl blur-xl opacity-50"
-                  animate={{
-                    opacity: hasStartedRating ? [0.3, 0.6, 0.3] : 0.3,
-                    scale: hasStartedRating ? [1, 1.1, 1] : 1
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: hasStartedRating ? Infinity : 0,
-                    ease: "easeInOut"
-                  }}
-                />
-                
                 <Button
                   type="submit"
                   disabled={submitting || progress < 100}
                   variant="premium"
                   size="lg"
                   className={`
-                    relative px-8 sm:px-12 py-4 text-base sm:text-lg font-bold rounded-2xl 
+                    px-8 sm:px-12 py-4 text-base sm:text-lg font-bold rounded-2xl 
                     transition-all duration-300 min-w-[200px] sm:min-w-[240px]
                     ${submitting ? 'cursor-not-allowed' : 'cursor-pointer'}
                   `}

@@ -125,9 +125,9 @@ export async function POST(request: NextRequest) {
     // Validate rating values (0-100)
     const ratings = [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction]
     for (const rating of ratings) {
-      if (rating < 0 || rating > 100) {
+      if (rating === undefined || rating === null || isNaN(rating) || rating < 0 || rating > 100) {
         return NextResponse.json(
-          { error: "All ratings must be between 0 and 100" },
+          { error: "All ratings must be valid numbers between 0 and 100" },
           { status: 400 }
         )
       }
