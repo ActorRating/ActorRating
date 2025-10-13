@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { makeCacheKey } from "@/lib/cache"
-import supabaseServer from "@/lib/supabaseServer"
+import { createServerClient } from "@supabase/ssr"
 
 export async function GET(
   request: NextRequest,
@@ -53,7 +53,21 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = supabaseServer
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // No need to set cookies in API routes
+          },
+        },
+      }
+    )
+    
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {
@@ -158,7 +172,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = supabaseServer
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // No need to set cookies in API routes
+          },
+        },
+      }
+    )
+    
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user?.id) {

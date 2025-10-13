@@ -589,34 +589,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </>
                     ) : (
                       <>
-                        <motion.div
-                          animate={{
-                            rotate: [0, 10, -10, 0],
-                            scale: [1, 1.1, 1]
-                          }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        >
-                          <CheckCircle2 className="w-5 h-5" />
-                        </motion.div>
+                        <CheckCircle2 className="w-5 h-5" />
                         <span>Submit Your Rating!</span>
-                        <motion.div
-                          animate={{
-                            rotate: [0, 10, -10, 0],
-                            scale: [1, 1.1, 1]
-                          }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                            delay: 0.5
-                          }}
-                        >
-                          <Star className="w-5 h-5 fill-current" />
-                        </motion.div>
+                        <Star className="w-5 h-5 fill-current" />
                       </>
                     )}
                   </div>
