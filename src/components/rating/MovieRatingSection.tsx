@@ -105,6 +105,16 @@ export function MovieRatingSection({
 
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error("Please sign in to submit ratings.")
+        } else if (response.status === 400 && errorData.error?.includes("foreign key")) {
+          throw new Error("Invalid actor or movie selection. Please refresh the page and try again.")
+        } else if (response.status === 429) {
+          throw new Error("Too many rating submissions. Please wait a moment and try again.")
+        }
+        
         throw new Error(errorData.error || "Failed to submit rating")
       }
 

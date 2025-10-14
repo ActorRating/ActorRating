@@ -41,7 +41,18 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("=== RATING API CALLED ===")
+  console.log("Request URL:", request.url)
+  console.log("Request method:", request.method)
+  console.log("Headers:", Object.fromEntries(request.headers.entries()))
+  
   try {
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -51,7 +62,9 @@ export async function POST(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            // No need to set cookies in API routes for now
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -72,37 +85,77 @@ export async function POST(request: NextRequest) {
     })
     
     if (!session?.user?.id) {
-      // Temporary bypass for development mode to test the flow
-      if (process.env.NODE_ENV === 'development') {
-        console.log("WARNING: Bypassing authentication in development mode")
-        // Create a mock session for development
-        const mockUserId = 'dev-user-' + Date.now()
-        console.log("Using mock user ID:", mockUserId)
-        
-        // Continue with mock user - we'll use this ID for the rating
-        const mockSession = { user: { id: mockUserId } }
-        
-        // Continue the flow with mock session...
-        return await handleRatingSubmission(request, mockSession.user.id)
-      }
-      
       return NextResponse.json(
-        { error: "Authentication required" },
+        { error: "Authentication required. Please sign in to submit ratings." },
         { status: 401 }
       )
     }
 
+    console.log("Authenticated user found:", session.user.id)
+
     // Use the helper function for authenticated users
-    return await handleRatingSubmission(request, session.user.id)
+    const result = await handleRatingSubmission(request, session.user.id)
+    
+    // Return the result with proper cookies
+    if (result.status === 201) {
+      const data = await result.json()
+      const finalResponse = NextResponse.json(data, { status: 201 })
+      
+      // Copy cookies from our response
+      response.cookies.getAll().forEach(cookie => {
+        finalResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      
+      return finalResponse
+    }
+    
+    return result
   } catch (error) {
+    console.error("=== RATING API ERROR ===")
     console.error("Error creating rating:", error)
     console.error("Error details:", {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
-      name: error instanceof Error ? error.name : 'Unknown'
+      name: error instanceof Error ? error.name : 'Unknown',
+      cause: error instanceof Error ? error.cause : 'No cause'
     })
+    
+    // Log environment info for debugging
+    console.error("Environment info:", {
+      nodeEnv: process.env.NODE_ENV,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasDatabaseUrl: !!process.env.DATABASE_URL
+    })
+    
+    // Handle specific Prisma errors
+    if (error instanceof Error) {
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json(
+          { error: "Invalid data provided. Please refresh the page and try again.", debug: error.message },
+          { status: 400 }
+        )
+      }
+      if (error.message.includes('Unique constraint')) {
+        return NextResponse.json(
+          { error: "You have already rated this performance.", debug: error.message },
+          { status: 409 }
+        )
+      }
+      if (error.message.includes('Authentication')) {
+        return NextResponse.json(
+          { error: "Authentication failed. Please sign in again.", debug: error.message },
+          { status: 401 }
+        )
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Failed to create rating", details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: "Failed to create rating. Please try again.", 
+        debug: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }
@@ -110,6 +163,8 @@ export async function POST(request: NextRequest) {
 
 // Helper function to handle rating submission logic
 async function handleRatingSubmission(request: NextRequest, userId: string) {
+  console.log("Starting handleRatingSubmission for user:", userId)
+  
   // Get client IP for rate limiting
   const clientIp = request.headers.get('x-forwarded-for') || 
                   request.headers.get('x-real-ip') || 
@@ -128,6 +183,12 @@ async function handleRatingSubmission(request: NextRequest, userId: string) {
   }
 
   const body = await request.json()
+  console.log("Request body received:", { 
+    actorId: body.actorId,
+    movieId: body.movieId,
+    hasRecaptchaToken: !!body.recaptchaToken 
+  })
+  
   const { 
     actorId, 
     movieId, 
@@ -175,6 +236,28 @@ async function handleRatingSubmission(request: NextRequest, userId: string) {
         { status: 400 }
       )
     }
+  }
+
+  // Validate that actor and movie exist and are associated
+  console.log("Validating performance for:", { actorId, movieId })
+  const performance = await prisma.performance.findFirst({
+    where: {
+      actorId: actorId,
+      movieId: movieId
+    },
+    include: {
+      actor: true,
+      movie: true
+    }
+  })
+  
+  console.log("Performance validation result:", { found: !!performance, performanceId: performance?.id })
+  
+  if (!performance) {
+    return NextResponse.json(
+      { error: "Invalid actor and movie combination. This actor did not appear in this movie." },
+      { status: 400 }
+    )
   }
 
   // Calculate weighted score
@@ -240,43 +323,78 @@ async function handleRatingSubmission(request: NextRequest, userId: string) {
     return NextResponse.json(rating)
   }
 
-  // Create new rating
-  const shareScore = Math.round(baseWeightedScore)
-  const rating = await prisma.rating.create({
-    data: {
-      userId: userId,
-      actorId,
-      movieId,
-      emotionalRangeDepth,
-      characterBelievability,
-      technicalSkill,
-      screenPresence,
-      chemistryInteraction,
-      weightedScore,
-      shareScore,
-      comment,
-    },
-    include: {
-      actor: {
-        select: {
-          name: true,
-          imageUrl: true,
-        },
-      },
-      movie: {
-        select: {
-          title: true,
-          year: true,
-          director: true,
-        },
-      },
-    },
-  })
-
   try {
-    revalidatePath(`/r/${rating.slug || rating.id}`)
-    revalidatePath('/dashboard')
-    revalidatePath('/api/user/ratings')
-  } catch {}
-  return NextResponse.json(rating, { status: 201 })
+    // Create new rating
+    const shareScore = Math.round(baseWeightedScore)
+    const rating = await prisma.rating.create({
+      data: {
+        userId: userId,
+        actorId,
+        movieId,
+        emotionalRangeDepth,
+        characterBelievability,
+        technicalSkill,
+        screenPresence,
+        chemistryInteraction,
+        weightedScore,
+        shareScore,
+        comment,
+      },
+      include: {
+        actor: {
+          select: {
+            name: true,
+            imageUrl: true,
+          },
+        },
+        movie: {
+          select: {
+            title: true,
+            year: true,
+            director: true,
+          },
+        },
+      },
+    })
+
+    try {
+      revalidatePath(`/r/${rating.slug || rating.id}`)
+      revalidatePath('/dashboard')
+      revalidatePath('/api/user/ratings')
+    } catch {}
+    return NextResponse.json(rating, { status: 201 })
+  } catch (error) {
+    console.error("=== HELPER FUNCTION ERROR ===")
+    console.error("Error in handleRatingSubmission:", error)
+    console.error("Helper error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown'
+    })
+    
+    // Handle specific Prisma errors
+    if (error instanceof Error) {
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json(
+          { error: "Invalid data provided. Please refresh the page and try again.", debug: error.message },
+          { status: 400 }
+        )
+      }
+      if (error.message.includes('Unique constraint')) {
+        return NextResponse.json(
+          { error: "You have already rated this performance.", debug: error.message },
+          { status: 409 }
+        )
+      }
+    }
+    
+    return NextResponse.json(
+      { 
+        error: "Failed to create rating. Please try again.", 
+        debug: error instanceof Error ? error.message : 'Unknown error',
+        location: "handleRatingSubmission"
+      },
+      { status: 500 }
+    )
+  }
 } 
