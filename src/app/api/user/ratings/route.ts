@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { prisma } from "@/lib/prisma"
-// Removed NextAuth imports - using Supabase Auth
 
 export async function GET(request: NextRequest) {
   console.log("=== USER RATINGS API CALLED ===")
-  console.log("Request URL:", request.url)
   
   try {
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
-
+    // Simple Supabase client setup
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,43 +15,34 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll()
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
+          setAll() {
+            // No-op for API routes
           },
         },
       }
     )
     
-    // Debug cookies
-    const cookies = request.cookies.getAll()
-    console.log("User ratings - Request cookies:", cookies.map(c => ({ name: c.name, hasValue: !!c.value })))
-    
+    // Get session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    console.log("User ratings - Session check:", { 
+    console.log("User ratings - Session status:", { 
       hasSession: !!session, 
       hasUser: !!session?.user, 
       userId: session?.user?.id,
-      sessionError: sessionError?.message,
-      cookieCount: cookies.length
+      error: sessionError?.message 
     })
     
     if (!session?.user?.id) {
-      console.log("User ratings - No valid session found")
       return NextResponse.json(
-        { error: "Authentication required. Please sign in to view your ratings." },
+        { error: "Authentication required" },
         { status: 401 }
       )
     }
-    
-    console.log("User ratings - Authenticated user found:", session.user.id)
 
     const { searchParams } = new URL(request.url)
-    const limitParam = searchParams.get("limit")
-    const cursor = searchParams.get("cursor") || undefined
-    const limit = Math.min(Math.max(parseInt(limitParam || "10", 10) || 10, 1), 50)
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50)
+
+    console.log("Fetching ratings for user:", session.user.id)
 
     const items = await prisma.rating.findMany({
       where: {
@@ -85,34 +69,22 @@ export async function GET(request: NextRequest) {
         { createdAt: "desc" },
         { id: "desc" },
       ],
-      take: limit + 1,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
+      take: limit,
     })
 
-    let nextCursor: string | null = null
-    if (items.length > limit) {
-      const nextItem = items.pop()!
-      nextCursor = nextItem.id
-    }
+    console.log("Found", items.length, "ratings")
 
-    return NextResponse.json({ items, nextCursor })
+    return NextResponse.json({ items, nextCursor: null })
   } catch (error) {
     console.error("=== USER RATINGS API ERROR ===")
-    console.error("Error fetching user ratings:", error)
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      name: error instanceof Error ? error.name : 'Unknown'
-    })
+    console.error("Full error:", error)
     
     return NextResponse.json(
       { 
-        error: "Failed to fetch ratings. Please try again.", 
-        debug: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        error: "Failed to fetch ratings", 
+        debug: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
   }
-} 
+}
