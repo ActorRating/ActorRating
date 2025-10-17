@@ -34,7 +34,7 @@ A minimalist, premium platform for rating actors' performances in specific movie
 ### ⭐ **Performance Rating System**
 
 - **5 Oscar-Inspired Criteria**:
-  - **Technical Skill** (20% weight): Voice control, physical presence, technique mastery
+  - **Performance Quality** (20% weight): Voice control, physical presence, technique mastery
   - **Emotional Depth** (25% weight): Range of emotions, authenticity, vulnerability
   - **Character Transformation** (25% weight): Physical/mental transformation, believability
   - **Story Impact** (15% weight): Essential to film's narrative and emotional impact

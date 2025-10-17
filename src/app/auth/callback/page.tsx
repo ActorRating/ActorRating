@@ -17,41 +17,69 @@ export default function AuthCallback() {
       setIsProcessing(true)
 
       try {
+        console.log('🔄 Starting auth callback...')
+        
         // Check if there are auth parameters in the URL
         const code = searchParams.get('code')
         const error = searchParams.get('error')
+        const error_description = searchParams.get('error_description')
+        
+        console.log('Auth params:', { 
+          hasCode: !!code, 
+          error, 
+          error_description,
+          url: window.location.href 
+        })
         
         if (error) {
-          console.error('OAuth error:', error)
+          console.error('OAuth error:', { error, error_description })
           // Don't show error immediately, try to get session first
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
+            console.log('✅ Found existing session despite OAuth error')
             router.push('/dashboard')
             return
           }
-          setError('Authentication failed. Please try again.')
+          setError(`Authentication failed: ${error_description || error}`)
           setIsLoading(false)
           return
         }
 
         if (code) {
+          console.log('🔑 Exchanging code for session...')
           // Exchange the code for a session
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
           
           if (exchangeError) {
             console.error('Code exchange error:', exchangeError)
-            // Try to get existing session before showing error
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session) {
-              router.push('/dashboard')
+            
+            // Handle specific PKCE errors
+            if (exchangeError.message?.includes('code verifier') || 
+                exchangeError.message?.includes('PKCE')) {
+              console.log('🔍 PKCE error detected, checking for existing session...')
+              
+              // Try to get existing session before showing error
+              const { data: { session } } = await supabase.auth.getSession()
+              if (session) {
+                console.log('✅ Found existing session despite PKCE error')
+                router.push('/dashboard')
+                return
+              }
+              
+              // Clear any stale auth state and redirect to sign-in
+              await supabase.auth.signOut()
+              console.log('🧹 Cleared auth state, redirecting to sign-in')
+              router.push('/auth/signin?error=pkce')
               return
             }
+            
             setError('Failed to complete authentication. Please try again.')
             setIsLoading(false)
             return
           }
 
           if (data.session) {
+            console.log('✅ Successfully authenticated via OAuth')
             // Successfully authenticated, redirect to dashboard
             router.push('/dashboard')
             return
@@ -59,6 +87,7 @@ export default function AuthCallback() {
         }
 
         // If no code, check current session
+        console.log('🔍 Checking current session...')
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
@@ -69,9 +98,11 @@ export default function AuthCallback() {
         }
 
         if (session) {
+          console.log('✅ Found existing session')
           // Successfully authenticated, redirect to dashboard
           router.push('/dashboard')
         } else {
+          console.log('❌ No session found, redirecting to sign-in')
           // No session found, redirect to sign-in
           router.push('/auth/signin')
         }
@@ -81,13 +112,14 @@ export default function AuthCallback() {
         try {
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
+            console.log('✅ Found session despite callback error')
             router.push('/dashboard')
             return
           }
         } catch {
           // Ignore session check errors
         }
-        setError('An unexpected error occurred')
+        setError('An unexpected error occurred. Please try signing in again.')
         setIsLoading(false)
       } finally {
         setIsProcessing(false)

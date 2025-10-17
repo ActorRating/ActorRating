@@ -141,7 +141,7 @@ export function PerformanceRatingForm({
             />
 
             <PerformanceSlider
-              label="Technical Skill"
+              label="Performance Quality"
               value={rating.technicalSkill}
               onChange={handleTechnicalSkillChange}
               icon={<GiClapperboard className="w-6 h-6" />}

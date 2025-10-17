@@ -278,7 +278,7 @@ export default function Home() {
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <GiClapperboard className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <h4 className="text-base sm:text-lg lg:text-xl font-bold text-foreground mb-2 sm:mb-3">Technical Skill</h4>
+                    <h4 className="text-base sm:text-lg lg:text-xl font-bold text-foreground mb-2 sm:mb-3">Performance Quality</h4>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed flex-1">Voice work, physicality, timing, dialogue delivery, and overall craft</p>
                   </div>
                 </motion.div>

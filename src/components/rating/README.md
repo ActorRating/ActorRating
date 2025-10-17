@@ -6,7 +6,7 @@ A sophisticated, accessible, and feature-rich rating system designed specificall
 
 ### 🏆 Oscar Criteria Implementation
 
-- **Technical Skill (25%)**: Voice control, physical presence, technique mastery
+- **Performance Quality (25%)**: Voice control, physical presence, technique mastery
 - **Emotional Depth (25%)**: Range of emotions, authenticity, vulnerability
 - **Character Transformation (25%)**: Physical/mental transformation, believability
 - **Story Impact (15%)**: How essential the performance is to the film
@@ -42,7 +42,7 @@ import { RatingSlider } from "@/components/rating";
   value={75}
   onChange={handleChange}
   weight={25}
-  label="Technical Skill"
+  label="Performance Quality"
   description="Voice control, physical presence, technique mastery"
   icon={<GiClapperboard />}
   tooltip="Detailed explanation of technical skill criteria"

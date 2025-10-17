@@ -40,6 +40,8 @@ function SignInContent() {
     const error = searchParams?.get('error')
     if (error === 'OAuthAccountNotLinked') {
       setApiError("An account with this email already exists. Please sign in with your original authentication method.")
+    } else if (error === 'pkce') {
+      setApiError("Authentication session expired. Please try signing in again.")
     } else if (error) {
       setApiError("Authentication failed. Please try again.")
     }
@@ -109,16 +111,26 @@ function SignInContent() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true)
+    setApiError("") // Clear any existing errors
+    
     try {
+      console.log('🚀 Starting Google OAuth sign-in...')
+      console.log('Redirect URL:', `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`)
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`
+          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
+      
       if (error) {
         console.error("Google sign in error:", error)
-        setApiError("Google sign in failed. Please try again.")
+        setApiError(`Google sign in failed: ${error.message}`)
       }
     } catch (error) {
       console.error("Google sign in error:", error)

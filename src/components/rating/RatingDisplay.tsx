@@ -82,7 +82,7 @@ export function CriteriaBreakdown({
   showScores = true 
 }: CriteriaBreakdownProps) {
   const criteriaLabels = {
-    technicalSkill: 'Technical Skill',
+    technicalSkill: 'Performance Quality',
     emotionalDepth: 'Emotional Depth',
     characterTransformation: 'Character Transformation',
     storyImpact: 'Story Impact',

@@ -114,7 +114,7 @@ export default function AboutPage() {
               <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
                 <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-4">Comprehensive Evaluation</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Each performance is evaluated across five key dimensions: Emotional Range & Depth, Character Believability, Technical Skill, Screen Presence, and Chemistry & Interaction.
+                  Each performance is evaluated across five key dimensions: Emotional Range & Depth, Character Believability, Performance Quality, Screen Presence, and Chemistry & Interaction.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   This multi-faceted approach ensures we capture the full spectrum of what makes an acting performance exceptional.

@@ -58,7 +58,17 @@ export async function POST(request: NextRequest) {
       error: sessionError?.message 
     })
     
-    if (!session?.user?.id) {
+    // Development bypass for localhost only
+    let userId = session?.user?.id
+    if (!userId && process.env.NODE_ENV === 'development') {
+      const host = request.headers.get('host')
+      if (host?.includes('localhost') || host?.includes('127.0.0.1')) {
+        userId = `dev-user-${Date.now()}`
+        console.log("🚧 Development bypass activated for localhost:", userId)
+      }
+    }
+    
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -142,7 +152,6 @@ export async function POST(request: NextRequest) {
       chemistryInteraction * 0.15
 
     const shareScore = Math.round(weightedScore)
-    const userId = session.user.id
 
     console.log("Creating rating for user:", userId)
 

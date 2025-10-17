@@ -255,7 +255,7 @@ export function RatingForm({
   const criteriaConfig = [
     {
       key: 'technicalSkill' as keyof OscarCriteria,
-      label: 'Technical Skill',
+      label: 'Performance Quality',
       description: 'Voice control, physical presence, technique mastery, and overall craft',
       icon: <GiClapperboard className="w-6 h-6" />,
       weight: DEFAULT_WEIGHTS.technicalSkill * 100

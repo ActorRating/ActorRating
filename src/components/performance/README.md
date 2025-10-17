@@ -224,7 +224,7 @@ interface PerformanceGridProps {
 
 The component system uses a 5-criteria Oscar-based rating system:
 
-1. **Technical Skill** (25%): Voice control, physical presence, technique
+1. **Performance Quality** (25%): Voice control, physical presence, technique
 2. **Emotional Depth** (25%): Range of emotions, authenticity, vulnerability
 3. **Character Transformation** (25%): Physical/mental transformation, believability
 4. **Story Impact** (15%): Narrative importance, emotional impact

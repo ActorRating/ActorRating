@@ -69,7 +69,7 @@ export function PerformanceCard({ performance, showUser = false, className = '' 
       {/* Oscar Criteria breakdown */}
       <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Technical Skill:</span>
+          <span className="text-muted-foreground">Performance Quality:</span>
           <span className="font-medium">{oscarCriteria.technicalSkill}</span>
         </div>
         <div className="flex justify-between">

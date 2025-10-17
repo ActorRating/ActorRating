@@ -590,7 +590,7 @@ export default function DashboardPage() {
                           {[
                             { key: 'emotionalRangeDepth', label: 'Emotional Range', value: rating.emotionalRangeDepth },
                             { key: 'characterBelievability', label: 'Believability', value: rating.characterBelievability },
-                            { key: 'technicalSkill', label: 'Technical Skill', value: rating.technicalSkill },
+                            { key: 'technicalSkill', label: 'Performance Quality', value: rating.technicalSkill },
                             { key: 'screenPresence', label: 'Screen Presence', value: rating.screenPresence },
                             { key: 'chemistryInteraction', label: 'Chemistry', value: rating.chemistryInteraction },
                           ].map(criterion => (

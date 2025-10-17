@@ -176,7 +176,7 @@ export function PerformanceRatingPreview() {
           />
           <RatingSliderCard
             icon={Zap}
-            label="Technical Skill"
+            label="Performance Quality"
             description="Voice work, physicality, timing, and overall craft"
             value={technicalSkill}
             onValueChange={setTechnicalSkill}

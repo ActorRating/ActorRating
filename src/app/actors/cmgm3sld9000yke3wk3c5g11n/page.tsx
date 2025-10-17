@@ -302,7 +302,7 @@ export default function ActorDetailPage() {
                     <Zap className="w-4 h-4 text-purple-300" />
                   </div>
                 </div>
-                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Technical Skill</div>
+                <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Performance Quality</div>
                 <div className="text-lg sm:text-xl font-bold text-white text-center">
                   {technicalSkill.toFixed(1)}
                 </div>

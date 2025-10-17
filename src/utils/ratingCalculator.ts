@@ -132,7 +132,7 @@ function calculatePercentile(userScore: number, averageScore: number, totalRatin
  */
 export const CRITERIA_DESCRIPTIONS = {
   technicalSkill: {
-    title: 'Technical Skill',
+    title: 'Performance Quality',
     description: 'Voice control, physical presence, technique mastery, and overall craft',
     examples: ['Accent work', 'Physical transformation', 'Vocal range', 'Timing and rhythm'],
     weight: 25

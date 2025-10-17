@@ -12,7 +12,7 @@ export const RATING_CRITERIA = {
     description: 'How completely the actor transforms into and embodies the character - do you forget you\'re watching an actor?',
   },
   technicalSkill: {
-    label: 'Technical Skill',
+    label: 'Performance Quality',
     weight: 0.20,
     description: 'Voice work, physicality, timing, dialogue delivery, and overall craft/technique',
   },

@@ -32,7 +32,17 @@ export async function GET(request: NextRequest) {
       error: sessionError?.message 
     })
     
-    if (!session?.user?.id) {
+    // Development bypass for localhost only
+    let userId = session?.user?.id
+    if (!userId && process.env.NODE_ENV === 'development') {
+      const host = request.headers.get('host')
+      if (host?.includes('localhost') || host?.includes('127.0.0.1')) {
+        userId = `dev-user-${Date.now()}`
+        console.log("🚧 Development bypass activated for localhost:", userId)
+      }
+    }
+    
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -42,11 +52,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50)
 
-    console.log("Fetching ratings for user:", session.user.id)
+    console.log("Fetching ratings for user:", userId)
 
     const items = await prisma.rating.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
       },
       include: {
         actor: {

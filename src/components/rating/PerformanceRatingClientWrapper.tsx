@@ -385,7 +385,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     <RatingSliderCard
                       key="technical-skill"
                       icon={Zap}
-                      label="Technical Skill"
+                      label="Performance Quality"
                       description="Voice work, physicality, timing, and overall craft"
                       value={technicalSkill}
                       onValueChange={handleTechnicalSkillChange}

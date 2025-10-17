@@ -54,7 +54,7 @@ export function SliderDemo() {
         />
         
         <SliderRow
-          label="Technical Skill"
+          label="Performance Quality"
           value={sliderValues.technicalSkill}
           onChange={(value) => handleSliderChange('technicalSkill', value)}
         />

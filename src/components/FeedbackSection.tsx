@@ -69,7 +69,7 @@ export function FeedbackSection() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-6 right-6 z-[999999]"
+        className="fixed bottom-6 right-6 z-40"
       >
         <Button
           onClick={() => setIsOpen(true)}
@@ -89,7 +89,7 @@ export function FeedbackSection() {
       initial={{ opacity: 0, scale: 0.9, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      className="fixed bottom-6 right-6 z-[999999] bg-background border border-border rounded-2xl shadow-2xl p-6 w-80 max-w-[calc(100vw-2rem)]"
+      className="fixed bottom-6 right-6 z-40 bg-background border border-border rounded-2xl shadow-2xl p-6 w-80 max-w-[calc(100vw-2rem)]"
     >
       {isSubmitted ? (
         <div className="text-center">
