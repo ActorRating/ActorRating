@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     siteName: "ActorRating",
     images: [
       {
-        url: "https://actorrating.com/og-image.png",
+         url: "https://actorrating.com/logo.png",
         width: 1200,
         height: 630,
         alt: "ActorRating - Rate Acting Performances",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ActorRating - Rate Acting Performances",
     description: "Community-driven platform to rate and analyze acting performances with professional criteria.",
-    images: ["https://actorrating.com/og-image.png"],
+    images: ["https://actorrating.com/logo.png"],
   },
 }
 
