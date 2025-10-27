@@ -34,7 +34,7 @@ export default function AboutPage() {
         />
         <meta property="og:url" content="https://www.actorrating.com/about" />
         <meta property="og:site_name" content="Actor Rating" />
-        <meta property="og:image" content="https://www.actorrating.com/og-image.jpg" />
+        <meta property="og:image" content="https://www.actorrating.com/logo.png" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
@@ -43,7 +43,7 @@ export default function AboutPage() {
           name="twitter:description"
           content="Learn how Actor Rating brings together a global community to rate acting performances across cinema."
         />
-        <meta name="twitter:image" content="https://www.actorrating.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://www.actorrating.com/logo.png" />
 
         {/* Structured Data (Schema.org) */}
         <script
