@@ -17,33 +17,70 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Remove extra display fonts to reduce CSS and font payload
-
+// ✅ Enhanced SEO Metadata
 export const metadata: Metadata = {
-  title: "Actor Rating",
-  description: "Rate and discover your favorite actors",
+  title: "ActorRating – Rate Acting Performances, Not Just Movies",
+  description:
+    "ActorRating is the world's first community-driven platform to rate and analyze acting performances using Oscar-inspired criteria. Discover, rate, and explore detailed performance insights.",
+  keywords: [
+    "actor rating",
+    "actors rating",
+    "rate acting",
+    "rate actors",
+    "movie performance ratings",
+    "acting performance analysis",
+    "Oscar-inspired ratings",
+    "cinema acting reviews",
+    "actor performance scores",
+    "film acting database",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/logos/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/logos/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/logos/favicon.ico", sizes: "any" }
+      { url: "/logos/favicon.ico", sizes: "any" },
     ],
     apple: [
-      { url: "/logos/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+      { url: "/logos/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     other: [
       { url: "/logos/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/logos/android-chrome-512x512.png", sizes: "512x512", type: "image/png" }
-    ]
+      { url: "/logos/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    title: "ActorRating – Rate Acting Performances",
+    description:
+      "Community-driven platform to rate and analyze acting performances using Oscar-inspired criteria. Discover your favorite actors' best performances.",
+    url: "https://www.actorrating.com",
+    siteName: "ActorRating",
+    images: [
+      {
+        url: "https://www.actorrating.com/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "ActorRating Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ActorRating – Rate Acting Performances",
+    description:
+      "Join the world’s first platform for rating and analyzing acting performances using professional criteria.",
+    images: ["https://www.actorrating.com/logo.png"],
+    creator: "@ActorRating",
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "black-translucent"
-  }
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+  },
 };
 
-// Next.js 15+ expects themeColor under viewport
+// ✅ Modern Next.js viewport handling
 export const viewport = {
   width: "device-width",
   initialScale: 1,
@@ -67,16 +104,14 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        {/* Supabase Session Provider */}
+        {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>
             <Suspense fallback={null}>
               <RouteChangeScroll />
             </Suspense>
             <ChunkErrorReload />
-            <Suspense fallback={null}>
-              {children}
-            </Suspense>
+            <Suspense fallback={null}>{children}</Suspense>
           </CookieConsentProvider>
         </SessionProvider>
       </body>
