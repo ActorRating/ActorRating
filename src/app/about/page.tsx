@@ -1,5 +1,4 @@
-"use client"
-
+import type { Metadata } from "next"
 export const dynamic = "force-dynamic"
 
 import { HomeLayout } from "@/components/layout"
@@ -7,70 +6,77 @@ import { motion } from "framer-motion"
 import { FaUsers, FaStar, FaHandshake, FaChartLine } from "react-icons/fa"
 import { GiClapperboard } from "react-icons/gi"
 import Link from "next/link"
-import Head from "next/head"
+import React from "react"
+
+/**
+ * SEO metadata (App Router expects this at the top-level of the page component file)
+ */
+export const metadata: Metadata = {
+  title: "About ActorRating — Our Mission & Vision",
+  description:
+    "Learn about ActorRating's mission to create the world's most comprehensive and community-driven database of acting performance ratings. Discover what makes us different and how we bring movie lovers together.",
+  keywords: [
+    "about actor rating",
+    "actor rating platform",
+    "acting performance ratings",
+    "rate actors",
+    "actor ranking",
+    "community-driven film platform",
+  ],
+  openGraph: {
+    title: "About ActorRating — Our Mission & Vision",
+    description:
+      "ActorRating is the community-driven platform where fans rate and discover the best acting performances in cinema.",
+    url: "https://www.actorrating.com/about",
+    siteName: "ActorRating",
+    images: [
+      {
+        url: "https://www.actorrating.com/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "ActorRating Logo",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About ActorRating — Our Mission & Vision",
+    description:
+      "Learn how ActorRating brings together a global community to rate acting performances across cinema.",
+    images: ["https://www.actorrating.com/logo.png"],
+  },
+}
 
 export default function AboutPage() {
+  // JSON-LD structured data (helps Google understand the page)
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: "About ActorRating",
+    url: "https://www.actorrating.com/about",
+    description:
+      "ActorRating is a community-driven database for rating acting performances based on quality, depth, and authenticity.",
+    publisher: {
+      "@type": "Organization",
+      name: "ActorRating",
+      url: "https://www.actorrating.com",
+    },
+  }
+
   return (
     <>
-      <Head>
-        <title>About Actor Rating — Our Mission & Vision</title>
-        <meta
-          name="description"
-          content="Learn about Actor Rating's mission to create the world's most comprehensive and community-driven database of acting performance ratings. Discover what makes us different and how we bring movie lovers together."
-        />
-        <meta
-          name="keywords"
-          content="about actor rating, actor rating platform, acting performance ratings, rate actors, actor ranking, community-driven film platform"
-        />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://www.actorrating.com/about" />
-
-        {/* Open Graph (for social previews) */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="About Actor Rating — Our Mission & Vision" />
-        <meta
-          property="og:description"
-          content="Actor Rating is the community-driven platform where fans rate and discover the best acting performances in cinema."
-        />
-        <meta property="og:url" content="https://www.actorrating.com/about" />
-        <meta property="og:site_name" content="Actor Rating" />
-        <meta property="og:image" content="https://www.actorrating.com/logo.png" />
-
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="About Actor Rating — Our Mission & Vision" />
-        <meta
-          name="twitter:description"
-          content="Learn how Actor Rating brings together a global community to rate acting performances across cinema."
-        />
-        <meta name="twitter:image" content="https://www.actorrating.com/logo.png" />
-
-        {/* Structured Data (Schema.org) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "AboutPage",
-              "name": "About Actor Rating",
-              "url": "https://www.actorrating.com/about",
-              "description":
-                "Actor Rating is a community-driven database for rating acting performances based on quality, depth, and authenticity.",
-              "publisher": {
-                "@type": "Organization",
-                "name": "Actor Rating",
-                "url": "https://www.actorrating.com",
-              },
-            }),
-          }}
-        />
-      </Head>
+      <script
+        type="application/ld+json"
+        // rendered server-side, safe to inline
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <HomeLayout>
         <div className="min-h-screen bg-background">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
             {/* Hero Section */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -85,7 +91,7 @@ export default function AboutPage() {
             </motion.div>
 
             {/* Mission Statement */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -102,7 +108,7 @@ export default function AboutPage() {
             </motion.div>
 
             {/* What Makes Us Different */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
@@ -111,7 +117,7 @@ export default function AboutPage() {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-8 sm:mb-12 text-center">
                 What Makes Us Different
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                 <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
                   <div className="flex items-center mb-4">
@@ -156,7 +162,7 @@ export default function AboutPage() {
             </motion.div>
 
             {/* Our Approach */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
@@ -165,7 +171,7 @@ export default function AboutPage() {
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-8 sm:mb-12 text-center">
                 Our Approach
               </h2>
-              
+
               <div className="space-y-6 sm:space-y-8">
                 <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
                   <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-4">Comprehensive Evaluation</h3>
@@ -200,7 +206,7 @@ export default function AboutPage() {
             </motion.div>
 
             {/* Call to Action */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.8 }}
@@ -214,15 +220,15 @@ export default function AboutPage() {
                   Help us build the most comprehensive database of acting performance ratings. Your insights matter in creating a valuable resource for movie enthusiasts worldwide.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link 
-                    href="/search" 
+                  <Link
+                    href="/search"
                     prefetch
                     className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                   >
                     Start Rating Performances
                   </Link>
-                  <Link 
-                    href="/auth/signup" 
+                  <Link
+                    href="/auth/signup"
                     prefetch
                     className="inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
                   >
