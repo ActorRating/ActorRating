@@ -1,3 +1,4 @@
+// src/app/api/ratings/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createServerClient } from "@supabase/ssr"
@@ -21,18 +22,23 @@ export async function GET() {
     return NextResponse.json(ratings)
   } catch (error) {
     console.error("Error fetching ratings:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch ratings" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to fetch ratings" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
-  console.log("=== RATING API CALLED ===")
-  
+  return handleRating(request, false)
+}
+
+export async function PUT(request: NextRequest) {
+  return handleRating(request, true)
+}
+
+// Unified handler for POST (create) and PUT (update)
+async function handleRating(request: NextRequest, isUpdate: boolean) {
   try {
-    // Simple Supabase client setup
+    console.log("=== RATING API CALLED ===", { method: isUpdate ? 'PUT' : 'POST' })
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -42,135 +48,86 @@ export async function POST(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll() {
-            // No-op for API routes
+            return
           },
         },
       }
     )
-    
-    // Get session
+
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    console.log("Session status:", { 
-      hasSession: !!session, 
-      hasUser: !!session?.user, 
-      userId: session?.user?.id,
-      error: sessionError?.message 
-    })
-    
-    // Development bypass for localhost only
+
     let userId = session?.user?.id
+    // Development bypass
     if (!userId && process.env.NODE_ENV === 'development') {
       const host = request.headers.get('host')
       if (host?.includes('localhost') || host?.includes('127.0.0.1')) {
         userId = `dev-user-${Date.now()}`
-        console.log("🚧 Development bypass activated for localhost:", userId)
+        console.log("🚧 Development bypass activated:", userId)
       }
     }
-    
+
     if (!userId) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    // Parse request body
     const body = await request.json()
     const { 
-      actorId, 
-      movieId, 
-      emotionalRangeDepth,
-      characterBelievability,
-      technicalSkill,
-      screenPresence,
-      chemistryInteraction,
-      comment,
-      recaptchaToken
+      ratingId, actorId, movieId,
+      emotionalRangeDepth, characterBelievability,
+      technicalSkill, screenPresence, chemistryInteraction,
+      comment, recaptchaToken
     } = body
 
-    console.log("Request data:", { actorId, movieId, hasToken: !!recaptchaToken })
-
-    // Basic validation
+    // Validate required fields
     if (!actorId || !movieId) {
-      return NextResponse.json(
-        { error: "Actor ID and Movie ID are required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Actor ID and Movie ID are required" }, { status: 400 })
     }
 
     // Validate rating values
     const ratings = [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction]
-    for (const rating of ratings) {
-      if (typeof rating !== 'number' || rating < 0 || rating > 100) {
-        return NextResponse.json(
-          { error: "All ratings must be numbers between 0 and 100" },
-          { status: 400 }
-        )
+    for (const r of ratings) {
+      if (typeof r !== 'number' || r < 0 || r > 100) {
+        return NextResponse.json({ error: "Ratings must be numbers between 0 and 100" }, { status: 400 })
       }
     }
 
-    // Verify reCAPTCHA (with bypass for development)
+    // Verify reCAPTCHA
     if (recaptchaToken && recaptchaToken !== 'dev_mock_token_submit_rating_123') {
       const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
       if (!recaptchaResult.success) {
-        return NextResponse.json(
-          { error: "reCAPTCHA verification failed" },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: "reCAPTCHA verification failed" }, { status: 403 })
       }
     }
 
-    // Check rate limiting
+    // Rate limiting
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
     const rateLimitResult = await checkRateLimit(clientIp, 'rating')
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429 }
-      )
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
     // Validate actor/movie combination exists
-    const performance = await prisma.performance.findFirst({
-      where: { actorId, movieId }
-    })
-    
+    const performance = await prisma.performance.findFirst({ where: { actorId, movieId } })
     if (!performance) {
-      return NextResponse.json(
-        { error: "Invalid actor/movie combination" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid actor/movie combination" }, { status: 400 })
     }
 
     // Calculate weighted score
-    const weightedScore = 
-      emotionalRangeDepth * 0.25 +
-      characterBelievability * 0.25 +
-      technicalSkill * 0.20 +
-      screenPresence * 0.15 +
-      chemistryInteraction * 0.15
-
+    const weightedScore = emotionalRangeDepth * 0.25 +
+                          characterBelievability * 0.25 +
+                          technicalSkill * 0.2 +
+                          screenPresence * 0.15 +
+                          chemistryInteraction * 0.15
     const shareScore = Math.round(weightedScore)
 
-    console.log("Creating rating for user:", userId)
-
-    // Check if rating already exists
-    const existingRating = await prisma.rating.findUnique({
-      where: {
-        userId_actorId_movieId: {
-          userId,
-          actorId,
-          movieId,
-        },
-      },
-    })
-
     let rating
-    if (existingRating) {
-      // Update existing rating
+    if (isUpdate) {
+      if (!ratingId) {
+        return NextResponse.json({ error: "Rating ID required for update" }, { status: 400 })
+      }
+
       rating = await prisma.rating.update({
-        where: { id: existingRating.id },
+        where: { id: ratingId },
         data: {
           emotionalRangeDepth,
           characterBelievability,
@@ -186,63 +143,41 @@ export async function POST(request: NextRequest) {
           movie: { select: { title: true, year: true, director: true } },
         },
       })
-      console.log("Updated existing rating:", rating.id)
+      console.log("Updated rating:", rating.id)
     } else {
-      // Create new rating
-      rating = await prisma.rating.create({
-        data: {
-          userId,
-          actorId,
-          movieId,
-          emotionalRangeDepth,
-          characterBelievability,
-          technicalSkill,
-          screenPresence,
-          chemistryInteraction,
-          weightedScore,
-          shareScore,
-          comment,
-        },
-        include: {
-          actor: { select: { name: true, imageUrl: true } },
-          movie: { select: { title: true, year: true, director: true } },
-        },
+      // Check if rating already exists
+      const existing = await prisma.rating.findUnique({
+        where: { userId_actorId_movieId: { userId, actorId, movieId } }
       })
-      console.log("Created new rating:", rating.id)
+
+      if (existing) {
+        // If exists, update instead
+        rating = await prisma.rating.update({
+          where: { id: existing.id },
+          data: { emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, weightedScore, shareScore, comment },
+          include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
+        })
+        console.log("Updated existing rating:", rating.id)
+      } else {
+        rating = await prisma.rating.create({
+          data: { userId, actorId, movieId, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, weightedScore, shareScore, comment },
+          include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
+        })
+        console.log("Created new rating:", rating.id)
+      }
     }
 
-    // Revalidate cache
-    try {
-      revalidatePath('/dashboard')
-    } catch (e) {
-      console.log("Cache revalidation failed:", e)
-    }
+    // Revalidate dashboard cache
+    try { revalidatePath('/dashboard') } catch (e) { console.log("Cache revalidation failed:", e) }
 
-    return NextResponse.json(rating, { status: 201 })
+    return NextResponse.json(rating, { status: isUpdate ? 200 : 201 })
 
   } catch (error) {
-    console.error("=== RATING API ERROR ===")
-    console.error("Full error:", error)
-    
-    // Handle specific database errors
+    console.error("=== RATING API ERROR ===", error)
     if (error instanceof Error) {
-      if (error.message.includes('Foreign key constraint')) {
-        return NextResponse.json(
-          { error: "Invalid data - actor or movie not found" },
-          { status: 400 }
-        )
-      }
-      if (error.message.includes('Unique constraint')) {
-        return NextResponse.json(
-          { error: "Rating already exists" },
-          { status: 409 }
-        )
-      }
+      if (error.message.includes('Foreign key constraint')) return NextResponse.json({ error: "Invalid data - actor or movie not found" }, { status: 400 })
+      if (error.message.includes('Unique constraint')) return NextResponse.json({ error: "Rating already exists" }, { status: 409 })
     }
-    
-    return NextResponse.json(
-      { error: "Internal server error", debug: error instanceof Error ? error.message : 'Unknown' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error", debug: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
