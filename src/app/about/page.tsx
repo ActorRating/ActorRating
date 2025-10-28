@@ -1,49 +1,13 @@
 // src/app/about/page.tsx
-import type { Metadata } from "next";
+"use client"
+
 import { HomeLayout } from "@/components/layout";
 import { motion } from "framer-motion";
 import { FaUsers, FaStar, FaChartLine } from "react-icons/fa";
 import { GiClapperboard } from "react-icons/gi";
 import Link from "next/link";
-
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "About ActorRating — Our Mission & Vision",
-  description:
-    "Learn about ActorRating's mission to create the world's most comprehensive and community-driven database of acting performance ratings. Discover what makes us different and how we bring movie lovers together.",
-  keywords: [
-    "about actor rating",
-    "actor rating platform",
-    "acting performance ratings",
-    "rate actors",
-    "actor ranking",
-    "community-driven film platform",
-  ],
-  openGraph: {
-    title: "About ActorRating — Our Mission & Vision",
-    description:
-      "ActorRating is the community-driven platform where fans rate and discover the best acting performances in cinema.",
-    url: "https://www.actorrating.com/about",
-    siteName: "ActorRating",
-    images: [
-      {
-        url: "https://www.actorrating.com/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "ActorRating Logo",
-      },
-    ],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "About ActorRating — Our Mission & Vision",
-    description:
-      "Learn how ActorRating brings together a global community to rate acting performances across cinema.",
-    images: ["https://www.actorrating.com/logo.png"],
-  },
-};
+import Head from "next/head";
+import React from "react";
 
 export default function AboutPage() {
   // JSON-LD structured data
@@ -63,10 +27,18 @@ export default function AboutPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <Head>
+        <title>About ActorRating — Our Mission & Vision</title>
+        <meta
+          name="description"
+          content="Learn about ActorRating's mission to create the world's most comprehensive and community-driven database of acting performance ratings."
+        />
+        <meta name="robots" content="index, follow" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </Head>
 
       <HomeLayout>
         <div className="min-h-screen bg-background">
@@ -103,9 +75,7 @@ export default function AboutPage() {
                   <strong className="text-foreground">
                     community-driven, high-quality rating data
                   </strong>{" "}
-                  that provides meaningful insights into acting performances across cinema. By focusing on
-                  specific performances rather than entire films, we create a nuanced
-                  understanding of what makes great acting truly exceptional.
+                  that provides meaningful insights into acting performances across cinema.
                 </p>
               </div>
             </motion.div>
@@ -157,7 +127,7 @@ export default function AboutPage() {
                   Join Our Community
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 sm:mb-12 max-w-2xl mx-auto">
-                  Help us build the most comprehensive database of acting performance ratings. Your insights matter in creating a valuable resource for movie enthusiasts worldwide.
+                  Help us build the most comprehensive database of acting performance ratings.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
@@ -182,7 +152,6 @@ export default function AboutPage() {
   );
 }
 
-// ✅ Feature card component
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
