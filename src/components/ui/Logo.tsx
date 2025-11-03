@@ -20,7 +20,7 @@ export function Logo({
       {/* Logo Image */}
       <div className="relative w-8 h-8">
         <Image
-          src="/logos/android-chrome-192x192.png"
+          src="/logo_navbar.png"
           alt="ActorRating Logo"
           width={32}
           height={32}

@@ -25,18 +25,17 @@ export async function GET(
       }
     )
     
-    // Get session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get user (more reliable than getSession for API routes)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    console.log("Actor user rating - Session status:", { 
-      hasSession: !!session, 
-      hasUser: !!session?.user, 
-      userId: session?.user?.id,
-      error: sessionError?.message 
+    console.log("Actor user rating - Auth status:", { 
+      hasUser: !!user, 
+      userId: user?.id,
+      error: userError?.message 
     })
     
     // Development bypass for localhost only
-    let userId = session?.user?.id
+    let userId = user?.id
     if (!userId && process.env.NODE_ENV === 'development') {
       const host = request.headers.get('host')
       if (host?.includes('localhost') || host?.includes('127.0.0.1')) {

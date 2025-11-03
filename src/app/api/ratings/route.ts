@@ -55,9 +55,16 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       }
     )
 
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get user (more reliable than getSession for API routes)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    let userId = session?.user?.id
+    console.log("Rating API - Auth status:", { 
+      hasUser: !!user, 
+      userId: user?.id,
+      error: userError?.message 
+    })
+
+    let userId = user?.id
     // Development bypass
     if (!userId && process.env.NODE_ENV === 'development') {
       const host = request.headers.get('host')
