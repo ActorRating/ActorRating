@@ -78,7 +78,7 @@ model Performance {
 }
 
 model Rating {
-  id                     String      @id @default(cuid())
+  id                     String      @id
   userId                 String
   actorId                String
   movieId                String

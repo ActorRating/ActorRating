@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/ssr"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { revalidatePath } from "next/cache"
+import { nanoid } from "nanoid"
 
 export async function GET() {
   try {
@@ -75,12 +76,22 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       ratingId, actorId, movieId,
       emotionalRangeDepth, characterBelievability,
       technicalSkill, screenPresence, chemistryInteraction,
-      comment, recaptchaToken
+      comment, recaptchaToken, breakdown, weightedScore: providedWeightedScore
     } = body
 
     // Validate required fields
     if (!actorId || !movieId) {
       return NextResponse.json({ error: "Actor ID and Movie ID are required" }, { status: 400 })
+    }
+
+    // Validate actorId and movieId are TEXT strings (not UUIDs)
+    if (typeof actorId !== 'string' || typeof movieId !== 'string') {
+      return NextResponse.json({ error: "Actor ID and Movie ID must be strings" }, { status: 400 })
+    }
+
+    // Ensure userId is stored as TEXT (from Supabase Auth UUID, stored as string)
+    if (typeof userId !== 'string') {
+      return NextResponse.json({ error: "User ID must be a string" }, { status: 400 })
     }
 
     // Validate rating values
@@ -112,12 +123,15 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       return NextResponse.json({ error: "Invalid actor/movie combination" }, { status: 400 })
     }
 
-    // Calculate weighted score
-    const weightedScore = emotionalRangeDepth * 0.25 +
-                          characterBelievability * 0.25 +
-                          technicalSkill * 0.2 +
-                          screenPresence * 0.15 +
-                          chemistryInteraction * 0.15
+    // Calculate weighted score (server-side calculation, or use provided if valid)
+    const calculatedWeightedScore = emotionalRangeDepth * 0.25 +
+                                    characterBelievability * 0.25 +
+                                    technicalSkill * 0.2 +
+                                    screenPresence * 0.15 +
+                                    chemistryInteraction * 0.15
+    const weightedScore = (typeof providedWeightedScore === 'number' && providedWeightedScore >= 0 && providedWeightedScore <= 100) 
+      ? providedWeightedScore 
+      : calculatedWeightedScore
     const shareScore = Math.round(weightedScore)
 
     let rating
@@ -137,6 +151,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
           weightedScore,
           shareScore,
           comment,
+          breakdown: breakdown !== undefined ? breakdown : undefined, // Update breakdown if provided
         },
         include: {
           actor: { select: { name: true, imageUrl: true } },
@@ -154,13 +169,40 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
         // If exists, update instead
         rating = await prisma.rating.update({
           where: { id: existing.id },
-          data: { emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, weightedScore, shareScore, comment },
+          data: { 
+            emotionalRangeDepth, 
+            characterBelievability, 
+            technicalSkill, 
+            screenPresence, 
+            chemistryInteraction, 
+            weightedScore, 
+            shareScore, 
+            comment,
+            breakdown: breakdown !== undefined ? breakdown : existing.breakdown // Update breakdown if provided
+          },
           include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
         })
         console.log("Updated existing rating:", rating.id)
       } else {
+        // Generate TEXT ID: "rating_" + nanoid()
+        const ratingId = `rating_${nanoid()}`
+        
         rating = await prisma.rating.create({
-          data: { userId, actorId, movieId, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, weightedScore, shareScore, comment },
+          data: { 
+            id: ratingId,
+            userId: String(userId), // Ensure TEXT format (UUID from Supabase stored as TEXT)
+            actorId: String(actorId), // Ensure TEXT format
+            movieId: String(movieId), // Ensure TEXT format
+            emotionalRangeDepth, 
+            characterBelievability, 
+            technicalSkill, 
+            screenPresence, 
+            chemistryInteraction, 
+            weightedScore, 
+            shareScore, 
+            comment,
+            breakdown: breakdown || null // Optional breakdown field
+          },
           include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
         })
         console.log("Created new rating:", rating.id)
