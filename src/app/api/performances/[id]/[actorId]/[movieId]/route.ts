@@ -3,16 +3,17 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { actorId: string; movieId: string } }
+  { params }: { params: Promise<{ id: string; actorId: string; movieId: string }> }
 ) {
   try {
-    console.log("Fetching performance for:", params);
+    const { actorId, movieId } = await params
+    console.log("Fetching performance for:", { actorId, movieId });
 
     // Find the performance with actor and movie details
     const performance = await prisma.performance.findFirst({
       where: {
-        actorId: params.actorId,
-        movieId: params.movieId
+        actorId: actorId,
+        movieId: movieId
       },
       include: {
         actor: {
@@ -37,7 +38,7 @@ export async function GET(
       return NextResponse.json(
         {
           error: "Performance not found",
-          message: `No performance found for actor ${params.actorId} in movie ${params.movieId}`
+          message: `No performance found for actor ${actorId} in movie ${movieId}`
         },
         { status: 404 }
       );
