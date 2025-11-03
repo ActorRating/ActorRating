@@ -217,8 +217,14 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
   } catch (error) {
     console.error("=== RATING API ERROR ===", error)
     if (error instanceof Error) {
+      console.error("Error name:", error.name)
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
       if (error.message.includes('Foreign key constraint')) return NextResponse.json({ error: "Invalid data - actor or movie not found" }, { status: 400 })
       if (error.message.includes('Unique constraint')) return NextResponse.json({ error: "Rating already exists" }, { status: 409 })
+      if (error.message.includes('null value in column') || error.message.includes('NOT NULL constraint')) {
+        return NextResponse.json({ error: "Missing required field", debug: error.message }, { status: 400 })
+      }
     }
     return NextResponse.json({ error: "Internal server error", debug: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
