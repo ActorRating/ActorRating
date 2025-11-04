@@ -18,12 +18,12 @@ export function Logo({
   const LogoContent = () => (
     <div className={cn("flex items-center", className)} suppressHydrationWarning>
       {/* Logo Image */}
-      <div className="relative w-8 h-8">
+      <div className="relative w-10 h-10">
         <Image
           src="/logo_navbar.png"
           alt="ActorRating Logo"
-          width={32}
-          height={32}
+          width={40}
+          height={40}
           className="object-contain"
           priority
           suppressHydrationWarning
