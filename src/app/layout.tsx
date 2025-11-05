@@ -34,19 +34,15 @@ export const metadata: Metadata = {
     "actor performance scores",
     "film acting database",
   ],
-  manifest: "/manifest.json",
+  manifest: "/site.webmanifest",
   icons: {
     icon: [
-      { url: "/logos/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/logos/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/logos/favicon.ico", sizes: "any" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
     apple: [
-      { url: "/logos/apple-touch-icon-V2.png", sizes: "180x180", type: "image/png" },
-    ],
-    other: [
-      { url: "/logos/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/logos/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
   openGraph: {
