@@ -41,7 +41,7 @@ export function HomeNavbar() {
           </div>
 
           {/* Right side - keep stable width so layout never collapses */}
-          <div className="flex items-center space-x-3 min-w-[120px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal">
+          <div className="flex items-center space-x-3 min-w-[120px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal pr-0">
             {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />

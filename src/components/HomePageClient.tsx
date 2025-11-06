@@ -58,8 +58,8 @@ export default function HomePageClient() {
 
   return (
     <>
-      <div className="min-h-screen bg-background relative overflow-hidden film-grain">
-        {/* Soft spotlight effect behind hero */}
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Soft spotlight effect behind hero - optimized for mobile */}
         <div className="absolute inset-0 hero-spotlight" />
         
         {/* Gradient background overlays */}
@@ -79,30 +79,20 @@ export default function HomePageClient() {
               Where every performance gets its moment.
             </motion.div>
 
-            <motion.h2
-              variants={fadeInUp}
-              {...getMotionProps()}
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white mb-8 sm:mb-10 md:mb-12 px-2 leading-relaxed font-light"
-              style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 300 }}
-            >
-              Rate the performances that move you. Celebrate the ones that define cinema.
-            </motion.h2>
-
             <motion.p
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8 sm:mb-10 px-3"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-400 max-w-4xl mx-auto leading-relaxed mb-16 sm:mb-20 md:mb-24 px-3"
+              style={{ fontFamily: 'var(--font-geist-sans), Inter, sans-serif' }}
             >
-              The world's first platform for rating and analyzing 
-              <span className="text-primary font-semibold"> acting performances</span> with our 
-              <span className="text-accent font-semibold"> Oscar-inspired criteria</span>
+              Rate the performances that move you. Celebrate the ones that define cinema.
             </motion.p>
 
-            {/* Start Rating Button */}
+            {/* Start Rating Button - Centered with lots of breathing room */}
             <motion.div
               variants={scaleIn}
               {...getMotionProps()}
-              className="flex justify-center mb-8 sm:mb-10 px-3"
+              className="flex justify-center mb-16 sm:mb-20 md:mb-24 px-3"
             >
               <Link href="/auth/signup" className="w-full sm:w-auto max-w-xs">
                 <Button 
@@ -113,26 +103,6 @@ export default function HomePageClient() {
                   Start Rating
                 </Button>
               </Link>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div
-              variants={staggerContainer}
-              {...getMotionProps()}
-              className="grid grid-cols-3 gap-4 sm:gap-6 max-w-lg sm:max-w-2xl mx-auto px-4"
-            >
-              <motion.div variants={fadeInUp} className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-primary mb-1 sm:mb-2">5</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Oscar Criteria</div>
-              </motion.div>
-              <motion.div variants={fadeInUp} className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-accent mb-1 sm:mb-2">∞</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Performances</div>
-              </motion.div>
-              <motion.div variants={fadeInUp} className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-primary mb-1 sm:mb-2">100%</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Free</div>
-              </motion.div>
             </motion.div>
 
             {/* Scroll Down */}
