@@ -124,10 +124,18 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
-    // Validate actor/movie combination exists
-    const performance = await prisma.performance.findFirst({ where: { actorId, movieId } })
-    if (!performance) {
-      return NextResponse.json({ error: "Invalid actor/movie combination" }, { status: 400 })
+    // Validate actor and movie exist
+    const [actor, movie] = await Promise.all([
+      prisma.actor.findUnique({ where: { id: actorId } }),
+      prisma.movie.findUnique({ where: { id: movieId } })
+    ])
+    
+    if (!actor) {
+      return NextResponse.json({ error: "Actor not found" }, { status: 400 })
+    }
+    
+    if (!movie) {
+      return NextResponse.json({ error: "Movie not found" }, { status: 400 })
     }
 
     // Calculate weighted score (server-side calculation, or use provided if valid)

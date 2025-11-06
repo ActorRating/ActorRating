@@ -87,6 +87,22 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("=== USER RATINGS API ERROR ===")
     console.error("Full error:", error)
+    if (error instanceof Error) {
+      console.error("Error name:", error.name)
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
+      
+      // Check for specific Prisma errors
+      if (error.message.includes('P2002') || error.message.includes('Unique constraint')) {
+        return NextResponse.json({ error: "Database constraint violation" }, { status: 400 })
+      }
+      if (error.message.includes('P2025') || error.message.includes('Record to update not found')) {
+        return NextResponse.json({ error: "Record not found" }, { status: 404 })
+      }
+      if (error.message.includes('P1001') || error.message.includes('Can\'t reach database')) {
+        return NextResponse.json({ error: "Database connection failed" }, { status: 503 })
+      }
+    }
     
     return NextResponse.json(
       { 
