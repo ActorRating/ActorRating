@@ -109,34 +109,60 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       }
     }
 
-    // Verify reCAPTCHA
-    if (recaptchaToken && recaptchaToken !== 'dev_mock_token_submit_rating_123') {
+    // Verify reCAPTCHA (required in production)
+    if (!recaptchaToken) {
+      return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
+    }
+    
+    if (recaptchaToken !== 'dev_mock_token_submit_rating_123') {
       const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
       if (!recaptchaResult.success) {
-        return NextResponse.json({ error: "reCAPTCHA verification failed" }, { status: 403 })
+        console.error("reCAPTCHA verification failed:", recaptchaResult.error)
+        return NextResponse.json({ 
+          error: "reCAPTCHA verification failed", 
+          debug: recaptchaResult.error 
+        }, { status: 403 })
       }
     }
 
     // Rate limiting
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    const rateLimitResult = await checkRateLimit(clientIp, 'rating')
+    let rateLimitResult
+    try {
+      rateLimitResult = await checkRateLimit(clientIp, 'rating')
+    } catch (rateLimitError) {
+      console.error("Rate limit check failed (allowing request):", rateLimitError)
+      // If rate limiting fails, allow the request but log the error
+      rateLimitResult = { allowed: true, remaining: 999, resetTime: new Date() }
+    }
     if (!rateLimitResult.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
     // Validate actor and movie exist
-    const [actor, movie] = await Promise.all([
-      prisma.actor.findUnique({ where: { id: actorId } }),
-      prisma.movie.findUnique({ where: { id: movieId } })
-    ])
+    console.log("Validating actor and movie:", { actorId, movieId })
+    let actor, movie
+    try {
+      [actor, movie] = await Promise.all([
+        prisma.actor.findUnique({ where: { id: actorId } }),
+        prisma.movie.findUnique({ where: { id: movieId } })
+      ])
+    } catch (dbError) {
+      console.error("Database error during actor/movie lookup:", dbError)
+      throw dbError
+    }
     
     if (!actor) {
+      console.error("Actor not found:", actorId)
       return NextResponse.json({ error: "Actor not found" }, { status: 400 })
     }
     
     if (!movie) {
+      console.error("Movie not found:", movieId)
       return NextResponse.json({ error: "Movie not found" }, { status: 400 })
     }
+    
+    console.log("Actor and movie validated:", { actorName: actor.name, movieTitle: movie.title })
 
     // Calculate weighted score (server-side calculation, or use provided if valid)
     const calculatedWeightedScore = emotionalRangeDepth * 0.25 +
@@ -202,25 +228,46 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
         // Generate TEXT ID: "rating_" + nanoid()
         const ratingId = `rating_${nanoid()}`
         
-        rating = await prisma.rating.create({
-          data: { 
-            id: ratingId,
-            userId: String(userId), // Ensure TEXT format (UUID from Supabase stored as TEXT)
-            actorId: String(actorId), // Ensure TEXT format
-            movieId: String(movieId), // Ensure TEXT format
-            emotionalRangeDepth, 
-            characterBelievability, 
-            technicalSkill, 
-            screenPresence, 
-            chemistryInteraction, 
-            weightedScore, 
-            shareScore, 
-            comment,
-            breakdown: breakdown || null // Optional breakdown field
-          },
-          include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
+        console.log("Creating new rating:", { 
+          ratingId, 
+          userId, 
+          actorId, 
+          movieId,
+          weightedScore,
+          shareScore
         })
-        console.log("Created new rating:", rating.id)
+        
+        try {
+          rating = await prisma.rating.create({
+            data: { 
+              id: ratingId,
+              userId: String(userId), // Ensure TEXT format (UUID from Supabase stored as TEXT)
+              actorId: String(actorId), // Ensure TEXT format
+              movieId: String(movieId), // Ensure TEXT format
+              emotionalRangeDepth, 
+              characterBelievability, 
+              technicalSkill, 
+              screenPresence, 
+              chemistryInteraction, 
+              weightedScore, 
+              shareScore, 
+              comment,
+              breakdown: breakdown || null // Optional breakdown field
+            },
+            include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
+          })
+          console.log("Created new rating:", rating.id)
+        } catch (createError) {
+          console.error("Error creating rating:", createError)
+          if (createError instanceof Error) {
+            console.error("Create error details:", {
+              name: createError.name,
+              message: createError.message,
+              stack: createError.stack
+            })
+          }
+          throw createError
+        }
       }
     }
 
