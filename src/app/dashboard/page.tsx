@@ -371,12 +371,12 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Unique Actors */}
-                <div className="bg-purple-500/20 border border-purple-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
-                  <User className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400 mx-auto mb-3" />
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400 mb-2">
+                <div className="bg-accent/20 border border-accent/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
+                  <User className="w-6 h-6 sm:w-7 sm:h-7 text-accent mx-auto mb-3" />
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-accent mb-2">
                     {uniqueActorsCount}
                   </div>
-                  <div className="text-sm sm:text-base text-purple-300/80 font-medium">
+                  <div className="text-sm sm:text-base text-accent/80 font-medium">
                     Actor{uniqueActorsCount === 1 ? '' : 's'}
                   </div>
                 </div>
@@ -470,7 +470,7 @@ export default function DashboardPage() {
                       {/* Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white text-lg leading-tight mb-1 group-hover:text-purple-400 transition-colors">
+                          <h3 className="font-bold text-white text-lg leading-tight mb-1 group-hover:text-accent transition-colors">
                             <Link href={`/actors/${rating.actor.id}`} className="hover:underline">
                               {rating.actor.name}
                             </Link>
@@ -493,9 +493,9 @@ export default function DashboardPage() {
                     {/* Character and Movie Info */}
                     <div className="space-y-2 mb-4">
                       {/* Movie Badge */}
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm">
-                        <Film className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                        <span className="font-medium text-purple-300 text-sm">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent/30 bg-accent/10 backdrop-blur-sm">
+                        <Film className="w-3 h-3 text-accent flex-shrink-0" />
+                        <span className="font-medium text-accent text-sm">
                           "{rating.movie.title}"
                         </span>
                       </div>
@@ -541,7 +541,7 @@ export default function DashboardPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all"
+                          className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-accent hover:bg-accent/10 transition-all"
                           onClick={() => beginEdit(rating)}
                           aria-label="Edit rating"
                           title="Edit rating"

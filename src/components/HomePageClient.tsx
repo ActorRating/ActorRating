@@ -73,11 +73,20 @@ export default function HomePageClient() {
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 leading-tight"
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-8 sm:mb-10 md:mb-12 lg:mb-14 px-2 leading-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
             >
               Where every performance gets its moment.
             </motion.div>
+
+            <motion.h2
+              variants={fadeInUp}
+              {...getMotionProps()}
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white mb-8 sm:mb-10 md:mb-12 px-2 leading-relaxed font-light"
+              style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 300 }}
+            >
+              Rate the performances that move you. Celebrate the ones that define cinema.
+            </motion.h2>
 
             <motion.p
               variants={fadeInUp}
@@ -99,7 +108,7 @@ export default function HomePageClient() {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="w-full sm:w-auto text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300 font-bold text-lg sm:text-xl py-4 sm:py-5 px-8 sm:px-10 min-h-[56px] sm:min-h-[60px]"
+                  className="w-full sm:w-auto text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300 font-bold text-lg sm:text-xl py-4 sm:py-5 px-8 sm:px-10 min-h-[56px] sm:min-h-[60px] premium-shadow"
                 >
                   Start Rating
                 </Button>

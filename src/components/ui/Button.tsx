@@ -15,10 +15,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const buttonClasses = cn(
       "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:scale-105 active:scale-95",
       {
-        "bg-primary text-primary-foreground hover:bg-accent shadow-lg hover:shadow-xl": variant === "default",
-        "border border-border bg-secondary text-secondary-foreground hover:bg-muted hover:border-primary": variant === "outline",
+        "bg-primary text-primary-foreground hover:bg-accent premium-shadow": variant === "default",
+        "border border-border bg-secondary text-secondary-foreground hover:bg-muted hover:border-primary premium-shadow": variant === "outline",
         "text-secondary-foreground hover:bg-secondary hover:text-foreground": variant === "ghost",
-        "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:from-accent hover:to-primary shadow-lg hover:shadow-xl": variant === "premium",
+        "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:from-accent hover:to-primary premium-shadow": variant === "premium",
         "h-8 px-3 text-sm": size === "sm",
         "h-10 px-4 py-2": size === "md",
         "h-12 px-6 text-lg": size === "lg",

@@ -73,9 +73,9 @@ export function FeedbackSection() {
       >
         <Button
           onClick={() => setIsOpen(true)}
-          variant="premium"
+          variant="outline"
           size="lg"
-          className="rounded-full px-6 py-3 feedback-button-shadow relative group"
+          className="rounded-full px-6 py-3 text-accent border-accent hover:bg-accent/10 hover:border-accent/80 premium-shadow relative group"
         >
           <MessageSquare className="w-5 h-5 mr-2" />
           Feedback

@@ -262,8 +262,8 @@ export default function ActorDetailPage() {
                 className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-1.5 bg-purple-500/20 rounded-md">
-                    <Heart className="w-4 h-4 text-purple-300" />
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <Heart className="w-4 h-4 text-accent" />
                   </div>
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Emotional Range</div>
@@ -279,8 +279,8 @@ export default function ActorDetailPage() {
                 className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-1.5 bg-purple-500/20 rounded-md">
-                    <Target className="w-4 h-4 text-purple-300" />
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <Target className="w-4 h-4 text-accent" />
                   </div>
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Believability</div>
@@ -299,8 +299,8 @@ export default function ActorDetailPage() {
                 className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-1.5 bg-purple-500/20 rounded-md">
-                    <Zap className="w-4 h-4 text-purple-300" />
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <Zap className="w-4 h-4 text-accent" />
                   </div>
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Performance Quality</div>
@@ -316,8 +316,8 @@ export default function ActorDetailPage() {
                 className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-1.5 bg-purple-500/20 rounded-md">
-                    <Eye className="w-4 h-4 text-purple-300" />
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <Eye className="w-4 h-4 text-accent" />
                   </div>
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Screen Presence</div>
@@ -336,8 +336,8 @@ export default function ActorDetailPage() {
                 className="bg-secondary border border-border rounded-lg p-3 sm:p-4 hover:border-primary transition-all duration-200 w-full max-w-[200px] sm:max-w-none"
               >
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-1.5 bg-purple-500/20 rounded-md">
-                    <Users className="w-4 h-4 text-purple-300" />
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <Users className="w-4 h-4 text-accent" />
                   </div>
                 </div>
                 <div className="text-xs sm:text-sm font-medium text-gray-300 mb-1 text-center leading-tight">Chemistry</div>
@@ -417,7 +417,7 @@ export default function ActorDetailPage() {
 
                       {/* Character - Fixed display with proper wrapping */}
                       <div className="mb-2">
-                        <span className="inline-block text-sm font-medium text-purple-300 bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 rounded-full break-words max-w-full">
+                        <span className="inline-block text-sm font-medium text-accent bg-accent/15 border border-accent/30 px-3 py-1.5 rounded-full break-words max-w-full">
                           Character: {resolveCharacterDisplay(performance)}
                         </span>
                       </div>
