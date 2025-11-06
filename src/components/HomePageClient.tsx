@@ -4,8 +4,7 @@
 import { useUser } from "@/components/providers/SessionProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { FaStar, FaHandshake, FaTheaterMasks, FaUsers, FaChartLine, FaPlay, FaArrowRight } from "react-icons/fa";
+import { FaStar, FaHandshake, FaTheaterMasks, FaUsers, FaChartLine, FaArrowRight } from "react-icons/fa";
 import { GiClapperboard, GiHeartWings } from "react-icons/gi";
 import { motion } from "framer-motion";
 import { fadeInUp, getMotionProps, staggerContainer, scaleIn } from "@/lib/animations";
@@ -59,7 +58,10 @@ export default function HomePageClient() {
 
   return (
     <>
-      <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="min-h-screen bg-background relative overflow-hidden film-grain">
+        {/* Soft spotlight effect behind hero */}
+        <div className="absolute inset-0 hero-spotlight" />
+        
         {/* Gradient background overlays */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -68,18 +70,14 @@ export default function HomePageClient() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="flex flex-col justify-start text-center py-12 sm:py-16 md:py-20 lg:py-24">
-            <motion.h1
+            <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl font-bold text-foreground mb-6 sm:mb-8 px-2 leading-tight"
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 leading-tight"
+              style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
             >
-              <div className="text-primary">Rate Acting</div>
-              <div className="mt-3 sm:mt-4">
-                <span className="text-foreground">Performances</span>
-                <br />
-                <span className="text-muted-foreground text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-5xl 2xl:text-6xl">Not Just Movies</span>
-              </div>
-            </motion.h1>
+              Where every performance gets its moment.
+            </motion.div>
 
             <motion.p
               variants={fadeInUp}
@@ -91,39 +89,19 @@ export default function HomePageClient() {
               <span className="text-accent font-semibold"> Oscar-inspired criteria</span>
             </motion.p>
 
-            {/* Search Bar */}
+            {/* Start Rating Button */}
             <motion.div
               variants={scaleIn}
               {...getMotionProps()}
-              className="max-w-lg sm:max-w-xl lg:max-w-2xl mx-auto mb-8 sm:mb-10 px-3"
+              className="flex justify-center mb-8 sm:mb-10 px-3"
             >
-              <SearchBar
-                placeholder="Search actors, movies..."
-                className="text-lg sm:text-xl shadow-2xl bg-transparent"
-                onSearch={(query) => {
-                  if (query.trim()) {
-                    window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
-                  }
-                }}
-              />
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              variants={fadeInUp}
-              {...getMotionProps()}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 sm:mb-12 px-4"
-            >
-              <Link href="/auth/signup" className="w-full sm:w-auto">
-                <Button variant="premium" size="lg" className="group w-full sm:w-auto">
-                  Get Started Free
-                  <FaArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/auth/signin" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="group w-full sm:w-auto">
-                  <FaPlay className="w-4 h-4 mr-2" />
-                  Sign In
+              <Link href="/auth/signup" className="w-full sm:w-auto max-w-xs">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full sm:w-auto text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300 font-bold text-lg sm:text-xl py-4 sm:py-5 px-8 sm:px-10 min-h-[56px] sm:min-h-[60px]"
+                >
+                  Start Rating
                 </Button>
               </Link>
             </motion.div>

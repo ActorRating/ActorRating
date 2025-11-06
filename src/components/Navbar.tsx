@@ -19,7 +19,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <nav className="bg-secondary/50 backdrop-blur-sm border-b border-border sticky top-0 z-50" suppressHydrationWarning>
+    <nav className="border-b border-border sticky top-0 z-50" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -76,7 +76,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden border-t border-border bg-secondary/50 backdrop-blur-sm"
+            className="lg:hidden border-t border-border"
           >
             <div className="px-4 py-4 space-y-2">
               {navigation.map((item) => (

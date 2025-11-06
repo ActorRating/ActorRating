@@ -32,7 +32,7 @@ export function HomeNavbar() {
   }, [navKey])
 
   return (
-    <nav className="bg-secondary/70 border-b border-border sticky top-0 z-50 isolate text-foreground" style={{ transform: 'translateZ(0)', willChange: 'opacity, transform', WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden' }} suppressHydrationWarning>
+    <nav className="border-b border-border sticky top-0 z-50 isolate text-foreground" style={{ transform: 'translateZ(0)', willChange: 'opacity, transform', WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden' }} suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -41,11 +41,10 @@ export function HomeNavbar() {
           </div>
 
           {/* Right side - keep stable width so layout never collapses */}
-          <div className="flex items-center space-x-3 min-w-[220px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal">
+          <div className="flex items-center space-x-3 min-w-[120px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal">
             {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
-                <div className="h-8 w-20 rounded-md bg-muted animate-pulse hidden sm:block" />
               </div>
             ) : user ? (
               <div className="flex items-center gap-2">
@@ -65,18 +64,16 @@ export function HomeNavbar() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/auth/signin">
-                  <Button noMotion variant="outline" size="sm" className="text-foreground text-white border-border">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button noMotion size="sm" className="text-foreground text-white">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/auth/signup">
+                <Button 
+                  noMotion 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300"
+                >
+                  Sign In
+                </Button>
+              </Link>
             )}
           </div>
         </div>
