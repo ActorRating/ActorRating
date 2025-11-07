@@ -73,10 +73,10 @@ export default function HomePageClient() {
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-8 sm:mb-10 md:mb-12 lg:mb-14 px-2 leading-tight"
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 leading-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
             >
-              Where every performance<br />gets its moment.
+              Where every performance<span className="sm:hidden"><br /></span> gets its moment.
             </motion.div>
 
             <motion.p
@@ -133,8 +133,8 @@ export default function HomePageClient() {
 
           {/* Interactive Sliders Preview */}
           <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4">
-            <div className="text-center mb-6 sm:mb-8 lg:mb-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
+            <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-8 sm:mb-10 md:mb-12">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Try Our
                 </span>
@@ -155,8 +155,8 @@ export default function HomePageClient() {
 
           {/* Rating System Section */}
           <div className="py-12 sm:py-16 md:py-20 lg:py-24">
-            <motion.div variants={fadeInUp} {...getMotionProps()} className="text-center mb-6 sm:mb-8 lg:mb-12 px-4">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
+            <motion.div variants={fadeInUp} {...getMotionProps()} className="text-center mb-12 sm:mb-16 lg:mb-20 px-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-8 sm:mb-10 md:mb-12">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Oscar-Inspired
                 </span>
@@ -238,14 +238,14 @@ export default function HomePageClient() {
                 <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
 
                 <div className="relative z-10">
-                  <div className="text-center mb-8 sm:mb-12">
-                    <motion.div variants={fadeInUp} className="mb-4 sm:mb-6">
+                  <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+                    <motion.div variants={fadeInUp} className="mb-6 sm:mb-8">
                       <span className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium border border-primary/20">
                         <FaStar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1.5 sm:mr-2" />
                         Our Vision
                       </span>
                     </motion.div>
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 sm:mb-6">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-8 sm:mb-10 md:mb-12">
                       <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                         Revolutionizing
                       </span>
