@@ -76,7 +76,7 @@ export default function HomePageClient() {
               className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-8 sm:mb-10 md:mb-12 lg:mb-14 px-2 leading-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
             >
-              Where every performance gets its moment.
+              Where every performance<br />gets its moment.
             </motion.div>
 
             <motion.p
@@ -96,9 +96,9 @@ export default function HomePageClient() {
             >
               <Link href="/auth/signup" className="w-full sm:w-auto max-w-xs">
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="lg" 
-                  className="w-full sm:w-auto text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300 font-bold text-lg sm:text-xl py-4 sm:py-5 px-8 sm:px-10 min-h-[56px] sm:min-h-[60px] premium-shadow"
+                  className="w-full sm:w-auto bg-accent text-black hover:bg-accent/90 transition-all duration-300 font-bold text-xl sm:text-2xl py-5 sm:py-6 px-10 sm:px-12 min-h-[64px] sm:min-h-[72px] premium-shadow glassmorphism"
                 >
                   Start Rating
                 </Button>
@@ -116,15 +116,14 @@ export default function HomePageClient() {
                   const nextSection = document.querySelector('.interactive-sliders-preview');
                   if (nextSection) nextSection.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="group flex flex-col items-center text-muted-foreground hover:text-primary transition-colors duration-300 focus:outline-none focus:ring-0"
+                className="group flex flex-col items-center text-accent transition-colors duration-300 focus:outline-none focus:ring-0"
               >
-                <span className="text-sm mb-2">Scroll to explore</span>
                 <motion.div
                   animate={{ y: [0, 8, 0] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-6 h-6 border-2 border-current rounded-full flex items-center justify-center"
+                  className="w-6 h-6 border-2 border-accent rounded-full flex items-center justify-center"
                 >
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
                 </motion.div>
@@ -174,7 +173,7 @@ export default function HomePageClient() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
                 {/* Emotional Range & Depth */}
                 <motion.div variants={fadeInUp} className="relative group safari-blur-fix">
-                  <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
+                  <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/30 text-center group-hover:border-accent/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <GiHeartWings className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
@@ -185,7 +184,7 @@ export default function HomePageClient() {
 
                 {/* Character Believability */}
                 <motion.div variants={fadeInUp} className="relative group safari-blur-fix">
-                  <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
+                  <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/30 text-center group-hover:border-accent/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaTheaterMasks className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
@@ -209,7 +208,7 @@ export default function HomePageClient() {
               {/* Screen Presence & Chemistry */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-3xl sm:max-w-4xl mx-auto">
                 <motion.div variants={fadeInUp} className="relative group safari-blur-fix">
-                  <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
+                  <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/30 text-center group-hover:border-accent/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaStar className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
@@ -219,7 +218,7 @@ export default function HomePageClient() {
                 </motion.div>
 
                 <motion.div variants={fadeInUp} className="relative group safari-blur-fix">
-                  <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/50 text-center group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col justify-center">
+                  <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl border border-border/30 text-center group-hover:border-accent/50 transition-all duration-300 h-full flex flex-col justify-center">
                     <div className="text-3xl sm:text-4xl mb-4 sm:mb-6 flex justify-center">
                       <FaHandshake className="w-12 h-12 sm:w-16 sm:h-16 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
@@ -234,7 +233,7 @@ export default function HomePageClient() {
           {/* Mission Section */}
           <div className="py-12 sm:py-16 md:py-20 lg:py-24">
             <motion.div variants={fadeInUp} {...getMotionProps()} className="relative group mx-4">
-              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 border border-border/50 overflow-hidden">
+              <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 border border-border/30 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 sm:w-64 sm:h-64 bg-primary/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-64 sm:h-64 bg-accent/5 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2" />
 
