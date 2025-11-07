@@ -69,14 +69,14 @@ export default function HomePageClient() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="flex flex-col justify-start text-center py-12 sm:py-16 md:py-20 lg:py-24">
+          <div className="flex flex-col justify-start text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32 pb-12 sm:pb-16 md:pb-20 lg:pb-24">
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
               className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 leading-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
             >
-              Where every performance<span className="sm:hidden"><br /></span> gets its moment.
+              Where every performance<br />gets its moment.
             </motion.div>
 
             <motion.p
@@ -109,7 +109,7 @@ export default function HomePageClient() {
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="flex justify-center mt-8 sm:hidden"
+              className="flex justify-center mt-16 sm:hidden"
             >
               <button
                 onClick={() => {
