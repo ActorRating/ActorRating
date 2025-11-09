@@ -169,14 +169,7 @@ export default function HomePageClient() {
       </div>
 
       {/* Interactive Sliders Preview - Outside hero container so spotlight doesn't affect it */}
-      <div className="relative z-10 bg-background border-t border-primary/10">
-        {/* Subtle gradient border for smooth transition */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-px pointer-events-none"
-          style={{
-            background: 'linear-gradient(to right, transparent, rgba(212, 175, 55, 0.2), transparent)'
-          }}
-        />
+      <div className="relative z-10 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4 parallax-peek">
             <div className="text-center mb-12 sm:mb-16 lg:mb-20">
