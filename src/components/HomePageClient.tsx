@@ -97,6 +97,15 @@ export default function HomePageClient() {
       <div className="hero min-h-[100vh] relative overflow-hidden">
         {/* Hero spotlight - contained within Hero section */}
         <div className="hero-spotlight" />
+        
+        {/* Bottom Fade Mask - smooth transition to next section */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-20"
+          style={{
+            background: 'linear-gradient(to top, #000000 0%, transparent 100%)'
+          }}
+        />
+        
         <div className="hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="flex flex-col justify-start text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32 pb-12 sm:pb-16 md:pb-20 lg:pb-24">
@@ -160,7 +169,14 @@ export default function HomePageClient() {
       </div>
 
       {/* Interactive Sliders Preview - Outside hero container so spotlight doesn't affect it */}
-      <div className="relative z-10 bg-background">
+      <div className="relative z-10 bg-background border-t border-primary/10">
+        {/* Subtle gradient border for smooth transition */}
+        <div 
+          className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+          style={{
+            background: 'linear-gradient(to right, transparent, rgba(212, 175, 55, 0.2), transparent)'
+          }}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4 parallax-peek">
             <div className="text-center mb-12 sm:mb-16 lg:mb-20">
