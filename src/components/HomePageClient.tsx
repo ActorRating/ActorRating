@@ -86,7 +86,7 @@ export default function HomePageClient() {
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-6 sm:px-8 md:px-12 lg:px-16 leading-tight"
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 sm:px-8 md:px-12 lg:px-16 leading-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400, textAlign: 'center' }}
             >
               Every performance matters.
