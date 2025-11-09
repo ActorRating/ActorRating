@@ -69,6 +69,23 @@ export default function HomePageClient() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [mounted]);
 
+  // Parallax effect for spotlight
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const handleScroll = () => {
+      const spotlight = document.querySelector('.hero-spotlight');
+      if (!spotlight) return;
+      
+      const scrolled = window.pageYOffset;
+      (spotlight as HTMLElement).style.transform = 
+        `translate(-50%, calc(-50% + ${scrolled * 0.5}px))`;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [mounted]);
+
   if (!mounted || isLoading) {
     return <div className="min-h-screen bg-background" />;
   }

@@ -61,20 +61,44 @@ body {
 /* Hero spotlight - contained inside Hero section */
 .hero-spotlight {
   position: absolute;
-  top: 32%;
+  top: 25%; /* Upper third */
   left: 50%;
-  width: 600px;
-  height: 600px;
   transform: translate(-50%, -50%);
+  
+  /* Size */
+  width: 700px;
+  height: 700px;
+  
+  /* Glow effect */
   background: radial-gradient(
-    circle,
-    rgba(255, 217, 102, 0.15) 0%,
-    rgba(255, 217, 102, 0.00) 70%
+    circle at center,
+    rgba(212, 175, 55, 0.15) 0%,    /* Bright center */
+    rgba(212, 175, 55, 0.08) 30%,   /* Medium glow */
+    rgba(212, 175, 55, 0.03) 60%,   /* Soft edge */
+    transparent 100%                 /* Fade out */
   );
+  
+  /* Blur for softness */
+  filter: blur(40px);
+  
+  /* Don't block clicks */
   pointer-events: none;
-  filter: blur(60px);
-  z-index: 5;
-  opacity: 1; /* Force full opacity */
+  
+  /* Layer behind text */
+  z-index: 1;
+  
+  /* Parallax optimization */
+  will-change: transform;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .hero-spotlight {
+    width: 500px;
+    height: 500px;
+    top: 30%; /* Slightly lower on mobile */
+    filter: blur(60px); /* More blur on small screens */
+  }
 }
 
 /* Hero content - ensure transparent background and correct z-index */
