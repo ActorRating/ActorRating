@@ -96,7 +96,7 @@ export default function HomePageClient() {
               variants={fadeInUp}
               {...getMotionProps()}
               className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-400 max-w-4xl mx-auto leading-relaxed mb-16 sm:mb-20 md:mb-24 px-6 sm:px-8 md:px-12 lg:px-16"
-              style={{ fontFamily: 'var(--font-geist-sans), Inter, sans-serif' }}
+              style={{ fontFamily: 'var(--font-cinzel), serif', letterSpacing: '1px' }}
             >
               Rate the performances that move you. Celebrate the ones that define cinema.
             </motion.p>

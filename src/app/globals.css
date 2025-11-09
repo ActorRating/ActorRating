@@ -93,9 +93,9 @@ body {
   padding: 14px 32px !important;
   border-radius: 8px !important;
   font-family: Cinzel, serif !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 17px !important;
-  letter-spacing: 0.6px !important;
+  letter-spacing: 2px !important;
   transition: all 0.25s ease !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
