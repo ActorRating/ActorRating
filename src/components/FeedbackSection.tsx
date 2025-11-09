@@ -74,10 +74,10 @@ export function FeedbackSection() {
         <Button
           onClick={() => setIsOpen(true)}
           variant="outline"
-          size="lg"
-          className="rounded-full w-14 h-14 p-0 text-accent border-accent hover:bg-accent/10 hover:border-accent/80 premium-shadow relative group glassmorphism"
+          size="sm"
+          className="rounded-full w-12 h-12 p-0 text-accent border-accent hover:bg-accent/10 hover:border-accent/80 premium-shadow relative group glassmorphism"
         >
-          <MessageSquare className="w-5 h-5" />
+          <MessageSquare className="w-4 h-4" />
         </Button>
       </motion.div>
     )

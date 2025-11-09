@@ -11,6 +11,8 @@ export function HomeNavbar() {
   const user = useUser()
   const navKey = `${user?.id || 'anon'}`
   const [mounted, setMounted] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
   useEffect(() => {
     setMounted(true)
     const clearOverlays = () => {
@@ -31,17 +33,33 @@ export function HomeNavbar() {
     return () => clearTimeout(id)
   }, [navKey])
 
+  useEffect(() => {
+    if (!mounted) return
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      setScrolled(scrollY > 60)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Check initial state
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [mounted])
+
   return (
-    <nav className="sticky top-0 z-50 isolate text-foreground navbar-fade" style={{ transform: 'translateZ(0)', willChange: 'opacity, transform', WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden' }} suppressHydrationWarning>
+    <nav 
+      className={`navbar-cinematic ${scrolled ? 'navbar-scrolled' : ''}`}
+      suppressHydrationWarning
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo - always gold */}
           <div className="flex items-center">
             <Logo href="/" />
           </div>
 
           {/* Right side - keep stable width so layout never collapses */}
-          <div className="flex items-center space-x-3 min-w-[120px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal pr-0">
+          <div className={`flex items-center space-x-3 min-w-[120px] justify-end relative z-10 pointer-events-auto mix-blend-normal pr-0 navbar-content ${scrolled ? 'navbar-content-scrolled' : ''}`}>
             {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
@@ -49,7 +67,7 @@ export function HomeNavbar() {
             ) : user ? (
               <div className="flex items-center gap-2">
                 <Link href="/dashboard">
-                  <Button noMotion variant="outline" size="sm" className="text-foreground text-white border-border">
+                  <Button noMotion variant="outline" size="sm" className="navbar-button">
                     Dashboard
                   </Button>
                 </Link>
@@ -58,7 +76,7 @@ export function HomeNavbar() {
                   onClick={() => handleLogout()} 
                   variant="outline" 
                   size="sm"
-                  className="text-foreground text-white border-border"
+                  className="navbar-button"
                 >
                   Sign Out
                 </Button>
@@ -69,7 +87,7 @@ export function HomeNavbar() {
                   noMotion 
                   variant="outline" 
                   size="sm" 
-                  className="text-accent border-accent hover:bg-accent/10 hover:border-accent/80 transition-all duration-300"
+                  className="navbar-button navbar-signin"
                 >
                   Sign In
                 </Button>

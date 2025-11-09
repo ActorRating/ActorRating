@@ -50,6 +50,25 @@ export default function HomePageClient() {
     if (user) router.replace("/dashboard");
   }, [mounted, user, router]);
 
+  // Parallax effect for next section
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const handleScroll = () => {
+      const peekElement = document.querySelector('.parallax-peek');
+      if (!peekElement) return;
+      
+      const scrollY = window.scrollY;
+      const maxScroll = 300; // Maximum scroll distance for parallax
+      const parallaxAmount = Math.min(scrollY / maxScroll, 1) * 10; // 10px max peek
+      
+      (peekElement as HTMLElement).style.transform = `translateY(${10 - parallaxAmount}px)`;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [mounted]);
+
   if (!mounted || isLoading) {
     return <div className="min-h-screen bg-background" />;
   }
@@ -58,31 +77,25 @@ export default function HomePageClient() {
 
   return (
     <>
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Soft spotlight effect behind hero - optimized for mobile */}
-        <div className="absolute inset-0 hero-spotlight" />
-        
-        {/* Gradient background overlays */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="hero min-h-[100vh] relative overflow-hidden">
+        {/* Hero spotlight - contained within Hero section */}
+        <div className="hero-spotlight" />
+        <div className="hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="flex flex-col justify-start text-center pt-20 sm:pt-24 md:pt-28 lg:pt-32 pb-12 sm:pb-16 md:pb-20 lg:pb-24">
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-2 leading-tight"
-              style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400 }}
+              className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl xl:text-7xl 2xl:text-8xl text-white mb-12 sm:mb-16 md:mb-20 lg:mb-24 px-6 sm:px-8 md:px-12 lg:px-16 leading-tight"
+              style={{ fontFamily: 'var(--font-cinzel), serif', fontWeight: 400, textAlign: 'center' }}
             >
-              Where every performance<br />gets its moment.
+              Every performance matters.
             </motion.div>
 
             <motion.p
               variants={fadeInUp}
               {...getMotionProps()}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-400 max-w-4xl mx-auto leading-relaxed mb-16 sm:mb-20 md:mb-24 px-3"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-400 max-w-4xl mx-auto leading-relaxed mb-16 sm:mb-20 md:mb-24 px-6 sm:px-8 md:px-12 lg:px-16"
               style={{ fontFamily: 'var(--font-geist-sans), Inter, sans-serif' }}
             >
               Rate the performances that move you. Celebrate the ones that define cinema.
@@ -92,13 +105,13 @@ export default function HomePageClient() {
             <motion.div
               variants={scaleIn}
               {...getMotionProps()}
-              className="flex justify-center mb-16 sm:mb-20 md:mb-24 px-3"
+              className="flex justify-center mb-16 sm:mb-20 md:mb-24 px-6 sm:px-8 md:px-12 lg:px-16"
             >
               <Link href="/auth/signup" className="w-full sm:w-auto max-w-xs">
                 <Button 
-                  variant="default" 
+                  variant="outline" 
                   size="lg" 
-                  className="w-full sm:w-auto bg-accent text-black hover:bg-accent/90 transition-all duration-300 font-bold text-xl sm:text-2xl py-5 sm:py-6 px-10 sm:px-12 min-h-[64px] sm:min-h-[72px] premium-shadow glassmorphism"
+                  className="cta-premium-outline w-full sm:w-auto"
                 >
                   Start Rating
                 </Button>
@@ -109,30 +122,30 @@ export default function HomePageClient() {
             <motion.div
               variants={fadeInUp}
               {...getMotionProps()}
-              className="flex justify-center mt-16 sm:hidden"
+              className="flex justify-center mt-24 sm:hidden"
             >
               <button
                 onClick={() => {
                   const nextSection = document.querySelector('.interactive-sliders-preview');
                   if (nextSection) nextSection.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="group flex flex-col items-center text-accent transition-colors duration-300 focus:outline-none focus:ring-0"
+                className="group flex flex-col items-center text-gray-400 transition-colors duration-300 focus:outline-none focus:ring-0"
               >
-                <motion.div
-                  animate={{ y: [0, 8, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-6 h-6 border-2 border-accent rounded-full flex items-center justify-center"
-                >
-                  <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-6 h-6 border-2 border-gray-400 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                </motion.div>
+                </div>
               </button>
             </motion.div>
           </div>
+        </div>
+      </div>
 
-          {/* Interactive Sliders Preview */}
-          <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4">
+      {/* Interactive Sliders Preview - Outside hero container so spotlight doesn't affect it */}
+      <div className="relative z-10 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div variants={fadeInUp} {...getMotionProps()} className="interactive-sliders-preview py-8 sm:py-10 px-4 parallax-peek">
             <div className="text-center mb-12 sm:mb-16 lg:mb-20">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-8 sm:mb-10 md:mb-12">
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -152,8 +165,12 @@ export default function HomePageClient() {
               </Link>
             </div>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Rating System Section */}
+      {/* Rating System Section */}
+      <div className="relative z-10 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-12 sm:py-16 md:py-20 lg:py-24">
             <motion.div variants={fadeInUp} {...getMotionProps()} className="text-center mb-12 sm:mb-16 lg:mb-20 px-4">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-8 sm:mb-10 md:mb-12">
@@ -229,8 +246,12 @@ export default function HomePageClient() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </div>
 
-          {/* Mission Section */}
+      {/* Mission Section */}
+      <div className="relative z-10 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-12 sm:py-16 md:py-20 lg:py-24">
             <motion.div variants={fadeInUp} {...getMotionProps()} className="relative group mx-4">
               <div className="relative glassmorphism bg-secondary/30 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 border border-border/30 overflow-hidden">
