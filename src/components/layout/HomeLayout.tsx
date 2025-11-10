@@ -24,7 +24,7 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
       style={{ zIndex: 1 }}
     >
       {/* Navbar switches based on auth status for consistency across pages */}
-      <div style={{ position: 'relative', zIndex: 999 }}>
+      <div style={{ position: 'relative', zIndex: 999, background: 'transparent' }}>
         {!mounted ? <HomeNavbar /> : (user ? <SignedInNavbar /> : <HomeNavbar />)}
       </div>
 

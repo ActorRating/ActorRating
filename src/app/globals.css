@@ -439,6 +439,8 @@ img, video {
 /* Navbar - no bottom fade to maintain seamless blend */
 nav {
   position: relative;
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Parallax peek effect for next section */
