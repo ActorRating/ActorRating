@@ -443,6 +443,13 @@ nav {
   background-color: transparent !important;
 }
 
+/* Ensure all navbar inner containers are transparent */
+.navbar-cinematic > div,
+.navbar-cinematic > div > div {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 /* Parallax peek effect for next section */
 .parallax-peek {
   margin-top: -10px;
