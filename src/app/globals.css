@@ -53,19 +53,20 @@ body {
 /* Hero section - content will be layered above */
 .hero {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible; /* Allow spotlight to extend upward behind navbar */
   background: #000; /* Only this background allowed in Hero */
   z-index: 0;
 }
 
-/* Hero spotlight - contained inside Hero section */
+/* Hero spotlight - contained inside Hero section, extends behind navbar */
 .hero-spotlight {
   position: absolute;
-  top: 25%; /* Upper third */
+  top: 20%; /* Higher to extend behind navbar area */
   left: 50%;
   transform: translate(-50%, -50%);
   
-  /* Size */
+  /* Size - larger to extend behind navbar */
   width: 700px;
   height: 700px;
   
@@ -84,7 +85,7 @@ body {
   /* Don't block clicks */
   pointer-events: none;
   
-  /* Layer behind text */
+  /* Layer behind text but above hero background */
   z-index: 1;
   
   /* Parallax optimization */
@@ -106,6 +107,17 @@ body {
   position: relative;
   z-index: 10;
   background: transparent !important;
+}
+
+/* Responsive letter spacing for h2 subtitle */
+.hero-subtitle {
+  letter-spacing: -0.5px; /* Mobile default */
+}
+
+@media (min-width: 640px) {
+  .hero-subtitle {
+    letter-spacing: -0.25px !important; /* Desktop */
+  }
 }
 
 
