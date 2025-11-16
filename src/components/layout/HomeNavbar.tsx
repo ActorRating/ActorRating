@@ -49,9 +49,18 @@ export function HomeNavbar() {
   return (
     <nav 
       className={`navbar-cinematic ${scrolled ? 'navbar-scrolled' : ''}`}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        background: 'transparent',
+        backgroundColor: 'transparent',
+      }}
       suppressHydrationWarning
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-16">
           {/* Logo - always gold */}
           <div className="flex items-center">
@@ -87,7 +96,7 @@ export function HomeNavbar() {
                   noMotion 
                   variant="outline" 
                   size="sm" 
-                  className="navbar-button navbar-signin"
+                  className="navbar-button navbar-signin rounded-full"
                 >
                   Sign In
                 </Button>

@@ -7,43 +7,51 @@ export function Footer() {
   const { openSettings } = useCookieConsentContext()
   
   return (
-    <footer className="bg-secondary/50 backdrop-blur-sm border-t border-border w-full">
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-3 md:gap-4 text-center md:text-left">
-          <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+    <footer className="bg-black border-t border-[#FFD700]/10 w-full">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 md:py-12">
+        {/* Main Footer Content */}
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-8 text-center md:text-left">
+          {/* Copyright */}
+          <div className="text-xs sm:text-sm text-[#a3a3a3] leading-relaxed font-light tracking-wide order-2 md:order-1">
             © 2025 ActorRating.com. All rights reserved.
           </div>
-          <nav aria-label="Footer" className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-6 gap-y-1 md:gap-y-0 text-sm whitespace-normal break-words">
-            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-              About Us
+          
+          {/* Navigation Links */}
+          <nav aria-label="Footer" className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-6 md:gap-x-8 gap-y-2 md:gap-y-0 text-xs sm:text-sm whitespace-normal order-1 md:order-2">
+            <Link href="/about" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+              About
             </Link>
-            <span className="hidden md:inline text-muted-foreground">•</span>
-            <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-              Privacy Policy
+            <span className="hidden sm:inline text-[#737373]">•</span>
+            <Link href="/privacy" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+              Privacy
             </Link>
-            <span className="hidden md:inline text-muted-foreground">•</span>
-            <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
-              Terms of Service
+            <span className="hidden sm:inline text-[#737373]">•</span>
+            <Link href="/terms" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+              Terms
             </Link>
-            <span className="hidden md:inline text-muted-foreground">•</span>
-            <Link href="/kvkk" className="text-muted-foreground hover:text-foreground transition-colors">
+            <span className="hidden sm:inline text-[#737373]">•</span>
+            <Link href="/kvkk" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
               KVKK
             </Link>
-            <span className="hidden md:inline text-muted-foreground">•</span>
-            <a href="mailto:contact@actorrating.com" className="text-muted-foreground hover:text-foreground transition-colors">
-              Contact / Support
+            <span className="hidden sm:inline text-[#737373]">•</span>
+            <a href="mailto:contact@actorrating.com" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+              Contact
             </a>
-            <span className="hidden md:inline text-muted-foreground">•</span>
+            <span className="hidden sm:inline text-[#737373]">•</span>
             <button 
               onClick={openSettings}
-              className="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+              className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide"
             >
-              Cookie Settings
+              Cookies
             </button>
           </nav>
         </div>
-        <div className="mt-2 md:mt-3 text-[11px] sm:text-xs text-muted-foreground/80 text-center md:text-left">
-          GDPR compliance is covered in our Privacy Policy.
+        
+        {/* Bottom Note */}
+        <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-[#737373]/20">
+          <p className="text-[10px] sm:text-xs text-[#737373] text-center md:text-left font-light tracking-wide">
+            GDPR compliance is covered in our Privacy Policy.
+          </p>
         </div>
       </div>
     </footer>

@@ -8,37 +8,35 @@ export function CookieBanner() {
   if (!showBanner) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-secondary/95 backdrop-blur-md border-t border-border shadow-2xl">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-foreground mb-2">
-              We use cookies
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We use cookies to enhance your browsing experience, provide personalized content, 
-              and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-xl border-t border-[#FFD700]/20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          {/* Compact Text */}
+          <div className="flex-1 text-center sm:text-left">
+            <p className="text-xs sm:text-sm text-[#d4d4d8] leading-tight font-light">
+              We use cookies to enhance your experience.{' '}
+              <button 
+                onClick={openSettings}
+                className="text-[#FFD700] hover:text-[#FFE55C] underline underline-offset-2 transition-colors duration-300"
+              >
+                Learn more
+              </button>
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
+          {/* Compact Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <button
               onClick={rejectAll}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted border border-border rounded-md hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-[#a3a3a3] hover:text-white border border-[#737373]/40 rounded-full hover:border-[#737373]/60 transition-all duration-300 bg-black/40 backdrop-blur-sm"
             >
               Reject
             </button>
             <button
-              onClick={openSettings}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted border border-border rounded-md hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-            >
-              Settings
-            </button>
-            <button
               onClick={acceptAll}
-              className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+              className="px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full hover:from-[#FFE55C] hover:to-[#FFD700] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.2)] hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]"
             >
-              Accept All
+              Accept
             </button>
           </div>
         </div>

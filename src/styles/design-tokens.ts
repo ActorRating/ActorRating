@@ -1,0 +1,403 @@
+/**
+ * ActorRating Design System
+ * Version 1.0.0
+ * 
+ * Central design tokens for the entire application
+ * Use these tokens instead of hard-coded values for consistency
+ */
+
+export const designTokens = {
+  colors: {
+    brand: {
+      gold: {
+        primary: '#D4AF37',
+        bright: '#FFD700',
+        light: '#FFE55C',
+        deep: '#FFA500',
+        muted: '#C9A961',
+        dark: '#B8941C',
+        bronze: '#8B7355',
+      },
+    },
+    neutral: {
+      black: '#000000',
+      almostBlack: '#0a0a0a',
+      charcoal: '#1a1a1a',
+      darkGray: '#2a2a2a',
+      gray: {
+        900: '#18181b',
+        800: '#27272a',
+        700: '#3f3f46',
+        600: '#52525b',
+        500: '#71717a',
+        400: '#a1a1aa',
+        300: '#d4d4d8',
+        200: '#e4e4e7',
+        100: '#f4f4f5',
+      },
+      white: '#ffffff',
+    },
+    semantic: {
+      success: '#22c55e',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
+    },
+    states: {
+      editorial: {
+        badge: '#52525b',
+        text: '#a1a1aa',
+      },
+      community: {
+        badge: '#D4AF37',
+        text: '#FFD700',
+      },
+      new: {
+        badge: '#f59e0b',
+        icon: '#fb923c',
+      },
+    },
+  },
+
+  typography: {
+    fonts: {
+      heading: {
+        family: "'Cinzel', serif",
+        fallback: "Georgia, 'Times New Roman', serif",
+        weights: {
+          regular: 400,
+          semibold: 600,
+          bold: 700,
+          black: 900,
+        },
+      },
+      body: {
+        family: "'Inter', sans-serif",
+        fallback: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        weights: {
+          light: 300,
+          regular: 400,
+          medium: 500,
+          semibold: 600,
+          bold: 700,
+        },
+      },
+    },
+    scale: {
+      h1: {
+        mobile: {
+          size: '36px',
+          lineHeight: '1.1',
+          weight: 700,
+          letterSpacing: '-0.5px',
+        },
+        desktop: {
+          size: '72px',
+          lineHeight: '1.1',
+          weight: 700,
+          letterSpacing: '-1px',
+        },
+      },
+      h2: {
+        mobile: {
+          size: '28px',
+          lineHeight: '1.2',
+          weight: 600,
+          letterSpacing: '0px',
+        },
+        desktop: {
+          size: '48px',
+          lineHeight: '1.2',
+          weight: 600,
+          letterSpacing: '0px',
+        },
+      },
+      h3: {
+        mobile: {
+          size: '20px',
+          lineHeight: '1.3',
+          weight: 600,
+          letterSpacing: '0px',
+        },
+        desktop: {
+          size: '32px',
+          lineHeight: '1.3',
+          weight: 600,
+          letterSpacing: '0px',
+        },
+      },
+      subtitle: {
+        mobile: {
+          size: '16px',
+          lineHeight: '1.5',
+          weight: 400,
+          letterSpacing: '1px',
+        },
+        desktop: {
+          size: '20px',
+          lineHeight: '1.5',
+          weight: 400,
+          letterSpacing: '1px',
+        },
+      },
+      body: {
+        large: {
+          size: '18px',
+          lineHeight: '1.6',
+          weight: 400,
+        },
+        regular: {
+          size: '16px',
+          lineHeight: '1.6',
+          weight: 400,
+        },
+        small: {
+          size: '14px',
+          lineHeight: '1.5',
+          weight: 400,
+        },
+      },
+      caption: {
+        size: '12px',
+        lineHeight: '1.4',
+        weight: 400,
+      },
+      button: {
+        size: '16px',
+        lineHeight: '1',
+        weight: 600,
+        letterSpacing: '2px',
+        textTransform: 'uppercase' as const,
+      },
+    },
+  },
+
+  spacing: {
+    scale: {
+      0: '0px',
+      1: '4px',
+      2: '8px',
+      3: '12px',
+      4: '16px',
+      5: '20px',
+      6: '24px',
+      8: '32px',
+      10: '40px',
+      12: '48px',
+      16: '64px',
+      20: '80px',
+      24: '96px',
+      32: '128px',
+    },
+    sections: {
+      hero: {
+        mobile: '80px',
+        desktop: '120px',
+      },
+      standard: {
+        mobile: '48px',
+        desktop: '96px',
+      },
+      compact: {
+        mobile: '32px',
+        desktop: '64px',
+      },
+    },
+  },
+
+  borderRadius: {
+    none: '0px',
+    sm: '4px',
+    base: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '24px',
+    full: '9999px',
+  },
+
+  shadows: {
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    glow: {
+      gold: '0 0 20px rgba(212, 175, 55, 0.3)',
+      goldStrong: '0 0 40px rgba(212, 175, 55, 0.5)',
+    },
+  },
+
+  effects: {
+    blur: {
+      sm: '4px',
+      base: '8px',
+      md: '12px',
+      lg: '16px',
+      xl: '24px',
+      spotlight: '40px',
+    },
+    opacity: {
+      0: 0,
+      5: 0.05,
+      10: 0.1,
+      20: 0.2,
+      30: 0.3,
+      40: 0.4,
+      50: 0.5,
+      60: 0.6,
+      70: 0.7,
+      80: 0.8,
+      90: 0.9,
+      100: 1,
+    },
+  },
+
+  gradients: {
+    gold: {
+      primary: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+      button: 'linear-gradient(135deg, #D4AF37 0%, #C9A961 100%)',
+      radial: 'radial-gradient(circle, #FFD700 0%, #D4AF37 100%)',
+    },
+    spotlight: {
+      default: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.08) 30%, rgba(212, 175, 55, 0.03) 60%, transparent 100%)',
+      intense: 'radial-gradient(circle at center, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.10) 40%, transparent 70%)',
+    },
+    backgrounds: {
+      dark: 'linear-gradient(135deg, #0a0a0a 0%, #000000 100%)',
+      fadeUp: 'linear-gradient(to top, #000000 0%, transparent 100%)',
+      fadeDown: 'linear-gradient(to bottom, #000000 0%, transparent 100%)',
+    },
+  },
+
+  components: {
+    button: {
+      primary: {
+        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+        color: '#000000',
+        padding: {
+          mobile: '16px 32px',
+          desktop: '20px 48px',
+        },
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: 600,
+        letterSpacing: '2px',
+        textTransform: 'uppercase' as const,
+        hover: {
+          transform: 'scale(1.05)',
+          shadow: '0 0 40px rgba(212, 175, 55, 0.5)',
+        },
+      },
+      secondary: {
+        background: 'transparent',
+        color: '#D4AF37',
+        border: '2px solid #D4AF37',
+        padding: {
+          mobile: '16px 32px',
+          desktop: '20px 48px',
+        },
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: 600,
+        letterSpacing: '2px',
+        hover: {
+          background: 'rgba(212, 175, 55, 0.1)',
+        },
+      },
+    },
+    card: {
+      glassmorphism: {
+        background: 'rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(212, 175, 55, 0.2)',
+        borderRadius: '16px',
+        padding: '24px',
+        hover: {
+          border: '1px solid rgba(212, 175, 55, 0.4)',
+          transform: 'translateY(-4px)',
+        },
+      },
+      performance: {
+        background: 'rgba(24, 24, 27, 0.8)',
+        border: '1px solid rgba(212, 175, 55, 0.2)',
+        borderRadius: '12px',
+        padding: '16px',
+        hover: {
+          border: '1px solid rgba(212, 175, 55, 0.4)',
+          transform: 'scale(1.02)',
+        },
+      },
+    },
+    navbar: {
+      background: '#0a0a0a',
+      borderBottom: '2px solid rgba(212, 175, 55, 0.3)',
+      backdropFilter: 'blur(12px)',
+      height: {
+        mobile: '64px',
+        desktop: '80px',
+      },
+      padding: {
+        mobile: '16px',
+        desktop: '24px',
+      },
+    },
+    searchBar: {
+      background: 'rgba(255, 255, 255, 0.08)',
+      border: '1px solid rgba(212, 175, 55, 0.2)',
+      borderRadius: '12px',
+      padding: '16px',
+      fontSize: '16px',
+      color: '#ffffff',
+      placeholder: '#71717a',
+      focus: {
+        border: '1px solid #D4AF37',
+        outline: '2px solid rgba(212, 175, 55, 0.2)',
+      },
+    },
+  },
+
+  breakpoints: {
+    mobile: '0px',
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    '2xl': '1536px',
+  },
+
+  zIndex: {
+    base: 0,
+    dropdown: 10,
+    sticky: 20,
+    fixed: 30,
+    overlay: 40,
+    modal: 50,
+    popover: 60,
+    tooltip: 70,
+  },
+
+  transitions: {
+    fast: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
+    base: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
+    slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
+    slower: '500ms cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+
+  animations: {
+    fadeIn: {
+      duration: '200ms',
+      easing: 'ease-out',
+    },
+    slideUp: {
+      duration: '300ms',
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    },
+    scaleIn: {
+      duration: '200ms',
+      easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+    },
+  },
+} as const;
+
+export type DesignTokens = typeof designTokens;
+
