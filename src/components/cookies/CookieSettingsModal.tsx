@@ -74,23 +74,31 @@ export function CookieSettingsModal() {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
+      {/* Premium Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
         onClick={closeSettings}
       />
       
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-secondary/95 backdrop-blur-md rounded-lg shadow-2xl border border-border">
+      {/* Elegant Modal */}
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div className="relative w-full max-w-2xl bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 backdrop-blur-xl rounded-2xl shadow-[0_0_100px_rgba(255,215,0,0.15)] border border-[#FFD700]/20">
+          {/* Ambient glow effect */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none rounded-2xl overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/20 rounded-full blur-3xl" />
+          </div>
+
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="relative flex items-center justify-between p-6 sm:p-8 border-b border-[#FFD700]/10">
+            <h2 
+              className="text-2xl sm:text-3xl font-bold text-white"
+              style={{ fontFamily: 'var(--font-cinzel), serif' }}
+            >
               Cookie Settings
             </h2>
             <button
               onClick={closeSettings}
-              className="text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded-md p-1"
+              className="text-[#a3a3a3] hover:text-[#FFD700] focus:outline-none focus:ring-2 focus:ring-[#FFD700] rounded-lg p-2 transition-all duration-300 hover:bg-[#FFD700]/10"
               aria-label="Close"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,33 +108,36 @@ export function CookieSettingsModal() {
           </div>
 
           {/* Content */}
-          <div className="p-6">
-            <p className="text-sm text-muted-foreground mb-6">
-              We use cookies to enhance your experience on our website. You can choose which categories 
+          <div className="relative p-6 sm:p-8">
+            <p className="text-base text-[#a3a3a3] mb-8 leading-relaxed">
+              We use cookies to enhance your experience. You can choose which categories 
               of cookies you allow us to use. Please note that blocking some types of cookies may impact 
               your experience of the site and the services we are able to offer.
             </p>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               {cookieCategories.map((category) => (
-                <div key={category.id} className="border border-border rounded-lg p-4 bg-muted/30">
-                  <div className="flex items-start justify-between">
+                <div key={category.id} className="group relative p-5 sm:p-6 rounded-xl border border-[#FFD700]/15 bg-black/40 backdrop-blur-sm hover:border-[#FFD700]/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.1)]">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium text-foreground mb-2">
+                      <h3 
+                        className="text-base sm:text-lg font-bold text-white mb-2"
+                        style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                      >
                         {category.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
+                      <p className="text-sm text-[#a3a3a3] leading-relaxed">
                         {category.description}
                       </p>
                     </div>
                     
-                    <div className="ml-4">
+                    <div className="ml-4 flex-shrink-0">
                       {category.required ? (
-                        <div className="flex items-center">
-                          <div className="w-11 h-6 bg-primary rounded-full relative">
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="w-11 h-6 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full relative shadow-[0_0_20px_rgba(255,215,0,0.3)]">
                             <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
                           </div>
-                          <span className="ml-2 text-xs text-muted-foreground">Always On</span>
+                          <span className="text-xs text-[#FFD700] font-medium">Always On</span>
                         </div>
                       ) : (
                         <label className="flex items-center cursor-pointer">
@@ -137,12 +148,12 @@ export function CookieSettingsModal() {
                               onChange={() => handleToggle(category.id as 'analytics' | 'marketing')}
                               className="sr-only"
                             />
-                            <div className={`w-11 h-6 rounded-full transition-colors ${
+                            <div className={`w-11 h-6 rounded-full transition-all duration-300 ${
                               preferences[category.id as 'analytics' | 'marketing'] 
-                                ? 'bg-primary' 
-                                : 'bg-muted'
+                                ? 'bg-gradient-to-r from-[#FFD700] to-[#FFA500] shadow-[0_0_20px_rgba(255,215,0,0.3)]' 
+                                : 'bg-[#2a2a2a]'
                             }`}>
-                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
                                 preferences[category.id as 'analytics' | 'marketing']
                                   ? 'right-1'
                                   : 'left-1'
@@ -159,16 +170,16 @@ export function CookieSettingsModal() {
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col sm:flex-row gap-3 p-6 border-t border-border">
+          <div className="relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-6 sm:p-8 border-t border-[#FFD700]/10">
             <button
               onClick={handleAcceptAll}
-              className="flex-1 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+              className="flex-1 px-6 py-3 text-base font-bold text-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] border border-transparent rounded-full hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] transition-all duration-300 hover:scale-105 uppercase tracking-wider"
             >
               Accept All
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground bg-muted border border-border rounded-md hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+              className="flex-1 px-6 py-3 text-base font-bold text-[#FFD700] bg-black/50 border-2 border-[#FFD700]/40 rounded-full hover:bg-[#FFD700]/10 hover:border-[#FFD700] transition-all duration-300 hover:scale-105 uppercase tracking-wider"
             >
               Save Preferences
             </button>

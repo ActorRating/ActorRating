@@ -192,58 +192,30 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-background to-primary/5" />
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Subtle Background Glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
+      <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
       
       <div className="relative z-10 min-h-screen flex">
         {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-secondary/50 to-secondary/30 backdrop-blur-xl">
-          <div className="flex-1 flex flex-col justify-center px-8 xl:px-16">
+        <div className="hidden lg:flex lg:w-1/2">
+          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="mb-8">
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium border border-accent/20">
-                  <FaUserPlus className="w-3 h-3 mr-2" />
-                  Join the Community
-                </span>
-              </div>
-              
-              <h1 className="text-4xl xl:text-5xl font-bold text-foreground mb-6 leading-tight">
-                Start Your Journey with
-                <span className="block bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  ActorRating
-                </span>
+              <h1 
+                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight"
+                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+              >
+                Join ActorRating
               </h1>
               
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Join thousands of film enthusiasts and critics in the world's most sophisticated 
-                platform for analyzing and rating acting performances.
+              <p className="text-lg text-[#a3a3a3] leading-relaxed font-light">
+                Start rating and analyzing the finest acting performances in cinema.
               </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span className="text-muted-foreground">Rate with professional criteria</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-muted-foreground">Discover hidden gems</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span className="text-muted-foreground">Connect with fellow cinephiles</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-muted-foreground">100% free forever</span>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
@@ -258,14 +230,13 @@ export default function SignUp() {
           >
             {/* Mobile Header */}
             <div className="lg:hidden text-center mb-8">
-              <motion.div variants={fadeInUp} className="mb-4">
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium border border-accent/20">
-                  <FaPlay className="w-3 h-3 mr-2" />
-                  ActorRating
-                </span>
-              </motion.div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">Join Us Today</h2>
-              <p className="text-muted-foreground">Create your account to start rating</p>
+              <h2 
+                className="text-3xl font-bold text-white mb-2"
+                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+              >
+                Create Account
+              </h2>
+              <p className="text-sm text-[#737373]">Join the platform</p>
             </div>
 
             {/* Sign Up Form */}
@@ -273,16 +244,21 @@ export default function SignUp() {
               variants={fadeInUp}
               className="relative group safari-blur-fix"
             >
-              <div className="relative bg-secondary/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 sm:p-8">
-                <div className="hidden lg:block mb-6">
-                  <h2 className="text-2xl xl:text-3xl font-bold text-foreground mb-2">Create Account</h2>
-                  <p className="text-muted-foreground">Start your journey with us today</p>
+              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10">
+                <div className="relative hidden lg:block mb-8">
+                  <h2 
+                    className="text-2xl font-bold text-white mb-1"
+                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                  >
+                    Create Account
+                  </h2>
+                  <p className="text-sm text-[#737373]">Join the platform</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="relative space-y-4">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-[#e4e4e7] mb-2">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -293,9 +269,9 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-background/50 border-2 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 ${
+                        className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
-                            ? "border-border/50 hover:border-border"
+                            ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
                               ? "border-green-500"
                               : "border-red-500"
@@ -325,7 +301,7 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-[#e4e4e7] mb-2">
                       Password *
                     </label>
                     <div className="relative">
@@ -336,9 +312,9 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-background/50 border-2 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 ${
+                        className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
-                            ? "border-border/50 hover:border-border"
+                            ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid
                               ? "border-green-500"
                               : "border-red-500"
@@ -348,7 +324,7 @@ export default function SignUp() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors"
                       >
                         {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
                       </button>
@@ -388,7 +364,7 @@ export default function SignUp() {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
+                      className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
                     >
                       <p className="text-sm text-red-400">{apiError}</p>
                     </motion.div>
@@ -416,17 +392,17 @@ export default function SignUp() {
                   </Button>
 
                   {/* Terms */}
-                  <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                  <p className="text-xs text-[#737373] text-center leading-relaxed">
                     By creating an account, you agree to our{" "}
-                    <Link href="/terms" className="text-primary hover:text-accent transition-colors underline">
+                    <Link href="/terms" className="text-[#FFD700] hover:text-white transition-colors underline">
                       Terms of Service
                     </Link>
                     ,{" "}
-                    <Link href="/privacy" className="text-primary hover:text-accent transition-colors underline">
+                    <Link href="/privacy" className="text-[#FFD700] hover:text-white transition-colors underline">
                       Privacy Policy
                     </Link>
                     {" "}and{" "}
-                    <Link href="/kvkk" className="text-primary hover:text-accent transition-colors underline">
+                    <Link href="/kvkk" className="text-[#FFD700] hover:text-white transition-colors underline">
                       KVKK Terms
                     </Link>
                     .
@@ -434,16 +410,14 @@ export default function SignUp() {
                 </form>
 
                 {/* Divider */}
-                <div className="my-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border/50" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="bg-secondary/40 px-4 text-muted-foreground">
-                        Or continue with
-                      </span>
-                    </div>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#FFD700]/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-[#0a0a0a] px-3 text-[#737373] uppercase tracking-wider">
+                      Or
+                    </span>
                   </div>
                 </div>
 
@@ -459,14 +433,14 @@ export default function SignUp() {
                 </LoginButton>
 
                 {/* Sign In Link */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-muted-foreground">
+                <div className="relative mt-6 text-center">
+                  <p className="text-sm text-[#737373]">
                     Already have an account?{" "}
                     <Link 
                       href="/auth/signin" 
-                      className="text-primary hover:text-accent font-medium transition-colors"
+                      className="text-[#FFD700] hover:text-white font-medium transition-colors"
                     >
-                      Sign in instead
+                      Sign in
                     </Link>
                   </p>
                 </div>

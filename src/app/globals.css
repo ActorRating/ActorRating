@@ -190,12 +190,33 @@ html, body {
 html {
   scroll-padding-top: 0;
   scroll-snap-type: none;
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* Ensure body can scroll to top */
+html {
+  scroll-margin-top: 0;
+  scroll-padding-top: 0;
+}
+
+body {
+  scroll-margin-top: 0;
+  scroll-padding-top: 0;
+}
+
+/* Fix scroll to top issue - ensure no padding prevents reaching top */
+#__next,
+#root,
+main {
+  scroll-margin-top: 0;
+  scroll-padding-top: 0;
 }
 
 /* Smooth scroll behavior for modern feel - Apple/Tesla level */
@@ -210,7 +231,8 @@ html {
 
 /* Carousel Pagination Dots - Minimal & Premium */
 .steps-carousel-dots .steps-dot,
-.performance-carousel-dots .performance-dot {
+.performance-carousel-dots .performance-dot,
+.features-carousel-dots .features-dot {
   width: 5px !important;
   height: 5px !important;
   min-width: 5px !important;
@@ -227,13 +249,15 @@ html {
 }
 
 .steps-carousel-dots .steps-dot-inactive,
-.performance-carousel-dots .performance-dot-inactive {
+.performance-carousel-dots .performance-dot-inactive,
+.features-carousel-dots .features-dot-inactive {
   background-color: rgba(115, 115, 115, 0.4) !important;
   opacity: 0.6 !important;
 }
 
 .steps-carousel-dots .steps-dot-active,
-.performance-carousel-dots .performance-dot-active {
+.performance-carousel-dots .performance-dot-active,
+.features-carousel-dots .features-dot-active {
   background-color: #FFD700 !important;
   opacity: 1 !important;
   width: 5px !important;
@@ -242,14 +266,16 @@ html {
 
 /* Hover states */
 .steps-carousel-dots .steps-dot:hover:not(.steps-dot-active),
-.performance-carousel-dots .performance-dot:hover:not(.performance-dot-active) {
+.performance-carousel-dots .performance-dot:hover:not(.performance-dot-active),
+.features-carousel-dots .features-dot:hover:not(.features-dot-active) {
   background-color: rgba(115, 115, 115, 0.6) !important;
   opacity: 0.8 !important;
 }
 
 /* Ensure proper spacing */
 .steps-carousel-dots,
-.performance-carousel-dots {
+.performance-carousel-dots,
+.features-carousel-dots {
   gap: 8px !important;
   display: flex !important;
   align-items: center !important;

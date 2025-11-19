@@ -11,10 +11,8 @@ import { fadeInUp, getMotionProps, staggerContainer, scaleIn } from "@/lib/anima
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
-// How It Works Section - Premium Rich Design with Mobile Carousel
+// How It Works Section - Clean Grid Layout (No Carousel)
 function HowItWorksSection() {
-  const [activeStep, setActiveStep] = useState(0);
-
   const steps = [
     {
       number: "01",
@@ -54,32 +52,12 @@ function HowItWorksSection() {
     }
   ];
 
-  useEffect(() => {
-    const container = document.querySelector('.steps-scroll-container');
-    if (!container) return;
-
-    // Ensure first card is fully visible on load
-    if (window.innerWidth < 1024) {
-      container.scrollLeft = 0;
-    }
-
-    const handleScroll = () => {
-      const cardWidth = container.scrollWidth / steps.length;
-      const scrollPosition = container.scrollLeft;
-      const newActiveStep = Math.round(scrollPosition / cardWidth);
-      setActiveStep(newActiveStep);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [steps.length]);
-
   return (
     <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60" style={{ willChange: 'auto' }}>
       {/* Background ambient glow */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFD700]/20 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFA500]/15 rounded-full blur-[150px]" />
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
@@ -101,33 +79,33 @@ function HowItWorksSection() {
             initial={{ width: 0, opacity: 0 }}
             whileInView={{ width: "220px", opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-8"
           />
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
             className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed"
           >
             Three simple steps to join the world's most sophisticated acting rating platform
           </motion.p>
         </motion.div>
 
-        {/* Rich Step Cards - Carousel on mobile, grid on desktop */}
-        <div className="steps-scroll-container flex lg:grid lg:grid-cols-3 gap-10 lg:gap-14 overflow-x-auto lg:overflow-visible pb-6 lg:pb-0 snap-x snap-mandatory lg:snap-none scrollbar-hide -mx-6 px-6 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 scroll-smooth">
+        {/* Rich Step Cards - Grid on all screen sizes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 lg:gap-14">
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.9, delay: index * 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="group relative"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-10 sm:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
+              <div className="relative h-full p-5 sm:p-8 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-500 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FFD700]/15 rounded-full blur-3xl" />
@@ -157,32 +135,32 @@ function HowItWorksSection() {
 
                   {/* Title */}
                   <h3 
-                    className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight"
+                    className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 leading-tight"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     {step.title}
                   </h3>
 
                   {/* Subtitle Badge */}
-                  <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
+                  <div className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-3 sm:mb-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
                     <span className="text-xs font-bold text-[#FFD700] tracking-widest uppercase">
                       {step.subtitle}
                     </span>
                   </div>
 
                   {/* Description */}
-                  <p className="text-base text-[#e4e4e7] leading-relaxed mb-6">
+                  <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-4 sm:mb-6">
                     {step.description}
                   </p>
 
                   {/* Features List */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2 sm:space-y-2.5">
                     {step.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2.5 text-[#d4d4d8]">
-                        <div className="w-5 h-5 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/30 flex items-center justify-center flex-shrink-0">
-                          <FaCheckCircle className="w-3 h-3 text-[#FFD700]" />
+                      <div key={idx} className="flex items-center gap-2 sm:gap-2.5 text-[#d4d4d8]">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/30 flex items-center justify-center flex-shrink-0">
+                          <FaCheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#FFD700]" />
                         </div>
-                        <span className="text-sm">{feature}</span>
+                        <span className="text-xs sm:text-sm">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -196,40 +174,12 @@ function HowItWorksSection() {
           ))}
         </div>
 
-        {/* Navigation Dots - Mobile Only */}
-        <div className="relative flex lg:hidden justify-center items-center mt-8 px-4">
-          {/* Glassmorphism oval bubble */}
-          <div className="absolute inset-0 flex justify-center items-center">
-            <div className="w-24 h-8 rounded-full bg-black/30 backdrop-blur-md border border-[#FFD700]/20 shadow-[0_0_20px_rgba(255,215,0,0.1)]" />
-          </div>
-          <div className="steps-carousel-dots relative z-10 flex justify-center items-center gap-2.5">
-            {steps.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  const container = document.querySelector('.steps-scroll-container');
-                  if (container) {
-                    const cardWidth = container.scrollWidth / steps.length;
-                    container.scrollTo({ left: cardWidth * index, behavior: 'smooth' });
-                  }
-                }}
-                className={`steps-dot rounded-full transition-all duration-300 ${
-                  index === activeStep 
-                    ? 'steps-dot-active' 
-                    : 'steps-dot-inactive'
-                }`}
-                aria-label={`Go to step ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-
         {/* Call to action */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 1 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
           className="text-center mt-16 sm:mt-20"
         >
           <Link href="/performances">
@@ -257,6 +207,20 @@ function PerformanceSection() {
       quote: "A haunting portrayal of genius and consequence",
       year: "2023",
       rating: "9.4"
+    },
+    {
+      actor: "Heath Ledger",
+      movie: "The Dark Knight",
+      quote: "An iconic transformation that redefined villainy",
+      year: "2008",
+      rating: "9.8"
+    },
+    {
+      actor: "Joaquin Phoenix",
+      movie: "Joker",
+      quote: "Raw intensity and psychological depth",
+      year: "2019",
+      rating: "9.6"
     },
     {
       actor: "Margot Robbie",
@@ -304,10 +268,10 @@ function PerformanceSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-24 sm:mb-32 lg:mb-40"
         >
           <h2 
@@ -377,7 +341,7 @@ function PerformanceSection() {
                   {/* Rate Button */}
                   <Link href={`/performances`}>
                     <button className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 text-[#FFD700] text-base font-bold tracking-wider uppercase transition-all duration-500 hover:from-[#FFD700] hover:to-[#FFA500] hover:text-black hover:border-[#FFD700] hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]">
-                      Rate This Performance
+                      Rate Performance
                     </button>
                   </Link>
                 </div>
@@ -421,20 +385,20 @@ function PerformanceSection() {
   );
 }
 
-// Features Section - Clean Single Column
+// Features Section - Clean Vertical Stack (No Carousel)
 function FeaturesSection() {
   const features = [
     {
       icon: FaUsers,
       title: "Community-driven precision",
-      description: "Every rating shapes the collective understanding of acting excellence. Join thousands of film enthusiasts, critics, and industry professionals building the definitive map of cinematic performance.",
-      stats: "10K+ active critics"
+      description: "Every rating shapes the collective understanding of acting excellence. Be part of building the definitive platform for analyzing cinematic performance.",
+      stats: "Growing community"
     },
     {
       icon: FaChartLine,
       title: "Actor-by-actor insights",
       description: "Deep analysis across performances, roles, and career trajectories. Track evolution, compare eras, and discover patterns in acting excellence across the history of cinema.",
-      stats: "1000+ performances rated"
+      stats: "25K+ performances"
     },
     {
       icon: FaStar,
@@ -448,17 +412,17 @@ function FeaturesSection() {
     <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60">
       {/* Background glow */}
       <div className="absolute inset-0 opacity-15 pointer-events-none">
-        <div className="absolute top-1/3 right-1/4 w-[700px] h-[700px] bg-[#FFD700]/20 rounded-full blur-[160px]" />
+        <div className="absolute top-1/3 right-1/4 w-[700px] h-[700px] bg-[#FFC800]/20 rounded-full blur-[160px]" />
       </div>
 
       <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center mb-24 sm:mb-32 lg:mb-40"
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center mb-16 sm:mb-24 lg:mb-32"
         >
           <h2 
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 tracking-tight"
@@ -470,53 +434,53 @@ function FeaturesSection() {
             initial={{ width: 0, opacity: 0 }}
             whileInView={{ width: "200px", opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.8, delay: 0.3 }}
+            transition={{ duration: 1.2, delay: 0.2 }}
             className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)]"
           />
         </motion.div>
 
-        {/* Features */}
-        <div className="space-y-16 sm:space-y-20 lg:space-y-24">
+        {/* Features - Vertical Stack on all screen sizes */}
+        <div className="space-y-8 md:space-y-16">
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.9, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Feature Card */}
-              <div className="relative p-12 sm:p-16 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
+              <div className="relative p-5 sm:p-8 md:p-10 lg:p-16 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-500 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#FFD700]/10 rounded-full blur-3xl" />
                 </div>
 
                 {/* Content */}
-                <div className="relative z-10 flex flex-col sm:flex-row items-start gap-8">
+                <div className="relative z-10 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 md:gap-8">
                   {/* Icon */}
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_40px_rgba(255,215,0,0.2)]">
-                      <feature.icon className="w-10 h-10 sm:w-12 sm:h-12 text-[#FFD700]" />
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_40px_rgba(255,215,0,0.2)]">
+                      <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-[#FFD700]" />
                     </div>
                   </div>
 
                   {/* Text Content */}
                   <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
                       <h3 
-                        className="text-3xl sm:text-4xl font-bold text-white leading-tight"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight"
                         style={{ fontFamily: 'var(--font-cinzel), serif' }}
                       >
                         {feature.title}
                       </h3>
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD700]/10 border border-[#FFD700]/30 self-start sm:self-auto">
-                        <FaCheckCircle className="w-4 h-4 text-[#FFD700]" />
-                        <span className="text-sm font-semibold text-[#FFD700] whitespace-nowrap">{feature.stats}</span>
+                      <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-[#FFD700]/10 border border-[#FFD700]/30 self-start sm:self-auto">
+                        <FaCheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FFD700]" />
+                        <span className="text-xs font-semibold text-[#FFD700] whitespace-nowrap">{feature.stats}</span>
                       </div>
                     </div>
-                    <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed">
+                    <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#e4e4e7] leading-relaxed">
                       {feature.description}
                     </p>
                   </div>
@@ -533,99 +497,128 @@ function FeaturesSection() {
   );
 }
 
-// About Section - Cinematic & Centered
+// About Section - Visual & Minimal
 function AboutSection() {
   return (
-    <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60 pb-40 sm:pb-48 md:pb-56 lg:pb-64 overflow-hidden">
-      {/* Sweeping premium gold reflection animation */}
-      <motion.div
-        initial={{ x: "-100%" }}
-        whileInView={{ x: "100%" }}
-        viewport={{ once: true }}
-        transition={{ duration: 4, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-      >
-        <div className="absolute top-1/2 left-0 w-[500px] h-1 bg-gradient-to-r from-transparent via-[#FFD700]/50 to-transparent blur-md shadow-[0_0_40px_rgba(255,215,0,0.4)]" />
-      </motion.div>
-
+    <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60 overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 opacity-15 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FFD700]/15 rounded-full blur-[180px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FFC800]/15 rounded-full blur-[180px]" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 text-center relative">
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 text-center relative">
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16 sm:mb-20"
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-20 sm:mb-24"
         >
           <h2 
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-10 tracking-tight"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
-            About ActorRating
+            Why ActorRating
           </h2>
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            whileInView={{ width: "220px", opacity: 1 }}
+            whileInView={{ width: "200px", opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)]"
           />
         </motion.div>
 
-        {/* Main text */}
+        {/* Visual Stats Grid - More Engaging */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+          >
+            <div className="text-5xl font-extrabold mb-3"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              25K+
+            </div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Performances
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+          >
+            <div className="text-5xl font-extrabold mb-3"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              5
+            </div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Rating Criteria
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+          >
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
+              <div className="text-3xl font-extrabold text-[#FFD700]">
+                Live
+              </div>
+            </div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Growing Daily
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Tagline */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-12 max-w-3xl mx-auto"
+        >
+          Be among the first to join us and be a part of the journey
+        </motion.p>
+
+        {/* Learn More Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-16 sm:mb-20"
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
         >
-          <p className="text-2xl sm:text-3xl md:text-4xl text-white leading-relaxed max-w-4xl mx-auto font-light mb-8"
-            style={{ letterSpacing: '0.01em' }}
-          >
-            ActorRating is redefining how audiences experience acting.
-          </p>
-          <p className="text-xl sm:text-2xl text-[#d4d4d8] leading-relaxed max-w-3xl mx-auto">
-            Every rating contributes to a living map of cinematic performance quality — guided by film lovers, critics, and professionals alike.
-          </p>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.7 }}
-          className="flex justify-center"
-        >
-          <div className="relative p-10 sm:p-12 rounded-3xl border border-[#FFD700]/30 bg-gradient-to-br from-[#1a1a1a]/90 to-black/90 backdrop-blur-2xl shadow-[0_0_60px_rgba(255,215,0,0.15)] max-w-md">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <FaStar className="w-8 h-8 text-[#FFD700]" />
-              <div className="text-5xl sm:text-6xl font-extrabold"
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                25,000+
-              </div>
-            </div>
-            <div className="text-xl sm:text-2xl text-[#e4e4e7] font-semibold mb-2 text-center">
-              Curated Performances
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FFD700]/10 border border-[#FFD700]/30 mx-auto">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#FFD700] animate-pulse" />
-              <span className="text-sm font-semibold text-[#FFD700] tracking-wider uppercase">
-                Growing Daily
+          <Link href="/about">
+            <button className="group px-10 py-4 rounded-full border-2 border-[#FFD700]/40 bg-black/50 text-[#FFD700] text-base font-bold tracking-wider uppercase transition-all duration-300 hover:bg-[#FFD700] hover:text-black hover:border-[#FFD700] hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] hover:scale-105">
+              <span className="flex items-center gap-3">
+                Learn More
+                <FaArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-2" />
               </span>
-            </div>
-          </div>
+            </button>
+          </Link>
         </motion.div>
       </div>
     </div>
@@ -643,6 +636,14 @@ export default function HomePageClient() {
     }
   }, [user, router]);
 
+  // Fix scroll to top on mount
+  useEffect(() => {
+    // Ensure page starts at top
+    if (typeof window !== 'undefined' && window.scrollY > 0) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, []);
+
 
   if (user) return null;
 
@@ -656,7 +657,7 @@ export default function HomePageClient() {
           transition={{ duration: 3, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full blur-[140px] z-[1] pointer-events-none"
           style={{
-            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.28) 0%, rgba(255, 165, 0, 0.18) 35%, rgba(255, 140, 0, 0.08) 55%, transparent 75%)',
+            background: 'radial-gradient(circle, rgba(255, 200, 0, 0.28) 0%, rgba(255, 180, 0, 0.18) 35%, rgba(255, 160, 0, 0.08) 55%, transparent 75%)',
             willChange: 'opacity, transform'
           }}
         />

@@ -304,7 +304,7 @@ export default function KVKKPage() {
               variant={language === "en" ? "default" : "outline"}
               size="sm"
               onClick={() => setLanguage("en")}
-              className={language === "en" ? "bg-purple-600 hover:bg-purple-700" : "text-gray-300 border-gray-600 hover:bg-gray-800"}
+              className={language === "en" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
             >
               EN
             </Button>
@@ -312,7 +312,7 @@ export default function KVKKPage() {
               variant={language === "tr" ? "default" : "outline"}
               size="sm"
               onClick={() => setLanguage("tr")}
-              className={language === "tr" ? "bg-purple-600 hover:bg-purple-700" : "text-gray-300 border-gray-600 hover:bg-gray-800"}
+              className={language === "tr" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
             >
               TR
             </Button>

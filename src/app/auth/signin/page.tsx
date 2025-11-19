@@ -165,54 +165,30 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Subtle Background Glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
       
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-secondary/50 to-secondary/30 backdrop-blur-xl">
-          <div className="flex-1 flex flex-col justify-center px-8 xl:px-16">
+        {/* Left Side - Elegant Branding */}
+        <div className="hidden lg:flex lg:w-1/2">
+          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="mb-8">
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
-                  <FaUserShield className="w-3 h-3 mr-2" />
-                  Secure Authentication
-                </span>
-              </div>
-              
-              <h1 className="text-4xl xl:text-5xl font-bold text-foreground mb-6 leading-tight">
-                Welcome Back to
-                <span className="block bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  ActorRating
-                </span>
+              <h1 
+                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight"
+                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+              >
+                Welcome Back
               </h1>
               
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Continue your journey in the world's most sophisticated platform for 
-                rating and analyzing acting performances.
+              <p className="text-lg text-[#a3a3a3] leading-relaxed font-light">
+                Continue rating and analyzing the finest acting performances in cinema.
               </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-muted-foreground">5 Oscar-inspired rating criteria</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-accent rounded-full"></div>
-                  <span className="text-muted-foreground">Community-driven insights</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-muted-foreground">Professional-grade analysis</span>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
@@ -226,32 +202,36 @@ function SignInContent() {
             className="w-full max-w-md mx-auto"
           >
             {/* Mobile Header */}
-            <div className="lg:hidden text-center mb-8">
-              <motion.div variants={fadeInUp} className="mb-4">
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
-                  <FaPlay className="w-3 h-3 mr-2" />
-                  ActorRating
-                </span>
-              </motion.div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h2>
-              <p className="text-muted-foreground">Sign in to continue rating performances</p>
+            <div className="lg:hidden text-center mb-10">
+              <h2 
+                className="text-4xl font-bold text-white mb-3"
+                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+              >
+                Welcome Back
+              </h2>
+              <p className="text-[#a3a3a3]">Sign in to continue</p>
             </div>
 
-            {/* Sign In Form */}
+            {/* Sign In Form - Clean & Elegant */}
             <motion.div
               variants={fadeInUp}
-              className="relative group safari-blur-fix"
+              className="relative"
             >
-              <div className="relative bg-secondary/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 sm:p-8">
-                <div className="hidden lg:block mb-6">
-                  <h2 className="text-2xl xl:text-3xl font-bold text-foreground mb-2">Sign In</h2>
-                  <p className="text-muted-foreground">Access your account to continue</p>
+              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10">
+                <div className="relative hidden lg:block mb-8">
+                  <h2 
+                    className="text-2xl font-bold text-white mb-1"
+                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                  >
+                    Sign In
+                  </h2>
+                  <p className="text-sm text-[#737373]">Enter your credentials</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="relative space-y-4">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                       Email Address
                     </label>
                     <input
@@ -260,8 +240,8 @@ function SignInContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
-                      className={`w-full px-4 py-3 bg-background/50 border-2 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 ${
-                        errors.email ? "border-red-500" : "border-border/50 hover:border-border"
+                      className={`w-full px-4 py-3 bg-black/40 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
+                        errors.email ? "border-red-500" : "border-[#FFD700]/20"
                       }`}
                       placeholder="your@email.com"
                     />
@@ -278,7 +258,7 @@ function SignInContent() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                       Password
                     </label>
                     <div className="relative">
@@ -288,15 +268,15 @@ function SignInContent() {
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-background/50 border-2 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 ${
-                          errors.password ? "border-red-500" : "border-border/50 hover:border-border"
+                        className={`w-full px-4 py-3 pr-12 bg-black/40 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
+                          errors.password ? "border-red-500" : "border-[#FFD700]/20"
                         }`}
                         placeholder="Enter your password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors"
                       >
                         {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
                       </button>
@@ -356,16 +336,14 @@ function SignInContent() {
                 </form>
 
                 {/* Divider */}
-                <div className="my-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border/50" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="bg-secondary/40 px-4 text-muted-foreground">
-                        Or continue with
-                      </span>
-                    </div>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#FFD700]/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-[#0a0a0a] px-3 text-[#737373] uppercase tracking-wider">
+                      Or
+                    </span>
                   </div>
                 </div>
 
@@ -380,26 +358,15 @@ function SignInContent() {
                   {isGoogleLoading ? "Signing in..." : "Continue with Google"}
                 </LoginButton>
 
-                {/* Guest Access */}
-                <div className="mt-6">
-                  <Button
-                    onClick={() => router.push("/")}
-                    variant="ghost"
-                    className="w-full text-muted-foreground hover:text-foreground"
-                  >
-                    Continue as Guest
-                  </Button>
-                </div>
-
                 {/* Sign Up Link */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-muted-foreground">
+                <div className="relative mt-6 text-center">
+                  <p className="text-sm text-[#737373]">
                     Don't have an account?{" "}
                     <Link 
                       href="/auth/signup" 
-                      className="text-primary hover:text-accent font-medium transition-colors"
+                      className="text-[#FFD700] hover:text-white font-medium transition-colors"
                     >
-                      Create one now
+                      Sign up
                     </Link>
                   </p>
                 </div>

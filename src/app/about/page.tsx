@@ -3,7 +3,7 @@
 
 import { HomeLayout } from "@/components/layout";
 import { motion } from "framer-motion";
-import { FaUsers, FaStar, FaChartLine } from "react-icons/fa";
+import { FaUsers, FaStar, FaChartLine, FaArrowRight } from "react-icons/fa";
 import { GiClapperboard } from "react-icons/gi";
 import Link from "next/link";
 import Head from "next/head";
@@ -41,107 +41,138 @@ export default function AboutPage() {
       </Head>
 
       <HomeLayout>
-        <div className="min-h-screen bg-background">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 lg:py-24">
-            {/* Hero Section */}
+        <div className="min-h-screen bg-black">
+          {/* Background glow */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#FFC800]/15 rounded-full blur-[200px]" />
+          </div>
+
+          <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-24 md:py-32 lg:py-40 relative">
+            {/* Hero Section - Mobile Optimized */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16 sm:mb-24"
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center mb-20 sm:mb-32"
             >
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 sm:mb-8 font-dm-serif-display">
+              <h1 
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 sm:mb-12 tracking-tight leading-[0.95] relative"
+                style={{ 
+                  fontFamily: 'var(--font-cinzel), serif',
+                  textShadow: '0 0 60px rgba(255, 215, 0, 0.3), 0 0 30px rgba(255, 215, 0, 0.2)'
+                }}
+              >
                 About ActorRating
               </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Our mission is to create the most comprehensive and reliable database
-                of community-driven acting performance ratings.
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "180px", opacity: 1 }}
+                transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-8 sm:mb-16"
+              />
+              <p className="text-base sm:text-xl md:text-2xl text-[#e4e4e7] max-w-3xl mx-auto leading-relaxed font-light px-4">
+                The definitive platform for rating acting performances
               </p>
             </motion.div>
 
-            {/* Mission Statement */}
+            {/* Mission Statement - Simplified */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-16 sm:mb-24"
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-20 sm:mb-32"
             >
-              <div className="bg-secondary/30 backdrop-blur-sm rounded-2xl p-8 sm:p-12 border border-border">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-6 sm:mb-8 text-center">
-                  Our Primary Goal
-                </h2>
-                <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed text-center max-w-3xl mx-auto">
-                  We are dedicated to collecting{" "}
-                  <strong className="text-foreground">
-                    community-driven, high-quality rating data
-                  </strong>{" "}
-                  that provides meaningful insights into acting performances across cinema.
-                </p>
+              <div className="relative p-8 sm:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/30 bg-gradient-to-br from-[#1a1a1a]/90 to-black/90 backdrop-blur-2xl overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                  <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#FFD700]/20 rounded-full blur-3xl" />
+                </div>
+                
+                <div className="relative z-10 text-center">
+                  <h2 
+                    className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6"
+                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                  >
+                    Our Mission
+                  </h2>
+                  <p className="text-base sm:text-lg md:text-xl text-[#e4e4e7] leading-relaxed max-w-2xl mx-auto font-light">
+                    Building the world's most comprehensive{" "}
+                    <span className="text-[#FFD700] font-medium">community-driven platform</span>{" "}
+                    for rating acting performances.
+                  </p>
+                </div>
               </div>
             </motion.div>
 
-            {/* What Makes Us Different */}
+            {/* What Makes Us Different - Mobile Optimized */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mb-16 sm:mb-24"
+              transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-20 sm:mb-32"
             >
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-8 sm:mb-12 text-center">
+              <h2 
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-12 sm:mb-20 text-center"
+                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+              >
                 What Makes Us Different
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                <FeatureCard
-                  icon={<FaUsers className="w-8 h-8 text-primary mr-4" />}
+              <div className="space-y-6 sm:space-y-8">
+                <PremiumFeatureCard
+                  icon={<FaUsers className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />}
                   title="Community-Driven"
                   description="Every rating comes from real movie enthusiasts who care about acting quality. Our community ensures diverse perspectives and authentic evaluations."
                 />
-                <FeatureCard
-                  icon={<FaStar className="w-8 h-8 text-primary mr-4" />}
+                <PremiumFeatureCard
+                  icon={<FaStar className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />}
                   title="Performance-Focused"
                   description="We rate individual performances, not entire movies. This allows for precise evaluation of each actor's contribution to their role."
                 />
-                <FeatureCard
-                  icon={<GiClapperboard className="w-8 h-8 text-primary mr-4" />}
+                <PremiumFeatureCard
+                  icon={<GiClapperboard className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />}
                   title="Oscar-Inspired Criteria"
                   description="Our five-category rating system is inspired by Academy Award standards, ensuring professional-grade evaluation criteria."
                 />
-                <FeatureCard
-                  icon={<FaChartLine className="w-8 h-8 text-primary mr-4" />}
+                <PremiumFeatureCard
+                  icon={<FaChartLine className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />}
                   title="Quality Data"
                   description="We prioritize data quality over quantity, ensuring each rating provides meaningful insights into acting excellence."
                 />
               </div>
             </motion.div>
 
-            {/* Call to Action */}
+            {/* Call to Action - Mobile Optimized */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="text-center"
             >
-              <div className="bg-primary/10 backdrop-blur-sm rounded-2xl p-8 sm:p-12 border border-primary/20">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground mb-6 sm:mb-8">
-                  Join Our Community
-                </h2>
-                <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 sm:mb-12 max-w-2xl mx-auto">
-                  Help us build the most comprehensive database of acting performance ratings.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    href="/search"
-                    className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              <div className="relative p-8 sm:p-12 md:p-16 rounded-2xl sm:rounded-3xl border border-[#FFD700]/40 bg-gradient-to-br from-[#1a1a1a]/95 to-black/95 backdrop-blur-2xl overflow-hidden">
+                <div className="absolute inset-0 opacity-15 pointer-events-none">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 bg-[#FFD700]/20 rounded-full blur-3xl" />
+                </div>
+                
+                <div className="relative z-10">
+                  <h2 
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6"
+                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
-                    Start Rating Performances
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    className="inline-flex items-center justify-center px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-secondary/80 transition-colors"
-                  >
-                    Create Account
-                  </Link>
+                    Join Our Community
+                  </h2>
+                  <p className="text-base sm:text-xl md:text-2xl text-[#e4e4e7] leading-relaxed mb-8 sm:mb-12 max-w-2xl mx-auto font-light">
+                    Help us build the most comprehensive database of acting performance ratings.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/performances">
+                      <button className="group px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-base sm:text-lg font-bold tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_60px_rgba(255,215,0,0.5)] hover:scale-105">
+                        <span className="flex items-center justify-center gap-3">
+                          Start Rating Now
+                          <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-2" />
+                        </span>
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -152,11 +183,30 @@ export default function AboutPage() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function PremiumFeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="bg-background p-6 sm:p-8 rounded-xl border border-border">
-      <div className="flex items-center mb-4">{icon}<h3 className="text-xl sm:text-2xl font-semibold text-foreground">{title}</h3></div>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    <div className="group relative p-6 sm:p-8 md:p-10 rounded-xl sm:rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/40 hover:shadow-[0_0_60px_rgba(255,215,0,0.15)]">
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-1/2 left-0 w-48 h-48 sm:w-72 sm:h-72 bg-[#FFD700]/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative z-10 flex items-start gap-4 sm:gap-6">
+        <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/10 border border-[#FFD700]/30 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.15)]">
+          {icon}
+        </div>
+        
+        <div className="flex-1">
+          <h3 
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3"
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+          >
+            {title}
+          </h3>
+          <p className="text-sm sm:text-base md:text-lg text-[#e4e4e7] leading-relaxed font-light">
+            {description}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
