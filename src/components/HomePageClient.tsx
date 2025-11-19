@@ -66,10 +66,10 @@ function HowItWorksSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ y: 20 }}
-          whileInView={{ y: 0 }}
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-24 sm:mb-32 lg:mb-40"
         >
           <h2 
@@ -95,14 +95,14 @@ function HowItWorksSection() {
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ y: 20 }}
-              whileInView={{ y: 0 }}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-5 sm:p-8 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
+              <div className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FFD700]/15 rounded-full blur-3xl" />
@@ -174,10 +174,10 @@ function HowItWorksSection() {
 
         {/* Call to action */}
         <motion.div
-          initial={{ y: 10 }}
-          whileInView={{ y: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.4 }}
           className="text-center mt-16 sm:mt-20"
         >
           <Link href="/performances">
@@ -266,10 +266,10 @@ function PerformanceSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ y: 15 }}
-          whileInView={{ y: 0 }}
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-24 sm:mb-32 lg:mb-40"
         >
           <h2 
@@ -288,14 +288,14 @@ function PerformanceSection() {
           {highlights.map((highlight, index) => (
             <motion.div
               key={index}
-              initial={{ y: 20 }}
-              whileInView={{ y: 0 }}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
               className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-10 sm:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_100px_rgba(255,215,0,0.25)] hover:-translate-y-2">
+              <div className="relative h-full p-8 sm:p-10 md:p-12 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_100px_rgba(255,215,0,0.25)] hover:-translate-y-2">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -445,14 +445,14 @@ function FeaturesSection() {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ y: 20 }}
-              whileInView={{ y: 0 }}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Feature Card */}
-              <div className="relative p-5 sm:p-8 md:p-10 lg:p-16 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
+              <div className="relative p-6 sm:p-8 md:p-10 lg:p-16 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -511,17 +511,17 @@ function AboutSection() {
       <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 text-center relative">
         {/* Title */}
         <motion.div
-          initial={{ y: 15 }}
-          whileInView={{ y: 0 }}
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="mb-20 sm:mb-24"
         >
           <h2 
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-10 tracking-tight"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
-            Why ActorRating
+            About ActorRating
           </h2>
           <motion.div
             initial={{ width: 0, opacity: 0 }}
@@ -535,11 +535,11 @@ function AboutSection() {
         {/* Visual Stats Grid - More Engaging */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-16">
                 <motion.div
-                  initial={{ y: 15 }}
-                  whileInView={{ y: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.3, delay: 0.05 }}
-            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+                  transition={{ duration: 0.4, delay: 0.05 }}
+            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
               style={{
@@ -556,11 +556,11 @@ function AboutSection() {
           </motion.div>
 
                 <motion.div
-                  initial={{ y: 15 }}
-                  whileInView={{ y: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+                  transition={{ duration: 0.4, delay: 0.1 }}
+            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
               style={{
@@ -577,11 +577,11 @@ function AboutSection() {
           </motion.div>
 
                 <motion.div
-                  initial={{ y: 15 }}
-                  whileInView={{ y: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.3, delay: 0.15 }}
-            className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+                  transition={{ duration: 0.4, delay: 0.15 }}
+            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />

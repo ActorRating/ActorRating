@@ -54,6 +54,9 @@ export default function Home() {
 
   return (
     <>
+      {/* Preload critical resources for better LCP */}
+      <link rel="preload" href="/hero-bg.jpg" as="image" type="image/jpeg" fetchPriority="high" />
+      
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
