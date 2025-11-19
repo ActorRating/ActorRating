@@ -229,9 +229,9 @@ export default function SignUp() {
             className="w-full max-w-md mx-auto"
           >
             {/* Mobile Header */}
-            <div className="lg:hidden text-center mb-8">
+            <div className="lg:hidden text-center mb-8 px-4">
               <h2 
-                className="text-3xl font-bold text-white mb-2"
+                className="text-3xl sm:text-4xl font-bold text-white mb-2"
                 style={{ fontFamily: 'var(--font-cinzel), serif' }}
               >
                 Create Account
@@ -244,21 +244,21 @@ export default function SignUp() {
               variants={fadeInUp}
               className="relative group safari-blur-fix"
             >
-              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10">
-                <div className="relative hidden lg:block mb-8">
+              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-6 sm:p-8 md:p-10">
+                <div className="relative hidden lg:block mb-6">
                   <h2 
-                    className="text-2xl font-bold text-white mb-1"
+                    className="text-xl md:text-2xl font-bold text-white mb-1"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     Create Account
                   </h2>
-                  <p className="text-sm text-[#737373]">Join the platform</p>
+                  <p className="text-xs md:text-sm text-[#737373]">Join the platform</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-4">
+                <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-4">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-1.5 sm:mb-2">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -269,7 +269,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
@@ -301,7 +301,7 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-1.5 sm:mb-2">
                       Password *
                     </label>
                     <div className="relative">
@@ -312,7 +312,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-black/50 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid

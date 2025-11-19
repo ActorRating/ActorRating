@@ -19,11 +19,12 @@ function HowItWorksSection() {
       icon: FaTheaterMasks,
       title: "Discover Performances",
       subtitle: "Curated Excellence",
-      description: "Explore acclaimed performances across cinema history. Our curated database ensures you rate performances that matter.",
+      description: "Explore acclaimed performances across cinema history.",
+      descriptionFull: "Explore acclaimed performances across cinema history. Our curated database ensures you rate performances that matter.",
       features: [
-        "25,000+ curated performances",
+        "25,000+ performances",
         "Classic to contemporary",
-        "All major genres covered"
+        "All major genres"
       ]
     },
     {
@@ -31,11 +32,12 @@ function HowItWorksSection() {
       icon: FaStar,
       title: "Rate with Precision",
       subtitle: "Five-Criteria System",
-      description: "Evaluate every dimension of acting craft with our professional rating system. Five criteria ensure comprehensive analysis.",
+      description: "Evaluate acting craft with our professional five-criteria system.",
+      descriptionFull: "Evaluate every dimension of acting craft with our professional rating system. Five criteria ensure comprehensive analysis.",
       features: [
-        "Professional-grade metrics",
+        "Professional metrics",
         "Five detailed criteria",
-        "Industry-standard approach"
+        "Industry-standard"
       ]
     },
     {
@@ -43,7 +45,8 @@ function HowItWorksSection() {
       icon: FaChartLine,
       title: "Compare & Discover",
       subtitle: "Community Insights",
-      description: "Discover what others think of each performance. Explore consensus and find new perspectives through our community.",
+      description: "Explore consensus and discover new perspectives.",
+      descriptionFull: "Discover what others think of each performance. Explore consensus and find new perspectives through our community.",
       features: [
         "Be among the first",
         "Real-time comparisons",
@@ -63,10 +66,10 @@ function HowItWorksSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ y: 20 }}
+          whileInView={{ y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-24 sm:mb-32 lg:mb-40"
         >
           <h2 
@@ -82,15 +85,9 @@ function HowItWorksSection() {
             transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-8"
           />
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed"
-          >
+          <p className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed">
             Three simple steps to join the world's most sophisticated acting rating platform
-          </motion.p>
+          </p>
         </motion.div>
 
         {/* Rich Step Cards - Grid on all screen sizes */}
@@ -98,14 +95,14 @@ function HowItWorksSection() {
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-5 sm:p-8 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-500 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
+              <div className="relative h-full p-5 sm:p-8 md:p-10 lg:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FFD700]/15 rounded-full blur-3xl" />
@@ -150,7 +147,8 @@ function HowItWorksSection() {
 
                   {/* Description */}
                   <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-4 sm:mb-6">
-                    {step.description}
+                    <span className="hidden lg:inline">{step.descriptionFull}</span>
+                    <span className="lg:hidden">{step.description}</span>
                   </p>
 
                   {/* Features List */}
@@ -176,10 +174,10 @@ function HowItWorksSection() {
 
         {/* Call to action */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ y: 10 }}
+          whileInView={{ y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.3 }}
           className="text-center mt-16 sm:mt-20"
         >
           <Link href="/performances">
@@ -268,10 +266,10 @@ function PerformanceSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ y: 15 }}
+          whileInView={{ y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-24 sm:mb-32 lg:mb-40"
         >
           <h2 
@@ -290,10 +288,10 @@ function PerformanceSection() {
           {highlights.map((highlight, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
               className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
             >
               {/* Premium Card */}
@@ -391,19 +389,22 @@ function FeaturesSection() {
     {
       icon: FaUsers,
       title: "Community-driven precision",
-      description: "Every rating shapes the collective understanding of acting excellence. Be part of building the definitive platform for analyzing cinematic performance.",
+      description: "Every rating shapes collective understanding of acting excellence.",
+      descriptionFull: "Every rating shapes the collective understanding of acting excellence. Be part of building the definitive platform for analyzing cinematic performance.",
       stats: "Growing community"
     },
     {
       icon: FaChartLine,
       title: "Actor-by-actor insights",
-      description: "Deep analysis across performances, roles, and career trajectories. Track evolution, compare eras, and discover patterns in acting excellence across the history of cinema.",
+      description: "Deep analysis across performances and career trajectories.",
+      descriptionFull: "Deep analysis across performances, roles, and career trajectories. Track evolution, compare eras, and discover patterns in acting excellence across the history of cinema.",
       stats: "25K+ performances"
     },
     {
       icon: FaStar,
       title: "Thoughtful rating experience",
-      description: "Five professional criteria ensure nuanced, meaningful evaluations. Emotional depth, technical skill, authenticity, impact, and overall performance combine for comprehensive analysis.",
+      description: "Five professional criteria ensure nuanced evaluations.",
+      descriptionFull: "Five professional criteria ensure nuanced, meaningful evaluations. Emotional depth, technical skill, authenticity, impact, and overall performance combine for comprehensive analysis.",
       stats: "5-criteria system"
     }
   ];
@@ -444,14 +445,14 @@ function FeaturesSection() {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ y: 20 }}
+              whileInView={{ y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Feature Card */}
-              <div className="relative p-5 sm:p-8 md:p-10 lg:p-16 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-500 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
+              <div className="relative p-5 sm:p-8 md:p-10 lg:p-16 rounded-2xl sm:rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -481,7 +482,8 @@ function FeaturesSection() {
                       </div>
                     </div>
                     <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#e4e4e7] leading-relaxed">
-                      {feature.description}
+                      <span className="hidden md:inline">{feature.descriptionFull}</span>
+                      <span className="md:hidden">{feature.description}</span>
                     </p>
                   </div>
                 </div>
@@ -509,10 +511,10 @@ function AboutSection() {
       <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 text-center relative">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ y: 15 }}
+          whileInView={{ y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="mb-20 sm:mb-24"
         >
           <h2 
@@ -532,11 +534,11 @@ function AboutSection() {
 
         {/* Visual Stats Grid - More Engaging */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+                <motion.div
+                  initial={{ y: 15 }}
+                  whileInView={{ y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
             className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
@@ -553,11 +555,11 @@ function AboutSection() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+                <motion.div
+                  initial={{ y: 15 }}
+                  whileInView={{ y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
             className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
@@ -574,11 +576,11 @@ function AboutSection() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+                <motion.div
+                  initial={{ y: 15 }}
+                  whileInView={{ y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
             className="relative p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="flex items-center justify-center gap-2 mb-3">
@@ -594,32 +596,19 @@ function AboutSection() {
         </div>
 
         {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-12 max-w-3xl mx-auto"
-        >
+        <p className="text-xl sm:text-2xl md:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-12 max-w-3xl mx-auto">
           Be among the first to join us and be a part of the journey
-        </motion.p>
+        </p>
 
         {/* Learn More Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
-          <Link href="/about">
-            <button className="group px-10 py-4 rounded-full border-2 border-[#FFD700]/40 bg-black/50 text-[#FFD700] text-base font-bold tracking-wider uppercase transition-all duration-300 hover:bg-[#FFD700] hover:text-black hover:border-[#FFD700] hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] hover:scale-105">
-              <span className="flex items-center gap-3">
-                Learn More
-                <FaArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-2" />
-              </span>
-            </button>
-          </Link>
-        </motion.div>
+        <Link href="/about">
+          <button className="group px-10 py-4 rounded-full border-2 border-[#FFD700]/40 bg-black/50 text-[#FFD700] text-base font-bold tracking-wider uppercase transition-all duration-300 hover:bg-[#FFD700] hover:text-black hover:border-[#FFD700] hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] hover:scale-105">
+            <span className="flex items-center gap-3">
+              Learn More
+              <FaArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-2" />
+            </span>
+          </button>
+        </Link>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export function Footer() {
   const { openSettings } = useCookieConsentContext()
   
   return (
-    <footer className="bg-black border-t border-[#FFD700]/10 w-full">
+    <footer className="bg-black border-t border-[#FFD700]/10 w-full mt-auto">
       <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 lg:px-12 py-12">
         {/* Main Footer Content - Clean Single Row */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">

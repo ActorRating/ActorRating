@@ -50,13 +50,13 @@ export default function AboutPage() {
           <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-24 md:py-32 lg:py-40 relative">
             {/* Hero Section - Mobile Optimized */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ y: 20 }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="text-center mb-20 sm:mb-32"
             >
               <h1 
-                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 sm:mb-12 tracking-tight leading-[0.95] relative"
+                className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif',
                   textShadow: '0 0 60px rgba(255, 215, 0, 0.3), 0 0 30px rgba(255, 215, 0, 0.2)'
@@ -67,34 +67,34 @@ export default function AboutPage() {
               <motion.div
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: "180px", opacity: 1 }}
-                transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-8 sm:mb-16"
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-6 sm:mb-12 md:mb-16"
               />
-              <p className="text-base sm:text-xl md:text-2xl text-[#e4e4e7] max-w-3xl mx-auto leading-relaxed font-light px-4">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#e4e4e7] max-w-3xl mx-auto leading-relaxed font-light px-6 sm:px-4">
                 The definitive platform for rating acting performances
               </p>
             </motion.div>
 
             {/* Mission Statement - Simplified */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ y: 20 }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="mb-20 sm:mb-32"
             >
-              <div className="relative p-8 sm:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/30 bg-gradient-to-br from-[#1a1a1a]/90 to-black/90 backdrop-blur-2xl overflow-hidden">
+              <div className="relative p-6 sm:p-10 md:p-12 rounded-2xl sm:rounded-3xl border border-[#FFD700]/30 bg-gradient-to-br from-[#1a1a1a]/90 to-black/90 backdrop-blur-2xl overflow-hidden">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#FFD700]/20 rounded-full blur-3xl" />
                 </div>
                 
-                <div className="relative z-10 text-center">
+                <div className="relative z-10 text-center px-4">
                   <h2 
-                    className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6"
+                    className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     Our Mission
                   </h2>
-                  <p className="text-base sm:text-lg md:text-xl text-[#e4e4e7] leading-relaxed max-w-2xl mx-auto font-light">
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#e4e4e7] leading-relaxed max-w-2xl mx-auto font-light">
                     Building the world's most comprehensive{" "}
                     <span className="text-[#FFD700] font-medium">community-driven platform</span>{" "}
                     for rating acting performances.

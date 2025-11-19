@@ -202,14 +202,14 @@ function SignInContent() {
             className="w-full max-w-md mx-auto"
           >
             {/* Mobile Header */}
-            <div className="lg:hidden text-center mb-10">
+            <div className="lg:hidden text-center mb-8 px-4">
               <h2 
-                className="text-4xl font-bold text-white mb-3"
+                className="text-3xl sm:text-4xl font-bold text-white mb-3"
                 style={{ fontFamily: 'var(--font-cinzel), serif' }}
               >
                 Welcome Back
               </h2>
-              <p className="text-[#a3a3a3]">Sign in to continue</p>
+              <p className="text-sm sm:text-base text-[#a3a3a3]">Sign in to continue</p>
             </div>
 
             {/* Sign In Form - Clean & Elegant */}
@@ -217,21 +217,21 @@ function SignInContent() {
               variants={fadeInUp}
               className="relative"
             >
-              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10">
-                <div className="relative hidden lg:block mb-8">
+              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-6 sm:p-8 md:p-10">
+                <div className="relative hidden lg:block mb-6">
                   <h2 
-                    className="text-2xl font-bold text-white mb-1"
+                    className="text-xl md:text-2xl font-bold text-white mb-1"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     Sign In
                   </h2>
-                  <p className="text-sm text-[#737373]">Enter your credentials</p>
+                  <p className="text-xs md:text-sm text-[#737373]">Enter your credentials</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-4">
+                <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-4">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-white mb-1.5 sm:mb-2">
                       Email Address
                     </label>
                     <input
@@ -240,7 +240,7 @@ function SignInContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
-                      className={`w-full px-4 py-3 bg-black/40 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
+                      className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-black/40 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
                         errors.email ? "border-red-500" : "border-[#FFD700]/20"
                       }`}
                       placeholder="your@email.com"
@@ -258,7 +258,7 @@ function SignInContent() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-white mb-1.5 sm:mb-2">
                       Password
                     </label>
                     <div className="relative">
@@ -268,7 +268,7 @@ function SignInContent() {
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
-                        className={`w-full px-4 py-3 pr-12 bg-black/40 border rounded-lg text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-black/40 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
                           errors.password ? "border-red-500" : "border-[#FFD700]/20"
                         }`}
                         placeholder="Enter your password"
