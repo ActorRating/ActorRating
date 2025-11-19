@@ -244,8 +244,8 @@ export default function SignUp() {
               variants={fadeInUp}
               className="relative group safari-blur-fix"
             >
-              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-6 sm:p-8 md:p-10">
-                <div className="relative hidden lg:block mb-6">
+              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10 md:p-12 lg:p-14">
+                <div className="relative hidden lg:block mb-8">
                   <h2 
                     className="text-xl md:text-2xl font-bold text-white mb-1"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
@@ -255,10 +255,10 @@ export default function SignUp() {
                   <p className="text-xs md:text-sm text-[#737373]">Join the platform</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-4">
+                <form onSubmit={handleSubmit} className="relative space-y-5 sm:space-y-6">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-1.5 sm:mb-2">
+                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-2 sm:mb-2.5">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -269,7 +269,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
@@ -301,7 +301,7 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-1.5 sm:mb-2">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-2 sm:mb-2.5">
                       Password *
                     </label>
                     <div className="relative">
@@ -312,7 +312,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid

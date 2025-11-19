@@ -91,7 +91,7 @@ function HowItWorksSection() {
         </motion.div>
 
         {/* Rich Step Cards - Grid on all screen sizes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 lg:gap-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-14 max-w-sm md:max-w-none mx-auto">
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -102,7 +102,7 @@ function HowItWorksSection() {
               className="group relative"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
+              <div className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FFD700]/15 rounded-full blur-3xl" />
@@ -111,13 +111,13 @@ function HowItWorksSection() {
                 {/* Content */}
                 <div className="relative z-10">
                   {/* Icon Section */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)]">
-                      <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)]">
+                      <step.icon className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-[#FFD700]" />
                     </div>
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-black/50 border border-[#FFD700]/30 flex items-center justify-center">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl bg-black/50 border border-[#FFD700]/30 flex items-center justify-center">
                       <span 
-                        className="text-2xl sm:text-3xl font-extrabold"
+                        className="text-xl sm:text-2xl md:text-3xl font-extrabold"
                         style={{ 
                           fontFamily: 'var(--font-cinzel), serif',
                           background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
@@ -132,21 +132,21 @@ function HowItWorksSection() {
 
                   {/* Title */}
                   <h3 
-                    className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 leading-tight"
+                    className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 leading-tight"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     {step.title}
                   </h3>
 
                   {/* Subtitle Badge */}
-                  <div className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-3 sm:mb-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
-                    <span className="text-xs font-bold text-[#FFD700] tracking-widest uppercase">
+                  <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-3 sm:mb-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
+                    <span className="text-xs sm:text-sm font-bold text-[#FFD700] tracking-widest uppercase">
                       {step.subtitle}
                     </span>
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-4 sm:mb-6">
+                  <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-4 sm:mb-5">
                     <span className="hidden lg:inline">{step.descriptionFull}</span>
                     <span className="lg:hidden">{step.description}</span>
                   </p>
@@ -158,7 +158,7 @@ function HowItWorksSection() {
                         <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/30 flex items-center justify-center flex-shrink-0">
                           <FaCheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#FFD700]" />
                         </div>
-                        <span className="text-xs sm:text-sm">{feature}</span>
+                        <span className="text-xs sm:text-sm leading-snug">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -295,7 +295,7 @@ function PerformanceSection() {
               className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-8 sm:p-10 md:p-12 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_100px_rgba(255,215,0,0.25)] hover:-translate-y-2">
+              <div className="relative h-full p-8 sm:p-10 md:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_100px_rgba(255,215,0,0.25)] hover:-translate-y-2">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -441,7 +441,7 @@ function FeaturesSection() {
         </motion.div>
 
         {/* Features - Vertical Stack on all screen sizes */}
-        <div className="space-y-8 md:space-y-16">
+        <div className="space-y-10 md:space-y-16 max-w-md md:max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -452,7 +452,7 @@ function FeaturesSection() {
               className="group relative"
             >
               {/* Premium Feature Card */}
-              <div className="relative p-6 sm:p-8 md:p-10 lg:p-16 rounded-2xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
+              <div className="relative p-6 sm:p-8 md:p-10 lg:p-16 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -533,13 +533,13 @@ function AboutSection() {
         </motion.div>
 
         {/* Visual Stats Grid - More Engaging */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-8 mb-16 max-w-xs sm:max-w-none mx-auto">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: 0.05 }}
-            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+            className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
               style={{
@@ -560,7 +560,7 @@ function AboutSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: 0.1 }}
-            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+            className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
               style={{
@@ -581,7 +581,7 @@ function AboutSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: 0.15 }}
-            className="relative p-6 sm:p-8 rounded-2xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
+            className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
