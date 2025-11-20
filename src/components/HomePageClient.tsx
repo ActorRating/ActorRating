@@ -95,10 +95,10 @@ function HowItWorksSection() {
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Card */}
@@ -151,8 +151,8 @@ function HowItWorksSection() {
                     <span className="lg:hidden">{step.description}</span>
                   </p>
 
-                  {/* Features List */}
-                  <div className="space-y-2 sm:space-y-2.5">
+                  {/* Features List - 2 columns on mobile, single column on desktop */}
+                  <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5">
                     {step.features.map((feature, idx) => (
                       <div key={idx} className="flex items-center gap-2 sm:gap-2.5 text-[#d4d4d8]">
                         <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/30 flex items-center justify-center flex-shrink-0">
@@ -288,10 +288,10 @@ function PerformanceSection() {
           {highlights.map((highlight, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
             >
               {/* Premium Card */}
@@ -445,10 +445,10 @@ function FeaturesSection() {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 25 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="group relative"
             >
               {/* Premium Feature Card */}
@@ -535,10 +535,10 @@ function AboutSection() {
         {/* Visual Stats Grid - More Engaging */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-8 mb-16 max-w-xs sm:max-w-none mx-auto">
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: 0.05 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
             className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
@@ -556,10 +556,10 @@ function AboutSection() {
           </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: 0.1 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
             className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="text-5xl font-extrabold mb-3"
@@ -577,10 +577,10 @@ function AboutSection() {
           </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: 0.15 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
             className="relative p-6 sm:p-8 rounded-3xl border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 backdrop-blur-xl"
           >
             <div className="flex items-center justify-center gap-2 mb-3">

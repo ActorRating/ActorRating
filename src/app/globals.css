@@ -595,14 +595,38 @@ img, video {
 
 .navbar-signin {
   color: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(212, 175, 55, 0.4) !important;
+  border: 2px solid transparent !important;
+  background: linear-gradient(black, black) padding-box,
+              linear-gradient(135deg, #FFD700, #FFA500) border-box !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.15) !important;
   filter: none !important;
   -webkit-filter: none !important;
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.875rem !important;
+}
+
+@media (min-width: 768px) {
+  .navbar-signin {
+    padding: 0.625rem 1.5rem !important;
+    font-size: 1rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbar-signin {
+    padding: 0.5rem 1.25rem !important;
+    font-size: 0.9375rem !important;
+  }
 }
 
 .navbar-scrolled .navbar-signin {
   color: var(--accent) !important;
   border-color: var(--accent) !important;
+}
+
+/* Radial gradient utility for spotlights */
+.bg-gradient-radial {
+  background-image: radial-gradient(circle, var(--tw-gradient-stops));
 }
 
 /* Ensure navbar logo and icons are not affected by spotlight */

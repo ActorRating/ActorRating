@@ -244,7 +244,12 @@ export default function SignUp() {
               variants={fadeInUp}
               className="relative group safari-blur-fix"
             >
-              <div className="relative bg-[#0a0a0a]/80 backdrop-blur-md border border-[#FFD700]/15 rounded-xl p-8 sm:p-10 md:p-12 lg:p-14">
+              {/* Golden Spotlights - Opposing Diagonal Corners */}
+              <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
+              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
+              
+              {/* Glassmorphism Container */}
+              <div className="relative bg-black/40 backdrop-blur-2xl border border-[#FFD700]/20 rounded-xl p-8 sm:p-10 md:p-12 lg:p-14 shadow-[0_8px_32px_0_rgba(255,215,0,0.15)]" style={{ backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
                 <div className="relative hidden lg:block mb-8">
                   <h2 
                     className="text-xl md:text-2xl font-bold text-white mb-1"

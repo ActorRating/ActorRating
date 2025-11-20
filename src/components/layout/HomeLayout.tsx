@@ -29,25 +29,17 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
       </div>
 
       {/* Main content */}
-      <motion.main
-        variants={fadeIn}
-        initial={mounted ? "hidden" : false}
-        animate={mounted ? "show" : undefined}
+      <main
         className="flex-1 max-w-full overflow-x-hidden relative"
         style={{ zIndex: 10, position: 'relative' }}
       >
         {children}
-      </motion.main>
+      </main>
 
       {/* Footer */}
-      <motion.div
-        variants={fadeIn}
-        initial={mounted ? "hidden" : false}
-        animate={mounted ? "show" : undefined}
-        style={{ position: 'relative', zIndex: 10 }}
-      >
+      <div style={{ position: 'relative', zIndex: 10 }}>
         <Footer />
-      </motion.div>
+      </div>
 
       {/* Feedback Section */}
       <FeedbackSection />
