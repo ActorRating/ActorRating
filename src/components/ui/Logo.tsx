@@ -17,13 +17,13 @@ export function Logo({
 }: LogoProps) {
   const LogoContent = () => (
     <div className={cn("flex items-center", className)} suppressHydrationWarning>
-      {/* Logo Image - Larger on iPad */}
-      <div className="relative w-10 h-10 md:w-12 md:h-12 lg:w-11 lg:h-11">
+      {/* Logo Image - Responsive sizing to match button */}
+      <div className="relative w-11 h-11 md:w-14 md:h-14 lg:w-12 lg:h-12">
         <Image
           src="/logo_navbar.png"
           alt="ActorRating Logo"
-          width={48}
-          height={48}
+          width={56}
+          height={56}
           className="object-contain"
           priority
           suppressHydrationWarning

@@ -132,33 +132,33 @@ function HowItWorksSection() {
 
                   {/* Title */}
                   <h3 
-                    className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 leading-tight"
+                    className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4 leading-tight"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     {step.title}
                   </h3>
 
                   {/* Subtitle Badge */}
-                  <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-3 sm:mb-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
+                  <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#FFA500]/10 border border-[#FFD700]/30 mb-4 sm:mb-5 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
                     <span className="text-xs sm:text-sm font-bold text-[#FFD700] tracking-widest uppercase">
                       {step.subtitle}
                     </span>
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-4 sm:mb-5">
+                  <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed mb-6 sm:mb-8">
                     <span className="hidden lg:inline">{step.descriptionFull}</span>
                     <span className="lg:hidden">{step.description}</span>
                   </p>
 
-                  {/* Features List - 2 columns on mobile, single column on desktop */}
-                  <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 sm:gap-2.5">
+                  {/* Features List - Single column for clean layout */}
+                  <div className="space-y-3 sm:space-y-3.5">
                     {step.features.map((feature, idx) => (
                       <div key={idx} className="flex items-center gap-2 sm:gap-2.5 text-[#d4d4d8]">
                         <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/30 flex items-center justify-center flex-shrink-0">
                           <FaCheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#FFD700]" />
                         </div>
-                        <span className="text-xs sm:text-sm leading-snug">{feature}</span>
+                        <span className="text-xs sm:text-sm leading-relaxed">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -469,7 +469,7 @@ function FeaturesSection() {
 
                   {/* Text Content */}
                   <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4 md:mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-4 mb-5 sm:mb-6 md:mb-8">
                       <h3 
                         className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight"
                         style={{ fontFamily: 'var(--font-cinzel), serif' }}
