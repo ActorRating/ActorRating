@@ -102,7 +102,7 @@ function HowItWorksSection() {
               className="group relative"
             >
               {/* Premium Card */}
-              <div className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
+              <div className="relative h-full p-8 sm:p-8 md:p-10 lg:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/80 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)] hover:transform hover:-translate-y-2">
                 {/* Glow effect on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FFD700]/15 rounded-full blur-3xl" />
@@ -452,7 +452,7 @@ function FeaturesSection() {
               className="group relative"
             >
               {/* Premium Feature Card */}
-              <div className="relative p-6 sm:p-8 md:p-10 lg:p-16 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
+              <div className="relative p-8 sm:p-8 md:p-10 lg:p-16 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/90 via-[#0a0a0a]/85 to-black/90 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/50 hover:shadow-[0_0_80px_rgba(255,215,0,0.2)]">
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                   <div className="absolute top-1/2 left-0 w-96 h-96 bg-[#FFD700]/10 rounded-full blur-3xl" />
