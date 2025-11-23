@@ -782,9 +782,24 @@ nav {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  scroll-behavior: smooth;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Performance optimization for scroll-triggered animations */
+.performance-scroll-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding: 0;
+}
+
+/* Optimize animation performance */
+@media (prefers-reduced-motion: no-preference) {
+  [style*="willChange"] {
+    will-change: transform, opacity;
+  }
 }
 

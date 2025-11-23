@@ -20,7 +20,7 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
   useEffect(() => setMounted(true), [])
   return (
     <div 
-      className={`min-h-screen flex flex-col overflow-x-hidden relative ${transparentBackground ? '' : 'bg-background'}`} 
+      className={`min-h-screen flex flex-col relative ${transparentBackground ? '' : 'bg-background'}`} 
       style={{ zIndex: 1 }}
     >
       {/* Navbar switches based on auth status for consistency across pages */}
@@ -30,7 +30,7 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
 
       {/* Main content */}
       <main
-        className="flex-1 max-w-full overflow-x-hidden relative"
+        className="flex-1 max-w-full relative"
         style={{ zIndex: 10, position: 'relative' }}
       >
         {children}

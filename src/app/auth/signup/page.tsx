@@ -244,26 +244,41 @@ export default function SignUp() {
               variants={fadeInUp}
               className="relative group safari-blur-fix"
             >
-              {/* Golden Spotlights - Opposing Diagonal Corners */}
-              <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
-              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
+              {/* Round Spotlights - Top Left and Bottom Left */}
+              <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
+              <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
               
-              {/* Glassmorphism Container */}
-              <div className="relative bg-black/40 backdrop-blur-2xl border border-[#FFD700]/20 rounded-xl p-8 sm:p-10 md:p-12 lg:p-14 shadow-[0_8px_32px_0_rgba(255,215,0,0.15)]" style={{ backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="relative hidden lg:block mb-8">
+              {/* Glassmorphism Container - 3D Elevated */}
+              <div 
+                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-2xl p-6 sm:p-8 transition-all duration-300" 
+                style={{ 
+                  backdropFilter: 'blur(24px) saturate(180%)', 
+                  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <div className="relative hidden lg:block mb-10">
                   <h2 
-                    className="text-xl md:text-2xl font-bold text-white mb-1"
+                    className="text-xl md:text-2xl font-bold text-white mb-2"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     Create Account
                   </h2>
-                  <p className="text-xs md:text-sm text-[#737373]">Join the platform</p>
+                  <p className="text-xs md:text-sm text-[#a3a3a3]">Join the platform</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-5 sm:space-y-6">
+                <form onSubmit={handleSubmit} className="relative space-y-5">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-2 sm:mb-2.5">
+                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -274,7 +289,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
@@ -306,7 +321,7 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-2 sm:mb-2.5">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
                       Password *
                     </label>
                     <div className="relative">
@@ -317,7 +332,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid

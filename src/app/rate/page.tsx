@@ -16,6 +16,7 @@ import { Actor, Movie, OscarRating, SearchResult, Rating } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft, User, Film, Star, Search, CheckCircle, Share2, Sparkles, Trophy, TrendingUp, Play } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
@@ -294,11 +295,13 @@ export default function RatePage() {
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div className="text-center">
-              <div className="animate-pulse">
-                <div className="h-8 bg-muted rounded mb-4 max-w-md mx-auto"></div>
-                <div className="h-4 bg-muted rounded mb-8 max-w-lg mx-auto"></div>
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 text-center">
+                <div className="animate-pulse">
+                  <div className="h-8 bg-muted rounded mb-4 max-w-md mx-auto"></div>
+                  <div className="h-4 bg-muted rounded mb-8 max-w-lg mx-auto"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -309,7 +312,7 @@ export default function RatePage() {
 
   if (submitted && submittedRating) {
     // Calculate total score
-    const totalScore = (
+    const totalScore = Math.round(
       submittedRating.emotionalRangeDepth * 0.25 +
       submittedRating.characterBelievability * 0.25 +
       submittedRating.technicalSkill * 0.20 +
@@ -317,222 +320,119 @@ export default function RatePage() {
       submittedRating.chemistryInteraction * 0.15
     )
 
-    // Quality assessment
-    const getQualityAssessment = (score: number) => {
-      if (score >= 90) return { 
-        level: 'Masterpiece', 
-        color: 'text-amber-400', 
-        bg: 'from-amber-400/20 to-yellow-400/20',
-        icon: Trophy,
-        description: 'Oscar-worthy performance!',
-        message: 'Incredible! You\'ve witnessed true artistry!'
-      }
-      if (score >= 80) return { 
-        level: 'Excellent', 
-        color: 'text-emerald-400', 
-        bg: 'from-emerald-400/20 to-green-400/20',
-        icon: Star,
-        description: 'Outstanding work!',
-        message: 'Fantastic! This performance really stood out!'
-      }
-      if (score >= 70) return { 
-        level: 'Good', 
-        color: 'text-blue-400', 
-        bg: 'from-blue-400/20 to-cyan-400/20',
-        icon: CheckCircle,
-        description: 'Solid performance',
-        message: 'Nice! A well-executed performance!'
-      }
-      if (score >= 60) return { 
-        level: 'Decent', 
-        color: 'text-yellow-400', 
-        bg: 'from-yellow-400/20 to-orange-400/20',
-        icon: TrendingUp,
-        description: 'Above average',
-        message: 'Good work! Room for improvement though.'
-      }
-      return { 
-        level: 'Mixed', 
-        color: 'text-orange-400', 
-        bg: 'from-orange-400/20 to-red-400/20',
-        icon: TrendingUp,
-        description: 'Mixed feelings',
-        message: 'Thanks for the honest review!'
-      }
-    }
-
-    const quality = getQualityAssessment(totalScore)
-
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 relative overflow-hidden">
-            {/* Subtle background effect */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10" />
+          <div className="min-h-screen bg-black">
+            {/* Subtle spotlight gradient */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px]" />
             </div>
 
-            <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+            <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16">
+              <div className="grid grid-cols-12 gap-6">
+              
+              {/* Header Section (kept from original) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-12 lg:col-span-8 lg:col-start-3 text-center mb-16"
+              >
+                {/* Actor Image */}
+                {actor?.imageUrl && (
+                  <div className="mb-6 flex justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-purple-600/30 blur-2xl rounded-lg" />
+                      <Image
+                        src={actor.imageUrl}
+                        alt={actor.name}
+                        width={120}
+                        height={120}
+                        className="relative rounded-lg object-cover shadow-2xl"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Actor Name */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
+                  {actor?.name}
+                </h1>
+                
+                {/* Movie Title */}
+                <h2 className="text-lg sm:text-xl text-gray-300 mb-2 font-medium">
+                  {movie?.title}
+                </h2>
+              </motion.div>
+
+              {/* Success Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ 
                   type: "spring", 
                   stiffness: 300, 
                   damping: 30,
                   delay: 0.2
                 }}
-                className="text-center"
+                className="col-span-12 lg:col-span-8 lg:col-start-3 bg-[#0d0d0d] rounded-2xl p-8 sm:p-12 shadow-2xl"
               >
-                {/* Success Icon with Animation */}
-                <motion.div 
-                  className="relative mx-auto mb-8"
+                {/* Green Checkmark Animation */}
+                <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ 
                     type: "spring", 
-                    stiffness: 500, 
+                    stiffness: 400, 
                     damping: 15,
-                    delay: 0.5
+                    delay: 0.4
                   }}
+                  className="flex justify-center mb-6"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-emerald-400/20 to-green-400/20 rounded-full flex items-center justify-center mx-auto relative">
-                    <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400" />
+                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-12 h-12 text-emerald-400" />
                   </div>
                 </motion.div>
 
-                {/* Main Success Message */}
-                <motion.h1 
-                  className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 leading-tight"
+                {/* Large "Rating Submitted" Text */}
+                <motion.h2
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-3xl sm:text-4xl font-bold text-white text-center mb-8"
                 >
-                  Rating Submitted Successfully!
-                </motion.h1>
+                  Rating Submitted
+                </motion.h2>
 
-                <motion.p 
-                  className="text-base sm:text-lg lg:text-xl text-gray-300 mb-6 sm:mb-8"
+                {/* Two CTA Buttons */}
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.9 }}
+                  transition={{ delay: 0.8 }}
+                  className="space-y-4"
                 >
-                  {quality.message}
-                </motion.p>
-
-                {/* Prominent Score Display */}
-                <motion.div 
-                  className="max-w-sm sm:max-w-md lg:max-w-lg mx-auto mb-6 sm:mb-8"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 300, 
-                    damping: 30,
-                    delay: 1.1
-                  }}
-                >
-                  <div className={`relative bg-gradient-to-br ${quality.bg} rounded-2xl sm:rounded-3xl p-6 sm:p-8 border-2 border-primary/20 backdrop-blur-sm overflow-hidden`}>
-                    {/* Background glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-50" />
-                    
-                    <div className="relative">
-                      <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                        <quality.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${quality.color}`} />
-                        <h3 className={`text-xl sm:text-2xl lg:text-3xl font-bold ${quality.color}`}>
-                          {quality.level}
-                        </h3>
-                        <quality.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${quality.color}`} />
-                      </div>
-
-                      <motion.div 
-                        className="flex items-center justify-center gap-2 sm:gap-3 lg:gap-4 mb-2 sm:mb-3"
-                        animate={{
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      >
-                        <div className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black ${quality.color}`}>
-                          {totalScore.toFixed(1)}
-                        </div>
-                        <Star className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 ${quality.color} fill-current`} />
-                      </motion.div>
-
-                      <p className={`text-base sm:text-lg font-medium ${quality.color} mb-2`}>
-                        {quality.description}
-                      </p>
-                      
-                      {/* Performance breakdown */}
-                      <div className="text-xs sm:text-sm text-gray-400 space-y-1">
-                        <p className="break-words">{actor?.name} in "{movie?.title}" ({movie?.year})</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Action Buttons */}
-                <motion.div 
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.3 }}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  {/* Rate Another Performance - Purple Gradient */}
+                  <button
+                    onClick={() => {
+                      window.location.href = '/search'
+                    }}
+                    className="w-full py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 hover:from-purple-500 hover:via-violet-500 hover:to-purple-500 text-white shadow-lg shadow-purple-600/50 hover:shadow-xl hover:shadow-purple-600/60 transition-all duration-300"
                   >
-                    <Button 
-                      variant="premium"
-                      size="lg"
-                      onClick={() => {
-                        // Navigate to search page instead of resetting
-                        window.location.href = '/search'
-                      }}
-                      className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl min-w-[200px] sm:min-w-[240px] w-full sm:w-auto relative overflow-hidden touch-manipulation"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Play className="w-5 h-5" />
-                        <span>Rate Another Performance</span>
-                        <TrendingUp className="w-5 h-5" />
-                      </div>
-                    </Button>
-                  </motion.div>
+                    Rate Another Performance
+                  </button>
 
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  {/* Return Home - Minimal White Outline */}
+                  <button
+                    onClick={() => {
+                      window.location.href = '/'
+                    }}
+                    className="w-full py-4 text-lg font-bold rounded-2xl border-2 border-white/30 text-white hover:border-white/50 hover:bg-white/5 transition-all duration-300"
                   >
-                    <button
-                      onClick={async () => {
-                        const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
-                        const url = base
-                        const text = `I just rated ${actor?.name} in ${movie?.title} and gave it ${totalScore.toFixed(1)}/100! Check out ActorRating.com`
-                        try {
-                          if (typeof navigator !== 'undefined' && (navigator as any).share) {
-                            await (navigator as any).share({ title: 'ActorRating', text, url })
-                          } else {
-                            await navigator.clipboard.writeText(`${text} - ${url}`)
-                            alert('Rating shared to clipboard!')
-                          }
-                        } catch {
-                          await navigator.clipboard.writeText(`${text} - ${url}`)
-                          alert('Rating shared to clipboard!')
-                        }
-                      }}
-                      className="inline-flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px] sm:min-w-[200px] w-full sm:w-auto touch-manipulation"
-                    >
-                      <Share2 className="w-5 h-5" />
-                      <span>Share Your Rating</span>
-                      <Sparkles className="w-5 h-5" />
-                    </button>
-                  </motion.div>
+                    Return Home
+                  </button>
                 </motion.div>
-
               </motion.div>
+              </div>
             </div>
           </div>
         )}
@@ -545,13 +445,14 @@ export default function RatePage() {
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            {/* Header with left-aligned back button */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+            <div className="grid grid-cols-12 gap-6">
+              {/* Header with left-aligned back button */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
+              >
               <div className="flex items-center justify-between mb-6">
                 <Button
                   variant="outline"
@@ -571,20 +472,21 @@ export default function RatePage() {
                   </p>
                 </div>
               )}
-            </motion.div>
-
-            {/* Error Display */}
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
-              >
-                <p className="text-red-800">{error}</p>
               </motion.div>
-            )}
 
-            {/* Rating Form */}
+              {/* Error Display */}
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="col-span-12 lg:col-span-10 lg:col-start-2 mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+                >
+                  <p className="text-red-800">{error}</p>
+                </motion.div>
+              )}
+
+          {/* Rating Form (with gutters) */}
+          <div className="col-span-12 lg:col-start-3 lg:col-span-8">
             <PerformanceRatingClientWrapper
               performance={{
                 id: `${actor.id}-${movie.id}`,
@@ -621,7 +523,9 @@ export default function RatePage() {
                 screenPresence: existingRating.screenPresence,
                 chemistryInteraction: existingRating.chemistryInteraction
               } : undefined}
-            />
+                />
+              </div>
+            </div>
           </div>
         )}
       </Suspense>
@@ -632,28 +536,29 @@ export default function RatePage() {
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+            <div className="grid grid-cols-12 gap-6">
+              {/* Header */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-12 lg:col-span-8 lg:col-start-3 text-center mb-12"
+              >
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Rate a Performance
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Search for an actor and movie to rate their performance using our Oscar-inspired criteria
-            </p>
-          </motion.div>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Search for an actor and movie to rate their performance using our Oscar-inspired criteria
+              </p>
+              </motion.div>
 
-          {/* Search Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
-          >
+              {/* Search Section */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="col-span-12 mb-8"
+              >
             <div className="max-w-2xl mx-auto mb-8">
               <SearchBar 
                 placeholder="Search for actors..."
@@ -740,15 +645,15 @@ export default function RatePage() {
                 )}
               </div>
             )}
-          </motion.div>
+              </motion.div>
 
-          {/* Browse Options */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-center"
-          >
+              {/* Browse Options */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="col-span-12 text-center"
+              >
             <p className="text-muted-foreground mb-4">Or browse our categories</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild variant="outline">
@@ -757,8 +662,9 @@ export default function RatePage() {
                 </Link>
               </Button>
             </div>
-          </motion.div>
-        </div>
+              </motion.div>
+            </div>
+          </div>
         )}
       </Suspense>
     )

@@ -170,9 +170,11 @@ function SignInContent() {
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
       
-      <div className="relative z-10 min-h-screen flex">
-        {/* Left Side - Elegant Branding */}
-        <div className="hidden lg:flex lg:w-1/2">
+      <div className="relative z-10 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-12 gap-8 min-h-screen">
+            {/* Left Side - Elegant Branding */}
+            <div className="hidden lg:flex lg:col-span-6">
           <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -190,11 +192,11 @@ function SignInContent() {
                 Continue rating and analyzing the finest acting performances in cinema.
               </p>
             </motion.div>
-          </div>
-        </div>
+            </div>
+            </div>
 
-        {/* Right Side - Sign In Form */}
-        <div className="flex-1 lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-16">
+            {/* Right Side - Sign In Form */}
+            <div className="col-span-12 lg:col-span-6 flex flex-col justify-center">
           <motion.div
             variants={scaleIn}
             initial="hidden"
@@ -217,26 +219,41 @@ function SignInContent() {
               variants={fadeInUp}
               className="relative"
             >
-              {/* Golden Spotlights - Opposing Diagonal Corners */}
-              <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
-              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-radial from-[#FFD700]/30 via-[#FFA500]/15 to-transparent rounded-full blur-3xl opacity-60 pointer-events-none" />
+              {/* Round Spotlights - Top Left and Bottom Left */}
+              <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
+              <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
               
-              {/* Glassmorphism Container */}
-              <div className="relative bg-black/40 backdrop-blur-2xl border border-[#FFD700]/20 rounded-xl p-8 sm:p-10 md:p-12 lg:p-14 shadow-[0_8px_32px_0_rgba(255,215,0,0.15)]" style={{ backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="relative hidden lg:block mb-8">
+              {/* Glassmorphism Container - 3D Elevated */}
+              <div 
+                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-2xl p-6 sm:p-8 transition-all duration-300" 
+                style={{ 
+                  backdropFilter: 'blur(24px) saturate(180%)', 
+                  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <div className="relative hidden lg:block mb-10">
                   <h2 
-                    className="text-xl md:text-2xl font-bold text-white mb-1"
+                    className="text-xl md:text-2xl font-bold text-white mb-2"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     Sign In
                   </h2>
-                  <p className="text-xs md:text-sm text-[#737373]">Enter your credentials</p>
+                  <p className="text-xs md:text-sm text-[#a3a3a3]">Enter your credentials</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-5 sm:space-y-6">
+                <form onSubmit={handleSubmit} className="relative space-y-5">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-white mb-2 sm:mb-2.5">
+                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
                       Email Address
                     </label>
                     <input
@@ -245,8 +262,8 @@ function SignInContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
-                      className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 bg-black/40 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
-                        errors.email ? "border-red-500" : "border-[#FFD700]/20"
+                      className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        errors.email ? "border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                       }`}
                       placeholder="your@email.com"
                     />
@@ -263,7 +280,7 @@ function SignInContent() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-white mb-2 sm:mb-2.5">
+                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
                       Password
                     </label>
                     <div className="relative">
@@ -273,8 +290,8 @@ function SignInContent() {
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
-                        className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 pr-12 sm:pr-14 bg-black/40 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:border-[#FFD700]/50 transition-colors duration-200 ${
-                          errors.password ? "border-red-500" : "border-[#FFD700]/20"
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                          errors.password ? "border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                         }`}
                         placeholder="Enter your password"
                       />
@@ -378,6 +395,8 @@ function SignInContent() {
               </div>
             </motion.div>
           </motion.div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

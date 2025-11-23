@@ -17,22 +17,60 @@ export async function GET() {
       return res
     }
 
-    // Fetch performances and left-join ratings to capture roleName if present
+    // Fetch performances with actor and movie relations
+    // CRITICAL: Only return performances where both actor AND movie exist in database
+    // Order by movie year DESC to prioritize recent movies, then by createdAt for variety
     const performances = await prisma.performance.findMany({
-      include: {
-        actor: { select: { name: true, imageUrl: true } },
-        movie: { select: { title: true, year: true, director: true } },
+      where: {
+        actor: {
+          isNot: null  // Ensure actor exists
+        },
+        movie: {
+          isNot: null  // Ensure movie exists
+        }
       },
-      orderBy: { createdAt: "desc" },
-      take: 100,
+      include: {
+        actor: { 
+          select: { 
+            id: true, 
+            name: true, 
+            imageUrl: true 
+          } 
+        },
+        movie: { 
+          select: { 
+            id: true, 
+            title: true, 
+            year: true, 
+            director: true 
+          } 
+        },
+      },
+      orderBy: [
+        { movie: { year: "desc" } },
+        { createdAt: "desc" }
+      ],
+      take: 200,  // Increased to get more variety
     })
+
+    // Filter out any performances where actor or movie is null (extra safety)
+    const validPerformances = performances.filter(p => 
+      p.actor && 
+      p.movie && 
+      p.actorId && 
+      p.movieId &&
+      p.actor.id &&
+      p.movie.id &&
+      p.actor.name &&
+      p.movie.title
+    )
 
     // Fetch role names for these performance triplets (userId, actorId, movieId)
     const roleNameByKey = new Map<string, string | null>()
-    if (performances.length > 0) {
+    if (validPerformances.length > 0) {
       const ratings = await prisma.rating.findMany({
         where: {
-          OR: performances.map((p) => ({
+          OR: validPerformances.map((p) => ({
             userId: p.userId,
             actorId: p.actorId,
             movieId: p.movieId,
@@ -45,10 +83,32 @@ export async function GET() {
       }
     }
 
-    const withRoleName = performances.map((p) => {
+    // Map performances with character/roleName display
+    const withRoleName = validPerformances.map((p) => {
       const roleName = roleNameByKey.get(`${p.userId}:${p.actorId}:${p.movieId}`) ?? null
-      const character = resolveCharacterDisplay({ character: (p as any).character, roleName, comment: p.comment as any })
-      return { ...p, roleName, character }
+      const character = resolveCharacterDisplay({ 
+        character: (p as any).character, 
+        roleName, 
+        comment: p.comment as any 
+      })
+      
+      // Return performance with explicit IDs at top level for easy access
+      return { 
+        ...p, 
+        roleName, 
+        character,
+        // Ensure IDs are always at top level for UI
+        actorId: p.actorId,
+        movieId: p.movieId,
+        actor: {
+          ...p.actor,
+          id: p.actor.id
+        },
+        movie: {
+          ...p.movie,
+          id: p.movie.id
+        }
+      }
     })
 
     await cacheSet(cacheKey, withRoleName, 120)
@@ -141,6 +201,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Verify that actor and movie exist before creating performance
+    const actor = await prisma.actor.findUnique({ where: { id: actorId } })
+    const movie = await prisma.movie.findUnique({ where: { id: movieId } })
+
+    if (!actor) {
+      return NextResponse.json(
+        { error: "Actor not found" },
+        { status: 404 }
+      )
+    }
+
+    if (!movie) {
+      return NextResponse.json(
+        { error: "Movie not found" },
+        { status: 404 }
+      )
+    }
+
     // Upsert by unique compound key
     const performance = await prisma.performance.upsert({
       where: {
@@ -170,8 +248,8 @@ export async function POST(request: NextRequest) {
         comment,
       },
       include: {
-        actor: { select: { name: true, imageUrl: true } },
-        movie: { select: { title: true, year: true, director: true } },
+        actor: { select: { id: true, name: true, imageUrl: true } },
+        movie: { select: { id: true, title: true, year: true, director: true } },
       },
     })
 
@@ -183,4 +261,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

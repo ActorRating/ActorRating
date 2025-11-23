@@ -97,6 +97,17 @@ export function HomeNavbar() {
                   variant="outline" 
                   size="sm" 
                   className="navbar-button navbar-signin rounded-full"
+                  style={{
+                    boxShadow: `
+                      0 15px 40px -10px rgba(0, 0, 0, 0.8),
+                      0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                    `,
+                    transform: 'translateY(-3px) perspective(1000px) rotateX(1deg)',
+                    transformStyle: 'preserve-3d',
+                  }}
                 >
                   Sign In
                 </Button>
