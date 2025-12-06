@@ -389,13 +389,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-2 sm:py-6 md:py-10 lg:py-16">
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-8 sm:py-10 md:py-12 lg:py-16 pb-16 sm:pb-20 md:pb-24">
 
         {/* Header Section - Mobile optimized */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6 sm:mb-10 md:mb-14"
+          className="text-center mb-8 sm:mb-12 md:mb-16"
         >
           {/* Actor Name */}
           <h1 
@@ -427,7 +427,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         <form onSubmit={handleSubmit}>
           <div className="relative">
             
-            {/* Score Display - Smaller on mobile */}
+            {/* Score Display - Responsive size */}
             <motion.div
               ref={scoreRef}
               initial={{ opacity: 0, y: -20 }}
@@ -437,13 +437,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 scale: spotlightPhase === 'score' ? 1.05 : 1
               }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="relative mx-auto mb-8 z-50 w-[240px] sm:w-[280px]"
+              className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
             >
               <div 
-                className="relative backdrop-blur-xl rounded-3xl px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
+                className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-4 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
                 style={{
                   width: '100%',
-                  minHeight: '90px',
+                  minHeight: '100px',
                   background: spotlightPhase === 'score' 
                     ? 'linear-gradient(135deg, rgba(255, 229, 92, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%)'
                     : 'rgba(26, 26, 26, 0.8)',
@@ -471,7 +471,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 )}
                 <div className="relative text-center z-10">
                   <div 
-                    className="text-3xl sm:text-4xl md:text-5xl font-black mb-2 min-h-[2.5rem] sm:min-h-[3rem] flex items-center justify-center"
+                    className="text-4xl sm:text-5xl md:text-6xl font-black mb-2 min-h-[3rem] sm:min-h-[3.5rem] flex items-center justify-center"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                       WebkitBackgroundClip: 'text',
@@ -481,7 +481,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     {/* Lotto roll effect - numbers rolling from bottom to top */}
-                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '70px', height: '2.5rem', lineHeight: '2.5rem' }}>
+                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem' }}>
                       <AnimatePresence mode="wait">
                         <motion.span
                           key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
@@ -489,7 +489,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: -40, opacity: 0 }}
                           transition={{ duration: 0.1, ease: 'easeOut' }}
-                          className="inline-block text-3xl sm:text-4xl md:text-5xl"
+                          className="inline-block text-4xl sm:text-5xl md:text-6xl"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                             WebkitBackgroundClip: 'text',
@@ -501,7 +501,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         </motion.span>
                       </AnimatePresence>
                     </div>
-                    <span className="text-xl sm:text-2xl md:text-3xl text-[#a1a1aa] ml-1">/10</span>
+                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-1">/10</span>
                   </div>
                   <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
                 </div>
