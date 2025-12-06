@@ -4,13 +4,13 @@ import { Variants } from "framer-motion"
 
 // Global animation defaults to keep things consistent and premium-feeling
 export const defaultTransition = {
-  duration: 0.5, // keep within 0.4–0.7s
+  duration: 0.4, // Quick and subtle for cinematic feel
   ease: "easeOut" as const,
 }
 
-// Fades in and slides up slightly
+// Fades in and slides up slightly (reduced from 20px to 8px for premium feel)
 export const fadeInUp: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
@@ -27,26 +27,8 @@ export const fadeIn: Variants = {
   },
 }
 
-// Scales in softly
-export const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.96 },
-  show: {
-    opacity: 1,
-    scale: 1,
-    transition: { ...defaultTransition },
-  },
-}
-
-// Staggered container for cascading child animations
-export const staggerContainer: Variants = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.04,
-    },
-  },
-}
+// Removed scaleIn and staggerContainer - these create agency-portfolio vibes
+// For premium feel, use simple fadeIn or fadeInUp only
 
 // Helper to apply once-on-view behavior consistently
 export function getMotionProps() {
@@ -60,7 +42,7 @@ export function getMotionProps() {
 // Reduced-motion aware variants factory (optional use)
 export function createReducedMotionVariants(prefersReducedMotion: boolean) {
   if (!prefersReducedMotion) {
-    return { fadeInUp, fadeIn, scaleIn, staggerContainer }
+    return { fadeInUp, fadeIn }
   }
 
   const rmFade: Variants = {
@@ -71,8 +53,6 @@ export function createReducedMotionVariants(prefersReducedMotion: boolean) {
   return {
     fadeInUp: rmFade,
     fadeIn: rmFade,
-    scaleIn: rmFade,
-    staggerContainer,
   }
 }
 

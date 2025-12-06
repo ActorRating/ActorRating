@@ -223,7 +223,7 @@ export default function AboutPage() {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center px-4 sm:px-0">
                     <Link href="/performances" className="w-full sm:w-auto">
-                      <button className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-sm xs:text-base sm:text-lg font-bold tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_60px_rgba(255,215,0,0.5)] hover:scale-105">
+                      <button className="group w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-sm xs:text-base sm:text-lg font-bold tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]">
                         <span className="flex items-center justify-center gap-2 sm:gap-3">
                           Start Rating Now
                           <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-2" />

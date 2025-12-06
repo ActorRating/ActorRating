@@ -726,24 +726,7 @@ nav {
   animation: premium-glow 3s ease-in-out infinite;
 }
 
-/* Subtle floating animation for badges and accent elements */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes float-subtle {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
+/* Removed float animations - they feel too bouncy and web-kit-y for premium cinema feel */
 
 /* Text shimmer effect for premium feel */
 @keyframes shimmer {

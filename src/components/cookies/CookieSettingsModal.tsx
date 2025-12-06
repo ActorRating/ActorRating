@@ -173,13 +173,13 @@ export function CookieSettingsModal() {
           <div className="relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-6 sm:p-8 border-t border-[#FFD700]/10">
             <button
               onClick={handleAcceptAll}
-              className="flex-1 px-6 py-3 text-base font-bold text-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] border border-transparent rounded-full hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] transition-all duration-300 hover:scale-105 uppercase tracking-wider"
+              className="flex-1 px-6 py-3 text-base font-bold text-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] border border-transparent rounded-full hover:shadow-[0_0_25px_rgba(255,215,0,0.25)] transition-all duration-300 uppercase tracking-wider"
             >
               Accept All
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 px-6 py-3 text-base font-bold text-[#FFD700] bg-black/50 border-2 border-[#FFD700]/40 rounded-full hover:bg-[#FFD700]/10 hover:border-[#FFD700] transition-all duration-300 hover:scale-105 uppercase tracking-wider"
+              className="flex-1 px-6 py-3 text-base font-bold text-[#FFD700] bg-black/50 border-2 border-[#FFD700]/40 rounded-full hover:bg-[#FFD700]/10 hover:border-[#FFD700] transition-all duration-300 uppercase tracking-wider"
             >
               Save Preferences
             </button>

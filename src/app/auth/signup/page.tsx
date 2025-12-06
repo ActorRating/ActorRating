@@ -405,7 +405,7 @@ export default function SignUp() {
                       </div>
                     ) : (
                       <>
-                        <FaRocket className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+                        <FaRocket className="w-4 h-4 mr-2" />
                         Create Account
                       </>
                     )}

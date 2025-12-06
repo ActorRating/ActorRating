@@ -447,32 +447,23 @@ export default function RatePage() {
         {getLayout(
           <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
             <div className="grid grid-cols-12 gap-6">
-              {/* Header with left-aligned back button */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
-              >
-              <div className="flex items-center justify-between mb-6">
-                <Button
-                  variant="outline"
-                  onClick={() => { window.location.href = ratingId ? '/dashboard' : '/search'; }}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  {ratingId ? 'Back to Dashboard' : 'Back to Search'}
-                </Button>
-              </div>
+              {/* Header - Back button removed */}
               {ratingId && (
-                <div className="text-center mb-4">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                    Edit Rating
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Update your rating for {actor?.name} in "{movie?.title}"
-                  </p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
+                >
+                  <div className="text-center mb-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                      Edit Rating
+                    </h1>
+                    <p className="text-muted-foreground">
+                      Update your rating for {actor?.name} in "{movie?.title}"
+                    </p>
+                  </div>
+                </motion.div>
               )}
-              </motion.div>
 
               {/* Error Display */}
               {error && (

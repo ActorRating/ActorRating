@@ -96,16 +96,16 @@ function HowItWorksSection() {
               {steps.map((step, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 8 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-                  transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                   style={{ willChange: 'transform, opacity' }}
                   className="group relative"
                 >
               {/* Premium Card - Clean & Centered */}
               <div 
-                className="relative h-full p-8 sm:p-10 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0a0a0a]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-500 ease-out group-hover:scale-[1.02]"
+                className="relative h-full p-8 sm:p-10 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0a0a0a]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
                 style={{
                   boxShadow: `
                     0 30px 80px -20px rgba(0, 0, 0, 0.9),
@@ -114,12 +114,10 @@ function HowItWorksSection() {
                     inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
                     inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
                   `,
-                  transform: 'translateY(-8px) perspective(1200px) rotateX(2deg)',
-                  transformStyle: 'preserve-3d',
                 }}
               >
                 {/* Subtle glow effect on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                   <div 
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full blur-2xl"
                     style={{
@@ -188,7 +186,7 @@ function HowItWorksSection() {
           >
           <Link href="/performances">
             <button 
-              className="group px-12 sm:px-16 py-6 sm:py-7 rounded-full text-black text-lg sm:text-xl font-extrabold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+              className="group px-12 sm:px-16 py-6 sm:py-7 rounded-full text-black text-lg sm:text-xl font-extrabold tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               }}
@@ -377,16 +375,16 @@ function PerformanceSection() {
               {highlights.map((highlight, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 style={{ willChange: 'transform, opacity' }}
                 className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-auto snap-center"
               >
-              {/* Premium Card - 3D Elevated */}
+              {/* Premium Card - Clean & Cinematic */}
               <div 
-                className="relative h-full p-8 sm:p-10 md:p-12 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-visible transition-all duration-700"
+                className="relative h-full p-8 sm:p-10 md:p-12 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-visible transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
                 style={{
                   boxShadow: `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -395,8 +393,6 @@ function PerformanceSection() {
                     inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
                     inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
                   `,
-                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
-                  transformStyle: 'preserve-3d',
                 }}
               >
                 {/* Glow effect */}
@@ -830,7 +826,7 @@ function AboutSection() {
           <div className="col-span-12 lg:col-start-2 lg:col-span-10">
             <Link href="/about">
           <button 
-            className="group px-10 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-300 hover:scale-105"
+            className="group px-10 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_25px_rgba(255,215,0,0.3)]"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
             }}
@@ -962,7 +958,7 @@ export default function HomePageClient() {
               className="px-5 sm:px-4 w-full sm:w-auto flex justify-center"
             >
               <Link href="/performances" className="w-full sm:w-auto max-w-sm">
-                <button className="group relative w-full sm:w-auto min-w-[260px] xs:min-w-[280px] sm:min-w-[320px] px-8 xs:px-10 sm:px-14 py-4 xs:py-5 sm:py-6 overflow-hidden rounded-full transition-all duration-500 hover:scale-[1.06] active:scale-[0.98]"
+                <button className="group relative w-full sm:w-auto min-w-[260px] xs:min-w-[280px] sm:min-w-[320px] px-8 xs:px-10 sm:px-14 py-4 xs:py-5 sm:py-6 overflow-hidden rounded-full transition-all duration-300 active:opacity-90"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     boxShadow: '0 10px 40px rgba(255, 215, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 25px 70px rgba(255, 165, 0, 0.2)',

@@ -1,264 +1,183 @@
+// app/api/performances/route.ts
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
-import { resolveCharacterDisplay } from "@/lib/character"
-import supabaseServer from "@/lib/supabaseServer"
-import { verifyRecaptchaV3 } from "@/lib/recaptcha"
-import { checkRateLimit } from "@/lib/rateLimit"
 
-export async function GET() {
-  try {
-    // Add caching for performance list
-    const cacheKey = makeCacheKey('performances:list', ['recent'])
-    const cached = await cacheGet<any[]>(cacheKey)
-    if (cached) {
-      const res = NextResponse.json(cached)
-      res.headers.set('Cache-Control', 'public, max-age=120, s-maxage=600, stale-while-revalidate=1200')
-      return res
-    }
+export const dynamic = 'force-dynamic'
 
-    // Fetch performances with actor and movie relations
-    // CRITICAL: Only return performances where both actor AND movie exist in database
-    // Order by movie year DESC to prioritize recent movies, then by createdAt for variety
-    const performances = await prisma.performance.findMany({
-      where: {
-        actor: {
-          isNot: null  // Ensure actor exists
-        },
-        movie: {
-          isNot: null  // Ensure movie exists
-        }
-      },
-      include: {
-        actor: { 
-          select: { 
-            id: true, 
-            name: true, 
-            imageUrl: true 
-          } 
-        },
-        movie: { 
-          select: { 
-            id: true, 
-            title: true, 
-            year: true, 
-            director: true 
-          } 
-        },
-      },
-      orderBy: [
-        { movie: { year: "desc" } },
-        { createdAt: "desc" }
-      ],
-      take: 200,  // Increased to get more variety
-    })
-
-    // Filter out any performances where actor or movie is null (extra safety)
-    const validPerformances = performances.filter(p => 
-      p.actor && 
-      p.movie && 
-      p.actorId && 
-      p.movieId &&
-      p.actor.id &&
-      p.movie.id &&
-      p.actor.name &&
-      p.movie.title
-    )
-
-    // Fetch role names for these performance triplets (userId, actorId, movieId)
-    const roleNameByKey = new Map<string, string | null>()
-    if (validPerformances.length > 0) {
-      const ratings = await prisma.rating.findMany({
-        where: {
-          OR: validPerformances.map((p) => ({
-            userId: p.userId,
-            actorId: p.actorId,
-            movieId: p.movieId,
-          })),
-        },
-        select: { userId: true, actorId: true, movieId: true, roleName: true },
-      })
-      for (const r of ratings) {
-        roleNameByKey.set(`${r.userId}:${r.actorId}:${r.movieId}`, r.roleName ?? null)
-      }
-    }
-
-    // Map performances with character/roleName display
-    const withRoleName = validPerformances.map((p) => {
-      const roleName = roleNameByKey.get(`${p.userId}:${p.actorId}:${p.movieId}`) ?? null
-      const character = resolveCharacterDisplay({ 
-        character: (p as any).character, 
-        roleName, 
-        comment: p.comment as any 
-      })
-      
-      // Return performance with explicit IDs at top level for easy access
-      return { 
-        ...p, 
-        roleName, 
-        character,
-        // Ensure IDs are always at top level for UI
-        actorId: p.actorId,
-        movieId: p.movieId,
-        actor: {
-          ...p.actor,
-          id: p.actor.id
-        },
-        movie: {
-          ...p.movie,
-          id: p.movie.id
-        }
-      }
-    })
-
-    await cacheSet(cacheKey, withRoleName, 120)
-    const res = NextResponse.json(withRoleName)
-    res.headers.set('Cache-Control', 'public, max-age=120, s-maxage=600, stale-while-revalidate=1200')
-    return res
-  } catch (error) {
-    console.error("Error fetching performances:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch performances" },
-      { status: 500 }
-    )
+/**
+ * Helper: compute an average rating for a single rating row.
+ * Adjust field names if you have different rating fields.
+ */
+function computeRatingAverageFromRatingRow(rating: any) {
+  // If you store a single score field (e.g. "score"), prefer that:
+  if (typeof (rating as any).score === "number") {
+    return (rating as any).score
   }
+
+  // Otherwise attempt to average the five actor criteria if present.
+  const fields = [
+    rating.emotionalRangeDepth,
+    rating.characterBelievability,
+    rating.technicalSkill,
+    rating.screenPresence,
+    rating.chemistryInteraction,
+  ].filter((v) => typeof v === "number")
+
+  if (fields.length === 0) return 0
+  const sum = fields.reduce((s: number, v: number) => s + v, 0)
+  // normalize to 0-100 average
+  return sum / fields.length
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * Compute an average rating for a performance aggregation.
+ * ratings is an array of rating rows for that performance.
+ */
+function computePerformanceAverage(ratings: any[] = []) {
+  if (!Array.isArray(ratings) || ratings.length === 0) return 0
+  const perRating = ratings.map(computeRatingAverageFromRatingRow)
+  const sum = perRating.reduce((s, v) => s + v, 0)
+  return sum / perRating.length
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const supabase = supabaseServer
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
-    }
+    console.log('[PERFORMANCES API] Starting request')
+    const { searchParams } = new URL(request.url)
+    const section = searchParams.get('section') // "new" or "iconic"
+    console.log('[PERFORMANCES API] Section:', section)
 
-    // Get client IP for rate limiting
-    const clientIp = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    'unknown'
-
-    // Check rate limiting for performance submissions
-    const rateLimitResult = await checkRateLimit(clientIp, 'rating')
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { 
-          error: "Too many performance submissions. Please try again later.",
-          resetTime: rateLimitResult.resetTime
-        },
-        { status: 429 }
-      )
-    }
-
-    const body = await request.json()
-    const { 
-      actorId, 
-      movieId, 
-      emotionalRangeDepth,
-      characterBelievability,
-      technicalSkill,
-      screenPresence,
-      chemistryInteraction,
-      comment,
-      recaptchaToken
-    } = body
-
-    if (!actorId || !movieId) {
-      return NextResponse.json(
-        { error: "Actor ID and Movie ID are required" },
-        { status: 400 }
-      )
-    }
-
-    // Validate reCAPTCHA
-    if (!recaptchaToken) {
-      return NextResponse.json(
-        { error: "reCAPTCHA verification is required" },
-        { status: 400 }
-      )
-    }
-
-    // Verify reCAPTCHA token
-    const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
-    if (!recaptchaResult.success) {
-      return NextResponse.json(
-        { error: recaptchaResult.error || "reCAPTCHA verification failed" },
-        { status: 403 }
-      )
-    }
-
-    // Validate rating values (0-100)
-    const ratings = [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction]
-    for (const rating of ratings) {
-      if (rating < 0 || rating > 100) {
-        return NextResponse.json(
-          { error: "All ratings must be between 0 and 100" },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Verify that actor and movie exist before creating performance
-    const actor = await prisma.actor.findUnique({ where: { id: actorId } })
-    const movie = await prisma.movie.findUnique({ where: { id: movieId } })
-
-    if (!actor) {
-      return NextResponse.json(
-        { error: "Actor not found" },
-        { status: 404 }
-      )
-    }
-
-    if (!movie) {
-      return NextResponse.json(
-        { error: "Movie not found" },
-        { status: 404 }
-      )
-    }
-
-    // Upsert by unique compound key
-    const performance = await prisma.performance.upsert({
-      where: {
-        userId_actorId_movieId: {
-          userId: session.user.id,
-          actorId,
-          movieId,
-        },
-      },
-      update: {
-        emotionalRangeDepth,
-        characterBelievability,
-        technicalSkill,
-        screenPresence,
-        chemistryInteraction,
-        comment,
-      },
-      create: {
-        userId: session.user.id,
-        actorId,
-        movieId,
-        emotionalRangeDepth,
-        characterBelievability,
-        technicalSkill,
-        screenPresence,
-        chemistryInteraction,
-        comment,
-      },
+    // Fetch performances (Performance model stores the actual performances)
+    console.log('[PERFORMANCES API] Fetching performances from database...')
+    const raw = await prisma.performance.findMany({
       include: {
         actor: { select: { id: true, name: true, imageUrl: true } },
         movie: { select: { id: true, title: true, year: true, director: true } },
       },
+      orderBy: { createdAt: 'desc' },
+      take: 300,
     })
+    console.log('[PERFORMANCES API] Found', raw.length, 'performances')
 
-    return NextResponse.json(performance, { status: 201 })
+    // Defensive: filter out any entries missing actor or movie
+    const valid = raw.filter((p) => p.actor && p.movie)
+    console.log('[PERFORMANCES API] Valid performances:', valid.length)
+
+    // Fetch all ratings for these actor-movie pairs
+    const actorMoviePairs = valid.map(p => ({ actorId: p.actorId, movieId: p.movieId }))
+    console.log('[PERFORMANCES API] Fetching ratings for', actorMoviePairs.length, 'pairs...')
+    
+    const ratings = await prisma.rating.findMany({
+      where: {
+        OR: actorMoviePairs
+      },
+      select: {
+        actorId: true,
+        movieId: true,
+        emotionalRangeDepth: true,
+        characterBelievability: true,
+        technicalSkill: true,
+        screenPresence: true,
+        chemistryInteraction: true,
+      },
+    })
+    console.log('[PERFORMANCES API] Found', ratings.length, 'ratings')
+
+    // Group ratings by actor-movie pair
+    const ratingsMap = new Map<string, any[]>()
+    for (const rating of ratings) {
+      const key = `${rating.actorId}:${rating.movieId}`
+      if (!ratingsMap.has(key)) {
+        ratingsMap.set(key, [])
+      }
+      ratingsMap.get(key)!.push(rating)
+    }
+
+    // Build an enriched list with computed averages
+    const enriched = valid.map((p) => {
+      const key = `${p.actorId}:${p.movieId}`
+      const perfRatings = ratingsMap.get(key) ?? []
+      const avg = computePerformanceAverage(perfRatings)
+      
+      return {
+        id: p.id,
+        actorId: p.actorId,
+        movieId: p.movieId,
+        actor: p.actor,
+        movie: p.movie,
+        character: (p as any).character ?? (p as any).comment ?? null,
+        createdAt: p.createdAt,
+        averageRating: avg,
+        ratingCount: perfRatings.length,
+      }
+    })
+    console.log('[PERFORMANCES API] Enriched', enriched.length, 'performances')
+
+    if (section === 'new') {
+      // New: most recent unique-actor performances
+      const seen = new Set<string>()
+      const out: any[] = []
+      for (const p of enriched) {
+        const actorKey = String(p.actorId)
+        if (!seen.has(actorKey)) {
+          seen.add(actorKey)
+          out.push(p)
+        }
+        if (out.length >= 6) break
+      }
+      console.log('[PERFORMANCES API] Returning', out.length, 'new performances')
+      return NextResponse.json(out)
+    }
+
+    if (section === 'iconic') {
+      // Iconic: highest averageRating first, then unique by actor
+      const sorted = enriched.slice().sort((a, b) => b.averageRating - a.averageRating)
+      const seen = new Set<string>()
+      const out: any[] = []
+      for (const p of sorted) {
+        const actorKey = String(p.actorId)
+        if (!seen.has(actorKey)) {
+          seen.add(actorKey)
+          out.push(p)
+        }
+        if (out.length >= 6) break
+      }
+      console.log('[PERFORMANCES API] Returning', out.length, 'iconic performances')
+      return NextResponse.json(out)
+    }
+
+    // If no or invalid section, return both new & iconic in one payload
+    const newList: any[] = []
+    const seenNew = new Set<string>()
+    for (const p of enriched) {
+      const a = String(p.actorId)
+      if (!seenNew.has(a)) {
+        seenNew.add(a)
+        newList.push(p)
+      }
+      if (newList.length >= 6) break
+    }
+    
+    const iconicSorted = enriched.slice().sort((a, b) => b.averageRating - a.averageRating)
+    const iconicList: any[] = []
+    const seenIconic = new Set<string>()
+    for (const p of iconicSorted) {
+      const a = String(p.actorId)
+      if (!seenIconic.has(a)) {
+        seenIconic.add(a)
+        iconicList.push(p)
+      }
+      if (iconicList.length >= 6) break
+    }
+
+    const resBody = { new: newList, iconic: iconicList }
+    const res = NextResponse.json(resBody)
+    res.headers.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120')
+    console.log('[PERFORMANCES API] Returning both sections')
+    return res
   } catch (error) {
-    console.error("Error creating performance rating:", error)
-    return NextResponse.json(
-      { error: "Failed to create performance rating" },
-      { status: 500 }
-    )
+    console.error("[PERFORMANCES API] ERROR:", error)
+    return NextResponse.json({ error: "Failed to fetch performances" }, { status: 500 })
   }
 }

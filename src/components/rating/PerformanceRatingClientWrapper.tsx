@@ -1,8 +1,76 @@
 "use client"
 
-import React, { useState, useCallback, memo, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import Image from 'next/image'
+import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
+import { Button } from "@/components/ui/Button"
+
+// Lotto-style number roll hook - shows rolling numbers like a slot machine
+function useNumberRoll(startValue: number, endValue: number, duration: number = 1000) {
+  const [currentValue, setCurrentValue] = useState(startValue)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const animationRef = useRef<number | null>(null)
+  const startTimeRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    // Only animate if value actually changed
+    if (Math.abs(endValue - startValue) < 0.01) {
+      setCurrentValue(endValue)
+      return
+    }
+
+    // Cancel any existing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current)
+    }
+
+    setIsAnimating(true)
+    const startTime = performance.now()
+    startTimeRef.current = startTime
+
+    const animate = (currentTime: number) => {
+      if (!startTimeRef.current) return
+
+      const elapsed = currentTime - startTimeRef.current
+      const progress = Math.min(elapsed / duration, 1)
+
+      // Ease out cubic for smooth deceleration (like lotto machine)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      // Calculate current value - show integers during roll, decimal at end
+      let current: number
+      if (progress < 0.95) {
+        // During animation: show integer values rolling
+        current = Math.floor(startValue + (endValue - startValue) * easeOut)
+      } else {
+        // Final 5%: show decimal value
+        current = startValue + (endValue - startValue) * easeOut
+      }
+      
+      setCurrentValue(current)
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate)
+      } else {
+        // Final value with decimal
+        setCurrentValue(endValue)
+        setIsAnimating(false)
+        animationRef.current = null
+      }
+    }
+
+    animationRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+      setIsAnimating(false)
+    }
+  }, [startValue, endValue, duration])
+
+  return { value: currentValue, isAnimating }
+}
 
 interface Performance {
   id: string
@@ -34,51 +102,69 @@ interface Performance {
 interface PerformanceRatingClientWrapperProps {
   performance: Performance
   onSubmit: (ratingData: {
-    emotionalRangeDepth: number
-    characterBelievability: number
+    emotionalDepth: number
     technicalSkill: number
+    believability: number
     screenPresence: number
-    chemistryInteraction: number
+    chemistry: number
   }) => Promise<void>
   submitting?: boolean
   initialRating?: {
-    emotionalRangeDepth?: number
-    characterBelievability?: number
+    emotionalDepth?: number
     technicalSkill?: number
+    believability?: number
     screenPresence?: number
-    chemistryInteraction?: number
+    chemistry?: number
   }
 }
 
-// Individual Slider Component - Minimalist with no numbers
+// Individual Slider Component - Premium Gold Design
 const RatingSliderCard = memo(function RatingSliderCard({
   label,
   value,
   onValueChange,
   disabled = false,
-  touched = false
+  touched = false,
+  spotlightActive = false
 }: {
   label: string
   value: number
   onValueChange: (value: number) => void
   disabled?: boolean
   touched?: boolean
+  spotlightActive?: boolean
 }) {
   return (
-    <div className="space-y-3">
+    <motion.div 
+      className="space-y-3 sm:space-y-4 relative"
+      animate={{
+        opacity: spotlightActive ? 0.5 : 1,
+        filter: spotlightActive ? 'blur(1px)' : 'blur(0px)'
+      }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    >
       {/* Label */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-base sm:text-lg font-medium text-white">{label}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 
+          className="text-lg sm:text-xl font-semibold text-white"
+          style={{ fontFamily: 'Inter, sans-serif' }}
+        >
+          {label}
+        </h3>
       </div>
 
       {/* Slider Container */}
-      <div className="relative pt-1">
+      <div className="relative pt-2">
         {/* Track Background */}
-        <div className="relative h-2 bg-[#1a1a1a] rounded-full">
-          {/* Fill - animated based on value */}
+        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5">
+          {/* Fill - Gold gradient */}
           <motion.div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-600 via-violet-500 to-purple-600 rounded-full"
-            style={{ width: `${value}%` }}
+            className="absolute top-0 left-0 h-full rounded-full"
+            style={{ 
+              width: `${value}%`,
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
+            }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
           
@@ -91,22 +177,29 @@ const RatingSliderCard = memo(function RatingSliderCard({
             value={value}
             onChange={(e) => onValueChange(Number(e.target.value))}
             disabled={disabled}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             aria-label={label}
           />
           
-          {/* Visible Thumb */}
+          {/* Visible Thumb - Fixed size, no growth animation */}
           <div
-            className="absolute top-1/2 w-5 h-5 bg-white rounded-full shadow-lg pointer-events-none transition-transform duration-150"
+            className="absolute top-1/2 w-6 h-6 rounded-full shadow-lg pointer-events-none"
             style={{
               left: `${value}%`,
               transform: `translate(-50%, -50%)`,
-              boxShadow: '0 0 20px rgba(139, 92, 246, 0.6)',
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
             }}
           />
         </div>
       </div>
-    </div>
+
+      {/* Quality Labels */}
+      <div className="flex justify-between mt-2 text-xs text-gray-500">
+        <span>Weak</span>
+        <span>Exceptional</span>
+      </div>
+    </motion.div>
   )
 })
 
@@ -116,31 +209,54 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   submitting = false,
   initialRating
 }: PerformanceRatingClientWrapperProps) {
+  const router = useRouter()
 
-  const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalRangeDepth ?? 0)
-  const [characterBelievability, setCharacterBelievability] = useState(initialRating?.characterBelievability ?? 0)
+  const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
+  const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)
   const [technicalSkill, setTechnicalSkill] = useState(initialRating?.technicalSkill ?? 0)
   const [screenPresence, setScreenPresence] = useState(initialRating?.screenPresence ?? 0)
-  const [chemistryInteraction, setChemistryInteraction] = useState(initialRating?.chemistryInteraction ?? 0)
+  const [chemistryInteraction, setChemistryInteraction] = useState(initialRating?.chemistry ?? 0)
 
   // Track which sliders have been touched
   const [touchedSliders, setTouchedSliders] = useState({
-    emotionalRangeDepth: initialRating?.emotionalRangeDepth !== undefined,
-    characterBelievability: initialRating?.characterBelievability !== undefined,
+    emotionalRangeDepth: initialRating?.emotionalDepth !== undefined,
+    characterBelievability: initialRating?.believability !== undefined,
     technicalSkill: initialRating?.technicalSkill !== undefined,
     screenPresence: initialRating?.screenPresence !== undefined,
-    chemistryInteraction: initialRating?.chemistryInteraction !== undefined,
+    chemistryInteraction: initialRating?.chemistry !== undefined,
   })
 
-  const totalScoreOutOf100 = useMemo(() => {
-    return Math.round(
-      emotionalRangeDepth * 0.25 +
-      characterBelievability * 0.25 +
-      technicalSkill * 0.20 +
-      screenPresence * 0.15 +
-      chemistryInteraction * 0.15
-    )
+  // Spotlight animation state
+  const [spotlightPhase, setSpotlightPhase] = useState<'none' | 'score' | 'button'>('none')
+  const lastInteractionTime = useRef<number>(Date.now())
+  const spotlightTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const scoreRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const previousScoreRef = useRef(0)
+
+  // Calculate average of 5 sliders, convert to 0-10 scale
+  const totalScoreOutOf10 = useMemo(() => {
+    const sliders = [
+      emotionalRangeDepth,
+      characterBelievability,
+      technicalSkill,
+      screenPresence,
+      chemistryInteraction
+    ]
+    const average = sliders.reduce((a, b) => a + b, 0) / 5
+    const totalScore = average / 10
+    return Number(totalScore.toFixed(1)) // Round to 1 decimal place
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction])
+
+  // Lotto roll animation - rolls every time score changes
+  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 1000)
+  
+  // Update previous score when animation completes
+  useEffect(() => {
+    if (!isAnimating) {
+      previousScoreRef.current = totalScoreOutOf10
+    }
+  }, [isAnimating, totalScoreOutOf10])
 
   const allSlidersTouched = useMemo(() => {
     return Object.values(touchedSliders).every(touched => touched)
@@ -148,6 +264,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   const handleSliderChange = useCallback((key: keyof typeof touchedSliders, value: number) => {
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
+    lastInteractionTime.current = Date.now()
+    
+    // Reset spotlight when slider moves
+    if (spotlightPhase !== 'none') {
+      setSpotlightPhase('none')
+    }
+    
+    // Clear any existing timeout
+    if (spotlightTimeoutRef.current) {
+      clearTimeout(spotlightTimeoutRef.current)
+    }
     
     switch(key) {
       case 'emotionalRangeDepth':
@@ -166,7 +293,54 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setChemistryInteraction(value)
         break
     }
-  }, [])
+  }, [spotlightPhase])
+
+
+  // Trigger spotlight animation 2 seconds after last slider interaction
+  useEffect(() => {
+    if (!allSlidersTouched) return
+
+    const checkForSpotlight = () => {
+      const timeSinceLastInteraction = Date.now() - lastInteractionTime.current
+      
+      if (timeSinceLastInteraction >= 2000 && spotlightPhase === 'none') {
+        // Start spotlight on score - auto scroll
+        setSpotlightPhase('score')
+        
+        // Auto scroll to score
+        setTimeout(() => {
+          scoreRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          })
+        }, 100)
+        
+        // After 2 seconds, sweep to button (without disappearing)
+        setTimeout(() => {
+          setSpotlightPhase('button')
+          
+          // Auto scroll to button
+          setTimeout(() => {
+            buttonRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'center'
+            })
+          }, 100)
+        }, 2000)
+      }
+    }
+
+    // Set up a timeout to check
+    spotlightTimeoutRef.current = setTimeout(checkForSpotlight, 2000)
+
+    return () => {
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current)
+      }
+    }
+  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, allSlidersTouched, spotlightPhase])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,11 +348,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (!allSlidersTouched) return
 
     const ratingData = {
-      emotionalRangeDepth: Math.round(emotionalRangeDepth),
-      characterBelievability: Math.round(characterBelievability),
+      emotionalDepth: Math.round(emotionalRangeDepth),
       technicalSkill: Math.round(technicalSkill),
+      believability: Math.round(characterBelievability),
       screenPresence: Math.round(screenPresence),
-      chemistryInteraction: Math.round(chemistryInteraction)
+      chemistry: Math.round(chemistryInteraction)
     }
 
     try {
@@ -189,90 +363,203 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched])
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Subtle spotlight gradient */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Ambient background glow */}
+      <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
       </div>
 
-      <div className="relative max-w-[850px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
+      {/* Spotlight overlay - sweeps in and slightly darkens everything */}
+      <AnimatePresence>
+        {spotlightPhase !== 'none' && (
+          <motion.div
+            initial={{ opacity: 0, clipPath: 'circle(0% at 50% 50%)' }}
+            animate={{ 
+              opacity: 1,
+              clipPath: spotlightPhase === 'score' 
+                ? 'circle(30% at 50% 20%)'
+                : 'circle(25% at 50% 90%)'
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 bg-black/40 pointer-events-none z-40"
+            style={{ backdropFilter: 'blur(2px)' }}
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Header Section */}
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-2 sm:py-6 md:py-10 lg:py-16">
+
+        {/* Header Section - Mobile optimized */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-32"
+          className="text-center mb-6 sm:mb-10 md:mb-14"
         >
-          {/* Actor Image */}
-          {performance.actor.imageUrl && (
-            <div className="mb-6 flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-purple-600/30 blur-2xl rounded-lg" />
-                <Image
-                  src={performance.actor.imageUrl}
-                  alt={performance.actor.name}
-                  width={120}
-                  height={120}
-                  className="relative rounded-lg object-cover shadow-2xl"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Actor Name */}
-          <h1 id="actor-name-header" className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
+          <h1 
+            id="actor-name-header" 
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight px-2"
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+          >
             {performance.actor.name}
           </h1>
           
           {/* Movie Title */}
-          <h2 className="text-lg sm:text-xl text-gray-300 mb-2 font-medium">
+          <h2 
+            className="text-lg sm:text-xl md:text-2xl font-semibold mb-2 sm:mb-3 px-2"
+            style={{
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             {performance.movie.title}
           </h2>
           
           {/* Role/Comment */}
           {performance.comment && (
-            <p className="text-base text-gray-500">{performance.comment}</p>
+            <p className="text-sm sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
           )}
         </motion.div>
 
         <form onSubmit={handleSubmit}>
           <div className="relative">
             
-            {/* Glass Score Pill - overlapping top of card */}
+            {/* Score Display - Smaller on mobile */}
             <motion.div
+              ref={scoreRef}
               initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 z-20"
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                scale: spotlightPhase === 'score' ? 1.05 : 1
+              }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="relative mx-auto mb-8 z-50 w-[240px] sm:w-[280px]"
             >
-              <div className="relative backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-8 py-4 shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-violet-400/10 rounded-2xl" />
-                <div className="relative text-center">
-                  <div className="text-4xl font-black text-white mb-1">
-                    {totalScoreOutOf100}
-                    <span className="text-2xl text-gray-400">/100</span>
+              <div 
+                className="relative backdrop-blur-xl rounded-3xl px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
+                style={{
+                  width: '100%',
+                  minHeight: '90px',
+                  background: spotlightPhase === 'score' 
+                    ? 'linear-gradient(135deg, rgba(255, 229, 92, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%)'
+                    : 'rgba(26, 26, 26, 0.8)',
+                  border: spotlightPhase === 'score'
+                    ? '2px solid rgba(255, 215, 0, 0.4)'
+                    : '1px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: spotlightPhase === 'score'
+                    ? '0 0 60px rgba(255, 215, 0, 0.6), 0 0 120px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)'
+                    : '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                  transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                {/* Golden spotlight glow effect */}
+                {spotlightPhase === 'score' && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 1 }}
+                    className="absolute inset-0 rounded-3xl pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%)',
+                      filter: 'blur(30px)',
+                    }}
+                  />
+                )}
+                <div className="relative text-center z-10">
+                  <div 
+                    className="text-3xl sm:text-4xl md:text-5xl font-black mb-2 min-h-[2.5rem] sm:min-h-[3rem] flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontFamily: 'var(--font-cinzel), serif',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Lotto roll effect - numbers rolling from bottom to top */}
+                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '70px', height: '2.5rem', lineHeight: '2.5rem' }}>
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                          initial={{ y: 40, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -40, opacity: 0 }}
+                          transition={{ duration: 0.1, ease: 'easeOut' }}
+                          className="inline-block text-3xl sm:text-4xl md:text-5xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
+                    <span className="text-xl sm:text-2xl md:text-3xl text-[#a1a1aa] ml-1">/10</span>
                   </div>
-                  <p className="text-xs text-gray-400 font-medium tracking-wide uppercase">Your Score</p>
+                  <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
                 </div>
               </div>
             </motion.div>
 
-            {/* Rating Card */}
+            {/* Rating Card - Extra round corners, mobile optimized */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-[#0d0d0d] rounded-2xl p-8 shadow-2xl space-y-8"
+              animate={{ 
+                opacity: spotlightPhase === 'button' ? 0.6 : spotlightPhase === 'score' ? 0.7 : 1,
+                filter: spotlightPhase === 'button' ? 'blur(1px)' : 'blur(0px)'
+              }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
+              style={{
+                boxShadow: `
+                  0 35px 90px -20px rgba(0, 0, 0, 0.95),
+                  0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                  0 0 0 1px rgba(255, 255, 255, 0.06),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
+                `,
+              }}
             >
+              {/* Decorative corner accents - properly positioned */}
+              <div 
+                className="absolute pointer-events-none"
+                style={{
+                  bottom: '-1px',
+                  right: '-1px',
+                  width: '120px',
+                  height: '120px',
+                  background: 'radial-gradient(ellipse at bottom right, rgba(255, 215, 0, 0.08) 0%, transparent 60%)',
+                  clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+                }}
+              />
+              <div 
+                className="absolute pointer-events-none"
+                style={{
+                  top: '-1px',
+                  left: '-1px',
+                  width: '120px',
+                  height: '120px',
+                  background: 'radial-gradient(ellipse at top left, rgba(255, 165, 0, 0.05) 0%, transparent 60%)',
+                  clipPath: 'polygon(0 0, 100% 0, 0 100%)',
+                }}
+              />
               
-              {/* Sliders */}
-              <div className="space-y-6">
+              {/* Sliders - Mobile optimized spacing, slightly narrower on mobile */}
+              <div className="space-y-6 sm:space-y-8 relative z-10 max-w-[calc(100%-24px)] sm:max-w-[600px] mx-auto">
                 <RatingSliderCard 
                   label="Emotional Impact" 
                   value={emotionalRangeDepth} 
                   onValueChange={(v) => handleSliderChange('emotionalRangeDepth', v)}
                   disabled={submitting}
                   touched={touchedSliders.emotionalRangeDepth}
+                  spotlightActive={spotlightPhase !== 'none'}
                 />
                 
                 <RatingSliderCard 
@@ -281,6 +568,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   onValueChange={(v) => handleSliderChange('characterBelievability', v)}
                   disabled={submitting}
                   touched={touchedSliders.characterBelievability}
+                  spotlightActive={spotlightPhase !== 'none'}
                 />
                 
                 <RatingSliderCard 
@@ -289,6 +577,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   onValueChange={(v) => handleSliderChange('technicalSkill', v)}
                   disabled={submitting}
                   touched={touchedSliders.technicalSkill}
+                  spotlightActive={spotlightPhase !== 'none'}
                 />
                 
                 <RatingSliderCard 
@@ -297,6 +586,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   onValueChange={(v) => handleSliderChange('screenPresence', v)}
                   disabled={submitting}
                   touched={touchedSliders.screenPresence}
+                  spotlightActive={spotlightPhase !== 'none'}
                 />
                 
                 <RatingSliderCard 
@@ -305,25 +595,62 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
                   disabled={submitting}
                   touched={touchedSliders.chemistryInteraction}
+                  spotlightActive={spotlightPhase !== 'none'}
                 />
               </div>
 
-              {/* Submit Button */}
-              <div className="pt-4">
-                <Button
+              {/* Submit Button with spotlight - Mobile optimized */}
+              <motion.div 
+                className="pt-4 sm:pt-6 relative z-50"
+                animate={{
+                  scale: spotlightPhase === 'button' ? 1.02 : 1,
+                }}
+                transition={{ duration: 0.6 }}
+              >
+                {/* Golden spotlight glow on button - sweeps without disappearing */}
+                {spotlightPhase === 'button' && (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1.2, opacity: 1 }}
+                    className="absolute inset-0 rounded-full pointer-events-none -z-10"
+                    style={{
+                      background: 'radial-gradient(ellipse 120% 100% at 50% 50%, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 40%, transparent 70%)',
+                      filter: 'blur(40px)',
+                    }}
+                  />
+                )}
+                <button
+                  ref={buttonRef}
                   type="submit"
                   disabled={!allSlidersTouched || submitting}
-                  className={`
-                    w-full py-4 text-lg font-bold rounded-2xl transition-all duration-300
-                    ${allSlidersTouched && !submitting
-                      ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 hover:from-purple-500 hover:via-violet-500 hover:to-purple-500 text-white shadow-lg shadow-purple-600/50 hover:shadow-xl hover:shadow-purple-600/60'
-                      : 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-50'
-                    }
-                  `}
+                  className="group w-full py-4 sm:py-5 md:py-6 text-base sm:text-lg md:text-xl font-extrabold rounded-full transition-all duration-500 tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: allSlidersTouched && !submitting
+                      ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
+                      : '#1a1a1a',
+                    color: allSlidersTouched && !submitting ? '#000000' : '#525252',
+                    boxShadow: allSlidersTouched && !submitting
+                      ? spotlightPhase === 'button'
+                        ? '0 0 60px rgba(255, 215, 0, 0.7), 0 0 100px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.5)'
+                        : '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
+                      : 'none',
+                    border: allSlidersTouched && !submitting ? 'none' : '1px solid #333',
+                  }}
                 >
-                  {submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Touch All Sliders to Continue'}
-                </Button>
-              </div>
+                  {/* White light sweep effect on hover */}
+                  {allSlidersTouched && !submitting && (
+                    <span 
+                      className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'}
+                  </span>
+                </button>
+              </motion.div>
 
             </motion.div>
           </div>

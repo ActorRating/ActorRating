@@ -174,7 +174,7 @@ export const SmoothSlider = React.forwardRef<
             "block rounded-full border-2 ring-offset-background transition-all duration-200 touch-action-none cursor-grab active:cursor-grabbing",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             "disabled:pointer-events-none disabled:opacity-50",
-            "hover:scale-110 active:scale-105",
+            "active:opacity-90",
             config.thumb,
             colors.thumb
           )} 

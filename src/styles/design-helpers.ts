@@ -129,52 +129,20 @@ export const cardStyles = {
 
 /**
  * Common Animation Variants for Framer Motion
+ * Keep it minimal and cinematic - no bounces, slides, or stagger
  */
 export const animationVariants = {
   fadeIn: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
   },
   fadeInUp: {
-    initial: { opacity: 0, y: 30 },
+    initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-  },
-  fadeInDown: {
-    initial: { opacity: 0, y: -30 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-  },
-  scaleIn: {
-    initial: { opacity: 0, scale: 0.95 },
-    animate: { opacity: 1, scale: 1 },
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-  },
-  slideInLeft: {
-    initial: { opacity: 0, x: -50 },
-    animate: { opacity: 1, x: 0 },
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-  },
-  slideInRight: {
-    initial: { opacity: 0, x: 50 },
-    animate: { opacity: 1, x: 0 },
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
   },
 } as const;
-
-/**
- * Stagger children animations for lists/grids
- */
-export const staggerContainer = {
-  initial: {},
-  animate: {
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-};
 
 /**
  * Common gradient backgrounds
@@ -260,7 +228,6 @@ export default {
   buttonStyles,
   cardStyles,
   animationVariants,
-  staggerContainer,
   gradients,
   shadows,
   sectionStyles,

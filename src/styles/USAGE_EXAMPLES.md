@@ -80,7 +80,7 @@ import { designTokens } from '@/styles/design-tokens';
     cursor: 'pointer',
     transition: designTokens.transitions.base,
   }}
-  className="hover:scale-105"
+  className="hover:shadow-[0_0_25px_rgba(212,175,55,0.3)] active:opacity-90"
 >
   Start Rating
 </button>
@@ -97,7 +97,7 @@ import { buttonStyles, typography } from '@/styles/design-helpers';
     ...typography.button,
     padding: '20px 48px',
   }}
-  className="hover:scale-105 hover:shadow-[0_0_40px_rgba(212,175,55,0.5)]"
+  className="hover:shadow-[0_0_25px_rgba(212,175,55,0.3)] active:opacity-90"
 >
   Start Rating
 </button>
@@ -114,7 +114,7 @@ import { cardStyles } from '@/styles/design-helpers';
 
 <div
   style={cardStyles.glassmorphism}
-  className="hover:border-[rgba(212,175,55,0.4)] hover:-translate-y-1"
+  className="hover:border-[rgba(212,175,55,0.35)] transition-all duration-300"
 >
   <h3>Card Title</h3>
   <p>Card content with glassmorphic background</p>
@@ -133,7 +133,7 @@ import { designTokens } from '@/styles/design-tokens';
     borderRadius: designTokens.components.card.performance.borderRadius,
     padding: designTokens.components.card.performance.padding,
   }}
-  className="hover:border-[rgba(212,175,55,0.4)] hover:scale-[1.02] transition-all duration-300"
+  className="hover:border-[rgba(212,175,55,0.35)] hover:shadow-[0_0_30px_rgba(212,175,55,0.15)] transition-all duration-300"
 >
   Performance content
 </div>
@@ -143,29 +143,29 @@ import { designTokens } from '@/styles/design-tokens';
 
 ## Example 4: Animations with Framer Motion
 
-### Using Animation Variants
+### Using Animation Variants (Premium/Cinematic Style)
 
 ```tsx
 import { motion } from 'framer-motion';
 import { animationVariants } from '@/styles/design-helpers';
 
-// Fade in up
+// Simple fade in (preferred for premium feel)
 <motion.div
-  initial={animationVariants.fadeInUp.initial}
-  animate={animationVariants.fadeInUp.animate}
-  transition={animationVariants.fadeInUp.transition}
+  initial={animationVariants.fadeIn.initial}
+  animate={animationVariants.fadeIn.animate}
+  transition={animationVariants.fadeIn.transition}
 >
-  Content fades in from below
+  Content fades in cleanly
 </motion.div>
 
-// Scale in
+// Subtle fade in up (minimal vertical movement)
 <motion.div
-  initial={animationVariants.scaleIn.initial}
-  whileInView={animationVariants.scaleIn.animate}
+  initial={animationVariants.fadeInUp.initial}
+  whileInView={animationVariants.fadeInUp.animate}
   viewport={{ once: true }}
-  transition={animationVariants.scaleIn.transition}
+  transition={animationVariants.fadeInUp.transition}
 >
-  Content scales in on scroll
+  Content fades in with subtle 8px upward motion
 </motion.div>
 ```
 
@@ -176,7 +176,7 @@ import { motion } from 'framer-motion';
 import { designTokens } from '@/styles/design-tokens';
 
 <motion.div
-  initial={{ opacity: designTokens.effects.opacity[0], y: 30 }}
+  initial={{ opacity: designTokens.effects.opacity[0], y: 8 }}
   animate={{ opacity: designTokens.effects.opacity[100], y: 0 }}
   transition={{ 
     duration: 0.8, 
