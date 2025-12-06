@@ -271,9 +271,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setSpotlightPhase('none')
     }
     
-    // Clear any existing timeout
+    // Clear any existing timeout to reset the 5 second timer
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
+      spotlightTimeoutRef.current = null
     }
     
     switch(key) {
@@ -299,6 +300,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Trigger spotlight animation 5 seconds after last slider interaction
   useEffect(() => {
     if (!allSlidersTouched) return
+    if (spotlightPhase !== 'none') return // Don't restart if already animating
 
     // Clear any existing timeout
     if (spotlightTimeoutRef.current) {
@@ -308,6 +310,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const checkForSpotlight = () => {
       const timeSinceLastInteraction = Date.now() - lastInteractionTime.current
       
+      // Only trigger if 5 seconds have passed and we're still in 'none' phase
       if (timeSinceLastInteraction >= 5000 && spotlightPhase === 'none') {
         // Start spotlight on score - auto scroll
         setSpotlightPhase('score')
@@ -343,6 +346,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     return () => {
       if (spotlightTimeoutRef.current) {
         clearTimeout(spotlightTimeoutRef.current)
+        spotlightTimeoutRef.current = null
       }
     }
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, allSlidersTouched, spotlightPhase])
@@ -368,7 +372,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched])
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-x-hidden">
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -394,7 +398,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-12 sm:py-14 md:py-16 lg:py-20 pb-20 sm:pb-24 md:pb-32">
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-12 sm:py-10 md:py-12 lg:py-16 pb-16 sm:pb-20 md:pb-24">
 
         {/* Header Section - Mobile optimized */}
         <motion.div
@@ -432,7 +436,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         <form onSubmit={handleSubmit}>
           <div className="relative">
             
-            {/* Score Display - Responsive size */}
+            {/* Score Display - Responsive size, prevent cutoff */}
             <motion.div
               ref={scoreRef}
               initial={{ opacity: 0, y: -20 }}
@@ -442,7 +446,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 scale: spotlightPhase === 'score' ? 1.05 : 1
               }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="relative mx-auto mb-10 sm:mb-12 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+              className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+              style={{ marginTop: '0', marginBottom: '2rem' }}
             >
               <div 
                 className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-4 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
@@ -486,14 +491,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     {/* Lotto roll effect - numbers rolling from bottom to top */}
-                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isAnimating ? (
+                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem' }}>
+                      <AnimatePresence mode="wait">
                         <motion.span
-                          key={`rolling-${Math.floor(animatedScore)}`}
-                          initial={{ y: 30, opacity: 0 }}
+                          key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                          initial={{ y: 40, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -30, opacity: 0 }}
-                          transition={{ duration: 0.08, ease: 'easeOut' }}
+                          exit={{ y: -40, opacity: 0 }}
+                          transition={{ duration: 0.1, ease: 'easeOut' }}
                           className="inline-block text-4xl sm:text-5xl md:text-6xl"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -502,23 +507,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             backgroundClip: 'text',
                           }}
                         >
-                          {Math.floor(animatedScore)}
+                          {isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
                         </motion.span>
-                      ) : (
-                        <span
-                          className="inline-block text-4xl sm:text-5xl md:text-6xl"
-                          style={{
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          }}
-                        >
-                          {animatedScore.toFixed(1)}
-                        </span>
-                      )}
+                      </AnimatePresence>
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-0.5">/10</span>
+                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-0.5 sm:ml-1">/10</span>
                   </div>
                   <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
                 </div>
