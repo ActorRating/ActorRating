@@ -296,14 +296,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [spotlightPhase])
 
 
-  // Trigger spotlight animation 2 seconds after last slider interaction
+  // Trigger spotlight animation 5 seconds after last slider interaction
   useEffect(() => {
     if (!allSlidersTouched) return
+
+    // Clear any existing timeout
+    if (spotlightTimeoutRef.current) {
+      clearTimeout(spotlightTimeoutRef.current)
+    }
 
     const checkForSpotlight = () => {
       const timeSinceLastInteraction = Date.now() - lastInteractionTime.current
       
-      if (timeSinceLastInteraction >= 2000 && spotlightPhase === 'none') {
+      if (timeSinceLastInteraction >= 5000 && spotlightPhase === 'none') {
         // Start spotlight on score - auto scroll
         setSpotlightPhase('score')
         
@@ -332,8 +337,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       }
     }
 
-    // Set up a timeout to check
-    spotlightTimeoutRef.current = setTimeout(checkForSpotlight, 2000)
+    // Set up a timeout to check after 5 seconds
+    spotlightTimeoutRef.current = setTimeout(checkForSpotlight, 5000)
 
     return () => {
       if (spotlightTimeoutRef.current) {
@@ -389,7 +394,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-8 sm:py-10 md:py-12 lg:py-16 pb-16 sm:pb-20 md:pb-24">
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-12 sm:py-14 md:py-16 lg:py-20 pb-20 sm:pb-24 md:pb-32">
 
         {/* Header Section - Mobile optimized */}
         <motion.div
@@ -437,7 +442,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 scale: spotlightPhase === 'score' ? 1.05 : 1
               }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+              className="relative mx-auto mb-10 sm:mb-12 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
             >
               <div 
                 className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-4 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
@@ -481,14 +486,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     {/* Lotto roll effect - numbers rolling from bottom to top */}
-                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem' }}>
-                      <AnimatePresence mode="wait">
+                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isAnimating ? (
                         <motion.span
-                          key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
-                          initial={{ y: 40, opacity: 0 }}
+                          key={`rolling-${Math.floor(animatedScore)}`}
+                          initial={{ y: 30, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -40, opacity: 0 }}
-                          transition={{ duration: 0.1, ease: 'easeOut' }}
+                          exit={{ y: -30, opacity: 0 }}
+                          transition={{ duration: 0.08, ease: 'easeOut' }}
                           className="inline-block text-4xl sm:text-5xl md:text-6xl"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -497,11 +502,23 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             backgroundClip: 'text',
                           }}
                         >
-                          {isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                          {Math.floor(animatedScore)}
                         </motion.span>
-                      </AnimatePresence>
+                      ) : (
+                        <span
+                          className="inline-block text-4xl sm:text-5xl md:text-6xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {animatedScore.toFixed(1)}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-1">/10</span>
+                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-0.5">/10</span>
                   </div>
                   <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
                 </div>
@@ -512,8 +529,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ 
-                opacity: spotlightPhase === 'button' ? 0.6 : spotlightPhase === 'score' ? 0.7 : 1,
-                filter: spotlightPhase === 'button' ? 'blur(1px)' : 'blur(0px)'
+                opacity: spotlightPhase === 'score' ? 0.7 : 1,
+                filter: spotlightPhase === 'score' ? 'blur(1px)' : 'blur(0px)'
               }}
               transition={{ delay: 0.1, duration: 0.6 }}
               className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
@@ -599,9 +616,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 />
               </div>
 
-              {/* Submit Button with spotlight - Mobile optimized */}
+              {/* Submit Button with spotlight - Mobile optimized, never blurred */}
               <motion.div 
                 className="pt-4 sm:pt-6 relative z-50"
+                style={{
+                  filter: 'blur(0px)',
+                  opacity: 1,
+                }}
                 animate={{
                   scale: spotlightPhase === 'button' ? 1.02 : 1,
                 }}
