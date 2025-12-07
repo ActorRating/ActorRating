@@ -325,7 +325,7 @@ function RatePageContent() {
       
       setLastRatingId(result.id)
       setSubmittedRating(result)
-      setSubmitted(true)
+      // Don't set submitted=true here - let the component handle the success animation
     } catch (err: any) {
       console.error('Failed to submit rating:', err)
       const errorMessage = err?.message || err?.response?.data?.error || err?.response?.data?.debug || 'Failed to submit rating. Please try again.'
@@ -354,7 +354,10 @@ function RatePageContent() {
     )
   }
 
-  if (submitted && submittedRating) {
+  // Success is now handled in-place by PerformanceRatingClientWrapper
+  // Remove old success page rendering
+  if (false && submitted && submittedRating) {
+    // This code is kept for reference but disabled
     // Calculate total score
     const totalScore = Math.round(
       submittedRating.emotionalRangeDepth * 0.25 +
@@ -552,13 +555,16 @@ function RatePageContent() {
               onSubmit={handleWrapperSubmit}
               submitting={submitting}
               initialRating={existingRating ? {
-                emotionalRangeDepth: existingRating.emotionalRangeDepth,
-                characterBelievability: existingRating.characterBelievability,
+                emotionalDepth: existingRating.emotionalRangeDepth,
+                believability: existingRating.characterBelievability,
                 technicalSkill: existingRating.technicalSkill,
                 screenPresence: existingRating.screenPresence,
-                chemistryInteraction: existingRating.chemistryInteraction
+                chemistry: existingRating.chemistryInteraction
               } : undefined}
-                />
+              onSuccess={() => {
+                // Success animation is handled in the component
+              }}
+            />
               </div>
             </div>
           </div>

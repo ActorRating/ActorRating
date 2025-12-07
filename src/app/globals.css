@@ -764,6 +764,15 @@ nav {
 /* Removed float animations - they feel too bouncy and web-kit-y for premium cinema feel */
 
 /* Text shimmer effect for premium feel */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -100% 0;

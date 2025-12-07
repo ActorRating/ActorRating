@@ -3,6 +3,8 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { CelebrationConfetti } from '@/components/ui/Confetti'
+import { CheckCircle, Share2, Twitter, Facebook } from 'lucide-react'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 1000) {
@@ -115,6 +117,13 @@ interface PerformanceRatingClientWrapperProps {
     screenPresence?: number
     chemistry?: number
   }
+  onSuccess?: (ratingData: {
+    emotionalDepth: number
+    technicalSkill: number
+    believability: number
+    screenPresence: number
+    chemistry: number
+  }) => void
 }
 
 // Individual Slider Component - Premium Gold Design
@@ -217,9 +226,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   performance,
   onSubmit,
   submitting = false,
-  initialRating
+  initialRating,
+  onSuccess
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
+  
+  // Success animation states
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>('idle')
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [finalScore, setFinalScore] = useState<number | null>(null)
 
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
   const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)
@@ -374,15 +389,106 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       chemistry: Math.round(chemistryInteraction)
     }
 
+    // Calculate final score
+    const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
+    setFinalScore(Number(score.toFixed(1)))
+
+    const startTime = Date.now()
+
+    // 0ms: Haptic feedback + start loading
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50)
+    }
+    setSubmitPhase('loading')
+
     try {
+      // Wait for API call
       await onSubmit(ratingData)
+      
+      const elapsed = Date.now() - startTime
+      
+      // 800ms: Morph to checkmark (ensure minimum 800ms total)
+      const checkmarkDelay = Math.max(0, 800 - elapsed)
+      setTimeout(() => {
+        setSubmitPhase('checkmark')
+      }, checkmarkDelay)
+      
+      // 1300ms: Confetti + fade transitions (ensure minimum 1300ms total)
+      const successDelay = Math.max(0, 1300 - elapsed)
+      setTimeout(() => {
+        setShowConfetti(true)
+        setSubmitPhase('success')
+        if (onSuccess) {
+          onSuccess(ratingData)
+        }
+      }, successDelay)
+      
     } catch (err) {
       console.error(err)
+      setSubmitPhase('idle')
+      setShowConfetti(false)
     }
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched])
+  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
+
+  // Share functionality
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}` : ''
+  const shareText = finalScore !== null 
+    ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating? ${shareUrl}`
+    : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}" ${shareUrl}`
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Rating: ${performance.actor.name} in ${performance.movie.title}`,
+          text: shareText,
+          url: shareUrl,
+        })
+      } catch (err) {
+        // User cancelled or error
+        console.log('Share cancelled')
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(shareText)
+      alert('Link copied to clipboard!')
+    }
+  }
+
+  const handleSocialShare = async (platform: 'twitter' | 'facebook') => {
+    // Generate shareable image
+    try {
+      // Use the OG image endpoint to generate a shareable image
+      const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=og&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+      
+      const encodedText = encodeURIComponent(shareText)
+      const encodedUrl = encodeURIComponent(shareUrl)
+      
+      if (platform === 'twitter') {
+        // Twitter doesn't support custom images in share dialog, but we can include the image URL in the text
+        window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
+      } else if (platform === 'facebook') {
+        // Facebook can use og:image meta tags, but for direct sharing we use the URL
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+      }
+    } catch (err) {
+      console.error('Failed to generate share image:', err)
+      // Fallback to text-only share
+      const encodedText = encodeURIComponent(shareText)
+      const encodedUrl = encodeURIComponent(shareUrl)
+      if (platform === 'twitter') {
+        window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
+      } else if (platform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
+      {/* Confetti */}
+      <CelebrationConfetti active={showConfetti} duration={3000} />
+      
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -430,23 +536,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           <div className="relative">
             
             {/* Score Display - Responsive size, prevent cutoff */}
-            <motion.div
-              ref={scoreRef}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0,
-                scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
-              }}
-              transition={{ 
-                delay: 0.2, 
-                duration: 1.0,
-                times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
-                ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : 'easeOut'
-              }}
-              className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
-              style={{ marginTop: '0', marginBottom: '2rem' }}
-            >
+            <AnimatePresence>
+              {submitPhase !== 'success' && (
+                <motion.div
+                  ref={scoreRef}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ 
+                    opacity: submitPhase === 'success' ? 0 : 1, 
+                    y: submitPhase === 'success' ? -20 : 0,
+                    scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
+                  }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ 
+                    delay: 0.2, 
+                    duration: 1.0,
+                    times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
+                    ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : 'easeOut'
+                  }}
+                  className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+                  style={{ marginTop: '0', marginBottom: '2rem' }}
+                >
               <div 
                 className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                 style={{
@@ -531,27 +640,32 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
                 </div>
               </div>
-            </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Rating Card - Extra round corners, mobile optimized */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ 
-                opacity: 1,
-                filter: 'blur(0px)'
-              }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-              className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
-              style={{
-                boxShadow: `
-                  0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                  0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                  0 0 0 1px rgba(255, 255, 255, 0.06),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                `,
-              }}
-            >
+            <AnimatePresence>
+              {submitPhase !== 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: submitPhase === 'success' ? 0 : 1,
+                    y: submitPhase === 'success' ? -20 : 0,
+                  }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: 0.1, duration: 0.6 }}
+                  className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
+                  style={{
+                    boxShadow: `
+                      0 35px 90px -20px rgba(0, 0, 0, 0.95),
+                      0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                      0 0 0 1px rgba(255, 255, 255, 0.06),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
+                    `,
+                  }}
+                >
               {/* Decorative corner accent - top left only */}
               <div 
                 className="absolute pointer-events-none"
@@ -664,15 +778,130 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       }}
                     />
                   )}
-                  <span className="relative z-10">
-                    {submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {submitPhase === 'loading' && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
+                        style={{
+                          animation: 'spin 0.8s linear infinite',
+                        }}
+                      />
+                    )}
+                    {submitPhase === 'checkmark' && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                      >
+                        <CheckCircle className="w-5 h-5 text-black" />
+                      </motion.div>
+                    )}
+                    {submitPhase === 'idle' && (
+                      submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'
+                    )}
                   </span>
                 </button>
               </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             </motion.div>
           </div>
         </form>
+
+        {/* Success Card - Fades in after confetti */}
+        <AnimatePresence>
+          {submitPhase === 'success' && finalScore !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-3xl p-8 sm:p-12 max-w-md w-full border border-white/10 shadow-2xl"
+              >
+                {/* Checkmark */}
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
+                  className="flex justify-center mb-6"
+                >
+                  <div className="w-20 h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg">
+                    <CheckCircle className="w-12 h-12 text-black" />
+                  </div>
+                </motion.div>
+
+                {/* Success Message */}
+                <motion.h2
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-2xl sm:text-3xl font-bold text-white text-center mb-4"
+                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                >
+                  Rating Submitted!
+                </motion.h2>
+
+                {/* Final Score */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center mb-8"
+                >
+                  <div className="inline-block px-6 py-3 rounded-full bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/20 border border-[#FFD700]/30">
+                    <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500]">
+                      {finalScore}/10
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Share Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="space-y-3"
+                >
+                  <button
+                    onClick={handleShare}
+                    className="w-full py-4 rounded-full bg-gradient-to-r from-[#FFE55C] to-[#FFD700] text-black font-bold text-lg hover:shadow-lg hover:shadow-[#FFD700]/50 transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share Your Rating
+                  </button>
+
+                  {/* Social Media Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleSocialShare('twitter')}
+                      className="flex-1 py-3 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Twitter className="w-5 h-5" />
+                      Twitter
+                    </button>
+                    <button
+                      onClick={() => handleSocialShare('facebook')}
+                      className="flex-1 py-3 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Facebook className="w-5 h-5" />
+                      Facebook
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>
