@@ -4,7 +4,7 @@ import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from '
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
-import { CheckCircle, Share2, Twitter, Facebook } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram } from 'lucide-react'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 1000) {
@@ -455,7 +455,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }
 
-  const handleSocialShare = async (platform: 'twitter' | 'facebook') => {
+  const handleSocialShare = async (platform: 'twitter' | 'facebook' | 'instagram') => {
     // Generate shareable image
     try {
       // Use the OG image endpoint to generate a shareable image
@@ -470,6 +470,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       } else if (platform === 'facebook') {
         // Facebook can use og:image meta tags, but for direct sharing we use the URL
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+      } else if (platform === 'instagram') {
+        // Instagram doesn't support direct URL sharing, so we copy the image URL to clipboard
+        // and show instructions to the user
+        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+        await navigator.clipboard.writeText(imageUrl)
+        alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
       }
     } catch (err) {
       console.error('Failed to generate share image:', err)
@@ -480,8 +486,35 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
       } else if (platform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+      } else if (platform === 'instagram') {
+        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+        navigator.clipboard.writeText(imageUrl).then(() => {
+          alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
+        }).catch(() => {
+          alert('Failed to copy image URL. Please try again.')
+        })
       }
     }
+  }
+
+  const handleContinueRating = () => {
+    // Reset the success state and allow user to rate again
+    setSubmitPhase('idle')
+    setShowConfetti(false)
+    setFinalScore(null)
+    // Reset all sliders
+    setEmotionalRangeDepth(0)
+    setCharacterBelievability(0)
+    setTechnicalSkill(0)
+    setScreenPresence(0)
+    setChemistryInteraction(0)
+    setTouchedSliders({
+      emotionalRangeDepth: false,
+      characterBelievability: false,
+      technicalSkill: false,
+      screenPresence: false,
+      chemistryInteraction: false,
+    })
   }
 
   return (
@@ -807,8 +840,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </motion.div>
               )}
             </AnimatePresence>
-
-            </motion.div>
           </div>
         </form>
 
@@ -881,22 +912,37 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </button>
 
                   {/* Social Media Buttons */}
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => handleSocialShare('twitter')}
-                      className="flex-1 py-3 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center gap-2"
+                      className="py-3 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center gap-1"
                     >
-                      <Twitter className="w-5 h-5" />
-                      Twitter
+                      <Twitter className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm">Twitter</span>
                     </button>
                     <button
                       onClick={() => handleSocialShare('facebook')}
-                      className="flex-1 py-3 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-2"
+                      className="py-3 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-1"
                     >
-                      <Facebook className="w-5 h-5" />
-                      Facebook
+                      <Facebook className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm">Facebook</span>
+                    </button>
+                    <button
+                      onClick={() => handleSocialShare('instagram')}
+                      className="py-3 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                    >
+                      <Instagram className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm">Instagram</span>
                     </button>
                   </div>
+
+                  {/* Continue Rating Button */}
+                  <button
+                    onClick={handleContinueRating}
+                    className="w-full py-3 rounded-full bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors border border-white/20"
+                  >
+                    Continue Rating
+                  </button>
                 </motion.div>
               </motion.div>
             </motion.div>
