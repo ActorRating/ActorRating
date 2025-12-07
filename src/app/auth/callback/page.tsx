@@ -28,7 +28,7 @@ export default function AuthCallback() {
           hasCode: !!code, 
           error, 
           error_description,
-          url: window.location.href 
+          url: typeof window !== 'undefined' ? window.location.href : 'server-side'
         })
         
         if (error) {

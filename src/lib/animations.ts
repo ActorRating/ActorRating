@@ -27,8 +27,15 @@ export const fadeIn: Variants = {
   },
 }
 
-// Removed scaleIn and staggerContainer - these create agency-portfolio vibes
-// For premium feel, use simple fadeIn or fadeInUp only
+// Scale in animation (for components that need it)
+export const scaleIn: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { ...defaultTransition },
+  },
+}
 
 // Helper to apply once-on-view behavior consistently
 export function getMotionProps() {
