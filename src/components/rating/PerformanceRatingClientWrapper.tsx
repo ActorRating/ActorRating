@@ -367,11 +367,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (!allSlidersTouched) return
 
     const ratingData = {
-      emotionalDepth: Math.round(emotionalRangeDepth),
+      emotionalRangeDepth: Math.round(emotionalRangeDepth),
+      characterBelievability: Math.round(characterBelievability),
       technicalSkill: Math.round(technicalSkill),
-      believability: Math.round(characterBelievability),
       screenPresence: Math.round(screenPresence),
-      chemistry: Math.round(chemistryInteraction)
+      chemistryInteraction: Math.round(chemistryInteraction)
     }
 
     try {
