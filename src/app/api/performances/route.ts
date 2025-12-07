@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         movie: { select: { id: true, title: true, year: true, director: true } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 300,
+      take: 50, // Take only 50 to process, not 300
     })
     console.log('[PERFORMANCES API] Found', raw.length, 'performances')
 

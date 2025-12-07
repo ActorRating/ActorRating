@@ -9,8 +9,8 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
 import { motion } from "framer-motion"
-import { fadeInUp, scaleIn } from "@/lib/animations"
-import { FaEye, FaEyeSlash, FaPlay, FaUserPlus, FaRocket, FaCheck, FaTimes } from "react-icons/fa"
+import { fadeInUp, fadeIn } from "@/lib/animations"
+import { FaEye, FaEyeSlash, FaPlay, FaUserPlus, FaRocket, FaCheck, FaTimes, FaArrowRight } from "react-icons/fa"
 import Link from "next/link"
 // Local validation using requested regex rules
 
@@ -192,12 +192,12 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden w-full" style={{ maxWidth: '100vw' }}>
       {/* Subtle Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
       <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
       
-      <div className="relative z-10 min-h-screen flex">
+      <div className="relative z-10 min-h-screen flex w-full" style={{ maxWidth: '100vw' }}>
         {/* Left Side - Branding */}
         <div className="hidden lg:flex lg:w-1/2">
           <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
@@ -223,7 +223,7 @@ export default function SignUp() {
         {/* Right Side - Sign Up Form */}
         <div className="flex-1 lg:w-1/2 flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-16">
           <motion.div
-            variants={scaleIn}
+            variants={fadeIn}
             initial="hidden"
             animate="show"
             className="w-full max-w-md mx-auto"
@@ -250,7 +250,7 @@ export default function SignUp() {
               
               {/* Glassmorphism Container - 3D Elevated */}
               <div 
-                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-2xl p-6 sm:p-8 transition-all duration-300" 
+                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[2rem] p-8 xs:p-10 sm:p-12 transition-all duration-300" 
                 style={{ 
                   backdropFilter: 'blur(24px) saturate(180%)', 
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -275,10 +275,10 @@ export default function SignUp() {
                   <p className="text-xs md:text-sm text-[#a3a3a3]">Join the platform</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="relative space-y-5">
+                <form onSubmit={handleSubmit} className="relative space-y-6 xs:space-y-7 sm:space-y-8">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
+                    <label htmlFor="email" className="block text-sm sm:text-base font-medium text-[#e4e4e7] mb-3 xs:mb-4">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -289,7 +289,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
@@ -321,7 +321,7 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
+                    <label htmlFor="password" className="block text-sm sm:text-base font-medium text-[#e4e4e7] mb-3 xs:mb-4">
                       Password *
                     </label>
                     <div className="relative">
@@ -332,7 +332,7 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid
@@ -391,38 +391,58 @@ export default function SignUp() {
                   )}
 
                   {/* Sign Up Button */}
-                  <Button
+                  <button
                     type="submit"
                     disabled={isLoading || !isEmailValid || !isPasswordValid || !isEmailDomainOk}
-                    variant="premium"
-                    size="lg"
-                    className="w-full group"
+                    className="w-full group px-8 py-4 rounded-full text-black text-lg font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      transform: 'scale(1)',
+                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.transform = 'scale(1.03)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
                   >
                     {isLoading ? (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="flex items-center justify-center gap-3">
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                         Creating Account...
-                      </div>
+                      </span>
                     ) : (
-                      <>
-                        <FaRocket className="w-4 h-4 mr-2" />
+                      <span className="flex items-center justify-center gap-3 group">
                         Create Account
-                      </>
+                        <FaArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                      </span>
                     )}
-                  </Button>
+                  </button>
 
                   {/* Terms */}
                   <p className="text-xs text-[#737373] text-center leading-relaxed">
                     By creating an account, you agree to our{" "}
-                    <Link href="/terms" className="text-[#FFD700] hover:text-white transition-colors underline">
+                    <Link 
+                      href="/terms" 
+                      className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
+                    >
                       Terms of Service
                     </Link>
                     ,{" "}
-                    <Link href="/privacy" className="text-[#FFD700] hover:text-white transition-colors underline">
+                    <Link 
+                      href="/privacy" 
+                      className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
+                    >
                       Privacy Policy
                     </Link>
                     {" "}and{" "}
-                    <Link href="/kvkk" className="text-[#FFD700] hover:text-white transition-colors underline">
+                    <Link 
+                      href="/kvkk" 
+                      className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
+                    >
                       KVKK Terms
                     </Link>
                     .
@@ -458,7 +478,7 @@ export default function SignUp() {
                     Already have an account?{" "}
                     <Link 
                       href="/auth/signin" 
-                      className="text-[#FFD700] hover:text-white font-medium transition-colors"
+                      className="text-[#FFD700] hover:text-[#FFE55C] font-medium transition-colors"
                     >
                       Sign in
                     </Link>

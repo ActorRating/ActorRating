@@ -185,6 +185,8 @@ html, body {
   overflow-y: auto;
   position: relative;
   height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 html {
@@ -195,9 +197,12 @@ html {
 
 body {
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   position: relative;
+  margin: 0;
+  padding: 0;
 }
 
 /* Ensure body can scroll to top */
@@ -321,6 +326,36 @@ html {
 /* Contain children from causing overflow on small screens */
 #__next, body > div, main, section {
   max-width: 100vw;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  position: relative;
+}
+
+/* Fix mobile viewport height issues - prevent black bar at bottom */
+@supports (height: 100dvh) {
+  html, body {
+    min-height: 100dvh;
+  }
+  
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Ensure footer doesn't create extra space on mobile */
+footer {
+  margin-top: auto;
+}
+
+/* Fix all containers to prevent horizontal shift */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Ensure no element causes horizontal overflow */
+* {
+  min-width: 0;
 }
 
 /* Custom scrollbar for the premium feel */
@@ -785,4 +820,5 @@ nav {
     will-change: transform, opacity;
   }
 }
+
 

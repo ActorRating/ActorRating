@@ -7,7 +7,7 @@ import { GiClapperboard, GiHeartWings } from "react-icons/gi"
 import { FaStar, FaHandshake, FaUserSecret } from "react-icons/fa"
 import { useRecaptchaV3 } from "@/components/auth/ReCaptcha"
 import { motion } from "framer-motion"
-import { fadeInUp, staggerContainer, getMotionProps } from "@/lib/animations"
+import { fadeInUp, getMotionProps, fadeIn } from "@/lib/animations"
 
 interface PerformanceRating {
   emotionalRangeDepth: number

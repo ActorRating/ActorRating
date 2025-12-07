@@ -6,7 +6,7 @@ import { Search, Filter, SortAsc, Loader2, Inbox } from 'lucide-react'
 import { Performance } from '@/types'
 import { PerformanceCard } from './PerformanceCard'
 import { Button } from '../ui/Button'
-import { fadeInUp, staggerContainer, getMotionProps } from '@/lib/animations'
+import { fadeInUp, getMotionProps, fadeIn } from '@/lib/animations'
 
 interface PerformanceGridProps {
   performances: Performance[]

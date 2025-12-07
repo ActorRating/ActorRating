@@ -20,18 +20,18 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
   useEffect(() => setMounted(true), [])
   return (
     <div 
-      className={`min-h-screen flex flex-col relative ${transparentBackground ? '' : 'bg-background'}`} 
-      style={{ zIndex: 1 }}
+      className={`min-h-screen flex flex-col relative w-full ${transparentBackground ? '' : 'bg-background'}`} 
+      style={{ zIndex: 1, maxWidth: '100vw', overflowX: 'hidden', minHeight: '100dvh' }}
     >
       {/* Navbar switches based on auth status for consistency across pages */}
-      <div style={{ position: 'relative', zIndex: 999, background: 'transparent' }}>
+      <div style={{ position: 'relative', zIndex: 999, background: 'transparent', width: '100%' }}>
         {!mounted ? <HomeNavbar /> : (user ? <SignedInNavbar /> : <HomeNavbar />)}
       </div>
 
       {/* Main content */}
       <main
-        className="flex-1 max-w-full relative"
-        style={{ zIndex: 10, position: 'relative' }}
+        className="flex-1 w-full relative"
+        style={{ zIndex: 10, position: 'relative', maxWidth: '100vw', overflowX: 'hidden' }}
       >
         {children}
       </main>

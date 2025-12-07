@@ -21,7 +21,7 @@ import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceR
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
 
-export default function RatePage() {
+function RatePageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const user = useUser()
@@ -108,9 +108,14 @@ export default function RatePage() {
               if (response.ok) {
                 const movieData = await response.json()
                 setMovie(movieData)
+              } else {
+                const errorData = await response.json().catch(() => ({ error: 'Failed to fetch movie' }))
+                console.error('Failed to fetch movie:', errorData)
+                setError(errorData.error || 'Failed to fetch movie data')
               }
             } catch (error) {
               console.error('Failed to fetch movie:', error)
+              setError('Failed to fetch movie data. Please try again.')
             }
           }
         }
@@ -660,4 +665,23 @@ export default function RatePage() {
       </Suspense>
     )
   }
+}
+
+export default function RatePage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded mb-4 max-w-md mx-auto"></div>
+              <div className="h-4 bg-muted rounded mb-8 max-w-lg mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <RatePageContent />
+    </Suspense>
+  )
 }

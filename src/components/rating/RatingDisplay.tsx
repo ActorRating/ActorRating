@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
-import { staggerContainer, fadeInUp, getMotionProps } from "@/lib/animations"
+import { fadeInUp, getMotionProps, fadeIn } from "@/lib/animations"
 import { 
   RatingDisplayProps,
   OverallScoreProps,

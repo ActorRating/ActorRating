@@ -2,66 +2,132 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { HomeLayout } from "@/components/layout"
 import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
-import { FaStar } from "react-icons/fa"
+import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import Link from "next/link"
 
-interface Performance {
+// Predefined performances to display (lookup by actor + movie)
+const RECENT_PERFORMANCE_TARGETS = [
+  { actor: "Timothée Chalamet", movie: "Dune: Part Two" },
+  { actor: "Zendaya", movie: "Challengers" },
+  { actor: "Cillian Murphy", movie: "Oppenheimer" },
+  { actor: "Emma Stone", movie: "Poor Things" },
+  { actor: "Austin Butler", movie: "Elvis" },
+  { actor: "Margot Robbie", movie: "Barbie" }
+]
+
+const ICONIC_PERFORMANCE_TARGETS = [
+  { actor: "Heath Ledger", movie: "The Dark Knight" },
+  { actor: "Al Pacino", movie: "The Godfather Part II" },
+  { actor: "Marlon Brando", movie: "The Godfather" },
+  { actor: "Leonardo DiCaprio", movie: "The Wolf of Wall Street" },
+  { actor: "Robert De Niro", movie: "Taxi Driver" },
+  { actor: "Anthony Hopkins", movie: "The Silence of the Lambs" }
+]
+
+interface PerformanceData {
   id: string
   actorId: string
   movieId: string
+  character: string | null
   actor: {
-    id: string
     name: string
     imageUrl?: string
   }
   movie: {
-    id: string
     title: string
     year: number
-    director?: string
   }
-  character?: string
-  roleName?: string
   averageRating?: number
   ratingCount?: number
 }
 
 export default function PerformancesPage() {
   const user = useUser()
-  const [allPerformances, setAllPerformances] = useState<Performance[]>([])
+  const [recentPerformances, setRecentPerformances] = useState<PerformanceData[]>([])
+  const [iconicPerformances, setIconicPerformances] = useState<PerformanceData[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeRecentCard, setActiveRecentCard] = useState(0)
+  const [activeIconicCard, setActiveIconicCard] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     
     const fetchPerformances = async () => {
       try {
-        const response = await fetch('/api/performances')
+        // Try to load from cache first
+        const cacheKey = 'performances-page-data'
+        const cached = sessionStorage.getItem(cacheKey)
+        
+        if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached)
+            // Cache is valid for 5 minutes
+            if (Date.now() - timestamp < 5 * 60 * 1000) {
+              console.log('[PERFORMANCES PAGE] Loading from cache')
+              if (!cancelled) {
+                setRecentPerformances(data.recent)
+                setIconicPerformances(data.iconic)
+                setLoading(false)
+              }
+              return
+            }
+          } catch (e) {
+            console.log('[PERFORMANCES PAGE] Cache invalid, fetching fresh data')
+          }
+        }
+        
+        // Fetch performances by actor/movie lookups
+        const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
+        
+        const response = await fetch('/api/performances/by-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targets: allTargets })
+        })
+        
         if (response.ok && !cancelled) {
           const data = await response.json()
           
-          // Filter for valid performances only
-          const validData = Array.isArray(data) 
-            ? data.filter((p: any) => 
-                p.actorId && 
-                p.movieId && 
-                p.actor?.id && 
-                p.movie?.id &&
-                p.actor?.name &&
-                p.movie?.title
-              )
-            : []
+          // Separate into recent and iconic based on original arrays
+          const recent = RECENT_PERFORMANCE_TARGETS
+            .map(target => data.performances.find((p: any) => 
+              p.actor.name === target.actor && p.movie.title === target.movie
+            ))
+            .filter((p: any) => p !== undefined)
           
-          setAllPerformances(validData)
+          const iconic = ICONIC_PERFORMANCE_TARGETS
+            .map(target => data.performances.find((p: any) => 
+              p.actor.name === target.actor && p.movie.title === target.movie
+            ))
+            .filter((p: any) => p !== undefined)
+          
+          console.log('[PERFORMANCES PAGE] Loaded:', {
+            recent: recent.length,
+            iconic: iconic.length,
+            total: recent.length + iconic.length
+          })
+          
+          if (!cancelled) {
+            setRecentPerformances(recent)
+            setIconicPerformances(iconic)
+            
+            // Cache the data
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              data: { recent, iconic },
+              timestamp: Date.now()
+            }))
+          }
         }
       } catch (error) {
         if (!cancelled) {
-          console.error("Failed to fetch performances:", error)
+          console.error("[PERFORMANCES PAGE] Failed to fetch performances:", error)
+          setRecentPerformances([])
+          setIconicPerformances([])
         }
       } finally {
         if (!cancelled) {
@@ -77,126 +143,136 @@ export default function PerformancesPage() {
     }
   }, [])
 
-  const { newPerformances, iconicPerformances } = useMemo(() => {
-    // Filter for recent performances (2023-2025)
-    const recentPerformances = allPerformances.filter(p => 
-      p.movie.year >= 2023 && p.movie.year <= 2025
-    )
+  // Track active card for carousel dots and depth effect (desktop only)
+  useEffect(() => {
+    const container = document.querySelector('.recent-scroll-container')
+    if (!container) return
 
-    // Deduplicate by actor-movie pair AND prioritize diversity (one performance per actor)
-    const seenRecent = new Set<string>()
-    const seenActors = new Set<string>()
-    const diverseRecent: Performance[] = []
-    
-    // First pass: get one performance per actor
-    for (const p of recentPerformances) {
-      const key = `${p.actorId}-${p.movieId}`
-      if (!seenRecent.has(key) && !seenActors.has(p.actorId)) {
-        seenRecent.add(key)
-        seenActors.add(p.actorId)
-        diverseRecent.push(p)
-        if (diverseRecent.length >= 6) break
-      }
-    }
-    
-    // If we don't have enough, add more from same actors
-    if (diverseRecent.length < 6) {
-      for (const p of recentPerformances) {
-        const key = `${p.actorId}-${p.movieId}`
-        if (!seenRecent.has(key)) {
-          seenRecent.add(key)
-          diverseRecent.push(p)
-          if (diverseRecent.length >= 6) break
+    const updateCardDepth = () => {
+      // Only apply depth effect on desktop
+      const isDesktop = window.innerWidth >= 1024
+      
+      const containerRect = container.getBoundingClientRect()
+      const containerCenter = containerRect.left + containerRect.width / 2
+      
+      const cards = container.querySelectorAll('.recent-scroll-container > div')
+      let closestIndex = 0
+      let closestDistance = Infinity
+      
+      cards.forEach((card, index) => {
+        const cardRect = card.getBoundingClientRect()
+        const cardCenter = cardRect.left + cardRect.width / 2
+        const distance = Math.abs(containerCenter - cardCenter)
+        
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestIndex = index
         }
-      }
+        
+        const element = card as HTMLElement
+        
+        if (isDesktop) {
+          // Calculate depth effect based on distance from center
+          const maxDistance = containerRect.width / 2
+          const normalizedDistance = Math.min(distance / maxDistance, 1)
+          const scale = 1 - (normalizedDistance * 0.08) // Scale from 1 to 0.92
+          const opacity = 1 - (normalizedDistance * 0.4) // Opacity from 1 to 0.6
+          const translateY = normalizedDistance * 10 // Move down by up to 10px
+          
+          element.style.transform = `scale(${scale}) translateY(${translateY}px)`
+          element.style.opacity = `${opacity}`
+        } else {
+          // Reset on mobile
+          element.style.transform = 'scale(1) translateY(0)'
+          element.style.opacity = '1'
+        }
+      })
+      
+      setActiveRecentCard(closestIndex)
     }
+
+    container.addEventListener('scroll', updateCardDepth, { passive: true })
+    window.addEventListener('resize', updateCardDepth, { passive: true })
+    updateCardDepth() // Initial call
     
-    const uniqueRecent = diverseRecent
+    return () => {
+      container.removeEventListener('scroll', updateCardDepth)
+      window.removeEventListener('resize', updateCardDepth)
+    }
+  }, [recentPerformances.length])
 
-    // Define iconic performances to search for in database
-    const iconicNames = [
-      { actor: "Heath Ledger", movie: "The Dark Knight" },
-      { actor: "Marlon Brando", movie: "The Godfather" },
-      { actor: "Daniel Day-Lewis", movie: "There Will Be Blood" },
-      { actor: "Al Pacino", movie: "The Godfather Part II" },
-      { actor: "Anthony Hopkins", movie: "The Silence of the Lambs" },
-      { actor: "Viola Davis", movie: "Fences" },
-      { actor: "Cate Blanchett", movie: "Blue Jasmine" },
-      { actor: "Frances McDormand", movie: "Three Billboards Outside Ebbing, Missouri" },
-      { actor: "Meryl Streep", movie: "The Iron Lady" },
-      { actor: "Vivien Leigh", movie: "Gone with the Wind" }
-    ]
+  useEffect(() => {
+    const container = document.querySelector('.iconic-scroll-container')
+    if (!container) return
 
-    // Find matching performances from database
-    const iconicMatches: Performance[] = []
-    for (const iconic of iconicNames) {
-      const found = allPerformances.find(p => 
-        p.actor.name.toLowerCase().trim() === iconic.actor.toLowerCase().trim() &&
-        p.movie.title.toLowerCase().trim() === iconic.movie.toLowerCase().trim()
-      )
-      if (found) {
-        iconicMatches.push(found)
-      }
+    const updateCardDepth = () => {
+      // Only apply depth effect on desktop
+      const isDesktop = window.innerWidth >= 1024
+      
+      const containerRect = container.getBoundingClientRect()
+      const containerCenter = containerRect.left + containerRect.width / 2
+      
+      const cards = container.querySelectorAll('.iconic-scroll-container > div')
+      let closestIndex = 0
+      let closestDistance = Infinity
+      
+      cards.forEach((card, index) => {
+        const cardRect = card.getBoundingClientRect()
+        const cardCenter = cardRect.left + cardRect.width / 2
+        const distance = Math.abs(containerCenter - cardCenter)
+        
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestIndex = index
+        }
+        
+        const element = card as HTMLElement
+        
+        if (isDesktop) {
+          // Calculate depth effect based on distance from center
+          const maxDistance = containerRect.width / 2
+          const normalizedDistance = Math.min(distance / maxDistance, 1)
+          const scale = 1 - (normalizedDistance * 0.08) // Scale from 1 to 0.92
+          const opacity = 1 - (normalizedDistance * 0.4) // Opacity from 1 to 0.6
+          const translateY = normalizedDistance * 10 // Move down by up to 10px
+          
+          element.style.transform = `scale(${scale}) translateY(${translateY}px)`
+          element.style.opacity = `${opacity}`
+        } else {
+          // Reset on mobile
+          element.style.transform = 'scale(1) translateY(0)'
+          element.style.opacity = '1'
+        }
+      })
+      
+      setActiveIconicCard(closestIndex)
     }
 
-    // Deduplicate iconic performances
-    const seenIconic = new Set<string>()
-    const uniqueIconic = iconicMatches.filter(p => {
-      const key = `${p.actorId}-${p.movieId}`
-      if (seenIconic.has(key)) return false
-      seenIconic.add(key)
-      return true
-    }).slice(0, 6)
-
-    return {
-      newPerformances: uniqueRecent,
-      iconicPerformances: uniqueIconic
+    container.addEventListener('scroll', updateCardDepth, { passive: true })
+    window.addEventListener('resize', updateCardDepth, { passive: true })
+    updateCardDepth() // Initial call
+    
+    return () => {
+      container.removeEventListener('scroll', updateCardDepth)
+      window.removeEventListener('resize', updateCardDepth)
     }
-  }, [allPerformances])
+  }, [iconicPerformances.length])
 
   const LayoutWrapper = user ? SignedInLayout : HomeLayout
 
   return (
     <LayoutWrapper>
-      <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60" style={{ willChange: 'auto' }}>
+      <div className="relative z-10 bg-black pt-40 pb-32 sm:pt-48 sm:pb-40 md:pt-56 md:pb-48 lg:pt-60 lg:pb-60" style={{ willChange: 'auto' }}>
         {/* Background ambient glow */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
           <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 relative">
-          <div className="grid grid-cols-12 gap-8">
-            {/* Title (with gutters) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-              style={{ willChange: 'transform, opacity' }}
-              className="col-span-12 lg:col-start-2 lg:col-span-10 text-center mb-24 sm:mb-32 lg:mb-40"
-            >
-            <h2 
-              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
-              style={{ fontFamily: 'var(--font-cinzel), serif' }}
-            >
-              Rate Performances
-            </h2>
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              whileInView={{ width: "220px", opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-              style={{ willChange: 'width, opacity' }}
-              className="h-1 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent mx-auto shadow-[0_0_30px_rgba(255,215,0,0.6)] mb-8"
-            />
-              <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
-                Discover and rate the finest performances in cinema history
-              </p>
-            </motion.div>
-
-            {/* New Performances Section (with gutters) */}
-            <div className="col-span-12 lg:col-start-2 lg:col-span-10 mb-32 sm:mb-40 md:mb-48">
+        <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+          <div className="grid grid-cols-12">
+            {/* New Performances Section */}
+            <div className="col-span-12 mb-32 sm:mb-40 md:mb-48">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -205,35 +281,138 @@ export default function PerformancesPage() {
                 style={{ willChange: 'transform, opacity' }}
                 className="text-center mb-24 sm:mb-32 lg:mb-40"
               >
-              <h3 
-                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
-              >
-                New Performances
-              </h3>
+                <h3 
+                  className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
+                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                >
+                  <span 
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                    }}
+                  >
+                    Trending
+                  </span>{' '}
+                  Now
+                </h3>
                 <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
-                  Recent additions and popular current releases
+                  Latest performances capturing global attention
                 </p>
               </motion.div>
 
               {loading ? (
-                <div className="grid grid-cols-12 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="col-span-12 md:col-span-6 animate-pulse">
-                      <div className="bg-[#1a1a1a]/80 rounded-3xl border border-[#FFD700]/10 p-8 h-96"></div>
-                    </div>
-                  ))}
+                <div className="relative">
+                  <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide px-4 sm:px-6 lg:px-[20vw] xl:px-[25vw]">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="animate-pulse flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw]">
+                        <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
+                          style={{
+                            boxShadow: `
+                              0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                              0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                              0 0 0 1px rgba(255, 255, 255, 0.05),
+                              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                            `,
+                          }}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ) : newPerformances.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {newPerformances.map((performance, index) => (
-                    <div key={`new-${performance.actorId}-${performance.movieId}-${index}`}>
-                      <PerformanceCard 
-                        performance={performance} 
-                        index={index} 
-                      />
+              ) : recentPerformances.length > 0 ? (
+                <div className="relative">
+                  {/* Carousel Container with Fade Edges */}
+                  <div className="relative -mx-4 sm:-mx-0">
+                    <div 
+                      className="overflow-hidden"
+                      style={{
+                        maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                      }}
+                    >
+                      {/* Carousel - Add extra padding on desktop for first/last cards */}
+                      <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                        {recentPerformances.map((performance, index) => (
+                          <div 
+                            key={performance.id} 
+                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                            onClick={() => {
+                              if (window.innerWidth >= 1024) {
+                                const element = document.querySelectorAll('.recent-scroll-container > div')[index] as HTMLElement
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                                }
+                              }
+                            }}
+                          >
+                            <LandingPageCard 
+                              performance={performance}
+                              index={index}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Navigation Dots */}
+                  <div className="relative flex justify-center items-center mt-8 px-4">
+                    <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
+                      style={{
+                        boxShadow: `
+                          0 10px 30px -5px rgba(0, 0, 0, 0.7),
+                          0 0 0 1px rgba(255, 255, 255, 0.03),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                        `,
+                        padding: '6px 12px',
+                      }}
+                    >
+                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
+                        {recentPerformances.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              const container = document.querySelector('.recent-scroll-container')
+                              if (container) {
+                                const cards = container.querySelectorAll('.recent-scroll-container > div')
+                                const targetCard = cards[index] as HTMLElement
+                                if (targetCard) {
+                                  targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                                }
+                              }
+                            }}
+                            style={{
+                              width: index === activeRecentCard ? '20px' : '5px',
+                              height: '5px',
+                              minWidth: index === activeRecentCard ? '20px' : '5px',
+                              minHeight: '5px',
+                              padding: 0,
+                              border: 'none',
+                              backgroundColor: index === activeRecentCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
+                              borderRadius: '9999px',
+                              transition: 'all 0.3s',
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (index !== activeRecentCard) {
+                                e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.6)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (index !== activeRecentCard) {
+                                e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)'
+                              }
+                            }}
+                            aria-label={`Go to card ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 px-4">
@@ -242,8 +421,8 @@ export default function PerformancesPage() {
               )}
             </div>
 
-            {/* Iconic Performances Section (with gutters) */}
-            <div className="col-span-12 lg:col-start-2 lg:col-span-10 mb-16 sm:mb-20">
+            {/* Iconic Performances Section */}
+            <div className="col-span-12 mb-16 sm:mb-20">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -252,30 +431,120 @@ export default function PerformancesPage() {
                 style={{ willChange: 'transform, opacity' }}
                 className="text-center mb-24 sm:mb-32 lg:mb-40"
               >
-              <h3 
-                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
-              >
-                Iconic Performances
-              </h3>
+                <h3 
+                  className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
+                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                >
+                  <span 
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                    }}
+                  >
+                    Iconic
+                  </span>{' '}
+                  Classics
+                </h3>
                 <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
                   Legendary performances that defined cinema
                 </p>
               </motion.div>
 
               {iconicPerformances.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {iconicPerformances.map((performance, index) => (
-                    <div key={`iconic-${performance.actorId}-${performance.movieId}-${index}`}>
-                      <PerformanceCard 
-                        performance={performance} 
-                        index={index} 
-                        isIconic 
-                      />
+                <div className="relative">
+                  {/* Carousel Container with Fade Edges */}
+                  <div className="relative -mx-4 sm:-mx-0">
+                    <div 
+                      className="overflow-hidden"
+                      style={{
+                        maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                      }}
+                    >
+                      {/* Carousel - Add extra padding on desktop for first/last cards */}
+                      <div className="iconic-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                        {iconicPerformances.map((performance, index) => (
+                          <div 
+                            key={performance.id} 
+                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                          onClick={() => {
+                            if (window.innerWidth >= 1024) {
+                              const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
+                              if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                              }
+                            }
+                          }}
+                        >
+                          <LandingPageCard 
+                            performance={performance}
+                            index={index}
+                          />
+                        </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Navigation Dots */}
+                  <div className="relative flex justify-center items-center mt-8 px-4">
+                    <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
+                      style={{
+                        boxShadow: `
+                          0 10px 30px -5px rgba(0, 0, 0, 0.7),
+                          0 0 0 1px rgba(255, 255, 255, 0.03),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                        `,
+                        padding: '6px 12px',
+                      }}
+                    >
+                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
+                        {iconicPerformances.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              const container = document.querySelector('.iconic-scroll-container')
+                              if (container) {
+                                const cards = container.querySelectorAll('.iconic-scroll-container > div')
+                                const targetCard = cards[index] as HTMLElement
+                                if (targetCard) {
+                                  targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                                }
+                              }
+                            }}
+                            style={{
+                              width: index === activeIconicCard ? '20px' : '5px',
+                              height: '5px',
+                              minWidth: index === activeIconicCard ? '20px' : '5px',
+                              minHeight: '5px',
+                              padding: 0,
+                              border: 'none',
+                              backgroundColor: index === activeIconicCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
+                              borderRadius: '9999px',
+                              transition: 'all 0.3s',
+                              cursor: 'pointer',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (index !== activeIconicCard) {
+                                e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.6)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (index !== activeIconicCard) {
+                                e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)'
+                              }
+                            }}
+                            aria-label={`Go to card ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
+              ) : loading ? null : (
                 <div className="text-center py-12 px-4">
                   <p className="text-xl sm:text-2xl text-[#a3a3a3]">Iconic performances will appear here once added to the database.</p>
                 </div>
@@ -288,60 +557,61 @@ export default function PerformancesPage() {
   )
 }
 
-function PerformanceCard({ 
+// EXACT COPY of the landing page card structure
+function LandingPageCard({ 
   performance, 
-  index, 
-  isIconic = false 
+  index 
 }: { 
-  performance: Performance
-  index: number
-  isIconic?: boolean 
+  performance: PerformanceData
+  index: number 
 }) {
-  // Use actorId and movieId directly from performance object
-  const actorId = performance.actorId
-  const movieId = performance.movieId
-  
-  // Safety check - should never happen due to filtering, but defensive programming
-  if (!actorId || !movieId) {
-    console.warn('Performance card received invalid IDs:', { actorId, movieId, performance })
-    return null
-  }
-  
-  const rateUrl = `/rate?actor=${actorId}&movie=${movieId}`
+  const rateUrl = `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
+  const rating = performance.averageRating?.toFixed(1)
+  const character = performance.character || "—"
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       style={{ willChange: 'transform, opacity' }}
       className="group relative"
     >
-      {/* Premium Card - EXACT match to landing page */}
-      <div className="relative h-full p-8 sm:p-10 md:p-12 rounded-3xl border border-[#FFD700]/25 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-700 hover:border-[#FFD700]/60 hover:shadow-[0_0_100px_rgba(255,215,0,0.25)] hover:-translate-y-2">
-        {/* Glow effect */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+      {/* Premium Card - Clean & Cinematic - EXACT COPY from landing page */}
+      <div 
+        className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+        style={{
+          boxShadow: `
+            0 25px 70px -15px rgba(0, 0, 0, 0.9),
+            0 15px 40px -10px rgba(0, 0, 0, 0.7),
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+          `,
+        }}
+      >
+        {/* Glow effect - CLIPPED to card corners */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex-1">
-            {/* Rating Badge or Iconic Badge */}
+            {/* Top Row: Rating Badge and Year */}
             <div className="flex items-center justify-between mb-6">
-              {isIconic ? (
+              {rating && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                   <FaStar className="w-4 h-4 text-[#FFD700]" />
-                  <span className="text-sm font-bold text-[#FFD700] tracking-widest uppercase">ICONIC</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                  <FaStar className="w-4 h-4 text-[#FFD700]" />
-                  <span className="text-sm font-bold text-[#FFD700] tracking-widest uppercase">NEW</span>
+                  <span className="text-xl font-bold text-[#FFD700]">{rating}</span>
                 </div>
               )}
-              <span className="text-base text-[#a1a1aa] font-medium">{performance.movie.year}</span>
+              
+              {/* Movie Year */}
+              <div className="text-[#a3a3a3] text-base font-medium">
+                {performance.movie.year}
+              </div>
             </div>
 
             {/* Actor Name */}
@@ -359,29 +629,25 @@ function PerformanceCard({
               </span>
             </div>
 
-            {/* Character Name */}
-            {(performance.roleName || performance.character) && (
-              <div className="mb-6">
-                <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                  <span className="text-[#FFD700]/60">"</span>
-                  as {performance.roleName || performance.character}
-                  <span className="text-[#FFD700]/60">"</span>
-                </p>
-              </div>
-            )}
+            {/* Character/Quote */}
+            <div className="mb-6">
+              <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
+                as {character}
+              </p>
+            </div>
           </div>
 
           {/* Rate Button - Always at bottom */}
           <div className="mt-auto pt-4">
             <Link href={rateUrl}>
               <button 
-                className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                className="w-full px-8 py-4 rounded-full text-black text-base font-extrabold tracking-wider uppercase transition-all duration-500 hover:scale-105"
                 style={{
                   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 }}
               >
                 <span className="flex items-center justify-center gap-2">
-                  Rate Performance
+                  Rate
                   <FaStar className="w-4 h-4" />
                 </span>
               </button>
@@ -389,7 +655,7 @@ function PerformanceCard({
           </div>
         </div>
 
-        {/* Decorative accent - EXACT match to landing page */}
+        {/* Decorative accent */}
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
     </motion.div>

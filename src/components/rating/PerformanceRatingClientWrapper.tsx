@@ -3,7 +3,6 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/Button"
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 1000) {
@@ -134,12 +133,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
   touched?: boolean
   spotlightActive?: boolean
 }) {
+  const [isActive, setIsActive] = useState(false)
+
   return (
     <motion.div 
       className="space-y-3 sm:space-y-4 relative"
       animate={{
-        opacity: spotlightActive ? 0.5 : 1,
-        filter: spotlightActive ? 'blur(1px)' : 'blur(0px)'
+        opacity: 1,
+        filter: 'blur(0px)'
       }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -176,20 +177,29 @@ const RatingSliderCard = memo(function RatingSliderCard({
             step="1"
             value={value}
             onChange={(e) => onValueChange(Number(e.target.value))}
+            onMouseDown={() => setIsActive(true)}
+            onMouseUp={() => setIsActive(false)}
+            onTouchStart={() => setIsActive(true)}
+            onTouchEnd={() => setIsActive(false)}
             disabled={disabled}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             aria-label={label}
           />
           
-          {/* Visible Thumb - Fixed size, no growth animation */}
-          <div
-            className="absolute top-1/2 w-6 h-6 rounded-full shadow-lg pointer-events-none"
+          {/* Visible Thumb - Grows when active */}
+          <motion.div
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none"
             style={{
               left: `${value}%`,
               transform: `translate(-50%, -50%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
             }}
+            animate={{
+              width: isActive ? '28px' : '24px',
+              height: isActive ? '28px' : '24px',
+            }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
           />
         </div>
       </div>
@@ -297,7 +307,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [spotlightPhase])
 
 
-  // Trigger spotlight animation 5 seconds after last slider interaction
+  // Trigger spotlight animation 100ms after last slider interaction
   useEffect(() => {
     if (!allSlidersTouched) return
     if (spotlightPhase !== 'none') return // Don't restart if already animating
@@ -307,41 +317,41 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       clearTimeout(spotlightTimeoutRef.current)
     }
 
-    const checkForSpotlight = () => {
+    const triggerAnimation = () => {
       const timeSinceLastInteraction = Date.now() - lastInteractionTime.current
       
-      // Only trigger if 5 seconds have passed and we're still in 'none' phase
-      if (timeSinceLastInteraction >= 5000 && spotlightPhase === 'none') {
-        // Start spotlight on score - auto scroll
+      // Trigger after 100ms of inactivity
+      if (timeSinceLastInteraction >= 100 && spotlightPhase === 'none') {
+        // Effect 1: Score pulse
         setSpotlightPhase('score')
         
-        // Auto scroll to score
+        // Effect 2: Scroll to score (after 200ms)
         setTimeout(() => {
           scoreRef.current?.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center',
             inline: 'center'
           })
-        }, 100)
+        }, 200)
         
-        // After 2 seconds, sweep to button (without disappearing)
+        // Effect 3: Button glow (after 1.2s, total ~1.8s)
         setTimeout(() => {
           setSpotlightPhase('button')
           
-          // Auto scroll to button
+          // Scroll to button
           setTimeout(() => {
             buttonRef.current?.scrollIntoView({ 
               behavior: 'smooth', 
               block: 'center',
               inline: 'center'
             })
-          }, 100)
-        }, 2000)
+          }, 200)
+        }, 1200)
       }
     }
 
-    // Set up a timeout to check after 5 seconds
-    spotlightTimeoutRef.current = setTimeout(checkForSpotlight, 5000)
+    // Set up a timeout to check after 100ms
+    spotlightTimeoutRef.current = setTimeout(triggerAnimation, 100)
 
     return () => {
       if (spotlightTimeoutRef.current) {
@@ -379,26 +389,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
       </div>
 
-      {/* Spotlight overlay - sweeps in and slightly darkens everything */}
-      <AnimatePresence>
-        {spotlightPhase !== 'none' && (
-          <motion.div
-            initial={{ opacity: 0, clipPath: 'circle(0% at 50% 50%)' }}
-            animate={{ 
-              opacity: 1,
-              clipPath: spotlightPhase === 'score' 
-                ? 'circle(30% at 50% 20%)'
-                : 'circle(25% at 50% 90%)'
-            }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 bg-black/40 pointer-events-none z-40"
-            style={{ backdropFilter: 'blur(2px)' }}
-          />
-        )}
-      </AnimatePresence>
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 py-12 sm:py-10 md:py-12 lg:py-16 pb-16 sm:pb-20 md:pb-24">
+
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 pt-20 sm:pt-10 md:pt-12 lg:pt-16 pb-16 sm:pb-20 md:pb-24">
 
         {/* Header Section - Mobile optimized */}
         <motion.div
@@ -409,7 +402,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Actor Name */}
           <h1 
             id="actor-name-header" 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 tracking-tight px-2"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 sm:mb-4 tracking-tight px-2"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             {performance.actor.name}
@@ -443,55 +436,68 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               animate={{ 
                 opacity: 1, 
                 y: 0,
-                scale: spotlightPhase === 'score' ? 1.05 : 1
+                scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
               }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+              transition={{ 
+                delay: 0.2, 
+                duration: 1.0,
+                times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
+                ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : 'easeOut'
+              }}
               className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
               style={{ marginTop: '0', marginBottom: '2rem' }}
             >
               <div 
-                className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-4 sm:py-4 md:py-5 shadow-2xl transition-all duration-700 overflow-hidden"
+                className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                 style={{
                   width: '100%',
-                  minHeight: '100px',
-                  background: spotlightPhase === 'score' 
-                    ? 'linear-gradient(135deg, rgba(255, 229, 92, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%)'
-                    : 'rgba(26, 26, 26, 0.8)',
-                  border: spotlightPhase === 'score'
-                    ? '2px solid rgba(255, 215, 0, 0.4)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                  boxShadow: spotlightPhase === 'score'
-                    ? '0 0 60px rgba(255, 215, 0, 0.6), 0 0 120px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)'
-                    : '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                  minHeight: '130px',
+                  background: 'rgba(26, 26, 26, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
                   transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
                   transformStyle: 'preserve-3d',
                 }}
               >
-                {/* Golden spotlight glow effect */}
-                {spotlightPhase === 'score' && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1.5, opacity: 1 }}
-                    className="absolute inset-0 rounded-3xl pointer-events-none"
-                    style={{
-                      background: 'radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%)',
-                      filter: 'blur(30px)',
-                    }}
-                  />
-                )}
+                {/* Score pulse effect - quick pulse animation */}
+                <AnimatePresence>
+                  {spotlightPhase === 'score' && (
+                    <motion.div
+                      initial={{ 
+                        scale: 0.9,
+                        opacity: 0,
+                      }}
+                      animate={{ 
+                        scale: [0.9, 1.15, 1.0],
+                        opacity: [0, 0.5, 0],
+                      }}
+                      exit={{
+                        opacity: 0,
+                      }}
+                      transition={{ 
+                        duration: 1.0,
+                        times: [0, 0.5, 1],
+                        ease: ['easeOut', 'easeIn'],
+                      }}
+                      className="absolute inset-0 pointer-events-none rounded-3xl"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 200, 0, 0.2) 40%, transparent 70%)',
+                        filter: 'blur(40px)',
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
                 <div className="relative text-center z-10">
                   <div 
-                    className="text-4xl sm:text-5xl md:text-6xl font-black mb-2 min-h-[3rem] sm:min-h-[3.5rem] flex items-center justify-center"
+                    className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
                       fontFamily: 'var(--font-cinzel), serif',
                       position: 'relative',
                     }}
                   >
                     {/* Lotto roll effect - numbers rolling from bottom to top */}
-                    <div className="relative inline-block overflow-hidden" style={{ minWidth: '80px', height: '3rem', lineHeight: '3rem' }}>
+                    <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
                       <AnimatePresence mode="wait">
                         <motion.span
                           key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
@@ -499,21 +505,30 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: -40, opacity: 0 }}
                           transition={{ duration: 0.1, ease: 'easeOut' }}
-                          className="inline-block text-4xl sm:text-5xl md:text-6xl"
+                          className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
+                            lineHeight: '1',
+                            verticalAlign: 'baseline',
                           }}
                         >
                           {isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
                         </motion.span>
                       </AnimatePresence>
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] ml-0.5 sm:ml-1">/10</span>
+                    <span 
+                      className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
+                      style={{
+                        verticalAlign: 'baseline',
+                      }}
+                    >
+                      /10
+                    </span>
                   </div>
-                  <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
+                  <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
                 </div>
               </div>
             </motion.div>
@@ -522,8 +537,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ 
-                opacity: spotlightPhase === 'score' ? 0.7 : 1,
-                filter: spotlightPhase === 'score' ? 'blur(1px)' : 'blur(0px)'
+                opacity: 1,
+                filter: 'blur(0px)'
               }}
               transition={{ delay: 0.1, duration: 0.6 }}
               className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
@@ -537,18 +552,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 `,
               }}
             >
-              {/* Decorative corner accents - properly positioned */}
-              <div 
-                className="absolute pointer-events-none"
-                style={{
-                  bottom: '-1px',
-                  right: '-1px',
-                  width: '120px',
-                  height: '120px',
-                  background: 'radial-gradient(ellipse at bottom right, rgba(255, 215, 0, 0.08) 0%, transparent 60%)',
-                  clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-                }}
-              />
+              {/* Decorative corner accent - top left only */}
               <div 
                 className="absolute pointer-events-none"
                 style={{
@@ -609,30 +613,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 />
               </div>
 
-              {/* Submit Button with spotlight - Mobile optimized, never blurred */}
+              {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
               <motion.div 
-                className="pt-4 sm:pt-6 relative z-50"
+                className="pt-4 sm:pt-6 relative"
                 style={{
                   filter: 'blur(0px)',
                   opacity: 1,
+                  zIndex: 60,
                 }}
                 animate={{
                   scale: spotlightPhase === 'button' ? 1.02 : 1,
                 }}
                 transition={{ duration: 0.6 }}
               >
-                {/* Golden spotlight glow on button - sweeps without disappearing */}
-                {spotlightPhase === 'button' && (
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1.2, opacity: 1 }}
-                    className="absolute inset-0 rounded-full pointer-events-none -z-10"
-                    style={{
-                      background: 'radial-gradient(ellipse 120% 100% at 50% 50%, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 40%, transparent 70%)',
-                      filter: 'blur(40px)',
-                    }}
-                  />
-                )}
                 <button
                   ref={buttonRef}
                   type="submit"
@@ -644,15 +637,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       : '#1a1a1a',
                     color: allSlidersTouched && !submitting ? '#000000' : '#525252',
                     boxShadow: allSlidersTouched && !submitting
-                      ? spotlightPhase === 'button'
-                        ? '0 0 60px rgba(255, 215, 0, 0.7), 0 0 100px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.5)'
-                        : '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
+                      ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
                       : 'none',
                     border: allSlidersTouched && !submitting ? 'none' : '1px solid #333',
                   }}
                 >
+                  {/* Button glow animation when spotlight phase is 'button' */}
+                  {spotlightPhase === 'button' && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: [0, 0.6, 0.3], scale: [0.95, 1.05, 1.0] }}
+                      transition={{ duration: 0.6, times: [0, 0.5, 1], ease: 'easeInOut' }}
+                      className="absolute inset-0 pointer-events-none rounded-full"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
+                        filter: 'blur(20px)',
+                      }}
+                    />
+                  )}
                   {/* White light sweep effect on hover */}
-                  {allSlidersTouched && !submitting && (
+                  {allSlidersTouched && !submitting && spotlightPhase !== 'button' && (
                     <span 
                       className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
                       style={{

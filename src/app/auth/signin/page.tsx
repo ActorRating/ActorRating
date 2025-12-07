@@ -10,8 +10,8 @@ import { LoginButton } from "@/components/auth/LoginButton"
 import supabase from "@/lib/supabaseClient"
 import { validateEmail, validatePassword } from "@/lib/validation"
 import { motion } from "framer-motion"
-import { fadeInUp, scaleIn } from "@/lib/animations"
-import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket } from "react-icons/fa"
+import { fadeInUp, fadeIn } from "@/lib/animations"
+import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket, FaArrowRight } from "react-icons/fa"
 import Link from "next/link"
 
 function SignInContent() {
@@ -165,13 +165,13 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-black relative overflow-hidden w-full" style={{ maxWidth: '100vw' }}>
       {/* Subtle Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
       
-      <div className="relative z-10 min-h-screen">
-          <div className="max-w-7xl mx-auto px-4">
+      <div className="relative z-10 min-h-screen w-full">
+          <div className="w-full px-4 sm:px-6 lg:px-8" style={{ maxWidth: '1280px', margin: '0 auto' }}>
             <div className="grid grid-cols-12 gap-8 min-h-screen">
             {/* Left Side - Elegant Branding */}
             <div className="hidden lg:flex lg:col-span-6">
@@ -198,7 +198,7 @@ function SignInContent() {
             {/* Right Side - Sign In Form */}
             <div className="col-span-12 lg:col-span-6 flex flex-col justify-center">
           <motion.div
-            variants={scaleIn}
+            variants={fadeIn}
             initial="hidden"
             animate="show"
             className="w-full max-w-md mx-auto"
@@ -225,7 +225,7 @@ function SignInContent() {
               
               {/* Glassmorphism Container - 3D Elevated */}
               <div 
-                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-2xl p-6 sm:p-8 transition-all duration-300" 
+                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[2rem] p-6 sm:p-8 transition-all duration-300" 
                 style={{ 
                   backdropFilter: 'blur(24px) saturate(180%)', 
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -336,25 +336,36 @@ function SignInContent() {
                   )}
 
                   {/* Sign In Button */}
-                  <Button
+                  <button
                     type="submit"
                     disabled={isLoading}
-                    variant="premium"
-                    size="lg"
-                    className="w-full group"
+                    className="w-full group px-8 py-4 rounded-full text-black text-lg font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      transform: 'scale(1)',
+                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.transform = 'scale(1.03)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
                   >
                     {isLoading ? (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="flex items-center justify-center gap-3">
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                         Signing In...
-                      </div>
+                      </span>
                     ) : (
-                      <>
-                        <FaRocket className="w-4 h-4 mr-2" />
+                      <span className="flex items-center justify-center gap-3 group">
                         Sign In
-                      </>
+                        <FaArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                      </span>
                     )}
-                  </Button>
+                  </button>
                 </form>
 
                 {/* Divider */}
@@ -386,7 +397,7 @@ function SignInContent() {
                     Don't have an account?{" "}
                     <Link 
                       href="/auth/signup" 
-                      className="text-[#FFD700] hover:text-white font-medium transition-colors"
+                      className="text-[#FFD700] hover:text-[#FFE55C] font-medium transition-colors"
                     >
                       Sign up
                     </Link>

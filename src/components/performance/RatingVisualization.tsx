@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, useReducedMotion } from 'framer-motion'
-import { staggerContainer, fadeInUp, getMotionProps } from '@/lib/animations'
+import { fadeInUp, getMotionProps, fadeIn } from '@/lib/animations'
 import { OscarCriteria } from '@/types/rating'
 
 interface RatingVisualizationProps {
@@ -98,7 +98,7 @@ export function RatingVisualization({
         </div>
       )}
       
-      <motion.div className="space-y-2" variants={staggerContainer} {...getMotionProps()}>
+      <motion.div className="space-y-2" {...getMotionProps()}>
         {Object.entries(criteria).map(([key, score]) => {
           const criterionConfig = CRITERIA_CONFIG[key as keyof typeof CRITERIA_CONFIG]
           const color = getScoreColor(score)
