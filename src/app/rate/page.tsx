@@ -209,13 +209,22 @@ function RatePageContent() {
 
   // Unified submit handler for the wrapper (handles both create and update)
   const handleWrapperSubmit = async (ratingData: {
-    emotionalRangeDepth: number
-    characterBelievability: number
+    emotionalDepth: number
+    believability: number
     technicalSkill: number
     screenPresence: number
-    chemistryInteraction: number
+    chemistry: number
   }) => {
     if (!actor || !movie) return
+
+    // Map the shorter field names to API field names
+    const apiRatingData = {
+      emotionalRangeDepth: ratingData.emotionalDepth,
+      characterBelievability: ratingData.believability,
+      technicalSkill: ratingData.technicalSkill,
+      screenPresence: ratingData.screenPresence,
+      chemistryInteraction: ratingData.chemistry,
+    }
 
     // If user is not signed in, redirect to signup with rating data
     if (!user) {
@@ -253,11 +262,11 @@ function RatePageContent() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            emotionalRangeDepth: ratingData.emotionalRangeDepth,
-            characterBelievability: ratingData.characterBelievability,
-            technicalSkill: ratingData.technicalSkill,
-            screenPresence: ratingData.screenPresence,
-            chemistryInteraction: ratingData.chemistryInteraction,
+            emotionalRangeDepth: apiRatingData.emotionalRangeDepth,
+            characterBelievability: apiRatingData.characterBelievability,
+            technicalSkill: apiRatingData.technicalSkill,
+            screenPresence: apiRatingData.screenPresence,
+            chemistryInteraction: apiRatingData.chemistryInteraction,
             comment: characterName || undefined,
             recaptchaToken,
           }),
@@ -274,11 +283,11 @@ function RatePageContent() {
         result = await ratingsApi.create({
           actorId: actor.id,
           movieId: movie.id,
-          emotionalRangeDepth: ratingData.emotionalRangeDepth,
-          characterBelievability: ratingData.characterBelievability,
-          technicalSkill: ratingData.technicalSkill,
-          screenPresence: ratingData.screenPresence,
-          chemistryInteraction: ratingData.chemistryInteraction,
+          emotionalRangeDepth: apiRatingData.emotionalRangeDepth,
+          characterBelievability: apiRatingData.characterBelievability,
+          technicalSkill: apiRatingData.technicalSkill,
+          screenPresence: apiRatingData.screenPresence,
+          chemistryInteraction: apiRatingData.chemistryInteraction,
           comment: characterName || undefined,
           recaptchaToken,
         })
