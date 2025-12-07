@@ -20,7 +20,9 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-    throw new ApiError(response.status, error.error || 'Request failed')
+    const errorMessage = error.error || error.debug || error.message || 'Request failed'
+    console.error('API Error:', { endpoint, status: response.status, error })
+    throw new ApiError(response.status, errorMessage)
   }
 
   return response.json()

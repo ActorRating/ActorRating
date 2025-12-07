@@ -250,6 +250,35 @@ function RatePageContent() {
     setSubmitting(true)
     setError(null)
     try {
+      // Validate rating data before sending
+      const validationErrors: string[] = []
+      if (isNaN(apiRatingData.emotionalRangeDepth) || apiRatingData.emotionalRangeDepth < 0 || apiRatingData.emotionalRangeDepth > 100) {
+        validationErrors.push('Emotional Range Depth must be between 0 and 100')
+      }
+      if (isNaN(apiRatingData.characterBelievability) || apiRatingData.characterBelievability < 0 || apiRatingData.characterBelievability > 100) {
+        validationErrors.push('Character Believability must be between 0 and 100')
+      }
+      if (isNaN(apiRatingData.technicalSkill) || apiRatingData.technicalSkill < 0 || apiRatingData.technicalSkill > 100) {
+        validationErrors.push('Technical Skill must be between 0 and 100')
+      }
+      if (isNaN(apiRatingData.screenPresence) || apiRatingData.screenPresence < 0 || apiRatingData.screenPresence > 100) {
+        validationErrors.push('Screen Presence must be between 0 and 100')
+      }
+      if (isNaN(apiRatingData.chemistryInteraction) || apiRatingData.chemistryInteraction < 0 || apiRatingData.chemistryInteraction > 100) {
+        validationErrors.push('Chemistry Interaction must be between 0 and 100')
+      }
+      
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join(', '))
+      }
+
+      console.log('Submitting rating with data:', {
+        actorId: actor.id,
+        movieId: movie.id,
+        ...apiRatingData,
+        hasRecaptcha: true
+      })
+
       const recaptchaToken = await executeRecaptcha('submit_rating')
 
       let result: Rating
@@ -274,7 +303,8 @@ function RatePageContent() {
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || 'Failed to update rating')
+          console.error('Update rating error:', { status: response.status, error: errorData })
+          throw new Error(errorData.error || errorData.debug || 'Failed to update rating')
         }
         
         result = await response.json()
@@ -298,7 +328,7 @@ function RatePageContent() {
       setSubmitted(true)
     } catch (err: any) {
       console.error('Failed to submit rating:', err)
-      const errorMessage = err?.response?.data?.error || 'Failed to submit rating. Please try again.'
+      const errorMessage = err?.message || err?.response?.data?.error || err?.response?.data?.debug || 'Failed to submit rating. Please try again.'
       setError(errorMessage)
     } finally {
       setSubmitting(false)
