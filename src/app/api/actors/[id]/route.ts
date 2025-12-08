@@ -77,7 +77,7 @@ export async function GET(
         screenPresence,
         chemistryInteraction
       `)
-      .eq('actorId', id)
+      .eq('actorId', actor.id)
       .order('createdAt', { ascending: false })
       .limit(1000)
 
