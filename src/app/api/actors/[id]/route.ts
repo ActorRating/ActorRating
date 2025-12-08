@@ -9,14 +9,30 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log("🎭 Fetching actor with ID:", id)
+    console.log("🎭 Fetching actor with ID or slug:", id)
     
-    // Fetch actor data from Supabase
-    const { data: actor, error: actorError } = await supabaseServer
+    // Try to fetch by slug first, then fallback to ID
+    let { data: actor, error: actorError } = await supabaseServer
       .from('Actor')
       .select('*')
-      .eq('id', id)
+      .eq('slug', id)
       .single()
+    
+    // If not found by slug, try by ID
+    if (actorError || !actor) {
+      const { data: actorById, error: idError } = await supabaseServer
+        .from('Actor')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (idError || !actorById) {
+        console.error("❌ Actor fetch error:", idError || actorError)
+        return NextResponse.json({ error: "Actor not found" }, { status: 404 })
+      }
+      actor = actorById
+      actorError = null
+    }
 
     if (actorError) {
       console.error("❌ Actor fetch error:", actorError)

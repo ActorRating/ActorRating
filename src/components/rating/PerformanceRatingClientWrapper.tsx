@@ -3,7 +3,6 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CelebrationConfetti } from '@/components/ui/Confetti'
 import { CheckCircle, Share2, Twitter, Facebook, Instagram } from 'lucide-react'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
@@ -233,7 +232,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>('idle')
-  const [showConfetti, setShowConfetti] = useState(false)
   const [finalScore, setFinalScore] = useState<number | null>(null)
 
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
@@ -413,10 +411,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setSubmitPhase('checkmark')
       }, checkmarkDelay)
       
-      // 1300ms: Confetti + fade transitions (ensure minimum 1300ms total)
+      // 1300ms: Fade transitions (ensure minimum 1300ms total)
       const successDelay = Math.max(0, 1300 - elapsed)
       setTimeout(() => {
-        setShowConfetti(true)
         setSubmitPhase('success')
         if (onSuccess) {
           onSuccess(ratingData)
@@ -426,7 +423,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     } catch (err) {
       console.error(err)
       setSubmitPhase('idle')
-      setShowConfetti(false)
     }
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
 
@@ -498,30 +494,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }
 
   const handleContinueRating = () => {
-    // Reset the success state and allow user to rate again
-    setSubmitPhase('idle')
-    setShowConfetti(false)
-    setFinalScore(null)
-    // Reset all sliders
-    setEmotionalRangeDepth(0)
-    setCharacterBelievability(0)
-    setTechnicalSkill(0)
-    setScreenPresence(0)
-    setChemistryInteraction(0)
-    setTouchedSliders({
-      emotionalRangeDepth: false,
-      characterBelievability: false,
-      technicalSkill: false,
-      screenPresence: false,
-      chemistryInteraction: false,
-    })
+    // Navigate to actor's page
+    router.push(`/actors/${performance.actor.id}`)
   }
 
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
-      {/* Confetti */}
-      <CelebrationConfetti active={showConfetti} duration={3000} />
-      
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -851,13 +829,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+              className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-3xl p-8 sm:p-12 max-w-md w-full border border-white/10 shadow-2xl"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-12 max-w-md w-full border border-white/10 shadow-2xl overflow-hidden"
+                style={{
+                  boxShadow: `
+                    0 35px 90px -20px rgba(0, 0, 0, 0.95),
+                    0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                    0 0 0 1px rgba(255, 255, 255, 0.06),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
+                  `,
+                }}
               >
                 {/* Checkmark */}
                 <motion.div
@@ -882,16 +869,55 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   Rating Submitted!
                 </motion.h2>
 
-                {/* Final Score */}
+                {/* Final Score - Matching rate page style */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
                   className="text-center mb-8"
                 >
-                  <div className="inline-block px-6 py-3 rounded-full bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/20 border border-[#FFD700]/30">
-                    <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500]">
-                      {finalScore}/10
+                  <div 
+                    className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
+                    style={{
+                      width: '240px',
+                      minHeight: '130px',
+                      background: 'rgba(26, 26, 26, 0.8)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                      transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
+                      transformStyle: 'preserve-3d',
+                    }}
+                  >
+                    <div className="relative text-center z-10">
+                      <div 
+                        className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
+                        style={{
+                          fontFamily: 'var(--font-cinzel), serif',
+                        }}
+                      >
+                        <span
+                          className="inline-block text-5xl sm:text-6xl md:text-7xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            lineHeight: '1',
+                            verticalAlign: 'baseline',
+                          }}
+                        >
+                          {finalScore}
+                        </span>
+                        <span 
+                          className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
+                          style={{
+                            verticalAlign: 'baseline',
+                          }}
+                        >
+                          /10
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
                     </div>
                   </div>
                 </motion.div>
@@ -901,47 +927,52 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="space-y-3"
+                  className="space-y-4"
                 >
                   <button
                     onClick={handleShare}
-                    className="w-full py-4 rounded-full bg-gradient-to-r from-[#FFE55C] to-[#FFD700] text-black font-bold text-lg hover:shadow-lg hover:shadow-[#FFD700]/50 transition-all duration-300 flex items-center justify-center gap-2"
+                    className="w-full py-4 sm:py-5 md:py-6 text-base sm:text-lg md:text-xl font-extrabold rounded-full transition-all duration-500 tracking-wider uppercase relative overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      color: '#000000',
+                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)',
+                    }}
                   >
-                    <Share2 className="w-5 h-5" />
+                    <Share2 className="w-5 h-5 inline-block mr-2" />
                     Share Your Rating
                   </button>
 
-                  {/* Social Media Buttons */}
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Social Media Buttons - Round on all screens */}
+                  <div className="flex gap-3 sm:gap-4 justify-center">
                     <button
                       onClick={() => handleSocialShare('twitter')}
-                      className="py-3 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center gap-1"
+                      className="w-12 h-12 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center"
+                      title="Share on Twitter"
                     >
-                      <Twitter className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm">Twitter</span>
+                      <Twitter className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleSocialShare('facebook')}
-                      className="py-3 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-1"
+                      className="w-12 h-12 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center"
+                      title="Share on Facebook"
                     >
-                      <Facebook className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm">Facebook</span>
+                      <Facebook className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleSocialShare('instagram')}
-                      className="py-3 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+                      className="w-12 h-12 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
+                      title="Share on Instagram"
                     >
-                      <Instagram className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm">Instagram</span>
+                      <Instagram className="w-5 h-5" />
                     </button>
                   </div>
 
-                  {/* Continue Rating Button */}
+                  {/* Rate Another Button */}
                   <button
                     onClick={handleContinueRating}
-                    className="w-full py-3 rounded-full bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors border border-white/20"
+                    className="w-full py-3 sm:py-4 rounded-full bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors border border-white/20"
                   >
-                    Continue Rating
+                    Rate Another
                   </button>
                 </motion.div>
               </motion.div>

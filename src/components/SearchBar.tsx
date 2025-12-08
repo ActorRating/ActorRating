@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { NewSearchResult } from '@/types'
 import Link from 'next/link'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
-import { fadeInUp, getMotionProps, fadeIn } from '@/lib/animations'
+import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (

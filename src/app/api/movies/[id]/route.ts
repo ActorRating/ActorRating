@@ -7,18 +7,29 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log("🎬 Fetching movie with ID:", id)
+    console.log("🎬 Fetching movie with ID or slug:", id)
     
-    // Fetch movie data from Supabase
-    const { data: movie, error: movieError } = await supabaseServer
+    // Try to fetch by slug first, then fallback to ID
+    let { data: movie, error: movieError } = await supabaseServer
       .from('Movie')
       .select('*')
-      .eq('id', id)
+      .eq('slug', id)
       .single()
-
-    if (movieError) {
-      console.error("❌ Movie fetch error:", movieError)
-      return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+    
+    // If not found by slug, try by ID (backwards compatibility)
+    if (movieError || !movie) {
+      const { data: movieById, error: idError } = await supabaseServer
+        .from('Movie')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (idError || !movieById) {
+        console.error("❌ Movie fetch error:", idError || movieError)
+        return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+      }
+      movie = movieById
+      movieError = null
     }
 
     console.log("🎬 Movie found:", movie.title)

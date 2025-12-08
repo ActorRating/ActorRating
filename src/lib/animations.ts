@@ -37,6 +37,18 @@ export const scaleIn: Variants = {
   },
 }
 
+// Stagger container for animating children in sequence
+export const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+}
+
 // Helper to apply once-on-view behavior consistently
 export function getMotionProps() {
   return {

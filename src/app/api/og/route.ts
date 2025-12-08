@@ -52,19 +52,43 @@ export async function GET(req: NextRequest) {
     const fg = '#FFFFFF'
     const gold = '#FFD700'
     const goldLight = '#FFE55C'
+    const scoreOutOf10 = (score / 10).toFixed(1)
 
-    // Success card style: Actor name at top, movie underneath, score underneath
+    // Shareable image: "I rated [Actor] a [Score]/10 in [Movie]"
+    // Using Cinzel font and proper styling - black background, gold accents
+    // Escape XML entities in text content
+    const escapeXml = (str: string) => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+    }
+    
+    const escapedActorName = escapeXml(actorName)
+    const escapedMovieTitle = escapeXml(movieTitle)
+    const centerY = dims.h / 2
+    
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&amp;display=swap');
+    </style>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:${goldLight};stop-opacity:1" />
+      <stop offset="50%" style="stop-color:${gold};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
   <rect width="100%" height="100%" fill="${bg}"/>
-  <foreignObject x="80" y="80" width="${dims.w - 160}" height="${dims.h - 160}">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;color:${fg};font-family:var(--font-cinzel),Georgia,serif;text-align:center;">
-      <div style="font-size:${size==='story'?96:size==='feed'?80:64}px;font-weight:800;line-height:1.2;margin-bottom:${size==='story'?48:32}px;color:${goldLight};">${actorName}</div>
-      <div style="font-size:${size==='story'?64:size==='feed'?56:48}px;font-weight:600;line-height:1.2;margin-bottom:${size==='story'?48:32}px;color:${fg};opacity:0.9;">${movieTitle}</div>
-      <div style="font-size:${size==='story'?120:size==='feed'?100:80}px;font-weight:900;line-height:1;color:${gold};background:linear-gradient(135deg, ${goldLight} 0%, ${gold} 50%, #FFA500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${(score/10).toFixed(1)}/10</div>
-      <div style="margin-top:${size==='story'?48:32}px;font-size:${size==='story'?32:24}px;opacity:0.6;">actorrating.com</div>
-    </div>
-  </foreignObject>
+  <text x="${dims.w/2}" y="${centerY - 180}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?56:size==='feed'?48:40}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">I rated</text>
+  <text x="${dims.w/2}" y="${centerY - 100}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?96:size==='feed'?80:64}" font-weight="800" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
+  <text x="${dims.w/2}" y="${centerY - 20}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?64:size==='feed'?56:48}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">a <tspan fill="${goldLight}">${scoreOutOf10}/10</tspan> in</text>
+  <text x="${dims.w/2}" y="${centerY + 60}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?80:size==='feed'?72:56}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedMovieTitle}</text>
+  <text x="${dims.w/2}" y="${centerY + 160}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?120:size==='feed'?100:80}" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10}/10</text>
+  <text x="${dims.w/2}" y="${centerY + 220}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?28:24}" fill="${fg}" opacity="0.6" text-anchor="middle">actorrating.com</text>
 </svg>`
 
     return new Response(svg, { status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' } })

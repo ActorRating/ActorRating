@@ -23,6 +23,7 @@ model RateLimit {
 model Actor {
   id           String        @id @default(cuid())
   name         String        @unique
+  slug         String?       @unique
   bio          String?
   imageUrl     String?
   birthDate    DateTime?
@@ -35,11 +36,13 @@ model Actor {
   ratings      Rating[]
 
   @@index([name])
+  @@index([slug])
 }
 
 model Movie {
   id           String        @id @default(cuid())
   title        String
+  slug         String?       @unique
   year         Int
   director     String?
   genre        String?
@@ -52,6 +55,7 @@ model Movie {
 
   @@unique([title, year])
   @@index([title])
+  @@index([slug])
 }
 
 model Performance {
