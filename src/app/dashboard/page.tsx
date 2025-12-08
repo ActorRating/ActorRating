@@ -27,6 +27,7 @@ const dominoContainer = {
 }
 // Removed icons to avoid runtime issues with missing exports in certain environments
 import { Calendar, Star, Film, ChevronDown, Pencil, Trash2, User } from "lucide-react"
+import { getActorUrl } from "@/lib/slugHelper"
 
 const ENABLE_SUGGESTED_RATINGS = false
 
@@ -43,6 +44,7 @@ interface Rating {
   actor: {
     id: string
     name: string
+    slug?: string | null
     imageUrl: string | null
   }
   movie: {
@@ -471,7 +473,7 @@ export default function DashboardPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-white text-lg leading-tight mb-1 group-hover:text-accent transition-colors">
-                            <Link href={`/actors/${rating.actor.id}`} className="hover:underline">
+                            <Link href={getActorUrl(rating.actor)} className="hover:underline">
                               {rating.actor.name}
                             </Link>
                           </h3>

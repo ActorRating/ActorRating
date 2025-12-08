@@ -1,6 +1,7 @@
 export interface Actor {
   id: string
   name: string
+  slug?: string | null
   bio?: string
   imageUrl?: string
   birthDate?: string
@@ -16,6 +17,7 @@ export interface Actor {
 export interface Movie {
   id: string
   title: string
+  slug?: string | null
   year: number
   director?: string
   genre?: string
@@ -109,12 +111,14 @@ export interface SearchResult {
 export interface SearchMovie {
   id: string
   title: string
+  slug?: string | null
   year: number
 }
 
 export interface SearchActor {
   id: string
   name: string
+  slug?: string | null
 }
 
 export interface NewSearchResult {

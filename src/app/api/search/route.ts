@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Search actors using Supabase
+    // Search actors using Supabase - include slug for URL generation
     console.log("👤 Searching actors for:", searchTerm)
     const { data: actors, error: actorsError } = await supabaseServer
       .from('Actor')
-      .select('id, name')
+      .select('id, name, slug')
       .ilike('name', `%${searchTerm}%`)
       .order('name')
       .limit(10)

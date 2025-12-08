@@ -11,6 +11,7 @@ import { Button } from '../ui/Button'
 import { RatingVisualization } from './RatingVisualization'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { fadeInUp, getMotionProps, scaleIn } from '@/lib/animations'
+import { getActorUrl } from '@/lib/slugHelper'
 
 interface PerformanceCardProps {
   performance: Performance
@@ -43,8 +44,11 @@ export function PerformanceCard({
   const cardRef = React.useRef<HTMLDivElement | null>(null)
   const prefetchedRef = React.useRef(false)
 
+  // Generate URLs - will use slugs if available, otherwise IDs
   const rateUrl = `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
-  const actorUrl = performance.actorId ? `/actors/${performance.actorId}` : null
+  const actorUrl = performance.actor && performance.actorId 
+    ? getActorUrl({ id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug })
+    : null
 
   const prefetchTargets = React.useCallback(() => {
     if (prefetchedRef.current) return

@@ -8,6 +8,7 @@ import { NewSearchResult } from '@/types'
 import Link from 'next/link'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
+import { getActorUrl } from '@/lib/slugHelper'
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (
@@ -259,7 +260,7 @@ export function SearchBar({
                       {suggestions.actors.slice(0, 10).map((actor) => (
                         <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
                           <PrefetchLink
-                            href={`/actors/${actor.id}`}
+                            href={getActorUrl(actor)}
                             onClick={handleSuggestionClick}
                             className="w-full text-left p-3 hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-3 cursor-pointer hover:underline"
                           >
