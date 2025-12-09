@@ -464,7 +464,7 @@ export default function ActorDetailPage() {
           transition={{ delay: 0.8 }}
           className="mt-12"
         >
-          <ActorRatingSection actorId={actorId} />
+          <ActorRatingSection actorId={actorId} actorName={actor.name} actorSlug={(actor as any).slug} />
         </motion.div>
       </div>
     </div>
