@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
     console.log('[PERFORMANCES API] Fetching performances from database...')
     const raw = await prisma.performance.findMany({
       include: {
-        actor: { select: { id: true, name: true, imageUrl: true } },
-        movie: { select: { id: true, title: true, year: true, director: true } },
+        actor: { select: { id: true, name: true, imageUrl: true, slug: true } },
+        movie: { select: { id: true, title: true, year: true, director: true, slug: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50, // Take only 50 to process, not 300
