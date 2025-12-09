@@ -496,19 +496,19 @@ function RatePageContent() {
             <div className="grid grid-cols-12 gap-6">
               {/* Header - Back button removed */}
               {ratingId && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
-                >
-                  <div className="text-center mb-4">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                      Edit Rating
-                    </h1>
-                    <p className="text-muted-foreground">
-                      Update your rating for {actor?.name} in "{movie?.title}"
-                    </p>
-                  </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
+              >
+                <div className="text-center mb-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                    Edit Rating
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Update your rating for {actor?.name} in "{movie?.title}"
+                  </p>
+                </div>
                 </motion.div>
               )}
 
@@ -564,7 +564,7 @@ function RatePageContent() {
               onSuccess={() => {
                 // Success animation is handled in the component
               }}
-            />
+                />
               </div>
             </div>
           </div>

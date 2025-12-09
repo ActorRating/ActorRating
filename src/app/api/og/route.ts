@@ -29,14 +29,14 @@ export async function GET(req: NextRequest) {
       username = 'You'
     } else if (ratingId) {
       // Lookup from database
-      const prismaAny = prisma as any
-      let rating: any = null
-      try {
-        rating = await prismaAny.rating.findFirst({
-          where: { id: ratingId },
-          include: { actor: true, movie: true, user: true },
-        })
-      } catch {}
+    const prismaAny = prisma as any
+    let rating: any = null
+    try {
+      rating = await prismaAny.rating.findFirst({
+        where: { id: ratingId },
+        include: { actor: true, movie: true, user: true },
+      })
+    } catch {}
 
       actorName = rating?.actor?.name || (ratingId === 'demo-123' ? 'Demo Actor' : 'Unknown Actor')
       movieTitle = rating?.movie?.title || (ratingId === 'demo-123' ? 'Demo Movie' : 'Unknown Movie')
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     const escapedActorName = escapeXml(actorName)
     const escapedMovieTitle = escapeXml(movieTitle)
     const centerY = dims.h / 2
-    
+
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
   <defs>

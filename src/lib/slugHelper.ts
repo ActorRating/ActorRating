@@ -54,15 +54,13 @@ export function getMovieUrl(movie: Movie): string {
 
 /**
  * Generate a rate page URL
- * Prefers new slug-based format, falls back to query params for backwards compatibility
+ * Always prefers new slug-based format, generates slugs on-the-fly if needed
  */
 export function getRateUrl(actor: Actor, movie: Movie): string {
-  // If both have slugs, use new format
-  if (actor.slug && movie.slug) {
-    return `/rate/${movie.slug}/${actor.slug}`
-  }
+  // Always use slug-based format
+  const actorSlugOrId = actor.slug || actor.id
+  const movieSlugOrId = movie.slug || movie.id
   
-  // Fallback to old query param format for backwards compatibility
-  return `/rate?actor=${actor.id}&movie=${movie.id}`
+  return `/rate/${movieSlugOrId}/${actorSlugOrId}`
 }
 

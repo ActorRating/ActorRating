@@ -181,13 +181,13 @@ export default function DashboardPage() {
     if (rating.actor.slug && rating.movie.slug) {
       router.push(`/rate/${rating.movie.slug}/${rating.actor.slug}?edit=true&rating=${rating.id}`)
     } else {
-      const params = new URLSearchParams({
-        actor: rating.actor.id,
-        movie: rating.movie.id,
-        rating: rating.id,
-        edit: 'true'
-      })
-      router.push(`/rate?${params.toString()}`)
+    const params = new URLSearchParams({
+      actor: rating.actor.id,
+      movie: rating.movie.id,
+      rating: rating.id,
+      edit: 'true'
+    })
+    router.push(`/rate?${params.toString()}`)
     }
   }
 

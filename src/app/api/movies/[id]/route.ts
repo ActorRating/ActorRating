@@ -15,7 +15,7 @@ export async function GET(
       .select('*')
       .eq('slug', id)
       .single()
-    
+
     // If not found by slug, try by ID (backwards compatibility)
     if (movieError || !movie) {
       const { data: movieById, error: idError } = await supabaseServer
@@ -26,7 +26,7 @@ export async function GET(
       
       if (idError || !movieById) {
         console.error("❌ Movie fetch error:", idError || movieError)
-        return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+      return NextResponse.json({ error: "Movie not found" }, { status: 404 })
       }
       movie = movieById
       movieError = null

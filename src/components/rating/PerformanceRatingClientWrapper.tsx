@@ -216,7 +216,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="flex justify-between mt-2 text-xs text-gray-500">
         <span>Weak</span>
         <span>Exceptional</span>
-      </div>
+    </div>
     </motion.div>
   )
 })
@@ -553,9 +553,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* Score Display - Responsive size, prevent cutoff */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
-                <motion.div
+            <motion.div
                   ref={scoreRef}
-                  initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -20 }}
                   animate={{ 
                     opacity: submitPhase === 'success' ? 0 : 1, 
                     y: submitPhase === 'success' ? -20 : 0,
@@ -570,7 +570,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
                   style={{ marginTop: '0', marginBottom: '2rem' }}
-                >
+            >
               <div 
                 className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                 style={{
@@ -655,15 +655,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
                 </div>
               </div>
-                </motion.div>
+            </motion.div>
               )}
             </AnimatePresence>
 
             {/* Rating Card - Extra round corners, mobile optimized */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: submitPhase === 'success' ? 0 : 1,
                     y: submitPhase === 'success' ? -20 : 0,
@@ -809,7 +809,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                      >
+                >
                         <CheckCircle className="w-5 h-5 text-black" />
                       </motion.div>
                     )}
@@ -819,7 +819,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </span>
                 </button>
               </motion.div>
-                </motion.div>
+            </motion.div>
               )}
             </AnimatePresence>
           </div>
