@@ -177,13 +177,18 @@ export default function DashboardPage() {
 
   const beginEdit = (rating: Rating) => {
     // Navigate to the rate page with the current rating values
-    const params = new URLSearchParams({
-      actor: rating.actor.id,
-      movie: rating.movie.id,
-      rating: rating.id,
-      edit: 'true'
-    })
-    router.push(`/rate?${params.toString()}`)
+    // Use slug-based URL if available
+    if (rating.actor.slug && rating.movie.slug) {
+      router.push(`/rate/${rating.movie.slug}/${rating.actor.slug}?edit=true&rating=${rating.id}`)
+    } else {
+      const params = new URLSearchParams({
+        actor: rating.actor.id,
+        movie: rating.movie.id,
+        rating: rating.id,
+        edit: 'true'
+      })
+      router.push(`/rate?${params.toString()}`)
+    }
   }
 
 

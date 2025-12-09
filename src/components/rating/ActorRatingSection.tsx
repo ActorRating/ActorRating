@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { formatScore } from "@/utils/ratingCalculator"
+import { getRateUrl } from "@/lib/slugHelper"
 
 interface UserRatingForActor {
   id: string
@@ -19,10 +20,11 @@ interface UserRatingForActor {
     title: string
     year: number
     director?: string
+    slug?: string | null
   }
 }
 
-export function ActorRatingSection({ actorId, actorName }: { actorId: string; actorName: string }) {
+export function ActorRatingSection({ actorId, actorName, actorSlug }: { actorId: string; actorName: string; actorSlug?: string | null }) {
   const user = useUser()
   const isLoadingUser = user === undefined
   const [userRatings, setUserRatings] = useState<UserRatingForActor[]>([])
@@ -95,7 +97,12 @@ export function ActorRatingSection({ actorId, actorName }: { actorId: string; ac
                 <div className="text-sm text-gray-400">{formatScore(calculateAverage(r))}/100 average</div>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link href={`/rate?actor=${actorId}&movie=${r.movie.id}`}>Edit Rating</Link>
+                <Link href={actorSlug && r.movie.slug
+                  ? getRateUrl(
+                      { id: actorId, name: actorName, slug: actorSlug },
+                      { id: r.movie.id, title: r.movie.title, year: r.movie.year, slug: r.movie.slug }
+                    )
+                  : `/rate?actor=${actorId}&movie=${r.movie.id}`}>Edit Rating</Link>
               </Button>
             </div>
           ))}

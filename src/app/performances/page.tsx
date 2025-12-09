@@ -9,6 +9,7 @@ import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
 import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import Link from "next/link"
+import { getRateUrl } from "@/lib/slugHelper"
 
 // Predefined performances to display (lookup by actor + movie)
 const RECENT_PERFORMANCE_TARGETS = [
@@ -565,7 +566,12 @@ function LandingPageCard({
   performance: PerformanceData
   index: number 
 }) {
-  const rateUrl = `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
+  const rateUrl = performance.actor && performance.movie && performance.actor.slug && performance.movie.slug
+    ? getRateUrl(
+        { id: performance.actorId, name: performance.actor.name, slug: performance.actor.slug },
+        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug }
+      )
+    : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
   const rating = performance.averageRating?.toFixed(1)
   const character = performance.character || "—"
 

@@ -67,6 +67,7 @@ export async function GET(
             title: true,
             year: true,
             director: true,
+            slug: true,
           },
         },
       },
