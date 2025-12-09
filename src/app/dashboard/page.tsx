@@ -4,35 +4,31 @@ export const dynamic = "force-dynamic"
 
 import { useUser, useSession } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
 import { AuthGuard } from "@/components/auth/AuthGuard"
-import { Button } from "@/components/ui/Button"
-import Link from "next/link"
 import { SearchBar } from "@/components/SearchBar"
 import { motion } from "framer-motion"
 import { fadeInUp } from "@/lib/animations"
-import { suggestionsApi } from "@/lib/api"
-import { PerformanceCard } from "@/components/performance/PerformanceCard"
-import { formatScore } from "@/utils/ratingCalculator"
-
-const dominoContainer = {
-  hidden: {},
-  show: {
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.06,
-    },
-  },
-}
-// Removed icons to avoid runtime issues with missing exports in certain environments
-import { Calendar, Star, Film, ChevronDown, Pencil, Trash2, User } from "lucide-react"
+import { Star, TrendingUp, Film } from "lucide-react"
+import Link from "next/link"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
+import { PerformanceCard } from "@/components/performance/PerformanceCard"
 
-const ENABLE_SUGGESTED_RATINGS = false
+interface Actor {
+  id: string
+  name: string
+  imageUrl?: string | null
+  slug?: string | null
+  _count?: {
+    performances: number
+  }
+}
 
 interface Rating {
   id: string
+  actorId: string
+  movieId: string
   emotionalRangeDepth: number
   characterBelievability: number
   technicalSkill: number
@@ -52,8 +48,19 @@ interface Rating {
     title: string
     year: number
     director: string
+    slug?: string | null
   }
 }
+
+// Popular actors - hardcoded for performance
+const POPULAR_ACTORS = [
+  { name: "Timothée Chalamet", id: "timothee-chalamet" },
+  { name: "Zendaya", id: "zendaya" },
+  { name: "Cillian Murphy", id: "cillian-murphy" },
+  { name: "Emma Stone", id: "emma-stone" },
+  { name: "Florence Pugh", id: "florence-pugh" },
+  { name: "Austin Butler", id: "austin-butler" }
+]
 
 export default function DashboardPage() {
   const user = useUser()
@@ -61,623 +68,213 @@ export default function DashboardPage() {
   const router = useRouter()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  // Pagination state
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState<boolean>(true)
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false)
-  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const [popularActors, setPopularActors] = useState<Actor[]>([])
 
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [suggestedPerformances, setSuggestedPerformances] = useState<Array<{
-    id: string
-    actorId: string
-    movieId: string
-    ratingsCount: number
-    comment?: string | null
-    actor: { id: string; name: string; imageUrl: string | null }
-    movie: { id: string; title: string; year: number; director: string | null }
-  }>>([])
-  const [suggestionsAnimKey, setSuggestionsAnimKey] = useState(0)
-  const [showAllRecent, setShowAllRecent] = useState(false)
-
-  // Wait until session is fully initialized and user is available
   useEffect(() => {
-    if (!isInitialized) return
-    if (!user || !session) {
-      router.replace("/auth/signin")
-      return
+    if (user && isInitialized) {
+      fetchUserData()
+    } else if (isInitialized && !sessionLoading) {
+      setIsLoadingData(false)
     }
-  }, [user, session, isInitialized, router])
+  }, [user, sessionLoading, isInitialized])
 
-  // Only fetch data when session is fully loaded and user exists
-  // This prevents 401 errors by ensuring session is established before API calls
-  useEffect(() => {
-    if (isInitialized && user && session && session.access_token) {
-      fetchUserRatings()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, user, session])
-
-  const fetchUserRatings = async () => {
+  const fetchUserData = async () => {
     try {
       setIsLoadingData(true)
-      const response = await fetch("/api/user/ratings?limit=20", { cache: "no-store" })
-
-      if (response.status === 401) {
-        router.push("/auth/signin")
-        return
+      
+      // Fetch user ratings
+      const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
+      if (ratingsRes.ok) {
+        const ratingsData = await ratingsRes.json()
+        setRatings(ratingsData.slice(0, 6)) // Only show 6 most recent
       }
 
-      let data: any = null
-      try {
-        data = await response.json()
-      } catch (_) {
-        // ignore JSON parse errors; we'll fall back below
+      // Fetch popular actors
+      const actorsRes = await fetch('/api/actors/popular?limit=6', { cache: 'no-store' })
+      if (actorsRes.ok) {
+        const actorsData = await actorsRes.json()
+        setPopularActors(actorsData)
       }
-
-      if (!response.ok) {
-        setError(data?.error || "We couldn’t load your data. Please try again.")
-        setRatings([])
-        return
-      }
-      if (Array.isArray(data?.items)) {
-        setRatings(data.items)
-        setCursor(data?.nextCursor ?? null)
-        setHasMore(Boolean(data?.nextCursor))
-      } else if (Array.isArray(data?.ratings)) {
-        // Backward compatibility
-        setRatings(data.ratings)
-        setCursor(null)
-        setHasMore(false)
-      } else {
-        setRatings([])
-        setCursor(null)
-        setHasMore(false)
-      }
-    } catch (err) {
-      console.error("Error fetching ratings:", err)
-      setError("We couldn’t load your data. Please try again.")
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
     } finally {
       setIsLoadingData(false)
     }
   }
 
-  const loadMore = useCallback(async () => {
-    if (!hasMore || isLoadingMore || !cursor) return
-    try {
-      setIsLoadingMore(true)
-      const response = await fetch(`/api/user/ratings?limit=20&cursor=${encodeURIComponent(cursor)}`, { cache: "no-store" })
-      const data = await response.json().catch(() => ({}))
-      if (Array.isArray(data?.items)) {
-        setRatings(prev => [...prev, ...data.items])
-        setCursor(data?.nextCursor ?? null)
-        setHasMore(Boolean(data?.nextCursor))
-      } else {
-        setHasMore(false)
-      }
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [cursor, hasMore, isLoadingMore])
-
-  // Infinite scroll via IntersectionObserver
-  useEffect(() => {
-    if (!loadMoreRef.current) return
-    const el = loadMoreRef.current
-    const observer = new IntersectionObserver((entries) => {
-      const first = entries[0]
-      if (first.isIntersecting) {
-        loadMore()
-      }
-    }, { rootMargin: "1200px 0px 1200px 0px" })
-    observer.observe(el)
-    return () => observer.unobserve(el)
-  }, [loadMore])
-
-  const beginEdit = (rating: Rating) => {
-    // Navigate to the rate page with the current rating values
-    // Use slug-based URL if available
-    if (rating.actor.slug && rating.movie.slug) {
-      router.push(`/rate/${rating.movie.slug}/${rating.actor.slug}?edit=true&rating=${rating.id}`)
-    } else {
-    const params = new URLSearchParams({
-      actor: rating.actor.id,
-      movie: rating.movie.id,
-      rating: rating.id,
-      edit: 'true'
-    })
-    router.push(`/rate?${params.toString()}`)
-    }
-  }
-
-
-
-  // Fetch suggested performances (popular, trending, related mix)
-  useEffect(() => {
-    if (!ENABLE_SUGGESTED_RATINGS) return
-    const fetchSuggestions = async () => {
-      try {
-        const data = await suggestionsApi.getPerformances()
-        if (Array.isArray(data?.items)) {
-          setSuggestedPerformances(data.items.slice(0, 6))
-        } else {
-          setSuggestedPerformances([])
-        }
-      } catch (e) {
-        setSuggestedPerformances([])
-      }
-    }
-    fetchSuggestions()
-  }, [])
-
-  // Retrigger domino animation whenever suggestions data arrives/changes
-  useEffect(() => {
-    if (!ENABLE_SUGGESTED_RATINGS) return
-    if (suggestedPerformances.length > 0) {
-      setSuggestionsAnimKey((k) => k + 1)
-    }
-  }, [suggestedPerformances])
-
-  const deleteRating = async (id: string) => {
-    if (!confirm("Delete this rating? This cannot be undone.")) return
-    setDeletingId(id)
-    try {
-      const response = await fetch(`/api/ratings/${id}`, { method: "DELETE" })
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to delete rating")
-      }
-      // Optimistically remove or refetch
-      setRatings(prev => prev.filter(r => r.id !== id))
-    } catch (e) {
-      console.error("Failed to delete rating:", e)
-      alert(e instanceof Error ? e.message : "Failed to delete rating")
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  const displayScoreFor = (rating: Rating): number => {
-    if (typeof rating.weightedScore === "number" && !Number.isNaN(rating.weightedScore)) {
-      return rating.weightedScore
-    }
+  const calculateAverage = (rating: Rating) => {
     return (
       (rating.emotionalRangeDepth +
         rating.characterBelievability +
         rating.technicalSkill +
         rating.screenPresence +
         rating.chemistryInteraction) / 5
-    )
+    ).toFixed(1)
   }
-
-  const overallAverage = useMemo(() => {
-    if (!ratings.length) return 0
-    const sum = ratings.reduce((acc, r) => acc + displayScoreFor(r), 0)
-    return sum / ratings.length
-  }, [ratings])
-
-  const uniqueActorsCount = useMemo(() => new Set(ratings.map(r => r.actor.id)).size, [ratings])
-
-  const recentRatings = ratings
-  const displayedRecentRatings = showAllRecent ? recentRatings : recentRatings.slice(0, 4)
-
-  // Show loading state while session is being initialized
-  if (!isInitialized || sessionLoading) {
-    return (
-      <SignedInLayout>
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative">
-              <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto mb-4" />
-              <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-primary/10 mx-auto" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">Initializing session</h2>
-            <p className="text-sm text-muted-foreground">Please wait while we verify your authentication...</p>
-          </div>
-        </div>
-      </SignedInLayout>
-    )
-  }
-
-  // Show loading state while data is being fetched
-  if (isLoadingData) {
-    return (
-      <SignedInLayout>
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative">
-              <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto mb-4" />
-              <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-primary/10 mx-auto" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">Loading your dashboard</h2>
-            <p className="text-sm text-muted-foreground">Preparing your performance ratings...</p>
-          </div>
-        </div>
-      </SignedInLayout>
-    )
-  }
-
 
   return (
-    <AuthGuard requireAuth={true}>
+    <AuthGuard>
       <SignedInLayout>
-      <div className="min-h-screen">
-        <div className="relative overflow-hidden">
-          <div className="relative max-w-6xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16 lg:py-20">
-            
-            {/* Welcome Section */}
+        <div className="min-h-screen bg-black">
+          {/* Hero Section */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-center mb-16 sm:mb-20 lg:mb-24"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
             >
-              <h1 className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8">
-                Dashboard
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6">
+                <span className="bg-gradient-to-r from-[#FFD700] via-[#FFC700] to-[#FFD700] bg-clip-text text-transparent">
+                  Welcome Back
+                </span>
               </h1>
-              <p className="text-gray-400 text-lg sm:text-lg lg:text-xl mb-6 sm:mb-8 lg:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
-                Rate performances and discover exceptional acting
-              </p>
-              
-              {/* Search Bar */}
-              <div className="max-w-lg mx-auto mb-6 sm:mb-8 px-4">
-                <SearchBar 
-                  placeholder="Search actors, movies..." 
-                  onSearch={(query) => {
-                    if (query.trim()) {
-                      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Quick Action */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Button asChild variant="premium" size="lg" className="feedback-button-shadow">
-                  <Link href="/search" className="flex items-center justify-center gap-2">
-                    <Star className="w-5 h-5" />
-                    Rate a Performance
-                  </Link>
-                </Button>
-              </motion.div>
+              <p className="text-xl text-gray-400">Rate performances, discover actors, share your taste</p>
             </motion.div>
 
-            {/* Stats Cards */}
-            {ratings.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16 lg:mb-20"
-              >
-                {/* Average Score */}
-                <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
-                  <Star className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-400 mx-auto mb-3 fill-current" />
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-yellow-400 mb-2">
-                    {formatScore(overallAverage)}
-                  </div>
-                  <div className="text-sm sm:text-base text-yellow-300/80 font-medium">
-                    Avg Score
-                  </div>
-                </div>
-
-                {/* Total Ratings */}
-                <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
-                  <Film className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400 mx-auto mb-3" />
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-blue-400 mb-2">
-                    {ratings.length}
-                  </div>
-                  <div className="text-sm sm:text-base text-blue-300/80 font-medium">
-                    Rating{ratings.length === 1 ? '' : 's'}
-                  </div>
-                </div>
-
-                {/* Unique Actors */}
-                <div className="bg-accent/20 border border-accent/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center backdrop-blur-sm">
-                  <User className="w-6 h-6 sm:w-7 sm:h-7 text-accent mx-auto mb-3" />
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-accent mb-2">
-                    {uniqueActorsCount}
-                  </div>
-                  <div className="text-sm sm:text-base text-accent/80 font-medium">
-                    Actor{uniqueActorsCount === 1 ? '' : 's'}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-
-
-
-          {/* Recent ratings */}
-          {error ? (
+            {/* Search Bar */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-              className="text-center py-16 bg-secondary/50 border border-border rounded-lg mx-4 sm:mx-6"
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="max-w-3xl mx-auto mb-16"
             >
-              <Film className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-300 mb-6">
-                {error}
-              </p>
-              <Button variant="outline" onClick={fetchUserRatings}>
-                Try Again
-              </Button>
+              <SearchBar
+                placeholder="Search for actors..."
+                showClear
+                autoFocus={false}
+                className="w-full"
+              />
             </motion.div>
-          ) : ratings.length === 0 ? (
+          </div>
+
+          {/* Popular Actors */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 }}
-              className="text-center py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-secondary/80 via-secondary/60 to-secondary/40 border border-border/50 rounded-2xl backdrop-blur-sm mx-2 sm:mx-4 lg:mx-6"
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div className="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <Star className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-400 fill-current" />
+              <div className="flex items-center gap-3 mb-8">
+                <TrendingUp className="w-6 h-6 text-[#FFD700]" />
+                <h2 className="text-3xl font-bold text-white">Popular Actors</h2>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 px-4">Ready to start rating?</h3>
-              <p className="text-gray-300 mb-6 sm:mb-8 max-w-md mx-auto text-base sm:text-lg px-4">
-                Discover incredible performances and share your perspective with the community.
-              </p>
-              <div className="px-4">
-                <Button asChild variant="premium" size="lg" className="w-full sm:w-auto max-w-xs mx-auto sm:mx-0">
-                  <Link href="/search" className="flex items-center justify-center gap-2 px-4 py-3 text-sm sm:text-base">
-                    <Star className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Start Rating
-                  </Link>
-                </Button>
-              </div>
-            </motion.div>
-          ) : (
-            <section className="px-4 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="mb-8"
-              >
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                    Your Ratings
-                  </h2>
-                  {ratings.length > 4 && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowAllRecent(prev => !prev)}
-                      className="text-gray-400 hover:text-white text-sm"
-                      aria-expanded={showAllRecent}
-                      aria-controls="recent-ratings-list"
+
+              {isLoadingData ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="aspect-square bg-gray-800 rounded-2xl mb-3"></div>
+                      <div className="h-4 bg-gray-800 rounded w-3/4 mx-auto"></div>
+                    </div>
+                  ))}
+                      </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                  {(popularActors.length > 0 ? popularActors : POPULAR_ACTORS).map((actor, index) => (
+                    <motion.div
+                      key={actor.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
                     >
-                      {showAllRecent ? 'Show less' : 'View all'}
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-              <motion.ul 
-                id="recent-ratings-list" 
-                className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-start" 
-                variants={dominoContainer} 
-                initial="hidden" 
-                animate="show"
-              >
-                {displayedRecentRatings.map((rating, index) => (
-                  <motion.li 
-                    variants={fadeInUp} 
-                    key={`rating-${rating.id}`} 
-                    className="group relative bg-secondary/80 backdrop-blur-sm border border-border/50 rounded-xl sm:rounded-2xl p-5 sm:p-6 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 self-start"
-                  >
-                    {/* Subtle background glow on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02] rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    
-                    <div className="relative z-10">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white text-lg leading-tight mb-1 group-hover:text-accent transition-colors">
-                            <Link href={getActorUrl(rating.actor)} className="hover:underline">
-                              {rating.actor.name}
-                            </Link>
-                          </h3>
-                          <p className="text-sm text-gray-400 flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-blue-400" />
-                            <span>in "{rating.movie.title}" ({rating.movie.year})</span>
-                          </p>
-                        </div>
-                        
-                        {/* Rating Score */}
-                        <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 rounded-xl px-3 py-2 text-center flex-shrink-0 backdrop-blur-sm">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current mx-auto mb-1" />
-                          <div className="text-lg font-bold text-yellow-400">
-                            {displayScoreFor(rating).toFixed(1)}
-                          </div>
-                        </div>
-                      </div>
-
-                    {/* Character and Movie Info */}
-                    <div className="space-y-2 mb-4">
-                      {/* Movie Badge */}
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent/30 bg-accent/10 backdrop-blur-sm">
-                        <Film className="w-3 h-3 text-accent flex-shrink-0" />
-                        <span className="font-medium text-accent text-sm">
-                          "{rating.movie.title}"
-                        </span>
-                      </div>
-                      
-                      {/* Character Info */}
-                      {rating.comment && rating.comment.trim().length > 0 && (
-                        (() => {
-                          const raw = rating.comment
-                          let text = raw.split(/,\s*Director:/i)[0]
-                          text = text.replace(/^\s*(Character\s*[:\-]\s*)/i, '')
-                          text = text.replace(/^\s*as\s+/i, '')
-                          text = text.replace(/^"|"$/g, '')
-                          text = text.trim()
-                          
-                          // Extract director info if present
-                          const directorMatch = raw.match(/,\s*Director:\s*(.+)/i)
-                          const director = directorMatch ? directorMatch[1].trim() : null
-                          
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {text && (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 backdrop-blur-sm">
-                                  <span className="font-medium text-blue-300 text-sm">Character: {text}</span>
-                                </div>
-                              )}
-                              {director && (
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-500/30 bg-green-500/10 backdrop-blur-sm">
-                                  <span className="font-medium text-green-300 text-sm">Director: {director}</span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })()
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                      <div className="text-xs text-gray-400">
-                        {new Date(rating.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-accent hover:bg-accent/10 transition-all"
-                          onClick={() => beginEdit(rating)}
-                          aria-label="Edit rating"
-                          title="Edit rating"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                          onClick={() => deleteRating(rating.id)}
-                          disabled={deletingId === rating.id}
-                          aria-label="Delete rating"
-                          title="Delete rating"
-                        >
-                          {deletingId === rating.id ? (
-                            <div className="h-3.5 w-3.5 animate-spin rounded-full border border-gray-400 border-t-transparent" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Expanded Details Button */}
-                    <div className="w-full mt-3">
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const detailsDiv = e.currentTarget.nextElementSibling as HTMLElement
-                          const chevron = e.currentTarget.querySelector('svg')
-                          if (detailsDiv && chevron) {
-                            const isExpanded = detailsDiv.style.display === 'block'
-                            detailsDiv.style.display = isExpanded ? 'none' : 'block'
-                            chevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
-                          }
-                        }}
-                        className="w-full cursor-pointer text-xs text-gray-400 hover:text-gray-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-gray-700/30 transition-all"
+                      <Link
+                        href={getActorUrl({ id: actor.id, name: actor.name, slug: actor.slug || null })}
+                        className="group block"
                       >
-                        <span>View Detailed Scores</span>
-                        <ChevronDown className="w-3 h-3 transition-transform duration-200" />
-                      </button>
-                      <div className="mt-3 pt-3 border-t border-border/30" style={{ display: 'none' }}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {[
-                            { key: 'emotionalRangeDepth', label: 'Emotional Range', value: rating.emotionalRangeDepth },
-                            { key: 'characterBelievability', label: 'Believability', value: rating.characterBelievability },
-                            { key: 'technicalSkill', label: 'Performance Quality', value: rating.technicalSkill },
-                            { key: 'screenPresence', label: 'Screen Presence', value: rating.screenPresence },
-                            { key: 'chemistryInteraction', label: 'Chemistry', value: rating.chemistryInteraction },
-                          ].map(criterion => (
-                            <div key={criterion.key} className="bg-background/50 rounded-lg p-2 text-center border border-border/30">
-                              <div className="text-lg font-bold text-gray-300 mb-1">{criterion.value}</div>
-                              <div className="text-xs text-gray-400 font-medium">{criterion.label}</div>
-                            </div>
-                          ))}
+                        <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
+                          {(actor as Actor).imageUrl ? (
+                            <img
+                              src={(actor as Actor).imageUrl || ''}
+                              alt={actor.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl font-bold text-gray-600">
+                              {actor.name.charAt(0)}
+                            </span>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                    </div>
-                  </motion.li>
-                ))}
-              </motion.ul>
-              {/* Load more sentinel (only when expanded) */}
-              {showAllRecent && hasMore && (
-                <div ref={loadMoreRef} className="mt-12 flex items-center justify-center">
-                  <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50 border border-border/50">
-                    <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    <span className="text-sm text-muted-foreground">Loading more ratings...</span>
-                  </div>
+                        <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
+                          {actor.name}
+                        </p>
+                      </Link>
+                    </motion.div>
+                  ))}
                 </div>
               )}
-            </section>
-           )}
-
-          {/* Suggested ratings */}
-          {ENABLE_SUGGESTED_RATINGS && (
-            <section className="mt-12 px-4 sm:px-6">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl sm:text-2xl font-medium text-foreground" style={{ fontFamily: 'var(--font-dm-serif-display)' }}>Suggested ratings</h2>
-                <Link href="/search" className="text-sm text-primary hover:underline">Explore more</Link>
-              </div>
-              <motion.ul key={suggestionsAnimKey} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" variants={dominoContainer} initial="hidden" animate="show">
-                {suggestedPerformances.map((item) => {
-                  const perf = {
-                    id: item.id,
-                    actorId: item.actorId,
-                    movieId: item.movieId,
-                    emotionalRangeDepth: 50,
-                    characterBelievability: 50,
-                    technicalSkill: 50,
-                    screenPresence: 50,
-                    chemistryInteraction: 50,
-                    // Hide comment to avoid showing director or character on suggested cards
-                    comment: undefined,
-                    user: { name: '', email: '' },
-                    actor: { name: item.actor.name, imageUrl: item.actor.imageUrl ?? undefined },
-                    movie: { title: item.movie.title, year: item.movie.year },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  }
-                  return (
-                    <motion.li variants={fadeInUp} key={`suggestion-perf-${item.id}`} className="">
-                      <PerformanceCard
-                        performance={perf as any}
-                        variant="compact"
-                        ratingCount={item.ratingsCount}
-                        averageRating={typeof (item as any).averageScore === 'number' ? (item as any).averageScore : undefined}
-                        performanceType={null as any}
-                        className="bg-muted/60 border border-border"
-                        onClick={() => {
-                          // SPA navigate to keep it smooth; prefetch handled by card
-                          const rateUrl = item.actor && item.movie && item.actor.slug && item.movie.slug
-                            ? `/rate/${item.movie.slug}/${item.actor.slug}`
-                            : `/rate?actor=${encodeURIComponent(item.actorId)}&movie=${encodeURIComponent(item.movieId)}`
-                          router.push(rateUrl)
-                        }}
-                      />
-                    </motion.li>
-                  )
-                })}
-              </motion.ul>
-            </section>
-          )}
+            </motion.div>
           </div>
-        </div>
-        {/* Bottom padding for better spacing */}
-        <div className="h-16 sm:h-20"></div>
+
+          {/* Recent Ratings */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex items-center gap-3 mb-8">
+                <Star className="w-6 h-6 text-[#FFD700]" />
+                <h2 className="text-3xl font-bold text-white">Your Recent Ratings</h2>
+              </div>
+
+              {isLoadingData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-64 bg-gray-800 rounded-2xl"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : ratings.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {ratings.map((rating, index) => (
+                    <motion.div
+                      key={rating.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.3 + index * 0.05 }}
+                    >
+                      <PerformanceCard
+                        performance={{
+                          id: rating.id,
+                          actorId: rating.actorId,
+                          movieId: rating.movieId,
+                          actor: rating.actor,
+                          movie: rating.movie,
+                          userId: user?.id || '',
+                          emotionalRangeDepth: rating.emotionalRangeDepth,
+                          characterBelievability: rating.characterBelievability,
+                          technicalSkill: rating.technicalSkill,
+                          screenPresence: rating.screenPresence,
+                          chemistryInteraction: rating.chemistryInteraction,
+                          comment: rating.comment,
+                          character: rating.comment,
+                          createdAt: rating.createdAt,
+                          updatedAt: rating.createdAt,
+                        }}
+                        averageRating={parseFloat(calculateAverage(rating))}
+                        variant="default"
+                        className="h-full"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-xl text-gray-400 mb-6">You haven't rated any performances yet</p>
+                  <Link
+                    href="/search"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#FFD700] text-black rounded-lg hover:bg-[#FFC700] transition font-medium"
+                  >
+                    <Star className="w-5 h-5" />
+                    Start Rating
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          </div>
       </div>
     </SignedInLayout>
     </AuthGuard>
