@@ -27,7 +27,7 @@ const dominoContainer = {
 }
 // Removed icons to avoid runtime issues with missing exports in certain environments
 import { Calendar, Star, Film, ChevronDown, Pencil, Trash2, User } from "lucide-react"
-import { getActorUrl } from "@/lib/slugHelper"
+import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 
 const ENABLE_SUGGESTED_RATINGS = false
 
@@ -657,7 +657,10 @@ export default function DashboardPage() {
                         className="bg-muted/60 border border-border"
                         onClick={() => {
                           // SPA navigate to keep it smooth; prefetch handled by card
-                          router.push(`/rate?actor=${encodeURIComponent(item.actorId)}&movie=${encodeURIComponent(item.movieId)}`)
+                          const rateUrl = item.actor && item.movie && item.actor.slug && item.movie.slug
+                            ? `/rate/${item.movie.slug}/${item.actor.slug}`
+                            : `/rate?actor=${encodeURIComponent(item.actorId)}&movie=${encodeURIComponent(item.movieId)}`
+                          router.push(rateUrl)
                         }}
                       />
                     </motion.li>

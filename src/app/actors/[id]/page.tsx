@@ -14,6 +14,7 @@ import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { ActorRatingSection } from '@/components/rating/ActorRatingSection'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { Rating } from '@/types'
+import { getRateUrl } from '@/lib/slugHelper'
 
 interface Actor {
   id: string
@@ -438,7 +439,12 @@ export default function ActorDetailPage() {
                         size="sm"
                         className="text-sm px-4 py-2 font-medium min-w-[80px] h-9"
                       >
-                        <Link href={`/rate?actor=${actorId}&movie=${performance.movie.id}`} className="flex items-center justify-center gap-1.5">
+                        <Link href={performance.movie && actor
+                          ? getRateUrl(
+                              { id: actorId, name: actor.name, slug: (actor as any).slug },
+                              { id: performance.movie.id, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+                            )
+                          : `/rate?actor=${actorId}&movie=${performance.movie.id}`} className="flex items-center justify-center gap-1.5">
                           <Star className="w-4 h-4" />
                           {hasUserRating ? "Edit" : "Rate"}
                         </Link>

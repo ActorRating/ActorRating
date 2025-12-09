@@ -153,7 +153,12 @@ export function PerformanceListItem({
             variant="premium"
             size="sm"
           >
-            <Link href={`/rate?actor=${performance.actorId}&movie=${performance.movieId}`}>
+            <Link href={performance.actor && performance.movie
+              ? getRateUrl(
+                  { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
+                  { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+                )
+              : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`}>
               <Play className="w-3 h-3" />
             </Link>
           </Button>

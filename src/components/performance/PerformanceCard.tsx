@@ -11,7 +11,7 @@ import { Button } from '../ui/Button'
 import { RatingVisualization } from './RatingVisualization'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { fadeInUp, getMotionProps, scaleIn } from '@/lib/animations'
-import { getActorUrl } from '@/lib/slugHelper'
+import { getActorUrl, getRateUrl } from '@/lib/slugHelper'
 
 interface PerformanceCardProps {
   performance: Performance
@@ -45,10 +45,17 @@ export function PerformanceCard({
   const prefetchedRef = React.useRef(false)
 
   // Generate URLs - will use slugs if available, otherwise IDs
-  const rateUrl = `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
+  // Generate URLs using slug helpers
   const actorUrl = performance.actor && performance.actorId 
     ? getActorUrl({ id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug })
     : null
+  
+  const rateUrl = performance.actor && performance.movie
+    ? getRateUrl(
+        { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
+        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+      )
+    : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
 
   const prefetchTargets = React.useCallback(() => {
     if (prefetchedRef.current) return
@@ -285,7 +292,7 @@ export function PerformanceCard({
           size={variant === 'compact' ? 'sm' : 'md'}
           className="flex-1"
         >
-          <Link href={`/rate?actor=${performance.actorId}&movie=${performance.movieId}`}>
+          <Link href={rateUrl}>
             {ratingCount > 0 ? 'Rate This' : 'Be the first to rate'}
           </Link>
         </Button>

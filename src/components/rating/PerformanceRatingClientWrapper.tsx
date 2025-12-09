@@ -427,7 +427,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
 
   // Share functionality
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}` : ''
+  const shareUrl = typeof window !== 'undefined' 
+    ? (performance.actor.slug && performance.movie.slug
+        ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
+        : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`)
+    : ''
   const shareText = finalScore !== null 
     ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating? ${shareUrl}`
     : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}" ${shareUrl}`
