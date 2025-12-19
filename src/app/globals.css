@@ -137,6 +137,7 @@ body {
 
 
 
+
 /* Legacy button styles (keeping for compatibility) */
 .cta-premium-outline {
   background: rgba(10, 10, 12, 0.8) !important;
@@ -311,14 +312,29 @@ html {
 }
 
 /* Better scroll snap for performance cards */
-.performance-scroll-container {
+.performance-scroll-container,
+.recent-scroll-container {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scroll-padding: 0 1rem;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  /* Hardware acceleration for smooth scrolling */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Remove transitions on mobile for smoother scrolling */
+@media (max-width: 1023px) {
+  .performance-card-mobile {
+    transition: none !important;
+  }
 }
 
 @media (min-width: 1024px) {
-  .performance-scroll-container {
+  .performance-scroll-container,
+  .recent-scroll-container {
     scroll-snap-type: none;
   }
 }
@@ -816,12 +832,6 @@ nav {
   display: none;
 }
 
-/* Performance optimization for scroll-triggered animations */
-.performance-scroll-container {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scroll-padding: 0;
-}
 
 /* Optimize animation performance */
 @media (prefers-reduced-motion: no-preference) {

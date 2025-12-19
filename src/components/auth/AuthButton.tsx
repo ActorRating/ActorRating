@@ -37,7 +37,7 @@ export function AuthButton() {
       })
       if (error) console.error(error)
     }}>
-      Sign In
+      Sign Up
     </Button>
   )
 } 

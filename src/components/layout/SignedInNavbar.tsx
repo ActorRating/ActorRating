@@ -8,51 +8,12 @@ import { usePathname } from 'next/navigation'
 import { Logo } from '../ui/Logo'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { User, Settings, LogOut, Home, Search } from 'lucide-react'
+import { User, Home, Search } from 'lucide-react'
 
 export function SignedInNavbar() {
   const user = useUser()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLDivElement>(null)
-  const [menuTop, setMenuTop] = useState<number>(0)
-  const [menuRight, setMenuRight] = useState<number>(0)
-  const portalMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const targetNode = event.target as Node
-      const clickedInsideTrigger = !!menuRef.current && menuRef.current.contains(targetNode)
-      const clickedInsidePortalMenu = !!portalMenuRef.current && portalMenuRef.current.contains(targetNode)
-      if (clickedInsideTrigger || clickedInsidePortalMenu) return
-      setIsMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  useEffect(() => {
-    if (!isMenuOpen || !triggerRef.current) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    const verticalOffset = 8
-    const menuWidth = 176 // w-44
-    setMenuTop(rect.bottom + verticalOffset)
-    setMenuRight(Math.max(8, window.innerWidth - rect.right))
-
-    const handleResize = () => {
-      const r = triggerRef.current!.getBoundingClientRect()
-      setMenuTop(r.bottom + verticalOffset)
-      setMenuRight(Math.max(8, window.innerWidth - r.right))
-    }
-    window.addEventListener('resize', handleResize)
-    window.addEventListener('scroll', handleResize, true)
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      window.removeEventListener('scroll', handleResize, true)
-    }
-  }, [isMenuOpen])
 
   useEffect(() => {
     setMounted(true)
@@ -91,73 +52,107 @@ export function SignedInNavbar() {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <Button 
-                noMotion
-                variant={pathname === "/dashboard" ? "default" : "ghost"} 
-                size="sm"
+          <div className="flex items-center space-x-3">
+            <Link href="/dashboard" className="group">
+              <button
+                className={`
+                  relative px-4 py-2 rounded-xl border border-transparent 
+                  bg-[#1a1a1a] 
+                  backdrop-blur-xl overflow-hidden transition-all duration-300
+                  ${pathname === "/dashboard" 
+                    ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
+                    : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
+                  }
+                `}
+                style={{
+                  boxShadow: pathname === "/dashboard" ? `
+                    0 15px 40px -10px rgba(0, 0, 0, 0.8),
+                    0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  ` : `
+                    0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                  `,
+                }}
                 aria-label="Home"
               >
-                <Home className="w-4 h-4" />
-              </Button>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                </div>
+                <Home className={`w-4 h-4 relative z-10 transition-colors duration-200 ${pathname === "/dashboard" ? 'text-[#FFD700]' : 'text-gray-400 group-hover:text-[#FFD700]'}`} />
+              </button>
             </Link>
-            <Link href="/search">
-              <Button 
-                noMotion
-                variant={pathname === "/search" ? "default" : "ghost"} 
-                size="sm"
+            <Link href="/search" className="group">
+              <button
+                className={`
+                  relative px-4 py-2 rounded-xl border border-transparent 
+                  bg-[#1a1a1a] 
+                  backdrop-blur-xl overflow-hidden transition-all duration-300
+                  ${pathname === "/search" 
+                    ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
+                    : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
+                  }
+                `}
+                style={{
+                  boxShadow: pathname === "/search" ? `
+                    0 15px 40px -10px rgba(0, 0, 0, 0.8),
+                    0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  ` : `
+                    0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                  `,
+                }}
                 aria-label="Search"
               >
-                <Search className="w-4 h-4" />
-              </Button>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                </div>
+                <Search className={`w-4 h-4 relative z-10 transition-colors duration-200 ${pathname === "/search" ? 'text-[#FFD700]' : 'text-gray-400 group-hover:text-[#FFD700]'}`} />
+              </button>
             </Link>
 
-            {/* Profile dropdown */}
-            <div className="relative" ref={menuRef}>
-              <Button
-                noMotion
-                variant={pathname === "/profile" ? "default" : "ghost"}
-                size="sm"
-                className="rounded-full px-3"
-                onClick={() => setIsMenuOpen((v) => !v)}
+            {/* Profile button */}
+            <Link href="/profile" className="group">
+              <button
+                className={`
+                  relative px-3 py-2 rounded-xl border border-transparent 
+                  bg-[#1a1a1a] 
+                  backdrop-blur-xl overflow-hidden transition-all duration-300
+                  ${pathname === "/profile" 
+                    ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
+                    : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
+                  }
+                `}
+                style={{
+                  boxShadow: pathname === "/profile" ? `
+                    0 15px 40px -10px rgba(0, 0, 0, 0.8),
+                    0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  ` : `
+                    0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                  `,
+                }}
               >
-                <span className="flex items-center gap-2" ref={triggerRef}>
-                  <User className="w-4 h-4" />
-                  <span className="text-sm">Profile</span>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                </div>
+                <span className="flex items-center gap-2 relative z-10">
+                  <User className={`w-4 h-4 transition-colors duration-200 ${pathname === "/profile" ? 'text-[#FFD700]' : 'text-gray-400 group-hover:text-[#FFD700]'}`} />
+                  <span className={`text-sm transition-colors duration-200 ${pathname === "/profile" ? 'text-[#FFD700]' : 'text-gray-300 group-hover:text-[#FFD700]'}`}>Profile</span>
                 </span>
-              </Button>
-
-              {isMenuOpen && typeof window !== 'undefined' && createPortal(
-                <div
-                  ref={portalMenuRef}
-                  className="fixed w-44 rounded-lg border border-border bg-secondary shadow-lg z-[100]"
-                  style={{ top: menuTop, right: menuRight }}
-                >
-                  <div className="py-1">
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false)
-                        handleLogout()
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Log out
-                    </button>
-                  </div>
-                </div>,
-                document.body
-              )}
-            </div>
+              </button>
+            </Link>
           </div>
         </div>
       </div>

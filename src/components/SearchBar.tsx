@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -39,7 +40,22 @@ const IconFilm = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
+// Debounce utility function - optimized for instant UI updates
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
 
+  return (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+    timeout = setTimeout(() => {
+      func(...args)
+    }, wait)
+  }
+}
 
 interface SearchBarProps {
   placeholder?: string
@@ -66,26 +82,29 @@ export function SearchBar({
   const [loading, setLoading] = useState(false)
   const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
-  const [hasAnimatedOnce, setHasAnimatedOnce] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<AbortController | null>(null)
 
-  // Throttled search for suggestions (updates continuously while typing)
-  const throttledSearch = useCallback(
-    throttle(async (searchQuery: string, shouldShowSuggestions: boolean) => {
-      const q = searchQuery.trim()
-      if (!q || q.length < 2 || !shouldShowSuggestions) {
-        if (controllerRef.current) controllerRef.current.abort()
-        setSuggestions(null)
-        setShowSuggestionsDropdown(false)
-        return
-      }
+  // Debounced search for suggestions - optimized for instant appearance
+  const performSearch = useCallback(async (searchQuery: string, shouldShowSuggestions: boolean) => {
+    const q = searchQuery.trim()
+    if (!q || q.length < 2 || !shouldShowSuggestions) {
+      if (controllerRef.current) controllerRef.current.abort()
+      setSuggestions(null)
+      setShowSuggestionsDropdown(false)
+      return
+    }
 
       // Make dropdown visible while loading
       setShowSuggestionsDropdown(true)
       setLoading(true)
+      setHasSearched(false)
       try {
         if (controllerRef.current) controllerRef.current.abort()
         const controller = new AbortController()
@@ -93,39 +112,93 @@ export function SearchBar({
         const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
         if (!response.ok) {
           setSuggestions(null)
+          setHasSearched(true)
           return
         }
         const data = await response.json()
         setSuggestions(data)
+        setHasSearched(true)
         if (!hasFetchedOnce) setHasFetchedOnce(true)
       } catch (error: any) {
         if (error?.name === 'AbortError') return
         console.error('Search failed:', error)
         setSuggestions(null)
+        setHasSearched(true)
       } finally {
         setLoading(false)
       }
-    }, 200, { leading: true, trailing: true }),
-    [hasFetchedOnce]
+  }, [hasFetchedOnce])
+
+  const debouncedSearch = useMemo(
+    () => debounce(performSearch, 150),
+    [performSearch]
   )
 
+  // Update dropdown position when input changes or window scrolls/resizes
+  const updateDropdownPosition = useCallback(() => {
+    if (inputRef.current && containerRef.current) {
+      const inputRect = inputRef.current.getBoundingClientRect()
+      const containerRect = containerRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: inputRect.bottom + window.scrollY + 8,
+        left: containerRect.left + window.scrollX,
+        width: containerRect.width
+      })
+    }
+  }, [])
+
   useEffect(() => {
-    if (query.trim() && query.trim().length >= 2) {
-      // Ensure dropdown is visible while typing
+    if (showSuggestionsDropdown) {
+      updateDropdownPosition()
+      window.addEventListener('scroll', updateDropdownPosition, true)
+      window.addEventListener('resize', updateDropdownPosition)
+      return () => {
+        window.removeEventListener('scroll', updateDropdownPosition, true)
+        window.removeEventListener('resize', updateDropdownPosition)
+      }
+    }
+  }, [showSuggestionsDropdown, updateDropdownPosition])
+
+  useEffect(() => {
+    if (query.trim() && query.trim().length >= 2 && showSuggestions && showSuggestionsDropdown) {
+      updateDropdownPosition()
+    }
+  }, [query, showSuggestionsDropdown, showSuggestions, updateDropdownPosition])
+
+  useEffect(() => {
+    if (query.trim() && query.trim().length >= 2 && showSuggestions) {
+      // Show dropdown instantly while typing (before API call completes)
       setShowSuggestionsDropdown(true)
-      throttledSearch(query, showSuggestions)
+      debouncedSearch(query, showSuggestions)
+      // Reset highlighted index when query changes (will be set to 0 when suggestions arrive)
+      setHighlightedIndex(-1)
     } else {
       setSuggestions(null)
       setShowSuggestionsDropdown(false)
+      setHighlightedIndex(-1)
     }
-  }, [query, throttledSearch, showSuggestions])
+  }, [query, debouncedSearch, showSuggestions])
 
-  // Mark that we've animated once when the dropdown is first shown
+  // Update highlighted index when suggestions change - always highlight first suggestion
   useEffect(() => {
-    if (showSuggestionsDropdown && !hasAnimatedOnce) {
-      setHasAnimatedOnce(true)
+    if (suggestions?.actors && suggestions.actors.length > 0) {
+      // Always highlight the first suggestion
+      setHighlightedIndex(0)
+    } else {
+      setHighlightedIndex(-1)
     }
-  }, [showSuggestionsDropdown, hasAnimatedOnce])
+  }, [suggestions])
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && dropdownRef.current) {
+      const highlightedElement = dropdownRef.current.querySelector(`[data-highlight-index="${highlightedIndex}"]`)
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      }
+    }
+  }, [highlightedIndex])
+
 
 
 
@@ -150,6 +223,7 @@ export function SearchBar({
     setQuery('')
     setSuggestions(null)
     setShowSuggestionsDropdown(false)
+    setHighlightedIndex(-1)
     if (onSearch) {
       onSearch('')
     }
@@ -158,20 +232,78 @@ export function SearchBar({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      // If we have suggestions and they're visible, keep the dropdown open
-      // Otherwise, proceed with the normal flow
-      if (suggestions && hasResults && showSuggestionsDropdown) {
-        // Keep dropdown open to show results
-        return
-      }
-      
+    e.stopPropagation()
+    
+    const actors = suggestions?.actors?.slice(0, 10) || []
+    
+    // If we have suggestions and a highlighted one, navigate to that actor
+    if (actors.length > 0 && highlightedIndex >= 0 && highlightedIndex < actors.length && actors[highlightedIndex]) {
+      const selectedActor = actors[highlightedIndex]
+      setQuery(selectedActor.name)
       setShowSuggestionsDropdown(false)
+      setHighlightedIndex(-1)
+      router.push(getActorUrl(selectedActor))
+      return
+    }
+    
+    // If no suggestions but query exists, navigate to search page
+    if (query.trim() && actors.length === 0) {
+      setShowSuggestionsDropdown(false)
+      setHighlightedIndex(-1)
       if (onSearch) {
         onSearch(query.trim())
       } else {
         router.push(`/search?q=${encodeURIComponent(query.trim())}`)
       }
+      return
+    }
+    
+    // If input is empty, do nothing
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const actors = suggestions?.actors?.slice(0, 10) || []
+    const maxIndex = actors.length - 1
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        e.stopPropagation()
+        if (showSuggestionsDropdown && actors.length > 0) {
+          setHighlightedIndex((prev) => {
+            if (prev < maxIndex) {
+              return prev + 1
+            }
+            return prev
+          })
+        }
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        e.stopPropagation()
+        if (showSuggestionsDropdown && actors.length > 0) {
+          setHighlightedIndex((prev) => {
+            if (prev <= 0) {
+              return -1
+            }
+            return prev - 1
+          })
+        }
+        break
+      case 'Enter':
+        e.preventDefault()
+        e.stopPropagation()
+        handleSubmit(e as any)
+        break
+      case 'Escape':
+        e.preventDefault()
+        e.stopPropagation()
+        setShowSuggestionsDropdown(false)
+        setHighlightedIndex(-1)
+        break
+      default:
+        // For other keys, don't prevent default
+        break
     }
   }
 
@@ -185,22 +317,72 @@ export function SearchBar({
   const hasResults = totalSuggestions > 0
 
   return (
-    <div className={cn("relative", className)}>
-      <form onSubmit={handleSubmit}>
+    <div ref={containerRef} className={cn("relative", className)}>
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        handleSubmit(e)
+      }}>
         <div className="relative">
-          <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+          <IconSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <input
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              setIsFocused(true)
-              // Warm suggestions cache on first focus using current query if present
-              if (query.trim().length >= 2 && !loading) {
-                throttledSearch(query, showSuggestions)
+            onChange={(e) => {
+              const newValue = e.target.value
+              setQuery(newValue)
+              
+              // Show dropdown instantly when typing (optimistic UI)
+              if (newValue.trim().length >= 2 && showSuggestions) {
+                setShowSuggestionsDropdown(true)
+              } else {
+                setShowSuggestionsDropdown(false)
               }
             }}
+            onClick={(e) => {
+              // Also trigger scroll on click
+              e.preventDefault()
+              requestAnimationFrame(() => {
+                if (inputRef.current) {
+                  const inputRect = inputRef.current.getBoundingClientRect()
+                  const currentScroll = window.scrollY || window.pageYOffset
+                  const inputTop = inputRect.top + currentScroll
+                  const viewportHeight = window.innerHeight
+                  const targetScroll = inputTop - (viewportHeight / 3)
+                  
+                  window.scrollTo({
+                    top: Math.max(0, targetScroll),
+                    behavior: 'smooth'
+                  })
+                }
+              })
+            }}
+            onFocus={(e) => {
+              setIsFocused(true)
+              
+              // Smooth scroll to position search bar in upper third of screen
+              requestAnimationFrame(() => {
+                if (inputRef.current) {
+                  const inputRect = inputRef.current.getBoundingClientRect()
+                  const currentScroll = window.scrollY || window.pageYOffset
+                  const inputTop = inputRect.top + currentScroll
+                  const viewportHeight = window.innerHeight
+                  const targetScroll = inputTop - (viewportHeight / 3)
+                  
+                  window.scrollTo({
+                    top: Math.max(0, targetScroll),
+                    behavior: 'smooth'
+                  })
+                }
+              })
+              
+              // Warm suggestions cache on first focus using current query if present
+              if (query.trim().length >= 2 && !loading && showSuggestions) {
+                debouncedSearch(query, showSuggestions)
+                setShowSuggestionsDropdown(true)
+              }
+            }}
+            onKeyDown={handleKeyDown}
             onBlur={() => {
               // Delay blur to allow clicking on dropdown items
               setTimeout(() => setIsFocused(false), 150)
@@ -208,7 +390,7 @@ export function SearchBar({
             placeholder={placeholder}
             autoFocus={autoFocus}
             className={cn(
-              "w-full pl-10 pr-10 py-3 bg-background border border-border rounded-2xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200",
+              "w-full pl-12 pr-10 py-3 bg-background border border-border rounded-2xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200",
               isFocused && "border-primary/50"
             )}
           />
@@ -229,63 +411,96 @@ export function SearchBar({
         </div>
       </form>
 
-            {/* Suggestions Dropdown */}
-      <AnimatePresence>
-        {showSuggestionsDropdown && query.trim().length >= 2 && (
-          <motion.div
-            ref={dropdownRef}
-            initial={hasAnimatedOnce ? false : { opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 border border-border rounded-xl shadow-2xl max-h-96 overflow-y-auto bg-black"
-            style={{ 
-              zIndex: 999999,
-              position: 'absolute'
-            }}
-          >
+            {/* Suggestions Dropdown - Optimized for instant appearance */}
+      {typeof window !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
+            <motion.div
+              ref={dropdownRef}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.1, ease: 'easeOut' }}
+              className="fixed border border-white/10 rounded-[2rem] shadow-2xl max-h-96 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl z-[9999] overflow-hidden"
+              style={{ 
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
+                position: 'fixed',
+                zIndex: 9999,
+                boxShadow: `
+                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                  0 0 0 1px rgba(255, 255, 255, 0.05),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                `,
+              }}
+            >
+            <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center">
-                <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p className="text-sm text-white">Searching...</p>
+              <div className="p-6 text-center">
+                <div className="animate-spin w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full mx-auto mb-3"></div>
+                <p className="text-sm text-gray-300">Searching...</p>
+              </div>
+            ) : !hasSearched ? (
+              <div className="p-6 text-center">
+                <div className="animate-spin w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full mx-auto mb-3"></div>
+                <p className="text-sm text-gray-300">Searching...</p>
               </div>
             ) : hasResults ? (
               <motion.div className="p-2" initial={{}} animate={{}}>
                 {/* Actors */}
                 {suggestions?.actors && suggestions.actors.length > 0 && (
-                  <div className="mb-4">
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                  <div className="mb-2">
+                    <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                       Actors
                     </div>
                     <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                      {suggestions.actors.slice(0, 10).map((actor) => (
-                        <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
-                          <PrefetchLink
-                            href={getActorUrl(actor)}
-                            onClick={handleSuggestionClick}
-                            className="w-full text-left p-3 hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-3 cursor-pointer hover:underline"
-                          >
-                            <IconUser className="w-4 h-4 text-accent flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-white truncate">
-                                {actor.name}
+                      {suggestions.actors.slice(0, 10).map((actor, index) => {
+                        const isHighlighted = highlightedIndex === index
+                        return (
+                          <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
+                            <PrefetchLink
+                              href={getActorUrl(actor)}
+                              onClick={handleSuggestionClick}
+                              onMouseEnter={() => setHighlightedIndex(index)}
+                              data-highlight-index={index}
+                              className={cn(
+                                "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 cursor-pointer group relative",
+                                isHighlighted ? "bg-[#1a1a1a]/50" : "hover:bg-[#1a1a1a]/30"
+                              )}
+                            >
+                              {/* Vertical bar indicator for highlighted item */}
+                              {isHighlighted && (
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
+                              )}
+                              <IconUser className={cn(
+                                "w-4 h-4 flex-shrink-0 transition-colors",
+                                isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
+                              )} />
+                              <div className="flex-1 min-w-0">
+                                <div className={cn(
+                                  "truncate transition-all",
+                                  isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
+                                )}>
+                                  {actor.name}
+                                </div>
                               </div>
-                            </div>
-                          </PrefetchLink>
-                        </motion.div>
-                      ))}
+                            </PrefetchLink>
+                          </motion.div>
+                        )
+                      })}
                     </motion.div>
                   </div>
                 )}
 
-
-
-
                 {/* View All Results */}
-                <div className="border-t border-border pt-2">
+                <div className="border-t border-white/10 pt-2 mt-2">
                   <motion.div variants={fadeInUp}>
                     <PrefetchLink
                     href={`/search?q=${encodeURIComponent(query)}`}
-                    className="block w-full text-center p-3 text-sm text-primary hover:bg-gray-800 rounded-lg transition-colors"
+                    className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
                     onClick={() => setShowSuggestionsDropdown(false)}
                     >
                     View all {totalSuggestions} results
@@ -293,58 +508,18 @@ export function SearchBar({
                   </motion.div>
                 </div>
               </motion.div>
-            ) : query.trim() && !loading && !hasResults ? (
-              <div className="p-4 text-center">
+            ) : hasSearched && !loading && !hasResults ? (
+              <div className="p-6 text-center">
                 <p className="text-sm text-white">No results found</p>
-                <p className="text-xs text-gray-300 mt-1">Try different keywords</p>
+                <p className="text-xs text-gray-400 mt-1">Try different keywords</p>
               </div>
             ) : null}
+            </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
     </div>
   )
-}
-
-// Throttle utility function
-function throttle<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-  options?: { leading?: boolean; trailing?: boolean }
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
-  let lastCall = 0
-  let lastArgs: Parameters<T> | null = null
-  const leading = options?.leading !== false
-  const trailing = options?.trailing !== false
-
-  const invoke = (args: Parameters<T>) => {
-    lastCall = Date.now()
-    func(...args)
-  }
-
-  return (...args: Parameters<T>) => {
-    const now = Date.now()
-    if (!lastCall && !leading) lastCall = now
-    const remaining = wait - (now - lastCall)
-    lastArgs = args
-
-    if (remaining <= 0 || remaining > wait) {
-      if (timeout) {
-        clearTimeout(timeout)
-        timeout = null
-      }
-      invoke(args)
-    } else if (trailing && !timeout) {
-      timeout = setTimeout(() => {
-        timeout = null
-        if (!leading) {
-          lastCall = 0
-        } else {
-          lastCall = Date.now()
-        }
-        if (lastArgs) invoke(lastArgs)
-      }, remaining)
-    }
-  }
 }

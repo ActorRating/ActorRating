@@ -340,7 +340,12 @@ export default function PerformancesPage() {
                         {recentPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center lg:cursor-pointer"
+                            style={{
+                              /* Hardware acceleration for smooth scrolling */
+                              transform: 'translateZ(0)',
+                              WebkitTransform: 'translateZ(0)',
+                            }}
                             onClick={() => {
                               if (window.innerWidth >= 1024) {
                                 const element = document.querySelectorAll('.recent-scroll-container > div')[index] as HTMLElement
@@ -647,7 +652,7 @@ function LandingPageCard({
           <div className="mt-auto pt-4">
             <Link href={rateUrl}>
               <button 
-                className="w-full px-8 py-4 rounded-full text-black text-base font-extrabold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
                 style={{
                   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 }}

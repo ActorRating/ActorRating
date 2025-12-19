@@ -75,28 +75,44 @@ export function HomeNavbar() {
               </div>
             ) : user ? (
               <div className="flex items-center gap-2">
-                <Link href="/dashboard">
-                  <Button noMotion variant="outline" size="sm" className="navbar-button">
-                    Dashboard
-                  </Button>
+                <Link href="/dashboard" className="group">
+                  <button
+                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]"
+                    style={{
+                      boxShadow: `
+                        0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                      `,
+                    }}
+                  >
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                    </div>
+                    <span className="text-sm text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10">Dashboard</span>
+                  </button>
                 </Link>
-                <Button 
-                  noMotion
-                  onClick={() => handleLogout()} 
-                  variant="outline" 
-                  size="sm"
-                  className="navbar-button"
+                <button
+                  onClick={() => handleLogout()}
+                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group"
+                  style={{
+                    boxShadow: `
+                      0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                    `,
+                  }}
                 >
-                  Sign Out
-                </Button>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                  </div>
+                  <span className="text-sm text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10">Sign Out</span>
+                </button>
               </div>
             ) : (
-              <Link href="/auth/signup">
-                <Button 
-                  noMotion 
-                  variant="outline" 
-                  size="sm" 
-                  className="navbar-button navbar-signin rounded-full"
+              <Link href="/auth/signup" className="group">
+                <button
+                  className="relative px-6 py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)]"
                   style={{
                     boxShadow: `
                       0 15px 40px -10px rgba(0, 0, 0, 0.8),
@@ -109,8 +125,11 @@ export function HomeNavbar() {
                     transformStyle: 'preserve-3d',
                   }}
                 >
-                  Sign In
-                </Button>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10">Sign Up</span>
+                </button>
               </Link>
             )}
           </div>

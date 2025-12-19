@@ -202,9 +202,9 @@ export function Header({
             {user ? (
               <UserMenu />
             ) : (
-              <Link href="/auth/signin">
+              <Link href="/auth/signup">
                 <Button variant="outline" size="sm">
-                  Sign in
+                  Sign Up
                 </Button>
               </Link>
             )}

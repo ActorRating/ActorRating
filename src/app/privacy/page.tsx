@@ -3,9 +3,9 @@
 export const dynamic = "force-dynamic"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/Button"
-import { Globe, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { HomeLayout } from "@/components/layout"
 
 export default function PrivacyPage() {
   const [language, setLanguage] = useState<"en" | "tr">("en")
@@ -55,13 +55,13 @@ export default function PrivacyPage() {
         },
         {
           title: "5. Data Sharing and Third Parties",
-          content: "We may share your data with the following third parties:",
+          content: "We may share your data with the following third parties. We only share data necessary for the operation of our Service:",
           list: [
-            "Google (for authentication via Google Sign-In)",
-            "Cloud service providers (for data storage and processing)",
-            "Analytics services (for understanding platform usage)",
-            "Legal authorities (when required by law)",
-            "Service providers (for technical support and maintenance)"
+            "Google (for authentication via Google Sign-In) - See Google's Privacy Policy: https://policies.google.com/privacy",
+            "Vercel (for hosting and infrastructure) - See Vercel's Privacy Policy: https://vercel.com/legal/privacy-policy",
+            "Supabase (for database and backend services) - See Supabase's Privacy Policy: https://supabase.com/privacy",
+            "Legal authorities (when required by law or to protect our rights)",
+            "Service providers (for technical support and maintenance, bound by confidentiality agreements)"
           ]
         },
         {
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           list: [
             "Right of access: Request information about your personal data",
             "Right of rectification: Correct inaccurate or incomplete data",
-            "Right of erasure: Request deletion of your personal data",
+            "Right of erasure: Request deletion of your personal data (see Account Deletion below)",
             "Right to restrict processing: Limit how we use your data",
             "Right to data portability: Receive your data in a structured format",
             "Right to object: Object to processing based on legitimate interests",
@@ -89,13 +89,24 @@ export default function PrivacyPage() {
           ]
         },
         {
-          title: "8. Cookies and Tracking",
-          content: "We use cookies and similar technologies to:",
+          title: "7.1. Account Deletion",
+          content: "You can delete your account and all associated data at any time through the following methods:",
           list: [
-            "Maintain your login session",
-            "Remember your preferences and settings",
-            "Analyze platform usage and performance",
-            "Ensure security and prevent fraud"
+            "Account Settings: Navigate to your profile settings and select 'Delete Account'",
+            "Email Request: Send a deletion request to contact@actorrating.com with your account email",
+            "Data Export: Before deletion, you can export your data from your profile page",
+            "Processing Time: Account deletion is processed within 30 days of your request",
+            "Retention Exceptions: Some data may be retained longer if required by law (e.g., transaction records for tax purposes)"
+          ]
+        },
+        {
+          title: "8. Cookies and Tracking",
+          content: "We use cookies and similar technologies categorized as follows:",
+          list: [
+            "Essential Cookies: Required for the Service to function (e.g., maintaining your login session, security features). These cannot be disabled.",
+            "Functional Cookies: Remember your preferences and settings to enhance your experience.",
+            "Analytics Cookies: Help us understand platform usage and performance to improve our services. These are anonymized and aggregated.",
+            "Security Cookies: Ensure security and prevent fraud, including reCAPTCHA for bot prevention."
           ]
         },
         {
@@ -107,6 +118,17 @@ export default function PrivacyPage() {
             "Access controls and authentication measures",
             "Employee training on data protection",
             "Incident response procedures"
+          ]
+        },
+        {
+          title: "9.1. Data Breach Notification",
+          content: "In the event of a data breach that may affect your personal data, we will:",
+          list: [
+            "Notify relevant supervisory authorities within 72 hours of becoming aware of the breach (as required by GDPR)",
+            "Notify affected users without undue delay if the breach is likely to result in a high risk to their rights and freedoms",
+            "Provide clear information about the nature of the breach, likely consequences, and measures taken to address it",
+            "Provide guidance on steps you can take to protect yourself",
+            "Maintain records of all data breaches as required by law"
           ]
         },
         {
@@ -182,13 +204,13 @@ export default function PrivacyPage() {
         },
         {
           title: "5. Veri Paylaşımı ve Üçüncü Taraflar",
-          content: "Verilerinizi aşağıdaki üçüncü taraflarla paylaşabiliriz:",
+          content: "Verilerinizi aşağıdaki üçüncü taraflarla paylaşabiliriz. Yalnızca Hizmetimizin işleyişi için gerekli verileri paylaşıyoruz:",
           list: [
-            "Google (Google Sign-In ile kimlik doğrulama için)",
-            "Bulut hizmet sağlayıcıları (veri depolama ve işleme için)",
-            "Analitik hizmetleri (platform kullanımını anlamak için)",
-            "Yasal makamlar (yasa gereği gerekli olduğunda)",
-            "Hizmet sağlayıcıları (teknik destek ve bakım için)"
+            "Google (Google Sign-In ile kimlik doğrulama için) - Google Gizlilik Politikası: https://policies.google.com/privacy",
+            "Vercel (barındırma ve altyapı için) - Vercel Gizlilik Politikası: https://vercel.com/legal/privacy-policy",
+            "Supabase (veritabanı ve backend hizmetleri için) - Supabase Gizlilik Politikası: https://supabase.com/privacy",
+            "Yasal makamlar (yasa gereği gerekli olduğunda veya haklarımızı korumak için)",
+            "Hizmet sağlayıcıları (teknik destek ve bakım için, gizlilik anlaşmalarıyla bağlı)"
           ]
         },
         {
@@ -207,7 +229,7 @@ export default function PrivacyPage() {
           list: [
             "Erişim hakkı: Kişisel verileriniz hakkında bilgi talep etme",
             "Düzeltme hakkı: Yanlış veya eksik verileri düzeltme",
-            "Silme hakkı: Kişisel verilerinizin silinmesini talep etme",
+            "Silme hakkı: Kişisel verilerinizin silinmesini talep etme (aşağıdaki Hesap Silme bölümüne bakın)",
             "İşlemeyi kısıtlama hakkı: Verilerinizi nasıl kullandığımızı sınırlama",
             "Veri taşınabilirliği hakkı: Verilerinizi yapılandırılmış bir formatta alma",
             "İtiraz hakkı: Meşru menfaatlere dayalı işlemeye itiraz etme",
@@ -216,13 +238,24 @@ export default function PrivacyPage() {
           ]
         },
         {
-          title: "8. Çerezler ve İzleme",
-          content: "Aşağıdaki amaçlarla çerezler ve benzer teknolojiler kullanıyoruz:",
+          title: "7.1. Hesap Silme",
+          content: "Hesabınızı ve tüm ilişkili verileri aşağıdaki yöntemlerle istediğiniz zaman silebilirsiniz:",
           list: [
-            "Giriş oturumunuzu sürdürmek",
-            "Tercihlerinizi ve ayarlarınızı hatırlamak",
-            "Platform kullanımını ve performansını analiz etmek",
-            "Güvenliği sağlamak ve dolandırıcılığı önlemek"
+            "Hesap Ayarları: Profil ayarlarınıza gidin ve 'Hesabı Sil' seçeneğini seçin",
+            "E-posta Talebi: Hesap e-postanızla contact@actorrating.com adresine silme talebi gönderin",
+            "Veri Dışa Aktarma: Silmeden önce, verilerinizi profil sayfanızdan dışa aktarabilirsiniz",
+            "İşlem Süresi: Hesap silme, talebinizden itibaren 30 gün içinde işlenir",
+            "Saklama İstisnaları: Bazı veriler yasa gereği daha uzun süre saklanabilir (örneğin, vergi amaçlı işlem kayıtları)"
+          ]
+        },
+        {
+          title: "8. Çerezler ve İzleme",
+          content: "Aşağıdaki kategorilerde çerezler ve benzer teknolojiler kullanıyoruz:",
+          list: [
+            "Zorunlu Çerezler: Hizmetin çalışması için gerekli (örneğin, giriş oturumunuzu sürdürme, güvenlik özellikleri). Bunlar devre dışı bırakılamaz.",
+            "İşlevsel Çerezler: Deneyiminizi geliştirmek için tercihlerinizi ve ayarlarınızı hatırlar.",
+            "Analitik Çerezler: Hizmetlerimizi iyileştirmek için platform kullanımını ve performansını anlamamıza yardımcı olur. Bunlar anonimleştirilmiş ve toplanmıştır.",
+            "Güvenlik Çerezleri: Güvenliği sağlar ve dolandırıcılığı önler, bot önleme için reCAPTCHA dahil."
           ]
         },
         {
@@ -234,6 +267,17 @@ export default function PrivacyPage() {
             "Erişim kontrolleri ve kimlik doğrulama önlemleri",
             "Veri koruma konusunda çalışan eğitimi",
             "Olay müdahale prosedürleri"
+          ]
+        },
+        {
+          title: "9.1. Veri İhlali Bildirimi",
+          content: "Kişisel verilerinizi etkileyebilecek bir veri ihlali durumunda:",
+          list: [
+            "İlgili denetim makamlarını ihlalden haberdar olduktan sonra 72 saat içinde bilgilendireceğiz (GDPR gereği)",
+            "İhlal, kullanıcıların hak ve özgürlüklerine yüksek risk oluşturuyorsa, etkilenen kullanıcıları gecikmeksizin bilgilendireceğiz",
+            "İhlalin niteliği, olası sonuçları ve bunu ele almak için alınan önlemler hakkında net bilgi sağlayacağız",
+            "Kendinizi korumak için atabileceğiniz adımlar hakkında rehberlik sağlayacağız",
+            "Yasa gereği tüm veri ihlallerinin kayıtlarını tutacağız"
           ]
         },
         {
@@ -270,65 +314,100 @@ export default function PrivacyPage() {
   const currentContent = content[language]
 
   return (
-    <div className="min-h-screen bg-background py-6 px-4 sm:py-8 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header with language switcher */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="flex items-center text-white hover:text-gray-300">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="flex items-center space-x-2">
-            <Globe className="w-4 h-4 text-gray-400" />
-            <Button
-              variant={language === "en" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("en")}
-              className={language === "en" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
-            >
-              EN
-            </Button>
-            <Button
-              variant={language === "tr" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("tr")}
-              className={language === "tr" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
-            >
-              TR
-            </Button>
-          </div>
+    <HomeLayout>
+      <div className="min-h-screen bg-black w-full" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+        {/* Background glow */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#FFC800]/15 rounded-full blur-[200px]" />
         </div>
 
-        <div className="bg-secondary shadow-lg rounded-lg p-6 sm:p-8 border border-border">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">
-            {currentContent.title}
-          </h1>
-          
-          <div className="prose prose-invert max-w-none">
-            <p className="text-sm text-gray-400 mb-6">
-              {currentContent.lastUpdated} {new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US")}
-            </p>
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:py-28 pb-16 sm:pb-24 md:pb-32 relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className="grid grid-cols-12 gap-8">
+            {/* Header with language switcher */}
+            <div className="col-span-12 flex items-center justify-between mb-8">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setLanguage("en")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    language === "en"
+                      ? "bg-[#FFD700] text-black"
+                      : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLanguage("tr")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    language === "tr"
+                      ? "bg-[#FFD700] text-black"
+                      : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
+                  }`}
+                >
+                  TR
+                </button>
+              </div>
+            </div>
 
-            {currentContent.sections.map((section, index) => (
-              <section key={index} className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-4">
-                  {section.title}
-                </h2>
-                <p className="text-gray-300 mb-4">
-                  {section.content}
-                </p>
-                {section.list && (
-                  <ul className="list-disc list-inside space-y-2 text-gray-300">
-                    {section.list.map((item, itemIndex) => (
-                      <li key={itemIndex}>{item}</li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
+            {/* Hero Section */}
+            <div className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32">
+              <h1 
+                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
+              >
+                {currentContent.title}
+              </h1>
+              <p className="text-sm text-[#a3a3a3] mb-8">
+                {currentContent.lastUpdated} {new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US")}
+              </p>
+            </div>
+
+            {/* Content Sections */}
+            <div className="col-span-12 lg:col-span-10 lg:col-start-2">
+              <div className="space-y-6 sm:space-y-8">
+                {currentContent.sections.map((section, index) => (
+                  <div
+                    key={index}
+                    className="relative p-8 xs:p-10 sm:p-12 md:p-14 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
+                    style={{
+                      boxShadow: `
+                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                      `,
+                    }}
+                  >
+                    <div className="relative z-10">
+                      <h2 
+                        className="text-xl sm:text-2xl md:text-3xl font-semibold text-white mb-4 sm:mb-6"
+                      >
+                        {section.title}
+                      </h2>
+                      <p className="text-base sm:text-lg text-[#e4e4e7] leading-loose font-normal mb-4">
+                        {section.content}
+                      </p>
+                      {section.list && (
+                        <ul className="list-disc list-inside space-y-2 text-[#e4e4e7] text-base sm:text-lg leading-loose font-normal">
+                          {section.list.map((item, itemIndex) => (
+                            <li key={itemIndex}>{item}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </HomeLayout>
   )
 } 

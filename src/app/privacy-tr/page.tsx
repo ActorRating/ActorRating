@@ -1,134 +1,158 @@
+"use client"
+
 export const dynamic = "force-dynamic"
+
+import Link from "next/link"
+import { HomeLayout } from "@/components/layout"
+import { ArrowLeft } from "lucide-react"
+
+const sections = [
+  {
+    title: "1. Giriş",
+    content: "ActorRating.com olarak, kullanıcılarımızın gizliliğini korumayı taahhüt ediyoruz. Bu gizlilik politikası, hangi bilgileri topladığımızı, nasıl kullandığımızı ve koruduğumuzu açıklar."
+  },
+  {
+    title: "2. Toplanan Bilgiler",
+    content: "Aşağıdaki bilgileri topluyoruz:",
+    list: [
+      "Hesap bilgileri (ad, e-posta, profil resmi)",
+      "Kullanım verileri (değerlendirmeler, yorumlar)",
+      "Teknik veriler (IP adresi, tarayıcı bilgileri)",
+      "Çerezler ve benzer teknolojiler"
+    ]
+  },
+  {
+    title: "3. Bilgilerin Kullanımı",
+    content: "Topladığımız bilgileri aşağıdaki amaçlarla kullanıyoruz:",
+    list: [
+      "Hizmetlerimizi sağlamak ve iyileştirmek",
+      "Kullanıcı deneyimini kişiselleştirmek",
+      "Güvenliği sağlamak",
+      "Yasal yükümlülükleri yerine getirmek"
+    ]
+  },
+  {
+    title: "4. Bilgi Paylaşımı",
+    content: "Kişisel bilgilerinizi üçüncü taraflarla paylaşmıyoruz, ancak aşağıdaki durumlar hariç:",
+    list: [
+      "Yasal zorunluluklar",
+      "Hizmet sağlayıcılarımız (veri işleme amaçlı)",
+      "Kullanıcı onayı ile",
+      "Güvenlik amaçlı"
+    ]
+  },
+  {
+    title: "5. Veri Güvenliği",
+    content: "Verilerinizi korumak için aşağıdaki önlemleri alıyoruz:",
+    list: [
+      "SSL şifreleme",
+      "Güvenli veri depolama",
+      "Düzenli güvenlik güncellemeleri",
+      "Erişim kontrolü"
+    ]
+  },
+  {
+    title: "6. Çerezler",
+    content: "Web sitemizde çerezler kullanıyoruz. Bu çerezler:",
+    list: [
+      "Oturum yönetimi için gerekli",
+      "Kullanıcı tercihlerini hatırlamak için",
+      "Analitik amaçlı",
+      "Güvenlik için"
+    ]
+  },
+  {
+    title: "7. Kullanıcı Hakları",
+    content: "KVKK kapsamında aşağıdaki haklara sahipsiniz:",
+    list: [
+      "Kişisel verilerinize erişim",
+      "Verilerinizin düzeltilmesi",
+      "Verilerinizin silinmesi",
+      "Verilerinizin işlenmesinin kısıtlanması",
+      "Veri taşınabilirliği",
+      "İtiraz hakkı"
+    ]
+  },
+  {
+    title: "8. İletişim",
+    content: "Gizlilik politikamız hakkında sorularınız için lütfen bizimle iletişime geçin."
+  }
+]
 
 export default function PrivacyTRPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Gizlilik Politikası (Türkçe)
-          </h1>
-          
-          <div className="prose prose-gray max-w-none">
-            <p className="text-sm text-gray-600 mb-6">
-              Son güncelleme: {new Date().toLocaleDateString("tr-TR")}
-            </p>
+    <HomeLayout>
+      <div className="min-h-screen bg-black w-full" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+        {/* Background glow */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#FFC800]/15 rounded-full blur-[200px]" />
+        </div>
 
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                1. Giriş
-              </h2>
-              <p className="text-gray-700 mb-4">
-                ActorRating.com olarak, kullanıcılarımızın gizliliğini korumayı taahhüt ediyoruz. 
-                Bu gizlilik politikası, hangi bilgileri topladığımızı, nasıl kullandığımızı ve 
-                koruduğumuzu açıklar.
-              </p>
-            </section>
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:py-28 pb-16 sm:pb-24 md:pb-32 relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className="grid grid-cols-12 gap-8">
+            {/* Header */}
+            <div className="col-span-12 flex items-center justify-between mb-8">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </div>
 
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                2. Toplanan Bilgiler
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Aşağıdaki bilgileri topluyoruz:
+            {/* Hero Section */}
+            <div className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32">
+              <h1 
+                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
+              >
+                Gizlilik Politikası
+              </h1>
+              <p className="text-sm text-[#a3a3a3] mb-8">
+                Son güncelleme: {new Date().toLocaleDateString("tr-TR")}
               </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Hesap bilgileri (ad, e-posta, profil resmi)</li>
-                <li>Kullanım verileri (değerlendirmeler, yorumlar)</li>
-                <li>Teknik veriler (IP adresi, tarayıcı bilgileri)</li>
-                <li>Çerezler ve benzer teknolojiler</li>
-              </ul>
-            </section>
+            </div>
 
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                3. Bilgilerin Kullanımı
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Topladığımız bilgileri aşağıdaki amaçlarla kullanıyoruz:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Hizmetlerimizi sağlamak ve iyileştirmek</li>
-                <li>Kullanıcı deneyimini kişiselleştirmek</li>
-                <li>Güvenliği sağlamak</li>
-                <li>Yasal yükümlülükleri yerine getirmek</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                4. Bilgi Paylaşımı
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Kişisel bilgilerinizi üçüncü taraflarla paylaşmıyoruz, ancak aşağıdaki 
-                durumlar hariç:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Yasal zorunluluklar</li>
-                <li>Hizmet sağlayıcılarımız (veri işleme amaçlı)</li>
-                <li>Kullanıcı onayı ile</li>
-                <li>Güvenlik amaçlı</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                5. Veri Güvenliği
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Verilerinizi korumak için aşağıdaki önlemleri alıyoruz:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>SSL şifreleme</li>
-                <li>Güvenli veri depolama</li>
-                <li>Düzenli güvenlik güncellemeleri</li>
-                <li>Erişim kontrolü</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                6. Çerezler
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Web sitemizde çerezler kullanıyoruz. Bu çerezler:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Oturum yönetimi için gerekli</li>
-                <li>Kullanıcı tercihlerini hatırlamak için</li>
-                <li>Analitik amaçlı</li>
-                <li>Güvenlik için</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                7. Kullanıcı Hakları
-              </h2>
-              <p className="text-gray-700 mb-4">
-                KVKK kapsamında aşağıdaki haklara sahipsiniz:
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                <li>Kişisel verilerinize erişim</li>
-                <li>Verilerinizin düzeltilmesi</li>
-                <li>Verilerinizin silinmesi</li>
-                <li>Verilerinizin işlenmesinin kısıtlanması</li>
-                <li>Veri taşınabilirliği</li>
-                <li>İtiraz hakkı</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                8. İletişim
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Gizlilik politikamız hakkında sorularınız için lütfen bizimle iletişime geçin.
-              </p>
-            </section>
+            {/* Content Sections */}
+            <div className="col-span-12 lg:col-span-10 lg:col-start-2">
+              <div className="space-y-6 sm:space-y-8">
+                {sections.map((section, index) => (
+                  <div
+                    key={index}
+                    className="relative p-8 xs:p-10 sm:p-12 md:p-14 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
+                    style={{
+                      boxShadow: `
+                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                      `,
+                    }}
+                  >
+                    <div className="relative z-10">
+                      <h2 
+                        className="text-xl sm:text-2xl md:text-3xl font-semibold text-white mb-4 sm:mb-6"
+                      >
+                        {section.title}
+                      </h2>
+                      <p className="text-base sm:text-lg text-[#e4e4e7] leading-loose font-normal mb-4">
+                        {section.content}
+                      </p>
+                      {section.list && (
+                        <ul className="list-disc list-inside space-y-2 text-[#e4e4e7] text-base sm:text-lg leading-loose font-normal">
+                          {section.list.map((item, itemIndex) => (
+                            <li key={itemIndex}>{item}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </HomeLayout>
   )
 } 

@@ -54,10 +54,10 @@ export default function AboutPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="col-span-12 lg:col-span-8 lg:col-start-3 text-center mb-16 sm:mb-24 md:mb-32"
+                className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32"
               >
               <h1 
-                className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4"
+                className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif'
                 }}
@@ -310,7 +310,7 @@ export default function AboutPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center px-4 sm:px-0">
                     <Link href="/performances" className="w-full sm:w-auto">
                       <button 
-                        className="group w-full sm:w-auto px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
+                        className="group w-full sm:w-auto px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                           transform: 'scale(1)',

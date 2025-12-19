@@ -18,6 +18,7 @@ function HowItWorksSection() {
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   
   const steps = [
@@ -45,11 +46,22 @@ function HowItWorksSection() {
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
     dragStartX.current = e.touches[0].clientX;
+    dragStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
     const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = Math.abs(dragStartX.current - currentX);
+    const deltaY = Math.abs(dragStartY.current - currentY);
+    
+    // Only prevent scroll if horizontal movement is greater than vertical (horizontal swipe)
+    if (deltaX > 10 && deltaX > deltaY) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const offset = dragStartX.current - currentX; // Negative = left
     // Only allow dragging to the left
     setDragOffset(Math.max(0, offset));
@@ -106,6 +118,10 @@ function HowItWorksSection() {
 
   useEffect(() => {
     if (isDragging) {
+      // Prevent body scroll on mobile when dragging
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      
       const handleGlobalMouseMove = (e: MouseEvent) => {
         const offset = dragStartX.current - e.clientX; // Negative = left
         setDragOffset(Math.max(0, offset));
@@ -128,13 +144,33 @@ function HowItWorksSection() {
         }
       };
 
+      const handleGlobalTouchMove = (e: TouchEvent) => {
+        // Prevent scrolling while dragging horizontally
+        if (isDragging && e.touches.length > 0) {
+          const currentX = e.touches[0].clientX;
+          const deltaX = Math.abs(dragStartX.current - currentX);
+          // Only prevent if there's significant horizontal movement
+          if (deltaX > 10) {
+            e.preventDefault();
+          }
+        }
+      };
+
       window.addEventListener('mousemove', handleGlobalMouseMove);
       window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
       
       return () => {
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
         window.removeEventListener('mousemove', handleGlobalMouseMove);
         window.removeEventListener('mouseup', handleGlobalMouseUp);
+        window.removeEventListener('touchmove', handleGlobalTouchMove);
       };
+    } else {
+      // Restore scrolling when not dragging
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
   }, [isDragging, dragOffset, steps.length]);
 
@@ -236,6 +272,7 @@ function HowItWorksSection() {
                           ? 'none'
                           : 'opacity 0.6s ease-out, transform 0.3s ease-out',
                         pointerEvents: isTopCard ? 'auto' : 'none',
+                        touchAction: isTopCard ? 'pan-x' : 'auto',
                       }}
                       onTouchStart={isTopCard ? handleTouchStart : undefined}
                       onTouchMove={isTopCard ? handleTouchMove : undefined}
@@ -405,7 +442,7 @@ function HowItWorksSection() {
           >
           <Link href="/performances">
             <button 
-              className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
+              className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
@@ -615,12 +652,15 @@ function PerformanceSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center lg:cursor-pointer performance-card-mobile"
                     style={{ 
                       willChange: 'transform, opacity',
                       paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
                       paddingRight: index === highlights.length - 1 && !isDesktop ? '1rem' : '0',
+                      /* Hardware acceleration for smooth scrolling */
+                      transform: 'translateZ(0)',
+                      WebkitTransform: 'translateZ(0)',
                     }}
-                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
                     onClick={() => {
                       if (window.innerWidth >= 1024) {
                         const element = cardRefs.current[index];
@@ -689,7 +729,7 @@ function PerformanceSection() {
                   <div className="mt-auto pt-4">
                     <Link href={`/performances`}>
                       <button 
-                        className="w-full px-8 py-4 rounded-full text-black text-base font-extrabold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                         }}
@@ -1355,7 +1395,7 @@ export default function HomePageClient() {
               className="w-full flex justify-center"
             >
               <Link href="/performances" className="inline-block relative">
-                <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
+                <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     transform: 'scale(1)',

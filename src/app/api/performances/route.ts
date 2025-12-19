@@ -52,16 +52,45 @@ export async function GET(request: NextRequest) {
     console.log('[PERFORMANCES API] Fetching performances from database...')
     const raw = await prisma.performance.findMany({
       include: {
-        actor: { select: { id: true, name: true, imageUrl: true, slug: true } },
-        movie: { select: { id: true, title: true, year: true, director: true, slug: true } },
+        actor: { select: { id: true, name: true, imageUrl: true } },
+        movie: { select: { id: true, title: true, year: true, director: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50, // Take only 50 to process, not 300
     })
     console.log('[PERFORMANCES API] Found', raw.length, 'performances')
 
-    // Defensive: filter out any entries missing actor or movie
-    const valid = raw.filter((p) => p.actor && p.movie)
+    // Get actor and movie IDs to fetch slugs
+    const actorIds = [...new Set(raw.map(p => p.actorId).filter(Boolean))]
+    const movieIds = [...new Set(raw.map(p => p.movieId).filter(Boolean))]
+    
+    // Fetch slugs separately
+    const [actorsWithSlugs, moviesWithSlugs] = await Promise.all([
+      prisma.actor.findMany({
+        where: { id: { in: actorIds } },
+        select: { id: true, slug: true } as any
+      }),
+      prisma.movie.findMany({
+        where: { id: { in: movieIds } },
+        select: { id: true, slug: true } as any
+      })
+    ])
+    
+    const actorSlugMap = new Map(actorsWithSlugs.map((a: any) => [a.id, a.slug || null]))
+    const movieSlugMap = new Map(moviesWithSlugs.map((m: any) => [m.id, m.slug || null]))
+
+    // Defensive: filter out any entries missing actor or movie and add slugs
+    const valid = raw.filter((p) => p.actor && p.movie).map((p) => ({
+      ...p,
+      actor: {
+        ...p.actor,
+        slug: actorSlugMap.get(p.actorId) || null,
+      },
+      movie: {
+        ...p.movie,
+        slug: movieSlugMap.get(p.movieId) || null,
+      },
+    }))
     console.log('[PERFORMANCES API] Valid performances:', valid.length)
 
     // Fetch all ratings for these actor-movie pairs

@@ -3,9 +3,9 @@
 export const dynamic = "force-dynamic"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/Button"
-import { Globe, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { HomeLayout } from "@/components/layout"
 
 export default function KVKKPage() {
   const [language, setLanguage] = useState<"en" | "tr">("en")
@@ -290,65 +290,100 @@ export default function KVKKPage() {
   const currentContent = content[language]
 
   return (
-    <div className="min-h-screen bg-background py-6 px-4 sm:py-8 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header with language switcher */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="flex items-center text-white hover:text-gray-300">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="flex items-center space-x-2">
-            <Globe className="w-4 h-4 text-gray-400" />
-            <Button
-              variant={language === "en" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("en")}
-              className={language === "en" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
-            >
-              EN
-            </Button>
-            <Button
-              variant={language === "tr" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("tr")}
-              className={language === "tr" ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:shadow-[0_0_30px_rgba(255,215,0,0.4)]" : "text-[#a3a3a3] border-[#FFD700]/30 hover:bg-[#FFD700]/10 hover:text-[#FFD700]"}
-            >
-              TR
-            </Button>
-          </div>
+    <HomeLayout>
+      <div className="min-h-screen bg-black w-full" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
+        {/* Background glow */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#FFC800]/15 rounded-full blur-[200px]" />
         </div>
 
-        <div className="bg-secondary shadow-lg rounded-lg p-6 sm:p-8 border border-border">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">
-            {currentContent.title}
-          </h1>
-          
-          <div className="prose prose-invert max-w-none">
-            <p className="text-sm text-gray-400 mb-6">
-              {currentContent.lastUpdated} {new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US")}
-            </p>
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:py-28 pb-16 sm:pb-24 md:pb-32 relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className="grid grid-cols-12 gap-8">
+            {/* Header with language switcher */}
+            <div className="col-span-12 flex items-center justify-between mb-8">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setLanguage("en")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    language === "en"
+                      ? "bg-[#FFD700] text-black"
+                      : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLanguage("tr")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    language === "tr"
+                      ? "bg-[#FFD700] text-black"
+                      : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
+                  }`}
+                >
+                  TR
+                </button>
+              </div>
+            </div>
 
-            {currentContent.sections.map((section, index) => (
-              <section key={index} className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-4">
-                  {section.title}
-                </h2>
-                <p className="text-gray-300 mb-4">
-                  {section.content}
-                </p>
-                {section.list && (
-                  <ul className="list-disc list-inside space-y-2 text-gray-300">
-                    {section.list.map((item, itemIndex) => (
-                      <li key={itemIndex}>{item}</li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
+            {/* Hero Section */}
+            <div className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32">
+              <h1 
+                className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
+              >
+                {currentContent.title}
+              </h1>
+              <p className="text-sm text-[#a3a3a3] mb-8">
+                {currentContent.lastUpdated} {new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US")}
+              </p>
+            </div>
+
+            {/* Content Sections */}
+            <div className="col-span-12 lg:col-span-10 lg:col-start-2">
+              <div className="space-y-6 sm:space-y-8">
+                {currentContent.sections.map((section, index) => (
+                  <div
+                    key={index}
+                    className="relative p-8 xs:p-10 sm:p-12 md:p-14 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
+                    style={{
+                      boxShadow: `
+                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                      `,
+                    }}
+                  >
+                    <div className="relative z-10">
+                      <h2 
+                        className="text-xl sm:text-2xl md:text-3xl font-semibold text-white mb-4 sm:mb-6"
+                      >
+                        {section.title}
+                      </h2>
+                      <p className="text-base sm:text-lg text-[#e4e4e7] leading-loose font-normal mb-4">
+                        {section.content}
+                      </p>
+                      {section.list && (
+                        <ul className="list-disc list-inside space-y-2 text-[#e4e4e7] text-base sm:text-lg leading-loose font-normal">
+                          {section.list.map((item, itemIndex) => (
+                            <li key={itemIndex}>{item}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </HomeLayout>
   )
 } 

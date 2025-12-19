@@ -9,16 +9,13 @@ import { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
 import { Button } from "@/components/ui/Button"
 import { motion } from "framer-motion"
-import { fadeInUp, getMotionProps } from "@/lib/animations"
 import { 
   User, 
-  Mail, 
   Shield, 
   Download, 
   Trash2, 
   TriangleAlert,
-  LogOut,
-  Settings
+  LogOut
 } from "lucide-react"
 
 export default function ProfilePage() {
@@ -151,54 +148,109 @@ export default function ProfilePage() {
 
   return (
     <SignedInLayout>
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 profile-mobile">
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-8 sm:pb-12">
           {/* Header */}
           <motion.div 
-            variants={fadeInUp}
-            {...getMotionProps()}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="text-center mb-8 sm:mb-12"
           >
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4">
-              Your Profile
+            <h1 
+              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-3 sm:mb-4"
+              style={{ 
+                fontFamily: 'var(--font-cinzel), serif',
+                textShadow: '0 10px 40px rgba(0,0,0,0.7)',
+                letterSpacing: '0.08em',
+                lineHeight: '1.1',
+              }}
+            >
+              <span 
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                }}
+              >
+                Your{' '}
+              </span>
+              <span className="text-white">
+                Profile
+              </span>
             </h1>
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+            
+            {/* Gold Divider */}
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "180px", opacity: 1 }}
+              transition={{ duration: 2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="h-[2px] mx-auto mb-6 sm:mb-8"
+            >
+              <div 
+                className="h-full w-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,229,92,0.4) 15%, rgba(255,215,0,0.9) 40%, rgba(255,215,0,1) 50%, rgba(255,215,0,0.9) 60%, rgba(255,229,92,0.4) 85%, transparent 100%)',
+                  boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)',
+                }}
+              />
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.2, delay: 0.9, ease: 'easeOut' }}
+              className="text-base sm:text-lg md:text-xl text-[#a3a3a3] font-light max-w-2xl mx-auto"
+              style={{ letterSpacing: '0.005em' }}
+            >
               Manage your account settings and data
-            </p>
+            </motion.p>
           </motion.div>
 
           <div className="space-y-6 sm:space-y-8">
             {/* Profile Card */}
             <motion.div 
-              variants={fadeInUp}
-              {...getMotionProps()}
-              className="relative group safari-blur-fix"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative group"
             >
-              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-border/50">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div 
+                className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)]"
+                style={{
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                }}
+              >
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 relative z-10">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center">
-                      <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-2xl flex items-center justify-center">
+                      <User className="w-10 h-10 sm:w-12 sm:h-12 text-black" />
                     </div>
                   </div>
                   
                   {/* User Info */}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">
+                  <div className="flex-1 min-w-0 text-center sm:text-left w-full sm:w-auto">
+                    <h2 
+                      className="text-2xl sm:text-2xl font-bold text-white mb-2 sm:mb-1"
+                      style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                    >
                       {profile.email?.split('@')[0] || 'User'}
                     </h2>
-                    <p className="text-muted-foreground text-sm sm:text-base mb-2">
+                    <p className="text-gray-400 text-base sm:text-base mb-3 sm:mb-2 break-all sm:break-normal">
                       {profile.email}
                     </p>
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">{getAccountType()}</span>
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <Shield className="w-4 h-4 text-[#FFD700]" />
+                      <span className="text-sm text-gray-400">{getAccountType()}</span>
                     </div>
                   </div>
                 </div>
@@ -207,111 +259,139 @@ export default function ProfilePage() {
 
             {/* Action Cards Grid */}
             <motion.div 
-              variants={fadeInUp}
-              {...getMotionProps()}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
             >
               {/* Download Data Card */}
-              <div className="relative group safari-blur-fix">
-                <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <Download className="w-5 h-5 text-primary" />
+              <div className="relative group">
+                <div 
+                  className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl p-4 sm:p-6 rounded-[2rem] border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)] h-full flex flex-col"
+                  style={{
+                    boxShadow: `
+                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                    `,
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-3 relative z-10">
+                    <div className="w-10 h-10 bg-[#FFD700]/20 rounded-lg flex items-center justify-center">
+                      <Download className="w-5 h-5 text-[#FFD700]" />
                     </div>
-                    <h3 className="font-semibold text-foreground">Download Data</h3>
+                    <h3 className="font-semibold text-white">Download Data</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4 flex-1">
+                  <p className="text-sm text-gray-400 mb-4 flex-1 relative z-10">
                     Export all your ratings and profile information
                   </p>
-                  <Button 
-                    onClick={handleExportData} 
-                    variant="outline" 
-                    size="lg"
-                    className="w-full h-12 group-hover:border-primary/50"
+                  <button
+                    onClick={handleExportData}
+                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2 relative z-10"
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4" />
                     Download
-                  </Button>
+                  </button>
                 </div>
               </div>
 
               {/* Sign Out Card */}
-              <div className="relative group safari-blur-fix">
-                <div className="relative bg-secondary/50 backdrop-blur-sm p-4 sm:p-6 rounded-xl border border-border/50 group-hover:border-primary/50 transition-all duration-300 h-full flex flex-col">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                      <LogOut className="w-5 h-5 text-primary" />
+              <div className="relative group">
+                <div 
+                  className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl p-4 sm:p-6 rounded-[2rem] border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)] h-full flex flex-col"
+                  style={{
+                    boxShadow: `
+                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                    `,
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-3 relative z-10">
+                    <div className="w-10 h-10 bg-[#FFD700]/20 rounded-lg flex items-center justify-center">
+                      <LogOut className="w-5 h-5 text-[#FFD700]" />
                     </div>
-                    <h3 className="font-semibold text-foreground">Sign Out</h3>
+                    <h3 className="font-semibold text-white">Sign Out</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4 flex-1">
+                  <p className="text-sm text-gray-400 mb-4 flex-1 relative z-10">
                     Sign out of your account on this device
                   </p>
-                  <Button 
-                    onClick={() => handleLogout(router)} 
-                    variant="outline" 
-                    size="lg"
-                    className="w-full h-12 group-hover:border-primary/50"
+                  <button
+                    onClick={() => handleLogout(router)}
+                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2 relative z-10"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-4 h-4" />
                     Sign Out
-                  </Button>
+                  </button>
                 </div>
               </div>
             </motion.div>
 
             {/* Danger Zone */}
             <motion.div 
-              variants={fadeInUp}
-              {...getMotionProps()}
-              className="relative group safari-blur-fix"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="relative group"
             >
-              <div className="relative bg-secondary/40 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-border/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-muted/50 rounded-lg flex items-center justify-center">
-                    <TriangleAlert className="w-5 h-5 text-muted-foreground" />
+              <div 
+                className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)]"
+                style={{
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4 relative z-10">
+                  <div className="w-10 h-10 bg-gray-500/20 rounded-lg flex items-center justify-center">
+                    <TriangleAlert className="w-5 h-5 text-gray-400" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground">Account Management</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-300">Account Management</h3>
                 </div>
                 
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="text-sm text-gray-400 mb-6 relative z-10">
                   Permanently delete your account and all associated data. This action cannot be undone.
                 </p>
 
                 {!showDeleteConfirm ? (
-                  <Button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    variant="outline"
-                    size="lg"
-                    className="text-muted-foreground border-border hover:bg-muted/50 hover:border-muted-foreground h-12"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Account
-                  </Button>
+                  <div className="flex justify-center sm:justify-start">
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="relative px-4 py-3 rounded-full border border-gray-500/30 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 font-medium transition-all duration-300 hover:border-gray-500/50 hover:shadow-[0_0_15px_rgba(156,163,175,0.2)] flex items-center justify-center gap-2 h-12 relative z-10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Account
+                    </button>
+                  </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted/20 border border-border/30 rounded-lg">
-                      <h4 className="font-medium text-foreground mb-2">Confirm Account Deletion</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
+                  <div className="space-y-4 relative z-10">
+                    <div className="p-4 bg-gray-500/10 border border-gray-500/30 rounded-[2rem]">
+                      <h4 className="font-medium text-white mb-2">Confirm Account Deletion</h4>
+                      <p className="text-sm text-gray-400 mb-4">
                         This will permanently delete your account, all ratings, and profile data. This action cannot be undone.
                       </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
+                      <button
                         onClick={handleDeleteAccount}
-                        className="bg-red-600 hover:bg-red-700 text-white flex-1 h-12"
-                        size="lg"
+                        className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-full transition-all duration-300 flex-1 h-12 flex items-center justify-center"
                       >
                         Yes, Delete My Account
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         onClick={() => setShowDeleteConfirm(false)}
-                        variant="outline"
-                        size="lg"
-                        className="flex-1 h-12"
+                        className="px-4 py-3 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 hover:border-[#FFD700]/50 flex-1 h-12 flex items-center justify-center"
                       >
                         Cancel
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}
