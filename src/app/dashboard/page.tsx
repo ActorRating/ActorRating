@@ -406,7 +406,10 @@ export default function DashboardPage() {
                           id: rating.id,
                           actorId: rating.actorId,
                           movieId: rating.movieId,
-                          actor: rating.actor,
+                          actor: {
+                            name: rating.actor.name,
+                            imageUrl: rating.actor.imageUrl ?? undefined,
+                          },
                           movie: rating.movie,
                           userId: user?.id || '',
                           emotionalRangeDepth: rating.emotionalRangeDepth,
@@ -414,8 +417,8 @@ export default function DashboardPage() {
                           technicalSkill: rating.technicalSkill,
                           screenPresence: rating.screenPresence,
                           chemistryInteraction: rating.chemistryInteraction,
-                          comment: rating.comment,
-                          character: rating.comment,
+                          comment: rating.comment ?? undefined,
+                          character: rating.comment ?? undefined,
                           createdAt: rating.createdAt,
                           updatedAt: rating.createdAt,
                         }}

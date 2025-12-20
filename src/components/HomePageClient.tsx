@@ -564,7 +564,33 @@ function PerformanceSection() {
 
     container.addEventListener('scroll', updateCardDepth, { passive: true });
     window.addEventListener('resize', updateCardDepth, { passive: true });
-    updateCardDepth(); // Initial call
+    
+    // On initial load, apply depth effect immediately, then center first card on desktop
+    const desktop = window.innerWidth >= 1024;
+    
+    // Ensure first card is active initially
+    setActiveCard(0);
+    
+    // Apply initial depth effect - wait for next frame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updateCardDepth();
+        
+        // On desktop, center the first card after applying initial depth
+        if (desktop && cardRefs.current[0]) {
+          const firstCard = cardRefs.current[0];
+          if (firstCard) {
+            firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+            // Update depth again after centering completes
+            setTimeout(() => {
+              requestAnimationFrame(() => {
+                updateCardDepth();
+              });
+            }, 150);
+          }
+        }
+      });
+    });
     
     return () => {
       container.removeEventListener('scroll', updateCardDepth);

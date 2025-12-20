@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
-import { MessageSquare, Send, CheckCircle } from 'lucide-react'
+import { MessageSquare, Send, CheckCircle, X } from 'lucide-react'
 
 // Replace with your actual Formspree form ID
 const FORMSPREE_FORM_ID = process.env.NEXT_PUBLIC_FORMSPREE_FORM_ID
@@ -64,65 +64,120 @@ export function FeedbackSection() {
     }
   }
 
-  if (!isOpen) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-6 right-6 z-40"
-      >
-        <Button
-          onClick={() => setIsOpen(true)}
-          variant="outline"
-          size="sm"
-          className="rounded-full w-14 h-14 p-0 text-accent border-accent hover:bg-accent/10 hover:border-accent/80 premium-shadow relative group glassmorphism"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </Button>
-      </motion.div>
-    )
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      className="fixed bottom-6 right-6 z-40 glassmorphism bg-background/80 border border-border/30 rounded-2xl shadow-2xl p-6 w-80 max-w-[calc(100vw-2rem)]"
-    >
-      {isSubmitted ? (
-        <div className="text-center">
+    <>
+      <AnimatePresence mode="wait">
+        {!isOpen ? (
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+            key="button"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            className="fixed bottom-6 right-6 z-40"
           >
-            <CheckCircle className="w-6 h-6 text-emerald-500" />
-          </motion.div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Thank you!</h3>
-          <p className="text-sm text-muted-foreground">
-            Your feedback has been sent successfully.
-          </p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Send Feedback
-            </h3>
             <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+              onClick={() => setIsOpen(true)}
+              className="relative rounded-full w-14 h-14 p-0 border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] group flex items-center justify-center"
+              style={{
+                boxShadow: `
+                  0 15px 40px -10px rgba(0, 0, 0, 0.8),
+                  0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                  0 0 0 1px rgba(255, 255, 255, 0.05),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                `,
+                transform: 'translateY(-3px) perspective(1000px) rotateX(1deg)',
+                transformStyle: 'preserve-3d',
+              }}
             >
-              ✕
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
+              </div>
+              <MessageSquare className="w-5 h-5 text-[#FFD700] group-hover:text-[#FFE55C] transition-colors duration-200 relative z-10" />
             </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, scale: 0.85, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 30 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 30,
+              duration: 0.4 
+            }}
+            className="fixed bottom-6 right-6 z-40 w-80 max-w-[calc(100vw-2rem)]"
+            style={{
+              backdropFilter: 'blur(24px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            }}
+          >
+        <div
+          className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[2rem] p-6 transition-all duration-300"
+          style={{
+            boxShadow: `
+              0 25px 70px -15px rgba(0, 0, 0, 0.9),
+              0 15px 40px -10px rgba(0, 0, 0, 0.7),
+              0 0 0 1px rgba(255, 255, 255, 0.05),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+            `,
+            transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {/* Ambient glow effect */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none rounded-[2rem] overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/20 rounded-full blur-3xl" />
           </div>
+
+          {isSubmitted ? (
+            <div className="text-center relative z-10">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <CheckCircle className="w-6 h-6 text-emerald-500" />
+              </motion.div>
+              <h3 className="text-lg font-semibold text-white mb-2">Thank you!</h3>
+              <p className="text-sm text-[#a3a3a3]">
+                Your feedback has been sent successfully.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-[#FFD700]" />
+                  Send Feedback
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="relative rounded-full w-10 h-10 flex items-center justify-center border border-transparent bg-[#1a1a1a]/50 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:bg-[#1a1a1a]/70 hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] group"
+                  style={{
+                    boxShadow: `
+                      0 8px 20px -5px rgba(0, 0, 0, 0.6),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1)
+                    `,
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-[#FFD700]/15 rounded-full blur-2xl" />
+                  </div>
+                  <X className="w-5 h-5 text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10" />
+                </button>
+              </div>
 
           {!isFormspreeConfigured && (
             <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-sm text-yellow-600 dark:text-yellow-400">
+              <p className="text-sm text-yellow-400">
                 ⚠️ Feedback form is not configured. Please contact the administrator.
               </p>
             </div>
@@ -130,7 +185,7 @@ export function FeedbackSection() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Message *
               </label>
               <textarea
@@ -139,12 +194,12 @@ export function FeedbackSection() {
                 placeholder="Tell us what you think..."
                 required
                 rows={4}
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                className="w-full px-4 py-3 bg-[rgba(26,26,26,0.6)] border border-white/10 rounded-xl text-white placeholder:text-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700]/30 resize-none transition-all duration-200 backdrop-blur-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Name (optional)
               </label>
               <input
@@ -152,12 +207,12 @@ export function FeedbackSection() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Your name"
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-3 bg-[rgba(26,26,26,0.6)] border border-white/10 rounded-xl text-white placeholder:text-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700]/30 transition-all duration-200 backdrop-blur-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Email (optional)
               </label>
               <input
@@ -165,16 +220,16 @@ export function FeedbackSection() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="your@email.com"
-                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-3 bg-[rgba(26,26,26,0.6)] border border-white/10 rounded-xl text-white placeholder:text-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700]/30 transition-all duration-200 backdrop-blur-sm"
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsOpen(false)}
-                className="flex-1"
+                className="flex-1 border-white/20 text-white hover:border-white/40 hover:bg-white/5"
               >
                 Cancel
               </Button>
@@ -201,6 +256,10 @@ export function FeedbackSection() {
           </div>
         </form>
       )}
-    </motion.div>
+          </div>
+        </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

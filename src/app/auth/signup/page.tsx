@@ -11,6 +11,7 @@ import { LoginButton } from "@/components/auth/LoginButton"
 import { motion } from "framer-motion"
 import { fadeInUp, fadeIn } from "@/lib/animations"
 import { FaEye, FaEyeSlash, FaPlay, FaUserPlus, FaRocket, FaCheck, FaTimes, FaArrowRight } from "react-icons/fa"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 // Local validation using requested regex rules
 
@@ -199,16 +200,31 @@ export default function SignUp() {
       
       <div className="relative z-10 min-h-screen flex w-full" style={{ maxWidth: '100vw' }}>
         {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-1/2">
-          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
+        <div className="hidden lg:flex lg:w-1/2 relative">
+          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20 py-8 overflow-visible">
+            {/* Back Button - Aligned with text on Desktop */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-16 left-12 xl:left-20"
+            >
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </motion.div>
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
+              className="w-full overflow-visible"
             >
               <h1 
-                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-[1.1]"
+                style={{ fontFamily: 'var(--font-cinzel), serif', wordBreak: 'normal' }}
               >
                 Join ActorRating
               </h1>
@@ -228,6 +244,21 @@ export default function SignUp() {
             animate="show"
             className="w-full max-w-md mx-auto"
           >
+            {/* Back Button - Mobile Only */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6 sm:mb-8 lg:hidden"
+            >
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </motion.div>
+
             {/* Mobile Header */}
             <div className="lg:hidden text-center mb-8 px-4">
               <h2 
@@ -289,12 +320,12 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         onBlur={() => setEmailTouched(true)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
-                              ? "border-green-500"
-                              : "border-red-500"
+                              ? "border-green-500 focus:border-green-500 focus:ring-green-500/50"
+                              : "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                         }`}
                         placeholder="your@email.com"
                       />
@@ -332,12 +363,12 @@ export default function SignUp() {
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         onBlur={() => setPasswordTouched(true)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid
-                              ? "border-green-500"
-                              : "border-red-500"
+                              ? "border-green-500 focus:border-green-500 focus:ring-green-500/50"
+                              : "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                         }`}
                         placeholder="Create a strong password"
                       />

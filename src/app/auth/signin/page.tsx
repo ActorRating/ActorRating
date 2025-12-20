@@ -12,6 +12,7 @@ import { validateEmail, validatePassword } from "@/lib/validation"
 import { motion } from "framer-motion"
 import { fadeInUp, fadeIn } from "@/lib/animations"
 import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket, FaArrowRight } from "react-icons/fa"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 function SignInContent() {
@@ -174,15 +175,30 @@ function SignInContent() {
           <div className="w-full px-4 sm:px-6 lg:px-8" style={{ maxWidth: '1280px', margin: '0 auto' }}>
             <div className="grid grid-cols-12 gap-8 min-h-screen">
             {/* Left Side - Elegant Branding */}
-            <div className="hidden lg:flex lg:col-span-6">
-          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20">
+            <div className="hidden lg:flex lg:col-span-6 relative">
+          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20 py-8 overflow-visible">
+            {/* Back Button - Aligned with text on Desktop */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-16 left-12 xl:left-20"
+            >
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </motion.div>
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
+              className="w-full overflow-visible"
             >
               <h1 
-                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-tight"
+                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-[1.1] whitespace-nowrap"
                 style={{ fontFamily: 'var(--font-cinzel), serif' }}
               >
                 Welcome Back
@@ -203,6 +219,21 @@ function SignInContent() {
             animate="show"
             className="w-full max-w-md mx-auto"
           >
+            {/* Back Button - Mobile Only */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6 sm:mb-8 lg:hidden"
+            >
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </motion.div>
+
             {/* Mobile Header */}
             <div className="lg:hidden text-center mb-8 px-4">
               <h2 
@@ -262,8 +293,8 @@ function SignInContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
-                      className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
-                        errors.email ? "border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
+                      className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                       }`}
                       placeholder="your@email.com"
                     />
@@ -290,8 +321,8 @@ function SignInContent() {
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] focus:outline-none focus:ring-2 focus:ring-[#FFD700]/30 transition-all duration-200 ${
-                          errors.password ? "border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
+                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                          errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                         }`}
                         placeholder="Enter your password"
                       />
