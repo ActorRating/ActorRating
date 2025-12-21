@@ -30,6 +30,7 @@ function SignInContent() {
   const [infoMessage, setInfoMessage] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -284,20 +285,33 @@ function SignInContent() {
                 <form onSubmit={handleSubmit} className="relative space-y-5">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
-                      className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
-                        errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
-                      }`}
-                      placeholder="your@email.com"
-                    />
+                    <div className="relative">
+                      <input
+                        type="email"
+                        id="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        onFocus={() => setFocusedField("email")}
+                        onBlur={() => setFocusedField(null)}
+                        required
+                        className={`floating-input w-full px-5 sm:px-6 pt-6 pb-2 sm:pt-7 sm:pb-2 bg-black/50 border rounded-lg text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                          formData.email ? 'has-value' : ''
+                        } ${
+                          errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
+                        }`}
+                        placeholder=" "
+                      />
+                      <label
+                        htmlFor="email"
+                        className={`floating-label absolute left-5 sm:left-6 text-sm sm:text-base pointer-events-none transition-all duration-200 origin-left ${
+                          formData.email || focusedField === "email"
+                            ? 'floating-label-active'
+                            : 'text-[#737373]'
+                        }`}
+                      >
+                        Email Address
+                      </label>
+                    </div>
                     {errors.email && (
                       <motion.p
                         initial={{ opacity: 0, y: -10 }}
@@ -311,25 +325,36 @@ function SignInContent() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-[#e4e4e7] mb-3">
-                      Password
-                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
                         id="password"
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
+                        onFocus={() => setFocusedField("password")}
+                        onBlur={() => setFocusedField(null)}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-4.5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        className={`floating-input w-full px-5 sm:px-6 pt-6 pb-2 sm:pt-7 sm:pb-2 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                          formData.password ? 'has-value' : ''
+                        } ${
                           errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                         }`}
-                        placeholder="Enter your password"
+                        placeholder=" "
                       />
+                      <label
+                        htmlFor="password"
+                        className={`floating-label absolute left-5 sm:left-6 text-sm sm:text-base pointer-events-none transition-all duration-200 origin-left ${
+                          formData.password || focusedField === "password"
+                            ? 'floating-label-active'
+                            : 'text-[#737373]'
+                        }`}
+                      >
+                        Password
+                      </label>
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors z-10"
                       >
                         {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
                       </button>

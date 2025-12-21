@@ -840,4 +840,88 @@ nav {
   }
 }
 
+/* Google-style Floating Labels */
+.floating-input {
+  position: relative;
+}
+
+.floating-label {
+  position: absolute;
+  top: 50%;
+  left: 1.25rem;
+  transform: translateY(-50%);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  padding: 0 4px;
+  margin-left: -4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .floating-label {
+    left: 1.5rem;
+  }
+}
+
+.floating-input:focus + .floating-label,
+.floating-input.has-value + .floating-label,
+.floating-label-active {
+  top: 0;
+  left: 1.25rem;
+  transform: translateY(-50%) scale(0.85);
+  color: #FFD700;
+  background: rgba(10, 10, 10, 0.95);
+  padding: 0 6px;
+  margin-left: -6px;
+  z-index: 1;
+}
+
+@media (min-width: 640px) {
+  .floating-input:focus + .floating-label,
+  .floating-input.has-value + .floating-label,
+  .floating-label-active {
+    left: 1.5rem;
+  }
+}
+
+.floating-input:focus {
+  padding-top: 1.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.floating-input.has-value {
+  padding-top: 1.75rem;
+  padding-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .floating-input:focus {
+    padding-top: 2rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .floating-input.has-value {
+    padding-top: 2rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Adjust label color for error states */
+.floating-input.border-red-500:focus + .floating-label-active,
+.floating-input.border-red-500.has-value + .floating-label-active,
+.floating-input.border-red-500:focus + .floating-label,
+.floating-input.border-red-500.has-value + .floating-label {
+  color: #ef4444;
+}
+
+/* Adjust label color for success states */
+.floating-input.border-green-500:focus + .floating-label-active,
+.floating-input.border-green-500.has-value + .floating-label-active,
+.floating-input.border-green-500:focus + .floating-label,
+.floating-input.border-green-500.has-value + .floating-label {
+  color: #22c55e;
+}
+
 

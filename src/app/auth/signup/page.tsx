@@ -26,6 +26,7 @@ export default function SignUp() {
   const [emailDomainError, setEmailDomainError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -309,28 +310,41 @@ export default function SignUp() {
                 <form onSubmit={handleSubmit} className="relative space-y-6 xs:space-y-7 sm:space-y-8">
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-sm sm:text-base font-medium text-[#e4e4e7] mb-3 xs:mb-4">
-                      Email Address *
-                    </label>
                     <div className="relative">
                       <input
                         type="email"
                         id="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange("email", e.target.value)}
-                        onBlur={() => setEmailTouched(true)}
+                        onFocus={() => setFocusedField("email")}
+                        onBlur={() => {
+                          setEmailTouched(true)
+                          setFocusedField(null)
+                        }}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        className={`floating-input w-full px-5 sm:px-6 pt-7 pb-2 sm:pt-8 sm:pb-2 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                          formData.email ? 'has-value' : ''
+                        } ${
                           formData.email.length === 0 && !emailTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : (isEmailValid && isEmailDomainOk)
                               ? "border-green-500 focus:border-green-500 focus:ring-green-500/50"
                               : "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                         }`}
-                        placeholder="your@email.com"
+                        placeholder=" "
                       />
+                      <label
+                        htmlFor="email"
+                        className={`floating-label absolute left-5 sm:left-6 text-sm sm:text-base pointer-events-none transition-all duration-200 origin-left ${
+                          formData.email || focusedField === "email"
+                            ? 'floating-label-active'
+                            : 'text-[#737373]'
+                        }`}
+                      >
+                        Email Address *
+                      </label>
                       {formData.email && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10">
                           {(isEmailValid && isEmailDomainOk) ? (
                             <FaCheck className="w-5 h-5 text-green-500" />
                           ) : emailTouched && formData.email ? (
@@ -352,30 +366,43 @@ export default function SignUp() {
 
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-sm sm:text-base font-medium text-[#e4e4e7] mb-3 xs:mb-4">
-                      Password *
-                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
                         id="password"
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
-                        onBlur={() => setPasswordTouched(true)}
+                        onFocus={() => setFocusedField("password")}
+                        onBlur={() => {
+                          setPasswordTouched(true)
+                          setFocusedField(null)
+                        }}
                         required
-                        className={`w-full px-5 sm:px-6 py-4 sm:py-5 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white placeholder-[#737373] outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        className={`floating-input w-full px-5 sm:px-6 pt-7 pb-2 sm:pt-8 sm:pb-2 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-base sm:text-lg text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                          formData.password ? 'has-value' : ''
+                        } ${
                           formData.password.length === 0 && !passwordTouched
                             ? "border-[#2a2a2a] hover:border-[#FFD700]/20"
                             : isPasswordValid
                               ? "border-green-500 focus:border-green-500 focus:ring-green-500/50"
                               : "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                         }`}
-                        placeholder="Create a strong password"
+                        placeholder=" "
                       />
+                      <label
+                        htmlFor="password"
+                        className={`floating-label absolute left-5 sm:left-6 text-sm sm:text-base pointer-events-none transition-all duration-200 origin-left ${
+                          formData.password || focusedField === "password"
+                            ? 'floating-label-active'
+                            : 'text-[#737373]'
+                        }`}
+                      >
+                        Password *
+                      </label>
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#a3a3a3] hover:text-[#FFD700] transition-colors z-10"
                       >
                         {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
                       </button>

@@ -193,7 +193,7 @@ function HowItWorksSection() {
             className="col-span-12 lg:col-span-12 text-center mb-16 sm:mb-32 lg:mb-40"
           >
             <h2 
-              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
             <span 
@@ -334,7 +334,7 @@ function HowItWorksSection() {
             </div>
 
             {/* Desktop: Fan Layout */}
-            <div className="hidden md:flex md:justify-center md:items-center md:gap-4 lg:gap-6 max-w-6xl mx-auto relative" style={{ minHeight: '500px' }}>
+            <div className="hidden md:flex md:justify-center md:items-center md:gap-2 lg:gap-4 xl:gap-6 max-w-6xl mx-auto relative px-2 md:px-4" style={{ minHeight: '500px' }}>
               {steps.map((step, index) => {
                 const StepIcon = step.icon;
                 // Fan angles: left card rotates left, center stays straight, right rotates right
@@ -354,11 +354,11 @@ function HowItWorksSection() {
                     transform: `rotate(${rotation}deg) translateY(${translateY}px)`,
                     zIndex: zIndex,
                   }}
-                  className="group relative flex-1 max-w-sm"
+                  className="group relative flex-1 max-w-[280px] md:max-w-[300px] lg:max-w-sm"
                 >
               {/* Premium Card - Clean & Centered with enhanced 3D shadow */}
               <div 
-                className="relative h-full p-8 sm:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
+                className="relative h-full p-6 md:p-8 lg:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -384,17 +384,17 @@ function HowItWorksSection() {
                 {/* Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
                   {/* Icon */}
-                  <div className="mb-6">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
-                      <StepIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700]" />
+                  <div className="mb-4 md:mb-6">
+                    <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
+                      <StepIcon className="w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 text-[#FFD700]" />
                     </div>
                   </div>
 
                   {/* Number Badge */}
-                  <div className="mb-6">
-                    <div className="inline-block px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
+                  <div className="mb-4 md:mb-6">
+                    <div className="inline-block px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
                       <span 
-                        className="text-2xl sm:text-3xl font-extrabold"
+                        className="text-xl md:text-2xl lg:text-3xl font-extrabold"
                         style={{ 
                           fontFamily: 'var(--font-cinzel), serif',
                           background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
@@ -409,14 +409,14 @@ function HowItWorksSection() {
 
                   {/* Title */}
                   <h3 
-                    className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight"
+                    className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-6 leading-tight"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     {step.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-base sm:text-lg text-[#d4d4d8] leading-relaxed max-w-sm mx-auto">
+                  <p className="text-sm md:text-base lg:text-lg text-[#d4d4d8] leading-relaxed max-w-sm mx-auto px-2">
                     {step.description}
                   </p>
                 </div>
@@ -575,20 +575,7 @@ function PerformanceSection() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         updateCardDepth();
-        
-        // On desktop, center the first card after applying initial depth
-        if (desktop && cardRefs.current[0]) {
-          const firstCard = cardRefs.current[0];
-          if (firstCard) {
-            firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
-            // Update depth again after centering completes
-            setTimeout(() => {
-              requestAnimationFrame(() => {
-                updateCardDepth();
-              });
-            }, 150);
-          }
-        }
+        // Removed auto-scroll to prevent page from scrolling to this section on load
       });
     });
     
@@ -622,7 +609,7 @@ function PerformanceSection() {
             className="col-span-12 lg:col-span-12 text-center mb-24 sm:mb-32 lg:mb-40"
           >
             <h2 
-              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
               Performance{' '}
@@ -884,7 +871,7 @@ function FeaturesSection() {
             className="col-span-12 lg:col-span-12 text-center mb-16 sm:mb-24 lg:mb-32"
           >
           <h2 
-            className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             <span 
@@ -1068,7 +1055,7 @@ function AboutSection() {
             className="col-span-12 lg:col-span-12 mb-12 sm:mb-16"
           >
           <h2 
-            className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-10 tracking-tight px-4 sm:px-0"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-10 tracking-tight px-4 sm:px-0"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             <span 

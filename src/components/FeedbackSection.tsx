@@ -94,7 +94,7 @@ export function FeedbackSection() {
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
               </div>
-              <MessageSquare className="w-5 h-5 text-[#FFD700] group-hover:text-[#FFE55C] transition-colors duration-200 relative z-10" />
+              <MessageSquare className="w-5 h-5 text-white group-hover:text-white transition-colors duration-200 relative z-10" />
             </button>
           </motion.div>
         ) : (

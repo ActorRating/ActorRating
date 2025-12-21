@@ -128,7 +128,7 @@ export function HomeNavbar() {
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
                   </div>
-                  <span className="text-sm font-medium text-[#FFD700] group-hover:text-[#FFE55C] transition-colors duration-200 relative z-10">Sign Up</span>
+                  <span className="text-sm font-medium text-white group-hover:text-white transition-colors duration-200 relative z-10">Sign Up</span>
                 </button>
               </Link>
             )}

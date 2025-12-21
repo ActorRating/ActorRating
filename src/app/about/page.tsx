@@ -57,7 +57,7 @@ export default function AboutPage() {
                 className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32"
               >
               <h1 
-                className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif'
                 }}
@@ -141,7 +141,7 @@ export default function AboutPage() {
                 className="col-span-12 lg:col-start-2 lg:col-span-10 mb-20 sm:mb-32"
               >
                 <h2 
-                  className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-12 sm:mb-20 text-center px-4 sm:px-0"
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-12 sm:mb-20 text-center px-4 sm:px-0"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   What Makes Us Different
