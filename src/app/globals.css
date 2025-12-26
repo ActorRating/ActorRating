@@ -417,6 +417,13 @@ button, a, input, select, textarea, [role="button"] {
   border-radius: 4px;
 }
 
+/* Disable default focus-visible for form inputs (they have custom focus styles) */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
 /* Special focus states for buttons */
 button:focus-visible,
 a:focus-visible {
@@ -887,24 +894,28 @@ nav {
 }
 
 .floating-input:focus {
-  padding-top: 1.75rem;
-  padding-bottom: 0.5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 0.75rem;
+  line-height: 1.2;
 }
 
 .floating-input.has-value {
-  padding-top: 1.75rem;
-  padding-bottom: 0.5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 0.75rem;
+  line-height: 1.2;
 }
 
 @media (min-width: 640px) {
   .floating-input:focus {
-    padding-top: 2rem;
-    padding-bottom: 0.5rem;
+    padding-top: 1.5rem;
+    padding-bottom: 0.75rem;
+    line-height: 1.2;
   }
   
   .floating-input.has-value {
-    padding-top: 2rem;
-    padding-bottom: 0.5rem;
+    padding-top: 1.5rem;
+    padding-bottom: 0.75rem;
+    line-height: 1.2;
   }
 }
 

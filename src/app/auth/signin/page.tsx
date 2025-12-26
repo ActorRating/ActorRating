@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useRef } from "react"
 import { useUser, useSession } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
@@ -14,6 +14,7 @@ import { fadeInUp, fadeIn } from "@/lib/animations"
 import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket, FaArrowRight } from "react-icons/fa"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 function SignInContent() {
   const router = useRouter()
@@ -31,7 +32,82 @@ function SignInContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [emailTouched, setEmailTouched] = useState(false)
+  const emailValidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const searchParams = useSearchParams()
+
+  // Popular email service domains
+  const POPULAR_EMAIL_DOMAINS = [
+    'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com',
+    'protonmail.com', 'aol.com', 'mail.com', 'yandex.com', 'gmx.com',
+    'zoho.com', 'live.com', 'msn.com', 'rediffmail.com', 'mail.ru'
+  ]
+
+  // Email validation with detailed error messages
+  const validateEmailDetailed = (email: string): { isValid: boolean; error?: string } => {
+    if (!email) {
+      return { isValid: false, error: "Email is required" }
+    }
+
+    // Check for basic format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(email)) {
+      // Check for common mistakes
+      if (email.includes('@') && !email.includes('.')) {
+        return { isValid: false, error: "Email must include a domain (e.g., @gmail.com)" }
+      }
+      if (email.includes('.') && !email.includes('@')) {
+        return { isValid: false, error: "Email must include @ symbol" }
+      }
+      if (email.includes(' ')) {
+        return { isValid: false, error: "Email cannot contain spaces" }
+      }
+      return { isValid: false, error: "Please enter a valid email address" }
+    }
+
+    // Extract domain
+    const domain = email.split('@')[1]?.toLowerCase()
+    if (!domain) {
+      return { isValid: false, error: "Email must include a domain" }
+    }
+
+    // Check for popular email services
+    const isPopularDomain = POPULAR_EMAIL_DOMAINS.some(popular => 
+      domain === popular || domain.endsWith(`.${popular}`)
+    )
+
+    if (!isPopularDomain) {
+      // Check for common typos in popular domains
+      const commonTypos: Record<string, string> = {
+        'gmial.com': 'gmail.com',
+        'gmaill.com': 'gmail.com',
+        'gmai.com': 'gmail.com',
+        'yahooo.com': 'yahoo.com',
+        'yaho.com': 'yahoo.com',
+        'outlok.com': 'outlook.com',
+        'outllook.com': 'outlook.com',
+        'hotmial.com': 'hotmail.com',
+        'hotmai.com': 'hotmail.com',
+        'hotmali.com': 'hotmail.com',
+      }
+
+      const typoFix = commonTypos[domain]
+      if (typoFix) {
+        return { isValid: false, error: `Did you mean @${typoFix}?` }
+      }
+
+      // Check if it's a valid-looking domain but not popular
+      const domainParts = domain.split('.')
+      if (domainParts.length >= 2 && domainParts[domainParts.length - 1].length >= 2) {
+        // Valid format but not a popular service - allow it but warn
+        return { isValid: true } // Allow custom domains
+      }
+
+      return { isValid: false, error: "Please use a valid email service (e.g., Gmail, Yahoo, Outlook)" }
+    }
+
+    return { isValid: true }
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -54,12 +130,46 @@ function SignInContent() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear field-specific error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }))
+    
+    if (field === "email") {
+      setEmailTouched(true)
+      
+      // Clear previous timeout
+      if (emailValidationTimeoutRef.current) {
+        clearTimeout(emailValidationTimeoutRef.current)
+      }
+
+      // Clear error immediately while typing
+      if (value.length === 0) {
+        setErrors(prev => ({ ...prev, email: "" }))
+      } else {
+        // Debounce validation - wait 800ms after user stops typing
+        emailValidationTimeoutRef.current = setTimeout(() => {
+          const validation = validateEmailDetailed(value)
+          if (validation.isValid) {
+            setErrors(prev => ({ ...prev, email: "" }))
+          } else {
+            setErrors(prev => ({ ...prev, email: validation.error || "Please enter a valid email address" }))
+          }
+        }, 800)
+      }
+    } else {
+      // Clear field-specific error when user starts typing
+      if (errors[field]) {
+        setErrors(prev => ({ ...prev, [field]: "" }))
+      }
     }
     setApiError("")
   }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (emailValidationTimeoutRef.current) {
+        clearTimeout(emailValidationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,98 +277,192 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden w-full" style={{ maxWidth: '100vw' }}>
-      {/* Subtle Background Glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/3 via-black to-transparent" />
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFD700]/5 rounded-full blur-[120px]" />
-      
-      <div className="relative z-10 min-h-screen w-full">
-          <div className="w-full px-4 sm:px-6 lg:px-8" style={{ maxWidth: '1280px', margin: '0 auto' }}>
-            <div className="grid grid-cols-12 gap-8 min-h-screen">
-            {/* Left Side - Elegant Branding */}
-            <div className="hidden lg:flex lg:col-span-6 relative">
-          <div className="flex-1 flex flex-col justify-center px-12 xl:px-20 py-8 overflow-visible">
-            {/* Back Button - Aligned with text on Desktop */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="absolute top-16 left-12 xl:left-20"
-            >
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="w-full overflow-visible"
-            >
-              <h1 
-                className="text-5xl xl:text-6xl font-bold text-white mb-4 leading-[1.1] whitespace-nowrap"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
-              >
-                Welcome Back
-              </h1>
-              
-              <p className="text-lg text-[#a3a3a3] leading-relaxed font-light">
-                Continue rating and analyzing the finest acting performances in cinema.
-              </p>
-            </motion.div>
-            </div>
-            </div>
-
-            {/* Right Side - Sign In Form */}
-            <div className="col-span-12 lg:col-span-6 flex flex-col justify-center">
-          <motion.div
-            variants={fadeIn}
-            initial="hidden"
-            animate="show"
-            className="w-full max-w-md mx-auto"
+    <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#181818] flex">
+      {/* LEFT SIDE - Hero (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 relative">
+        {/* Back button */}
+        <Link 
+          href="/" 
+          className="absolute top-8 left-8 flex items-center gap-2 text-gray-400 hover:text-[#FFD700] transition-colors group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </Link>
+        
+        {/* Hero content */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 
+            className="text-5xl font-bold text-white mb-6 leading-[1.2]" 
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
-            {/* Back Button - Mobile Only */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-6 sm:mb-8 lg:hidden"
+            Welcome Back
+          </h1>
+          <p className="text-xl text-gray-400 leading-relaxed">
+            Continue rating and analyzing cinema's finest performances
+          </p>
+        </motion.div>
+      </div>
+      
+      {/* RIGHT SIDE - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-8 relative -mt-4 sm:-mt-6 lg:mt-0">
+        <div className="w-full max-w-md">
+          
+          {/* Mobile: Back button */}
+          <div className="lg:hidden mb-6">
+            <Link 
+              href="/" 
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
             >
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </motion.div>
-
-            {/* Mobile Header */}
-            <div className="lg:hidden text-center mb-8 px-4">
-              <h2 
-                className="text-3xl sm:text-4xl font-bold text-white mb-3"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
-              >
-                Welcome Back
-              </h2>
-              <p className="text-sm sm:text-base text-[#a3a3a3]">Sign in to continue</p>
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+          </div>
+          
+          {/* Mobile: Show logo + title */}
+          <motion.div 
+            className="lg:hidden text-center mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex justify-center mb-4">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+                <Image
+                  src="/logo_navbar.png"
+                  alt="ActorRating Logo"
+                  width={96}
+                  height={96}
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
-
-            {/* Sign In Form - Clean & Elegant */}
-            <motion.div
-              variants={fadeInUp}
-              className="relative"
+            <h1 
+              className="text-3xl font-bold text-white mb-2" 
+              style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
-              {/* Round Spotlights - Top Left and Bottom Left */}
-              <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
-              <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-radial from-[#FFD700]/40 via-[#FFA500]/20 to-transparent rounded-full blur-[100px] opacity-70 pointer-events-none" />
+              Welcome Back
+            </h1>
+            <p className="text-gray-400 text-sm">
+              Continue rating cinema's finest performances
+            </p>
+          </motion.div>
+          
+          {/* Card - 3D Elevated Design */}
+          <motion.div 
+            className="relative p-8 sm:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            style={{
+              boxShadow: `
+                0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+              `,
+              transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
+              transformStyle: 'preserve-3d',
+            }}
+          >
+            {/* Title (desktop only, mobile has it above) */}
+            <h2 className="hidden lg:block text-2xl font-semibold text-white mb-2 text-center" style={{ fontFamily: 'var(--font-cinzel), serif' }}>
+              Sign In
+            </h2>
+            
+            {/* Subtitle (desktop only) */}
+            <p className="hidden lg:block text-gray-400 text-center mb-8">
+              Sign in to continue
+            </p>
+            
+            {/* Messages */}
+            {infoMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
+              >
+                <p className="text-sm text-emerald-300 text-center">{infoMessage}</p>
+              </motion.div>
+            )}
+            
+            {/* API Error */}
+            {apiError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
+              >
+                <p className="text-sm text-red-400 text-center">{apiError}</p>
+              </motion.div>
+            )}
+            
+            {/* Google Button */}
+            <button 
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading}
+              className="w-full py-4 px-6 rounded-2xl text-white font-semibold flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isGoogleLoading) {
+                  e.currentTarget.style.transform = 'scale(1.02)'
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              }}
+            >
+              {/* Hover gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/10 via-[#FFA500]/10 to-[#FFD700]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               
-              {/* Glassmorphism Container - 3D Elevated */}
-              <div 
-                className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[2rem] p-6 sm:p-8 transition-all duration-300" 
-                style={{ 
+              <div className="relative flex items-center justify-center gap-3">
+                {isGoogleLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                  </>
+                )}
+              </div>
+            </button>
+            
+            {/* Sign up link (improved visibility) */}
+            <div className="mt-8 pt-6 border-t border-[#FFD700]/10 text-center">
+              <p className="text-sm text-gray-400">
+                Don't have an account?{' '}
+                <Link href="/auth/signup" className="text-[#FFD700] font-semibold hover:underline">
+                  Sign Up
+                </Link>
+              </p>
+            </div>
+            
+            {/* ============================================
+                EMAIL/PASSWORD FORM - COMMENTED OUT
+                (Can be restored if needed)
+            ============================================ */}
+            {/* 
+            <div 
+              className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[2rem] p-5 sm:p-7 transition-all duration-300" 
+              style={{ 
                   backdropFilter: 'blur(24px) saturate(180%)', 
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
                   boxShadow: `
@@ -271,19 +475,9 @@ function SignInContent() {
                   transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
                   transformStyle: 'preserve-3d',
                 }}
-              >
-                <div className="relative hidden lg:block mb-10">
-                  <h2 
-                    className="text-xl md:text-2xl font-bold text-white mb-2"
-                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                  >
-                    Sign In
-                  </h2>
-                  <p className="text-xs md:text-sm text-[#a3a3a3]">Enter your credentials</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="relative space-y-5">
-                  {/* Email Field */}
+            >
+              {/* 
+                <form onSubmit={handleSubmit} className="relative space-y-4 sm:space-y-5">
                   <div>
                     <div className="relative">
                       <input
@@ -294,10 +488,10 @@ function SignInContent() {
                         onFocus={() => setFocusedField("email")}
                         onBlur={() => setFocusedField(null)}
                         required
-                        className={`floating-input w-full px-5 sm:px-6 pt-6 pb-2 sm:pt-7 sm:pb-2 bg-black/50 border rounded-lg text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 sm:pt-5 sm:pb-2 bg-black/50 border rounded-xl text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
                           formData.email ? 'has-value' : ''
                         } ${
-                          errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
+                          errors.email ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                         }`}
                         placeholder=" "
                       />
@@ -323,7 +517,6 @@ function SignInContent() {
                     )}
                   </div>
 
-                  {/* Password Field */}
                   <div>
                     <div className="relative">
                       <input
@@ -334,10 +527,10 @@ function SignInContent() {
                         onFocus={() => setFocusedField("password")}
                         onBlur={() => setFocusedField(null)}
                         required
-                        className={`floating-input w-full px-5 sm:px-6 pt-6 pb-2 sm:pt-7 sm:pb-2 pr-12 sm:pr-14 bg-black/50 border rounded-lg text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:ring-offset-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
+                        className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 sm:pt-5 sm:pb-2 pr-12 sm:pr-14 bg-black/50 border rounded-xl text-sm sm:text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all duration-200 ${
                           formData.password ? 'has-value' : ''
                         } ${
-                          errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/50" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
+                          errors.password ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
                         }`}
                         placeholder=" "
                       />
@@ -370,7 +563,6 @@ function SignInContent() {
                     )}
                   </div>
 
-                  {/* Messages */}
                   {infoMessage && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
@@ -391,7 +583,6 @@ function SignInContent() {
                     </motion.div>
                   )}
 
-                  {/* Sign In Button */}
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -424,8 +615,7 @@ function SignInContent() {
                   </button>
                 </form>
 
-                {/* Divider */}
-                <div className="relative my-6">
+                <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-[#FFD700]/10" />
                   </div>
@@ -435,35 +625,8 @@ function SignInContent() {
                     </span>
                   </div>
                 </div>
-
-                {/* Google Sign In */}
-                <LoginButton
-                  onClick={handleGoogleSignIn}
-                  disabled={isGoogleLoading}
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                >
-                  {isGoogleLoading ? "Signing in..." : "Continue with Google"}
-                </LoginButton>
-
-                {/* Sign Up Link */}
-                <div className="relative mt-6 text-center">
-                  <p className="text-sm text-[#737373]">
-                    Don't have an account?{" "}
-                    <Link 
-                      href="/auth/signup" 
-                      className="text-[#FFD700] hover:text-[#FFE55C] font-medium transition-colors"
-                    >
-                      Sign up
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+                */}
           </motion.div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

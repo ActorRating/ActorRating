@@ -449,10 +449,11 @@ function HowItWorksSection() {
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              aria-label="Start rating acting performances"
             >
               <span className="flex items-center gap-4 xs:gap-5">
                 Start Rating
-                <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" />
+                <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
               </span>
             </button>
           </Link>
@@ -742,14 +743,15 @@ function PerformanceSection() {
                   <div className="mt-auto pt-4">
                     <Link href={`/performances`}>
                       <button 
-                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 min-h-[48px]"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                         }}
+                        aria-label="Rate this performance"
                       >
                         <span className="flex items-center justify-center gap-2">
                           Rate
-                          <FaStar className="w-4 h-4" />
+                          <FaStar className="w-4 h-4" aria-hidden="true" />
                         </span>
                       </button>
                     </Link>
@@ -793,11 +795,11 @@ function PerformanceSection() {
                       }
                     }}
                     style={{
-                      width: index === activeCard ? '20px' : '5px',
-                      height: '5px',
-                      minWidth: index === activeCard ? '20px' : '5px',
-                      minHeight: '5px',
-                      padding: 0,
+                      width: index === activeCard ? '20px' : '8px',
+                      height: '8px',
+                      minWidth: '8px',
+                      minHeight: '8px',
+                      padding: '8px',
                       border: 'none',
                       backgroundColor: index === activeCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                       borderRadius: '9999px',
@@ -814,7 +816,7 @@ function PerformanceSection() {
                         e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)';
                       }
                     }}
-                    aria-label={`Go to card ${index + 1}`}
+                    aria-label={`Go to performance card ${index + 1} of ${highlights.length}`}
                   />
                 ))}
               </div>
@@ -1263,7 +1265,7 @@ function AboutSection() {
 
           {/* Tagline - REMOVE DUPLICATE */}
           <div className="col-span-12 lg:col-span-12 mt-16 sm:mt-20 lg:mt-24">
-            <Link href="/about">
+            <Link href="/about" aria-label="Learn more about ActorRating">
           <button 
             className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
             style={{
@@ -1272,10 +1274,11 @@ function AboutSection() {
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            aria-label="Learn more about ActorRating"
           >
             <span className="flex items-center gap-4 xs:gap-5">
               Learn More
-              <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" />
+              <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
             </span>
           </button>
         </Link>
@@ -1407,7 +1410,7 @@ export default function HomePageClient() {
               transition={{ duration: 1, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
               className="w-full flex justify-center"
             >
-              <Link href="/performances" className="inline-block relative">
+              <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
                 <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
@@ -1420,6 +1423,7 @@ export default function HomePageClient() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'scale(1)'
                   }}
+                  aria-label="Start rating acting performances now"
                 >
                   {/* White light sweep effect */}
                   <span 
@@ -1429,10 +1433,11 @@ export default function HomePageClient() {
                       width: '100%',
                       height: '100%',
                     }}
+                    aria-hidden="true"
                   />
                   <span className="flex items-center justify-center gap-4 xs:gap-5 whitespace-nowrap relative z-10">
                     Start Rating Now
-                    <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" />
+                    <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
                   </span>
                 </button>
               </Link>

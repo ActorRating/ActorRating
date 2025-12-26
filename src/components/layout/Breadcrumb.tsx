@@ -63,7 +63,10 @@ export function Breadcrumb() {
                 aria-current="page"
               >
                 {item.label === 'Home' ? (
-                  <Home className="w-4 h-4" />
+                  <>
+                    <Home className="w-4 h-4" aria-hidden="true" />
+                    <span className="sr-only">Home</span>
+                  </>
                 ) : (
                   item.label
                 )}
@@ -75,9 +78,13 @@ export function Breadcrumb() {
                   "text-muted-foreground hover:text-foreground transition-colors",
                   item.label === 'Home' && "flex items-center"
                 )}
+                aria-label={item.label === 'Home' ? 'Go to home page' : `Go to ${item.label}`}
               >
                 {item.label === 'Home' ? (
-                  <Home className="w-4 h-4" />
+                  <>
+                    <Home className="w-4 h-4" aria-hidden="true" />
+                    <span className="sr-only">Home</span>
+                  </>
                 ) : (
                   item.label
                 )}

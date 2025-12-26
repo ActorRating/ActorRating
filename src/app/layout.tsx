@@ -101,7 +101,8 @@ export const metadata: Metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: "#000000",
 };
 
@@ -121,6 +122,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        {/* Preload critical resources */}
+        <link rel="preload" href="/logo.png" as="image" />
         {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>

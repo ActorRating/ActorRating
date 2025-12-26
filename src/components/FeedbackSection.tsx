@@ -159,7 +159,7 @@ export function FeedbackSection() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="relative rounded-full w-10 h-10 flex items-center justify-center border border-transparent bg-[#1a1a1a]/50 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:bg-[#1a1a1a]/70 hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] group"
+                  className="relative rounded-full w-10 h-10 flex items-center justify-center border border-transparent bg-[#1a1a1a]/50 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:bg-[#1a1a1a]/70 hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] group min-h-[48px] min-w-[48px]"
                   style={{
                     boxShadow: `
                       0 8px 20px -5px rgba(0, 0, 0, 0.6),
@@ -167,11 +167,12 @@ export function FeedbackSection() {
                       inset 0 1px 0 0 rgba(255, 255, 255, 0.1)
                     `,
                   }}
+                  aria-label="Close feedback form"
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-[#FFD700]/15 rounded-full blur-2xl" />
                   </div>
-                  <X className="w-5 h-5 text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10" />
+                  <X className="w-5 h-5 text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10" aria-hidden="true" />
                 </button>
               </div>
 
