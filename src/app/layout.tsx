@@ -23,7 +23,8 @@ const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
   weight: "400",
-  display: "swap",
+  display: "optional", // Faster LCP - don't block rendering
+  preload: true,
 });
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -122,8 +123,14 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        {/* Preload critical resources */}
-        <link rel="preload" href="/logo.png" as="image" />
+        {/* Preload critical font for LCP element */}
+        <link
+          rel="preload"
+          href="https://fonts.gstatic.com/s/cinzel/v24/8vIJ7ww63mVu7gt79mT7PkRXMw.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>

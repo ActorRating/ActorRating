@@ -77,7 +77,7 @@ export function HomeNavbar() {
               <div className="flex items-center gap-2">
                 <Link href="/dashboard" className="group">
                   <button
-                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]"
+                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] min-h-[48px]"
                     style={{
                       boxShadow: `
                         0 10px 30px -10px rgba(0, 0, 0, 0.7),
@@ -85,6 +85,7 @@ export function HomeNavbar() {
                         inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
                       `,
                     }}
+                    aria-label="Go to dashboard"
                   >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
@@ -94,7 +95,7 @@ export function HomeNavbar() {
                 </Link>
                 <button
                   onClick={() => handleLogout()}
-                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group"
+                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group min-h-[48px]"
                   style={{
                     boxShadow: `
                       0 10px 30px -10px rgba(0, 0, 0, 0.7),
@@ -102,6 +103,7 @@ export function HomeNavbar() {
                       inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
                     `,
                   }}
+                  aria-label="Sign out"
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
@@ -112,7 +114,7 @@ export function HomeNavbar() {
             ) : (
               <Link href="/auth/signup" className="group">
                 <button
-                  className="relative px-6 py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)]"
+                  className="relative px-6 py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] min-h-[48px]"
                   style={{
                     boxShadow: `
                       0 15px 40px -10px rgba(0, 0, 0, 0.8),
@@ -124,6 +126,7 @@ export function HomeNavbar() {
                     transform: 'translateY(-3px) perspective(1000px) rotateX(1deg)',
                     transformStyle: 'preserve-3d',
                   }}
+                  aria-label="Sign up for ActorRating"
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
