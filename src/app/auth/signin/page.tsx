@@ -277,7 +277,7 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#181818] flex">
+    <div className="min-h-screen bg-gradient-to-br from-black via-black to-[#D4AF37]/15 flex relative overflow-hidden">
       {/* LEFT SIDE - Hero (Desktop Only) */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 relative">
         {/* Back button */}
