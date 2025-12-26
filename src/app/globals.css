@@ -359,6 +359,30 @@ html {
   }
 }
 
+/* Fix mobile Safari bottom navigation bar black area */
+@supports (padding: max(0px)) {
+  /* Ensure fixed bottom elements account for safe area */
+  [class*="fixed"][class*="bottom-0"] {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* Fix search bars and input fields at bottom on mobile Safari */
+  @media (max-width: 768px) {
+    /* Add safe area padding to main content to prevent black bar */
+    main {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    /* Fix any search inputs or forms at the bottom */
+    form[class*="bottom"],
+    div[class*="bottom"][class*="search"],
+    input[type="search"]:focus,
+    input[type="text"]:focus {
+      margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+}
+
 /* Ensure footer doesn't create extra space on mobile */
 footer {
   margin-top: auto;

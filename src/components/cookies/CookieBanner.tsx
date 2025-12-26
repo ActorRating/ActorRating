@@ -8,16 +8,35 @@ export function CookieBanner() {
   if (!showBanner) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-xl border-t border-[#FFD700]/20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+    <div 
+      className="bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 backdrop-blur-2xl border-t border-[#FFD700]/30"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        paddingBottom: 'env(safe-area-inset-bottom, 0)',
+        boxShadow: `
+          0 -10px 40px rgba(0, 0, 0, 0.8),
+          0 -5px 20px rgba(255, 215, 0, 0.1),
+          0 0 0 1px rgba(255, 255, 255, 0.05),
+          inset 0 1px 0 0 rgba(255, 255, 255, 0.08)
+        `,
+        width: '100%',
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-5">
           {/* Compact Text */}
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-xs sm:text-sm text-[#d4d4d8] leading-tight font-light">
+            <p className="text-sm sm:text-base text-[#e4e4e7] leading-relaxed font-light">
               We use cookies to enhance your experience.{' '}
               <button 
                 onClick={openSettings}
-                className="text-[#FFD700] hover:text-[#FFE55C] underline underline-offset-2 transition-colors duration-300"
+                className="text-[#FFD700] hover:text-[#FFE55C] underline underline-offset-2 transition-colors duration-300 font-medium"
               >
                 Learn more
               </button>
@@ -25,16 +44,29 @@ export function CookieBanner() {
           </div>
           
           {/* Compact Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
             <button
               onClick={rejectAll}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-[#a3a3a3] hover:text-white border border-[#737373]/40 rounded-full hover:border-[#737373]/60 transition-all duration-300 bg-black/40 backdrop-blur-sm"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-[#d4d4d8] hover:text-white border border-[#737373]/50 rounded-full hover:border-[#737373]/70 transition-all duration-300 bg-gradient-to-br from-[#0a0a0a]/90 to-black/90 backdrop-blur-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+              style={{
+                boxShadow: `
+                  0 5px 15px -5px rgba(0, 0, 0, 0.5),
+                  0 0 0 1px rgba(255, 255, 255, 0.03),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                `,
+              }}
             >
               Reject
             </button>
             <button
               onClick={acceptAll}
-              className="px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-black bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full hover:from-[#FFE55C] hover:to-[#FFD700] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.2)] hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]"
+              className="px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] rounded-full hover:from-[#FFE55C] hover:via-[#FFE55C] hover:to-[#FFD700] transition-all duration-300 hover:scale-105"
+              style={{
+                boxShadow: `
+                  0 0 8px rgba(255, 215, 0, 0.15),
+                  0 3px 10px -3px rgba(0, 0, 0, 0.3)
+                `,
+              }}
             >
               Accept
             </button>

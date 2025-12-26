@@ -42,135 +42,156 @@ function HowItWorksSection() {
     }
   ];
 
-  // Handle drag for top card - LEFT only
+  // Handle drag for top card - LEFT only - Optimized for smoothness
   const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
     setIsDragging(true);
-    dragStartX.current = e.touches[0].clientX;
-    dragStartY.current = e.touches[0].clientY;
+    dragStartX.current = touch.clientX;
+    dragStartY.current = touch.clientY;
+    setDragOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const deltaX = Math.abs(dragStartX.current - currentX);
+    const touch = e.touches[0];
+    const currentX = touch.clientX;
+    const currentY = touch.clientY;
+    const deltaX = dragStartX.current - currentX; // Positive = left swipe
     const deltaY = Math.abs(dragStartY.current - currentY);
     
-    // Only prevent scroll if horizontal movement is greater than vertical (horizontal swipe)
-    if (deltaX > 10 && deltaX > deltaY) {
+    // Only handle horizontal swipes (left direction)
+    if (deltaX > 0 && deltaX > deltaY * 1.5) {
       e.preventDefault();
-      e.stopPropagation();
+      // Use requestAnimationFrame for smooth updates
+      requestAnimationFrame(() => {
+        setDragOffset(Math.min(deltaX, 400)); // Cap at 400px
+      });
+    } else if (deltaX < 0) {
+      // Prevent right swipe, snap back
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
     }
-    
-    const offset = dragStartX.current - currentX; // Negative = left
-    // Only allow dragging to the left
-    setDragOffset(Math.max(0, offset));
   };
 
   const handleTouchEnd = () => {
     if (!isDragging) return;
+    const currentOffset = dragOffset;
     setIsDragging(false);
     
-      // Reduced threshold for easier mobile swipe (60px instead of 100px)
-      if (dragOffset > 60) {
-        // Animate card out smoothly before cycling
-        setIsAnimatingOut(true);
+    // Threshold for swipe (30% of card width or 80px, whichever is smaller)
+    const threshold = 80;
+    if (currentOffset > threshold) {
+      // Animate card out smoothly
+      setIsAnimatingOut(true);
+      requestAnimationFrame(() => {
         setTimeout(() => {
           setTopCardIndex((prev) => (prev + 1) % steps.length);
           setDragOffset(0);
           setIsAnimatingOut(false);
-        }, 250); // Faster transition
+        }, 200);
+      });
     } else {
-      // Snap back if not dragged far enough
-      setDragOffset(0);
+      // Snap back smoothly
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     dragStartX.current = e.clientX;
+    setDragOffset(0);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    const offset = dragStartX.current - e.clientX; // Negative = left
-    setDragOffset(Math.max(0, offset));
+    const deltaX = dragStartX.current - e.clientX; // Positive = left
+    requestAnimationFrame(() => {
+      setDragOffset(Math.max(0, Math.min(deltaX, 400)));
+    });
   };
 
   const handleMouseUp = () => {
     if (!isDragging) return;
+    const currentOffset = dragOffset;
     setIsDragging(false);
     
-      // Reduced threshold for easier swipe
-      if (dragOffset > 60) {
-        // Animate card out smoothly before cycling
-        setIsAnimatingOut(true);
+    const threshold = 80;
+    if (currentOffset > threshold) {
+      setIsAnimatingOut(true);
+      requestAnimationFrame(() => {
         setTimeout(() => {
           setTopCardIndex((prev) => (prev + 1) % steps.length);
           setDragOffset(0);
           setIsAnimatingOut(false);
-        }, 250); // Faster transition
+        }, 200);
+      });
     } else {
-      // Snap back if not dragged far enough
-      setDragOffset(0);
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
     }
   };
 
   useEffect(() => {
     if (isDragging) {
-      // Prevent body scroll on mobile when dragging
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      
+      // Only prevent scroll when actively dragging horizontally
       const handleGlobalMouseMove = (e: MouseEvent) => {
-        const offset = dragStartX.current - e.clientX; // Negative = left
-        setDragOffset(Math.max(0, offset));
+        const deltaX = dragStartX.current - e.clientX;
+        if (deltaX > 10) {
+          requestAnimationFrame(() => {
+            setDragOffset(Math.max(0, Math.min(deltaX, 400)));
+          });
+        }
       };
       
       const handleGlobalMouseUp = () => {
+        const currentOffset = dragOffset;
         setIsDragging(false);
-      // Reduced threshold for easier swipe
-      if (dragOffset > 60) {
-        // Animate card out smoothly before cycling
-        setIsAnimatingOut(true);
-        setTimeout(() => {
-          setTopCardIndex((prev) => (prev + 1) % steps.length);
-          setDragOffset(0);
-          setIsAnimatingOut(false);
-        }, 250); // Faster transition
+        const threshold = 80;
+        if (currentOffset > threshold) {
+          setIsAnimatingOut(true);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              setTopCardIndex((prev) => (prev + 1) % steps.length);
+              setDragOffset(0);
+              setIsAnimatingOut(false);
+            }, 200);
+          });
         } else {
-          // Snap back if not dragged far enough
-          setDragOffset(0);
+          requestAnimationFrame(() => {
+            setDragOffset(0);
+          });
         }
       };
 
       const handleGlobalTouchMove = (e: TouchEvent) => {
-        // Prevent scrolling while dragging horizontally
-        if (isDragging && e.touches.length > 0) {
-          const currentX = e.touches[0].clientX;
-          const deltaX = Math.abs(dragStartX.current - currentX);
-          // Only prevent if there's significant horizontal movement
-          if (deltaX > 10) {
+        if (e.touches.length > 0 && isDragging) {
+          const touch = e.touches[0];
+          const deltaX = dragStartX.current - touch.clientX;
+          const deltaY = Math.abs(dragStartY.current - touch.clientY);
+          
+          // Only prevent scroll for clear horizontal swipes
+          if (deltaX > 10 && deltaX > deltaY * 1.5) {
             e.preventDefault();
+            requestAnimationFrame(() => {
+              setDragOffset(Math.min(deltaX, 400));
+            });
           }
         }
       };
 
-      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
       window.addEventListener('mouseup', handleGlobalMouseUp);
       window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
       
       return () => {
-        document.body.style.overflow = '';
-        document.body.style.touchAction = '';
         window.removeEventListener('mousemove', handleGlobalMouseMove);
         window.removeEventListener('mouseup', handleGlobalMouseUp);
         window.removeEventListener('touchmove', handleGlobalTouchMove);
       };
-    } else {
-      // Restore scrolling when not dragging
-      document.body.style.overflow = '';
-      document.body.style.touchAction = '';
     }
   }, [isDragging, dragOffset, steps.length]);
 
@@ -263,16 +284,20 @@ function HowItWorksSection() {
                       className={`absolute top-1/2 left-1/2 w-72 ${isTopCard ? 'cursor-grab active:cursor-grabbing' : ''}`}
                       style={{
                         transform: `translate(-50%, -50%) translateX(${finalTranslateX + peekOffset}px) translateY(${peekDown}px) rotate(${peekRotation}deg)`,
-                        transformOrigin: 'top left',
+                        transformOrigin: 'center center',
                         zIndex: zIndex,
                         opacity: finalOpacity,
-                        transition: isTopCard && (isAnimatingOut || !isDragging)
-                          ? 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out' 
-                          : isTopCard && isDragging
+                        willChange: isTopCard ? 'transform' : 'opacity, transform',
+                        transition: isTopCard && isDragging
                           ? 'none'
-                          : 'opacity 0.6s ease-out, transform 0.3s ease-out',
+                          : isTopCard && isAnimatingOut
+                          ? 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out'
+                          : isTopCard
+                          ? 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out'
+                          : 'opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         pointerEvents: isTopCard ? 'auto' : 'none',
-                        touchAction: isTopCard ? 'pan-x' : 'auto',
+                        touchAction: isTopCard ? 'pan-x pan-y' : 'auto',
+                        WebkitTransform: `translate(-50%, -50%) translateX(${finalTranslateX + peekOffset}px) translateY(${peekDown}px) rotate(${peekRotation}deg)`,
                       }}
                       onTouchStart={isTopCard ? handleTouchStart : undefined}
                       onTouchMove={isTopCard ? handleTouchMove : undefined}
@@ -1335,7 +1360,7 @@ export default function HomePageClient() {
               style={{ opacity: 1, transform: 'translateY(0)' }}
             >
               <h1 
-                className="hero-tagline text-[3rem] xs:text-[3.5rem] sm:text-[4.25rem] md:text-[5.25rem] lg:text-[6.25rem] xl:text-[7.25rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
+                className="hero-tagline text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif',
                   textShadow: '0 10px 40px rgba(0,0,0,0.7)',
