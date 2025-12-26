@@ -1303,9 +1303,9 @@ export default function HomePageClient() {
       <div className="hero min-h-[85vh] relative flex items-start justify-center bg-black w-full overflow-visible" style={{ willChange: 'auto', maxWidth: '100vw' }}>
         {/* Spotlight effect - Award show aesthetic with premium gold */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 0.15, scale: 1 }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full blur-[140px] z-[1] pointer-events-none"
           style={{
             background: 'radial-gradient(circle, rgba(255, 200, 0, 0.28) 0%, rgba(255, 180, 0, 0.18) 35%, rgba(255, 160, 0, 0.08) 55%, transparent 75%)',
@@ -1348,27 +1348,29 @@ export default function HomePageClient() {
                 <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
                 <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }}>RATE THE </span>
                 <span 
-                  className="inline sm:hidden"
+                  className="inline sm:hidden relative"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.08em',
+                    textShadow: '0 0 60px rgba(255, 215, 0, 0.5), 0 0 100px rgba(255, 215, 0, 0.3), 0 0 140px rgba(255, 215, 0, 0.2)',
+                    filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))',
                   }}
                 >
                   CRAFT
                 </span>
                 <span 
-                  className="hidden sm:inline"
+                  className="hidden sm:inline relative"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.02em',
+                    textShadow: '0 0 60px rgba(255, 215, 0, 0.5), 0 0 100px rgba(255, 215, 0, 0.3), 0 0 140px rgba(255, 215, 0, 0.2)',
+                    filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))',
                   }}
                 >
                   CRAFT
@@ -1380,7 +1382,7 @@ export default function HomePageClient() {
             <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: "180px", opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="h-[2px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 relative"
             >
               <div 
@@ -1394,9 +1396,9 @@ export default function HomePageClient() {
 
             {/* Subtitle - Clear & Compelling */}
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-12 xs:mb-14 sm:mb-12 md:mb-14 lg:mb-16 font-light text-center px-4"
               style={{ letterSpacing: '0.005em' }}
             >
@@ -1405,9 +1407,9 @@ export default function HomePageClient() {
 
             {/* CTA Button - Convert with Elegance */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="w-full flex justify-center"
             >
               <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
