@@ -1348,29 +1348,27 @@ export default function HomePageClient() {
                 <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
                 <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }}>RATE THE </span>
                 <span 
-                  className="inline sm:hidden relative"
+                  className="inline sm:hidden"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
+                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.08em',
-                    textShadow: '0 0 60px rgba(255, 215, 0, 0.5), 0 0 100px rgba(255, 215, 0, 0.3), 0 0 140px rgba(255, 215, 0, 0.2)',
-                    filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))',
                   }}
                 >
                   CRAFT
                 </span>
                 <span 
-                  className="hidden sm:inline relative"
+                  className="hidden sm:inline"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
+                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.02em',
-                    textShadow: '0 0 60px rgba(255, 215, 0, 0.5), 0 0 100px rgba(255, 215, 0, 0.3), 0 0 140px rgba(255, 215, 0, 0.2)',
-                    filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))',
                   }}
                 >
                   CRAFT
