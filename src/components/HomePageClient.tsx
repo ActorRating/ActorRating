@@ -1326,12 +1326,13 @@ export default function HomePageClient() {
           {/* Hero Section - Award Show Caliber with 12-column grid */}
           <div className="grid grid-cols-12 pt-60 xs:pt-64 sm:pt-32 md:pt-40 lg:pt-48 xl:pt-56 pb-24 sm:pb-32 md:pb-40 lg:pb-48 xl:pb-56 w-full">
             <div className="col-span-12 lg:col-span-12 flex flex-col justify-center items-center w-full">
-            {/* Main Headline - MASSIVE & Centered - LCP Element: Render immediately, animate with CSS */}
+            {/* Main Headline - MASSIVE & Centered - LCP Element: Render immediately visible */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 w-full flex justify-center"
+              style={{ opacity: 1, transform: 'translateY(0)' }}
             >
               <h1 
                 className="hero-tagline text-[3rem] xs:text-[3.5rem] sm:text-[4.25rem] md:text-[5.25rem] lg:text-[6.25rem] xl:text-[7.25rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
@@ -1342,7 +1343,8 @@ export default function HomePageClient() {
                   lineHeight: '1.1',
                   maxWidth: '100%',
                   display: 'inline-block',
-                  contentVisibility: 'auto'
+                  opacity: 1,
+                  transform: 'translateY(0)'
                 }}
               >
                 <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
@@ -1392,13 +1394,17 @@ export default function HomePageClient() {
               />
             </motion.div>
 
-            {/* Subtitle - Clear & Compelling */}
+            {/* Subtitle - Clear & Compelling - LCP Element: Render immediately visible */}
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-12 xs:mb-14 sm:mb-12 md:mb-14 lg:mb-16 font-light text-center px-4"
-              style={{ letterSpacing: '0.005em' }}
+              style={{ 
+                letterSpacing: '0.005em',
+                opacity: 1,
+                transform: 'translateY(0)'
+              }}
             >
               Judge performances like the Academy.
             </motion.p>
