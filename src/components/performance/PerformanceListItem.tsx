@@ -155,10 +155,10 @@ export function PerformanceListItem({
           >
             <Link 
               href={performance.actor && performance.movie
-                ? getRateUrl(
-                    { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
-                    { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
-                  )
+              ? getRateUrl(
+                  { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
+                  { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+                )
                 : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`}
               aria-label={`Rate ${performance.actor?.name || 'actor'}'s performance in ${performance.movie?.title || 'movie'}`}
             >

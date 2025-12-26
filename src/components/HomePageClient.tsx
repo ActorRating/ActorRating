@@ -1301,19 +1301,16 @@ export default function HomePageClient() {
   return (
     <>
       <div className="hero min-h-[85vh] relative flex items-start justify-center bg-black w-full overflow-visible" style={{ willChange: 'auto', maxWidth: '100vw' }}>
-        {/* Spotlight effect - Award show aesthetic with premium gold - Animate after initial render */}
+        {/* Spotlight effect - Award show aesthetic with premium gold */}
         <motion.div
-          initial={false}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 0.15, scale: 1 }}
-          transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full blur-[140px] z-[1] pointer-events-none"
           style={{
             background: 'radial-gradient(circle, rgba(255, 200, 0, 0.28) 0%, rgba(255, 180, 0, 0.18) 35%, rgba(255, 160, 0, 0.08) 55%, transparent 75%)',
-            opacity: 0.15,
-            transform: 'translate(-50%, -50%) scale(1)',
             maxWidth: '100vw',
-            maxHeight: '100vh',
-            willChange: 'opacity, transform'
+            maxHeight: '100vh'
           }}
         />
         
@@ -1329,11 +1326,11 @@ export default function HomePageClient() {
           {/* Hero Section - Award Show Caliber with 12-column grid */}
           <div className="grid grid-cols-12 pt-60 xs:pt-64 sm:pt-32 md:pt-40 lg:pt-48 xl:pt-56 pb-24 sm:pb-32 md:pb-40 lg:pb-48 xl:pb-56 w-full">
             <div className="col-span-12 lg:col-span-12 flex flex-col justify-center items-center w-full">
-            {/* Main Headline - MASSIVE & Centered - LCP Element: Render immediately with CSS animation */}
+            {/* Main Headline - MASSIVE & Centered - LCP Element: Render immediately, animate with CSS */}
             <motion.div
-              initial={false}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
               className="mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 w-full flex justify-center"
             >
               <h1 
@@ -1345,8 +1342,7 @@ export default function HomePageClient() {
                   lineHeight: '1.1',
                   maxWidth: '100%',
                   display: 'inline-block',
-                  opacity: 1,
-                  transform: 'translateY(0)'
+                  contentVisibility: 'auto'
                 }}
               >
                 <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
@@ -1380,13 +1376,12 @@ export default function HomePageClient() {
               </h1>
             </motion.div>
 
-            {/* Gold Divider - Cinematic - Animate after initial render */}
+            {/* Gold Divider - Cinematic */}
             <motion.div
-              initial={false}
+              initial={{ width: 0, opacity: 0 }}
               animate={{ width: "180px", opacity: 1 }}
-              transition={{ duration: 1.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="h-[2px] w-[180px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 relative"
-              style={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="h-[2px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 relative"
             >
               <div 
                 className="h-full w-full"
@@ -1397,24 +1392,23 @@ export default function HomePageClient() {
               />
             </motion.div>
 
-            {/* Subtitle - Clear & Compelling - Fade in after initial render */}
+            {/* Subtitle - Clear & Compelling */}
             <motion.p
-              initial={false}
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
+              transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
               className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-12 xs:mb-14 sm:mb-12 md:mb-14 lg:mb-16 font-light text-center px-4"
-              style={{ letterSpacing: '0.005em', opacity: 1 }}
+              style={{ letterSpacing: '0.005em' }}
             >
               Judge performances like the Academy.
             </motion.p>
 
-            {/* CTA Button - Convert with Elegance - Slide up after initial render */}
+            {/* CTA Button - Convert with Elegance */}
             <motion.div
-              initial={false}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="w-full flex justify-center"
-              style={{ opacity: 1 }}
             >
               <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
                 <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
