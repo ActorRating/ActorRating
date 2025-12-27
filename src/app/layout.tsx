@@ -94,17 +94,19 @@ export const metadata: Metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
     "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "apple-mobile-web-app-status-bar-style": "black-translucent", // Allows content behind status bar
+    "viewport-fit": "cover", // CRITICAL: iOS safe area support
   },
 };
 
-// ✅ Modern Next.js viewport handling
+// ✅ Modern Next.js viewport handling with iOS safe area support
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
   themeColor: "#000000",
+  viewportFit: "cover", // CRITICAL: Allows content to extend into safe areas on iOS
 };
 
 export default function RootLayout({

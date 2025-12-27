@@ -176,6 +176,7 @@ main {
 
 /* Prevent horizontal scrolling site-wide and improve mobile behavior */
 html, body {
+  height: 100%;
   background: #000000;
   overflow-x: hidden;
   width: 100%;
@@ -185,7 +186,6 @@ html, body {
   overscroll-behavior-y: none; /* Prevent bounce effect on iOS */
   overflow-y: auto;
   position: relative;
-  height: 100%;
   margin: 0;
   padding: 0;
 }
@@ -197,13 +197,12 @@ html {
 }
 
 body {
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  min-height: 100dvh; /* Dynamic viewport height for mobile browsers - CRITICAL for iOS */
+  padding-bottom: env(safe-area-inset-bottom); /* Respect iOS safe area */
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   position: relative;
   margin: 0;
-  padding: 0;
 }
 
 /* Ensure body can scroll to top */
@@ -355,24 +354,39 @@ html {
   }
   
   .min-h-screen {
-    min-height: 100dvh;
+    min-height: 100dvh !important;
   }
 }
 
-/* Fix mobile Safari bottom navigation bar black area */
+/* Fix mobile Safari bottom navigation bar black area - CRITICAL iOS FIX */
 @supports (padding: max(0px)) {
+  /* Apply safe-area-inset to body globally */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: #000; /* Match app background */
+  }
+  
+  /* Ensure main content respects safe area */
+  main {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: #000;
+  }
+  
+  /* Ensure root container respects safe area */
+  #__next {
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: #000;
+  }
+  
   /* Ensure fixed bottom elements account for safe area */
-  [class*="fixed"][class*="bottom-0"] {
+  [class*="fixed"][class*="bottom-0"],
+  .fixed.bottom-0 {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   
   /* Fix search bars and input fields at bottom on mobile Safari */
   @media (max-width: 768px) {
-    /* Add safe area padding to main content to prevent black bar */
-    main {
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    
     /* Fix any search inputs or forms at the bottom */
     form[class*="bottom"],
     div[class*="bottom"][class*="search"],
@@ -840,6 +854,39 @@ nav {
   background-clip: text;
   -webkit-background-clip: text;
   animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Premium glow pulse for CRAFT text - LCP optimized */
+@keyframes craft-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 60px rgba(255, 215, 0, 0.5));
+  }
+}
+
+.craft-glow-animation {
+  animation: craft-glow 3s ease-in-out infinite;
+  animation-delay: 0.5s; /* Start after LCP */
+}
+
+/* Fade in animation for hero text - LCP optimized */
+@keyframes fade-in-hero {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-text-fade-in {
+  animation: fade-in-hero 1s ease-out forwards;
+  animation-delay: 0.3s; /* Start after LCP */
+  opacity: 0; /* Start hidden, animation will show it */
 }
 
 /* Modern card hover effect */

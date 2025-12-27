@@ -82,14 +82,16 @@ function HowItWorksSection() {
     // Threshold for swipe (30% of card width or 80px, whichever is smaller)
     const threshold = 80;
     if (currentOffset > threshold) {
-      // Animate card out smoothly
+      // Animate card out smoothly with better timing
       setIsAnimatingOut(true);
       requestAnimationFrame(() => {
-        setTimeout(() => {
-          setTopCardIndex((prev) => (prev + 1) % steps.length);
-          setDragOffset(0);
-          setIsAnimatingOut(false);
-        }, 200);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            setTopCardIndex((prev) => (prev + 1) % steps.length);
+            setDragOffset(0);
+            setIsAnimatingOut(false);
+          }, 250);
+        });
       });
     } else {
       // Snap back smoothly
@@ -122,11 +124,13 @@ function HowItWorksSection() {
     if (currentOffset > threshold) {
       setIsAnimatingOut(true);
       requestAnimationFrame(() => {
-        setTimeout(() => {
-          setTopCardIndex((prev) => (prev + 1) % steps.length);
-          setDragOffset(0);
-          setIsAnimatingOut(false);
-        }, 200);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            setTopCardIndex((prev) => (prev + 1) % steps.length);
+            setDragOffset(0);
+            setIsAnimatingOut(false);
+          }, 250);
+        });
       });
     } else {
       requestAnimationFrame(() => {
@@ -153,14 +157,18 @@ function HowItWorksSection() {
         const threshold = 80;
         if (currentOffset > threshold) {
           setIsAnimatingOut(true);
+          // Use a smoother timing for the animation
           requestAnimationFrame(() => {
-            setTimeout(() => {
-              setTopCardIndex((prev) => (prev + 1) % steps.length);
-              setDragOffset(0);
-              setIsAnimatingOut(false);
-            }, 200);
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                setTopCardIndex((prev) => (prev + 1) % steps.length);
+                setDragOffset(0);
+                setIsAnimatingOut(false);
+              }, 250);
+            });
           });
         } else {
+          // Smooth snap back with better easing
           requestAnimationFrame(() => {
             setDragOffset(0);
           });
@@ -291,10 +299,10 @@ function HowItWorksSection() {
                         transition: isTopCard && isDragging
                           ? 'none'
                           : isTopCard && isAnimatingOut
-                          ? 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out'
+                          ? 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease-out'
                           : isTopCard
-                          ? 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out'
-                          : 'opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                          ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out'
+                          : 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                         pointerEvents: isTopCard ? 'auto' : 'none',
                         touchAction: isTopCard ? 'pan-x pan-y' : 'auto',
                         WebkitTransform: `translate(-50%, -50%) translateX(${finalTranslateX + peekOffset}px) translateY(${peekDown}px) rotate(${peekRotation}deg)`,
@@ -489,56 +497,99 @@ function HowItWorksSection() {
   );
 }
 
+// Performance highlights data
+const PERFORMANCE_HIGHLIGHTS = [
+  {
+    actor: "Cillian Murphy",
+    movie: "Oppenheimer",
+    quote: "A haunting portrayal of genius and consequence",
+    year: "2023",
+  },
+  {
+    actor: "Heath Ledger",
+    movie: "The Dark Knight",
+    quote: "An iconic transformation that redefined villainy",
+    year: "2008",
+  },
+  {
+    actor: "Joaquin Phoenix",
+    movie: "Joker",
+    quote: "Raw intensity and psychological depth",
+    year: "2019",
+  },
+  {
+    actor: "Margot Robbie",
+    movie: "Barbie",
+    quote: "Effortless charm meets existential depth",
+    year: "2023",
+  },
+  {
+    actor: "Paul Mescal",
+    movie: "Aftersun",
+    quote: "Subtlety and heartbreak in perfect measure",
+    year: "2022",
+  },
+  {
+    actor: "Cate Blanchett",
+    movie: "TÁR",
+    quote: "A masterclass in power and vulnerability",
+    year: "2022",
+  }
+];
+
 // Performance Section with active card tracking and depth effect
 function PerformanceSection() {
   const [activeCard, setActiveCard] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [performancesData, setPerformancesData] = useState<Map<string, any>>(new Map());
+  const [isLoadingRatings, setIsLoadingRatings] = useState(true);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const highlights = [
-    {
-      actor: "Cillian Murphy",
-      movie: "Oppenheimer",
-      quote: "A haunting portrayal of genius and consequence",
-      year: "2023",
-      rating: "9.4"
-    },
-    {
-      actor: "Heath Ledger",
-      movie: "The Dark Knight",
-      quote: "An iconic transformation that redefined villainy",
-      year: "2008",
-      rating: "9.8"
-    },
-    {
-      actor: "Joaquin Phoenix",
-      movie: "Joker",
-      quote: "Raw intensity and psychological depth",
-      year: "2019",
-      rating: "9.6"
-    },
-    {
-      actor: "Margot Robbie",
-      movie: "Barbie",
-      quote: "Effortless charm meets existential depth",
-      year: "2023",
-      rating: "9.1"
-    },
-    {
-      actor: "Paul Mescal",
-      movie: "Aftersun",
-      quote: "Subtlety and heartbreak in perfect measure",
-      year: "2022",
-      rating: "9.3"
-    },
-    {
-      actor: "Cate Blanchett",
-      movie: "TÁR",
-      quote: "A masterclass in power and vulnerability",
-      year: "2022",
-      rating: "9.5"
-    }
-  ];
+  // Fetch ratings for the highlights
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const targets = PERFORMANCE_HIGHLIGHTS.map(h => ({
+          actor: h.actor,
+          movie: h.movie
+        }));
+
+        const response = await fetch('/api/performances/by-lookup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ targets }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to fetch ratings');
+          setIsLoadingRatings(false);
+          return;
+        }
+
+        const data = await response.json();
+        const newPerformancesData = new Map<string, any>();
+
+        if (data.performances && Array.isArray(data.performances)) {
+          data.performances.forEach((perf: any) => {
+            if (perf.actor && perf.movie) {
+              const key = `${perf.actor.name}:${perf.movie.title}`;
+              newPerformancesData.set(key, perf);
+            }
+          });
+        }
+
+        setPerformancesData(newPerformancesData);
+      } catch (error) {
+        console.error('Error fetching ratings:', error);
+      } finally {
+        setIsLoadingRatings(false);
+      }
+    };
+
+    fetchRatings();
+  }, []);
 
   // Track active card and apply depth effect (desktop only)
   useEffect(() => {
@@ -609,14 +660,14 @@ function PerformanceSection() {
       container.removeEventListener('scroll', updateCardDepth);
       window.removeEventListener('resize', updateCardDepth);
     };
-  }, [highlights.length]);
+  }, [PERFORMANCE_HIGHLIGHTS.length]);
 
   // AUTO-SCROLL DISABLED - User requested no auto-scroll on mobile
   // useEffect(() => {
   //   // Only run on mobile (screen width < 1024px)
   //   if (typeof window === 'undefined' || window.innerWidth >= 1024) return;
   //   ...
-  // }, [highlights.length]);
+  // }, [PERFORMANCE_HIGHLIGHTS.length]);
 
   return (
     <div className="performance-section-container relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60 overflow-visible">
@@ -683,7 +734,7 @@ function PerformanceSection() {
                 }}
               >
                 <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
-                  {highlights.map((highlight, index) => (
+                  {PERFORMANCE_HIGHLIGHTS.map((highlight, index) => (
                   <motion.div
                     key={index}
                     ref={(el) => cardRefs.current[index] = el}
@@ -691,11 +742,11 @@ function PerformanceSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center lg:cursor-pointer performance-card-mobile"
+                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
                     style={{ 
                       willChange: 'transform, opacity',
                       paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
-                      paddingRight: index === highlights.length - 1 && !isDesktop ? '1rem' : '0',
+                      paddingRight: index === PERFORMANCE_HIGHLIGHTS.length - 1 && !isDesktop ? '1rem' : '0',
                       /* Hardware acceleration for smooth scrolling */
                       transform: 'translateZ(0)',
                       WebkitTransform: 'translateZ(0)',
@@ -734,7 +785,16 @@ function PerformanceSection() {
                     <div className="flex items-center justify-between mb-6">
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                         <FaStar className="w-4 h-4 text-[#FFD700]" />
-                        <span className="text-xl font-bold text-[#FFD700]">{highlight.rating}</span>
+                        <span className="text-xl font-bold text-[#FFD700]">
+                          {(() => {
+                            const key = `${highlight.actor}:${highlight.movie}`;
+                            const perfData = performancesData.get(key);
+                            if (perfData && perfData.averageRating > 0 && perfData.ratingCount > 0) {
+                              return perfData.averageRating.toFixed(1);
+                            }
+                            return "N/A";
+                          })()}
+                        </span>
                       </div>
                       <span className="text-base text-[#a1a1aa] font-medium">{highlight.year}</span>
                     </div>
@@ -766,20 +826,36 @@ function PerformanceSection() {
 
                   {/* Rate Button - Always at bottom */}
                   <div className="mt-auto pt-4">
-                    <Link href={`/performances`}>
-                      <button 
-                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 min-h-[48px]"
-                        style={{
-                          background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                        }}
-                        aria-label="Rate this performance"
-                      >
-                        <span className="flex items-center justify-center gap-2">
-                          Rate
-                          <FaStar className="w-4 h-4" aria-hidden="true" />
-                        </span>
-                      </button>
-                    </Link>
+                    {(() => {
+                      const key = `${highlight.actor}:${highlight.movie}`;
+                      const perfData = performancesData.get(key);
+                      
+                      let href = `/performances`; // default fallback
+                      
+                      if (perfData && perfData.actor && perfData.movie) {
+                        // Build rate URL with actor and movie data
+                        const actorSlug = perfData.actor.slug || perfData.actorId;
+                        const movieSlug = perfData.movie.slug || perfData.movieId;
+                        href = `/rate/${movieSlug}/${actorSlug}`;
+                      }
+                      
+                      return (
+                        <Link href={href}>
+                          <button 
+                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 min-h-[48px]"
+                            style={{
+                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                            }}
+                            aria-label="Rate this performance"
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              Rate
+                              <FaStar className="w-4 h-4" aria-hidden="true" />
+                            </span>
+                          </button>
+                        </Link>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -806,7 +882,7 @@ function PerformanceSection() {
               }}
             >
               <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
-                {highlights.map((_, index) => (
+                {PERFORMANCE_HIGHLIGHTS.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => {
@@ -841,7 +917,7 @@ function PerformanceSection() {
                         e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)';
                       }
                     }}
-                    aria-label={`Go to performance card ${index + 1} of ${highlights.length}`}
+                    aria-label={`Go to performance card ${index + 1} of ${PERFORMANCE_HIGHLIGHTS.length}`}
                   />
                 ))}
               </div>
@@ -1292,7 +1368,7 @@ function AboutSection() {
           <div className="col-span-12 lg:col-span-12 mt-16 sm:mt-20 lg:mt-24">
             <Link href="/about" aria-label="Learn more about ActorRating">
           <button 
-            className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-extrabold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
+            className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               transform: 'scale(1)',
@@ -1335,7 +1411,7 @@ export default function HomePageClient() {
           style={{
             background: 'radial-gradient(circle, rgba(255, 200, 0, 0.28) 0%, rgba(255, 180, 0, 0.18) 35%, rgba(255, 160, 0, 0.08) 55%, transparent 75%)',
             maxWidth: '100vw',
-            maxHeight: '100vh'
+            maxHeight: '100dvh'
           }}
         />
         
@@ -1360,22 +1436,20 @@ export default function HomePageClient() {
               style={{ opacity: 1, transform: 'translateY(0)' }}
             >
               <h1 
-                className="hero-tagline text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
+                className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif',
                   textShadow: '0 10px 40px rgba(0,0,0,0.7)',
                   letterSpacing: '0.08em',
                   lineHeight: '1.1',
                   maxWidth: '100%',
-                  display: 'inline-block',
-                  opacity: 1,
-                  transform: 'translateY(0)'
+                  display: 'inline-block'
                 }}
               >
                 <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
                 <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }}>RATE THE </span>
                 <span 
-                  className="inline sm:hidden"
+                  className="inline sm:hidden craft-glow-animation"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
@@ -1388,7 +1462,7 @@ export default function HomePageClient() {
                   CRAFT
                 </span>
                 <span 
-                  className="hidden sm:inline"
+                  className="hidden sm:inline craft-glow-animation"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
