@@ -42,6 +42,7 @@ export function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={item.href === '/' ? false : undefined}
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
                   pathname === item.href
@@ -97,6 +98,7 @@ export function Navbar() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={item.href === '/' ? false : undefined}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     "block px-3 py-2 rounded-lg text-sm font-medium transition-colors",

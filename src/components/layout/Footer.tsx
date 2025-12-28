@@ -21,13 +21,13 @@ export function Footer() {
             <Link href="/about" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
               About
             </Link>
-            <Link href="/privacy" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
               Privacy
             </Link>
-            <Link href="/terms" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+            <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
               Terms
             </Link>
-            <Link href="/kvkk" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
+            <Link href="/kvkk" target="_blank" rel="noopener noreferrer" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">
               KVKK
             </Link>
             <a href="mailto:contact@actorrating.com" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide">

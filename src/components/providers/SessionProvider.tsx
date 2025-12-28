@@ -27,35 +27,58 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const redirectHandled = useRef(false)
 
+  // Safety timeout: if loading takes more than 10 seconds, force initialization
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('[SessionProvider] Loading timeout - forcing initialization')
+        setLoading(false)
+        setIsInitialized(true)
+      }
+    }, 10000)
+
+    return () => clearTimeout(timeout)
+  }, [loading])
+
   useEffect(() => {
     let mounted = true
+    let redirectTimeout: NodeJS.Timeout | null = null
 
     // Get initial session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         
+        if (error) {
+          console.error('Error getting session:', error)
+        }
+        
         if (mounted) {
-          setSession(session)
+          setSession(session || null)
           setLoading(false)
           setIsInitialized(true)
           
           // Handle initial redirect for logged-in users (skip for sign-in page)
+          // Only redirect once and only from specific pages
           if (session?.user && !redirectHandled.current) {
+            // Only redirect from auth pages or home page, not from other pages
             if (pathname?.startsWith('/auth/') || pathname === '/') {
               // Skip redirect if we're on sign-in page (handled by sign-in page)
               if (pathname === '/auth/signin') {
                 return
               }
-              // console.log('Initial redirect to dashboard from SessionProvider')
+              // Only redirect once
               redirectHandled.current = true
-              router.push('/dashboard')
+              // Use replace instead of push to avoid adding to history
+              router.replace('/dashboard')
             }
           }
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
+        // Always clear loading state even on error
         if (mounted) {
+          setSession(null)
           setLoading(false)
           setIsInitialized(true)
         }
@@ -68,37 +91,56 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        // console.log('Auth state change:', { event, session: !!session, user: !!session?.user, pathname })
-        setSession(session)
-        setLoading(false)
-        setIsInitialized(true)
+      if (!mounted) return
 
-        // Handle redirects for auth events (skip for email sign-in to prevent conflicts)
-        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && !redirectHandled.current) {
-          // Only redirect if on auth pages or home, but not if we're already redirecting
-          if (pathname?.startsWith('/auth/') || pathname === '/') {
-            // Skip redirect if we're on sign-in page and using email auth (handled by sign-in page)
-            if (pathname === '/auth/signin') {
-              return
-            }
-            // console.log('Redirecting to dashboard from SessionProvider')
-            redirectHandled.current = true
-            router.push('/dashboard')
+      setSession(session)
+      setLoading(false)
+      setIsInitialized(true)
+
+      // Clear any pending redirect timeout
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout)
+        redirectTimeout = null
+      }
+
+      // Only handle redirects for SIGNED_IN event, not TOKEN_REFRESHED
+      // TOKEN_REFRESHED happens frequently and shouldn't trigger redirects
+      if (session?.user && event === 'SIGNED_IN' && !redirectHandled.current) {
+        // Only redirect if on auth pages or home, not if already on a valid page
+        if (pathname?.startsWith('/auth/') || pathname === '/') {
+          // Skip redirect if we're on sign-in page
+          if (pathname === '/auth/signin') {
+            return
           }
-        }
-
-        // Handle sign out
-        if (!session?.user && event === 'SIGNED_OUT') {
-          redirectHandled.current = false
-          // Always redirect to landing page on sign out from any page
-          router.push('/')
+          // Debounce redirect to prevent loops
+          redirectHandled.current = true
+          redirectTimeout = setTimeout(() => {
+            if (mounted) {
+              router.replace('/dashboard')
+            }
+          }, 100)
         }
       }
+
+        // Handle sign out - only redirect if actually signed out
+        if (!session?.user && event === 'SIGNED_OUT') {
+          redirectHandled.current = false
+          // Only redirect if not already on home page
+          if (pathname !== '/') {
+            redirectTimeout = setTimeout(() => {
+              if (mounted) {
+                router.replace('/')
+              }
+            }, 100)
+          }
+        }
     })
 
     return () => {
       mounted = false
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout)
+      }
       subscription.unsubscribe()
     }
   }, [router, pathname])

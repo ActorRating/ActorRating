@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { HomeLayout } from "@/components/layout"
@@ -38,12 +36,14 @@ interface PerformanceData {
   actor: {
     name: string
     imageUrl?: string
+    slug?: string | null
   }
   movie: {
     title: string
     year: number
+    slug?: string | null
   }
-  averageRating?: number
+  averageRating?: number | null
   ratingCount?: number
 }
 
@@ -91,19 +91,30 @@ export default function PerformancesPage() {
           body: JSON.stringify({ targets: allTargets })
         })
         
-        if (response.ok && !cancelled) {
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('[PERFORMANCES PAGE] API error:', response.status, errorData)
+          if (!cancelled) {
+            setRecentPerformances([])
+            setIconicPerformances([])
+            setLoading(false)
+          }
+          return
+        }
+        
+        if (!cancelled) {
           const data = await response.json()
           
           // Separate into recent and iconic based on original arrays
           const recent = RECENT_PERFORMANCE_TARGETS
-            .map(target => data.performances.find((p: any) => 
-              p.actor.name === target.actor && p.movie.title === target.movie
+            .map(target => data.performances?.find((p: any) => 
+              p.actor?.name === target.actor && p.movie?.title === target.movie
             ))
             .filter((p: any) => p !== undefined)
           
           const iconic = ICONIC_PERFORMANCE_TARGETS
-            .map(target => data.performances.find((p: any) => 
-              p.actor.name === target.actor && p.movie.title === target.movie
+            .map(target => data.performances?.find((p: any) => 
+              p.actor?.name === target.actor && p.movie?.title === target.movie
             ))
             .filter((p: any) => p !== undefined)
           
@@ -113,16 +124,14 @@ export default function PerformancesPage() {
             total: recent.length + iconic.length
           })
           
-          if (!cancelled) {
-            setRecentPerformances(recent)
-            setIconicPerformances(iconic)
-            
-            // Cache the data
-            sessionStorage.setItem(cacheKey, JSON.stringify({
-              data: { recent, iconic },
-              timestamp: Date.now()
-            }))
-          }
+          setRecentPerformances(recent)
+          setIconicPerformances(iconic)
+          
+          // Cache the data
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            data: { recent, iconic },
+            timestamp: Date.now()
+          }))
         }
       } catch (error) {
         if (!cancelled) {
@@ -306,22 +315,33 @@ export default function PerformancesPage() {
 
               {loading ? (
                 <div className="relative">
-                  <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide px-4 sm:px-6 lg:px-[20vw] xl:px-[25vw]">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="animate-pulse flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw]">
-                        <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
-                          style={{
-                            boxShadow: `
-                              0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                              0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                              0 0 0 1px rgba(255, 255, 255, 0.05),
-                              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                            `,
-                          }}
-                        ></div>
+                  {/* Carousel Container with Fade Edges */}
+                  <div className="relative -mx-4 sm:-mx-0">
+                    <div 
+                      className="overflow-hidden"
+                      style={{
+                        maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                      }}
+                    >
+                      <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="animate-pulse flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw]">
+                            <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
+                              style={{
+                                boxShadow: `
+                                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                                  0 0 0 1px rgba(255, 255, 255, 0.05),
+                                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                                `,
+                              }}
+                            ></div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               ) : recentPerformances.length > 0 ? (
@@ -340,7 +360,7 @@ export default function PerformancesPage() {
                         {recentPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center lg:cursor-pointer"
+                            className="flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center lg:cursor-pointer"
                             style={{
                               /* Hardware acceleration for smooth scrolling */
                               transform: 'translateZ(0)',
@@ -475,7 +495,7 @@ export default function PerformancesPage() {
                         {iconicPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                            className="flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
                           onClick={() => {
                             if (window.innerWidth >= 1024) {
                               const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
@@ -571,13 +591,14 @@ function LandingPageCard({
   performance: PerformanceData
   index: number 
 }) {
-  const rateUrl = performance.actor && performance.movie && performance.actor.slug && performance.movie.slug
+  const rateUrl = performance.actor && performance.movie
     ? getRateUrl(
-        { id: performance.actorId, name: performance.actor.name, slug: performance.actor.slug },
-        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug }
+        { id: performance.actorId, name: performance.actor.name, slug: performance.actor.slug || null },
+        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
       )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
-  const rating = performance.averageRating?.toFixed(1)
+  const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+  const rating = hasRating ? performance.averageRating.toFixed(1) : null
   const character = performance.character || "—"
 
   return (
@@ -612,10 +633,15 @@ function LandingPageCard({
           <div className="flex-1">
             {/* Top Row: Rating Badge and Year */}
             <div className="flex items-center justify-between mb-6">
-              {rating && (
+              {rating ? (
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                   <FaStar className="w-4 h-4 text-[#FFD700]" />
                   <span className="text-xl font-bold text-[#FFD700]">{rating}</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                  <FaStar className="w-4 h-4 text-[#666]" />
+                  <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
                 </div>
               )}
               
@@ -650,7 +676,7 @@ function LandingPageCard({
 
           {/* Rate Button - Always at bottom */}
           <div className="mt-auto pt-4">
-            <Link href={rateUrl}>
+            <Link href={rateUrl} prefetch={false}>
               <button 
                 className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
                 style={{

@@ -3,8 +3,6 @@ import { Metadata } from "next";
 import { HomeLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 
-export const dynamic = "force-dynamic";
-
 // --- SEO Metadata ---
 export const metadata: Metadata = {
   title: "ActorRating - Rate Acting Performances, Not Just Movies",

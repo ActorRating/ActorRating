@@ -483,15 +483,15 @@ export default function SignUp() {
             {/* Legal (simplified) */}
             <p className="text-xs text-gray-500 text-center mt-6 leading-relaxed">
               By continuing, you agree to our{' '}
-              <Link href="/terms" className="text-[#FFD700] hover:underline">
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#FFD700] hover:underline">
                 Terms
               </Link>
               ,{' '}
-              <Link href="/privacy" className="text-[#FFD700] hover:underline">
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#FFD700] hover:underline">
                 Privacy
               </Link>
               , and{' '}
-              <Link href="/kvkk" className="text-[#FFD700] hover:underline">
+              <Link href="/kvkk" target="_blank" rel="noopener noreferrer" className="text-[#FFD700] hover:underline">
                 KVKK
               </Link>
             </p>
@@ -728,6 +728,8 @@ export default function SignUp() {
                     By creating an account, you agree to our{" "}
                     <Link 
                       href="/terms" 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
                     >
                       Terms of Service
@@ -735,6 +737,8 @@ export default function SignUp() {
                     ,{" "}
                     <Link 
                       href="/privacy" 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
                     >
                       Privacy Policy
@@ -742,6 +746,8 @@ export default function SignUp() {
                     {" "}and{" "}
                     <Link 
                       href="/kvkk" 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-[#FFD700] hover:text-[#FFE55C] underline transition-colors"
                     >
                       KVKK Terms

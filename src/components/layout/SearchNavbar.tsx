@@ -43,7 +43,7 @@ export function SearchNavbar() {
 
           {/* Center - Home Button */}
           <div className="flex items-center">
-            <Link href="/" className="group">
+            <Link href="/" prefetch={false} className="group">
               <button
                 className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]"
                 style={{
