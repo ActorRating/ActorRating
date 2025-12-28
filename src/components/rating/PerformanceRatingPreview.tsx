@@ -37,6 +37,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const qualityZone = getQualityZone(value)
   const isImproving = value > lastValue
   const isDecreasing = value < lastValue
+  const QualityIcon = qualityZone.icon
 
   const handleValueChange = useCallback((newValue: number) => {
     setLastValue(value)
@@ -70,7 +71,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
                   </svg>
                 </button>
               </div>
-              <qualityZone.icon className={`w-4 h-4 ${qualityZone.color}`} />
+              <QualityIcon className={`w-4 h-4 ${qualityZone.color}`} />
             </div>
             {/* Description is now only shown in tooltip */}
           </div>
@@ -147,6 +148,7 @@ export function PerformanceRatingPreview() {
   }, [])
 
   const overallQuality = getOverallQuality(totalScore)
+  const OverallIcon = overallQuality.icon
 
   return (
     <div>
@@ -229,9 +231,9 @@ export function PerformanceRatingPreview() {
           </div>
           <div className="relative text-center">
             <motion.div className="flex items-center justify-center gap-2 mb-3">
-              <overallQuality.icon className={`w-6 h-6 ${overallQuality.color}`} />
+              <OverallIcon className={`w-6 h-6 ${overallQuality.color}`} />
               <h3 className={`text-xl sm:text-2xl font-bold ${overallQuality.color}`}>{overallQuality.label}</h3>
-              <overallQuality.icon className={`w-6 h-6 ${overallQuality.color}`} />
+              <OverallIcon className={`w-6 h-6 ${overallQuality.color}`} />
             </motion.div>
             <motion.div className="flex items-center justify-center gap-3 mb-2">
               <div className={`text-5xl sm:text-6xl lg:text-7xl font-black ${overallQuality.color}`}>{totalScore.toFixed(1)}</div>
