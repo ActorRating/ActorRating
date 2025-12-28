@@ -176,7 +176,7 @@ main {
 
 /* Prevent horizontal scrolling site-wide and improve mobile behavior */
 html, body {
-  height: 100%;
+  height: auto; /* CRITICAL: Changed from 100% to auto to allow proper scrolling on iOS Safari */
   background: #000000;
   overflow-x: hidden;
   width: 100%;
@@ -184,7 +184,7 @@ html, body {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-x: none;
   overscroll-behavior-y: none; /* Prevent bounce effect on iOS */
-  overflow-y: auto;
+  overflow-y: auto; /* Allow vertical scrolling */
   position: relative;
   margin: 0;
   padding: 0;
@@ -199,7 +199,7 @@ html {
 body {
   min-height: 100dvh; /* Dynamic viewport height for mobile browsers - CRITICAL for iOS */
   padding-bottom: env(safe-area-inset-bottom); /* Respect iOS safe area */
-  overflow-y: scroll;
+  overflow-y: auto; /* Changed from scroll to auto - only show scrollbar when needed */
   -webkit-overflow-scrolling: touch;
   position: relative;
   margin: 0;
