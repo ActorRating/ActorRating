@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Logo } from '@/components/ui/Logo'
 import { FaHome, FaArrowRight } from 'react-icons/fa'
 
 export default function NotFound() {
@@ -20,17 +19,12 @@ export default function NotFound() {
       />
 
       <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
-        {/* Logo */}
-        <div className="mb-12">
-          <Logo href="/" />
-        </div>
-
         {/* 404 Heading */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-8"
+          className="mb-12"
         >
           <h1 
             className="text-7xl sm:text-9xl font-bold mb-4 leading-none"
@@ -55,33 +49,55 @@ export default function NotFound() {
           </p>
         </motion.div>
 
-        {/* Navigation Links */}
+        {/* Navigation Buttons - Matching app style */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap justify-center gap-4 mb-12"
+          className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8"
         >
-          <Link
-            href="/"
-            className="px-6 py-3 bg-gradient-to-r from-[#D4AF37] to-[#FFA500] text-black font-semibold rounded-lg hover:from-[#FFD700] hover:to-[#D4AF37] transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center gap-2"
-          >
-            <FaHome className="w-4 h-4" />
-            <span>Homepage</span>
+          <Link href="/" className="inline-block">
+            <button 
+              className="group px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                transform: 'scale(1)',
+                boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.03)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              <span className="flex items-center justify-center gap-3">
+                <FaHome className="w-5 h-5" />
+                <span>Homepage</span>
+              </span>
+            </button>
           </Link>
-          <Link
-            href="/performances"
-            className="px-6 py-3 bg-[#1a1a1a] border border-[#333333] text-white font-semibold rounded-lg hover:bg-[#2a2a2a] hover:border-[#D4AF37] transition-all duration-200 inline-flex items-center gap-2"
-          >
-            <span>Performances</span>
-            <FaArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/search"
-            className="px-6 py-3 bg-[#1a1a1a] border border-[#333333] text-white font-semibold rounded-lg hover:bg-[#2a2a2a] hover:border-[#D4AF37] transition-all duration-200 inline-flex items-center gap-2"
-          >
-            <span>Search</span>
-            <FaArrowRight className="w-4 h-4" />
+          
+          <Link href="/performances" className="inline-block">
+            <button 
+              className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px]"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                transform: 'scale(1)',
+                boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.03)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              <span className="flex items-center justify-center gap-3">
+                <span>Performances</span>
+                <FaArrowRight className="w-5 h-5" />
+              </span>
+            </button>
           </Link>
         </motion.div>
 
@@ -92,6 +108,9 @@ export default function NotFound() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-wrap justify-center gap-6 text-sm"
         >
+          <Link href="/search" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors">
+            Search
+          </Link>
           <Link href="/dashboard" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors">
             Dashboard
           </Link>
