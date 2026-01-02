@@ -6,13 +6,6 @@ import { motion } from "framer-motion";
 import { FaStar, FaChartLine, FaArrowRight, FaTheaterMasks } from "react-icons/fa";
 import Link from "next/link";
 import React from "react";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "About ActorRating — Rate the acting, not the movie",
-  description: "ActorRating is a platform dedicated to evaluating individual acting performances, not overall films.",
-  robots: "index, follow",
-};
 
 export default function AboutPage() {
   // JSON-LD structured data - Fixed syntax
