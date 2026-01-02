@@ -39,7 +39,7 @@ const cormorantGaramond = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "ActorRating – Rate Acting Performances, Not Just Movies",
   description:
-    "ActorRating is the world's first community-driven platform to rate and analyze acting performances using Oscar-inspired criteria. Discover, rate, and explore detailed performance insights.",
+    "Rate and analyze acting performances using Oscar-inspired criteria. Join our community-driven platform to discover acclaimed performances.",
   keywords: [
     "actor rating",
     "actors rating",

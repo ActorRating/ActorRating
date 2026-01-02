@@ -17,7 +17,9 @@ const nextConfig = {
   },
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ['react-icons', 'framer-motion'],
+    optimizePackageImports: ['react-icons', 'framer-motion', 'lucide-react'],
+    // Reduce bundle size by optimizing server components
+    optimizeServerReact: true,
   },
   // Optimize images
   images: {
