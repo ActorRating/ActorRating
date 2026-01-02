@@ -108,14 +108,17 @@ export default function NotFound() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-wrap justify-center gap-6 text-sm"
         >
-          <Link href="/search" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors">
+          <Link href="/search" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors inline-flex items-center gap-1">
             Search
+            <FaArrowRight className="w-3 h-3" />
           </Link>
-          <Link href="/dashboard" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors">
+          <Link href="/dashboard" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors inline-flex items-center gap-1">
             Dashboard
+            <FaArrowRight className="w-3 h-3" />
           </Link>
-          <Link href="/about" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors">
+          <Link href="/about" className="text-[#D4AF37] hover:text-[#FFD700] transition-colors inline-flex items-center gap-1">
             About
+            <FaArrowRight className="w-3 h-3" />
           </Link>
         </motion.div>
       </div>
