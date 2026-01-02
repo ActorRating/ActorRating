@@ -112,30 +112,95 @@ export default function DashboardPage() {
     ).toFixed(1)
   }
 
+  // JSON-LD Schemas for Dashboard
+  const webPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Dashboard - ActorRating",
+    url: "https://www.actorrating.com/dashboard",
+    description: "Your personal dashboard for rating and tracking acting performances",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "ActorRating",
+      url: "https://www.actorrating.com"
+    }
+  };
+
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How to Use Your ActorRating Dashboard",
+    description: "Learn how to navigate and use your personal dashboard to rate and track acting performances",
+    step: [
+      {
+        "@type": "HowToStep",
+        name: "Search for Actors",
+        text: "Use the search bar to find actors you want to rate",
+        position: 1
+      },
+      {
+        "@type": "HowToStep",
+        name: "Browse Popular Actors",
+        text: "Explore popular actors and their performances",
+        position: 2
+      },
+      {
+        "@type": "HowToStep",
+        name: "View Your Ratings",
+        text: "See all your past ratings and performance scores",
+        position: 3
+      }
+    ]
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What can I do on my dashboard?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Your dashboard allows you to search for actors, browse popular performers, view your past ratings, and discover new performances to rate."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "How do I rate a performance from my dashboard?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Click on any actor card or use the search bar to find a specific actor and movie. Then navigate to their performance page to submit your rating across five criteria."
+        }
+      }
+    ]
+  };
+
   return (
     <AuthGuard>
       <SignedInLayout>
-        {/* JSON-LD Schema for Dashboard */}
+        {/* JSON-LD Schemas for Dashboard */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebPage",
-              name: "Dashboard - ActorRating",
-              url: "https://www.actorrating.com/dashboard",
-              description: "Your personal dashboard for rating and tracking acting performances",
-              isPartOf: {
-                "@type": "WebSite",
-                name: "ActorRating",
-                url: "https://www.actorrating.com"
-              }
-            })
+            __html: JSON.stringify(webPageSchema)
           }}
         />
-        <div className="min-h-screen bg-black">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(howToSchema)
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqSchema)
+          }}
+        />
+        <main className="min-h-screen bg-black">
           {/* Hero Section */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
+          <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
             <motion.div 
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -194,6 +259,7 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Search Bar */}
+            <nav aria-label="Search navigation">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -224,10 +290,11 @@ export default function DashboardPage() {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </nav>
+          </header>
 
           {/* Popular Actors */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="popular-actors-heading">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -373,7 +440,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Ratings */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="recent-ratings-heading">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -382,6 +449,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3 mb-8 justify-center sm:justify-start">
                 <Star className="w-6 h-6 text-[#FFD700]" />
                 <h2 
+                  id="recent-ratings-heading"
                   className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
                   style={{ 
                     fontFamily: 'var(--font-cinzel), serif',
@@ -483,9 +551,9 @@ export default function DashboardPage() {
                 </div>
               )}
             </motion.div>
-          </div>
-      </div>
-    </SignedInLayout>
+          </section>
+        </main>
+      </SignedInLayout>
     </AuthGuard>
   )
 }
