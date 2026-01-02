@@ -1,0 +1,47 @@
+# ActorRating - AI-Readable Documentation
+
+## Overview
+ActorRating is a community-driven platform for rating and analyzing individual acting performances using Oscar-inspired criteria.
+
+## Purpose
+Separate great performances from mediocre movies and vice versa by focusing exclusively on acting quality.
+
+## Core Features
+- Rate performances across 5 professional criteria
+- Compare actors across different roles and eras
+- Build comprehensive database of acting quality
+- View aggregated community scores
+
+## Rating Criteria
+1. **Emotional Range & Depth** - Ability to convey complex emotions authentically
+2. **Character Believability** - Creating convincing, memorable characters
+3. **Technical Skill & Authenticity** - Mastery of acting techniques
+4. **Screen Presence & Impact** - Commanding attention and making an impression
+5. **Chemistry & Interaction** - Working effectively with other actors
+
+## How It Works
+1. Select an actor's performance in a specific film
+2. Rate across five standardized categories
+3. View aggregated scores and community consensus
+
+## Key Pages
+- Homepage: https://actorrating.com
+- About: https://actorrating.com/about
+- Performances: https://actorrating.com/performances
+- Search: https://actorrating.com/search
+- Dashboard: https://actorrating.com/dashboard
+
+## Technology Stack
+- Next.js 15
+- React 19
+- PostgreSQL
+- Prisma ORM
+- Supabase Auth
+
+## Contact
+Email: contact@actorrating.com
+Website: https://actorrating.com
+
+## Last Updated
+2025-01-02
+

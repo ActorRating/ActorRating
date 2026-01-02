@@ -50,11 +50,87 @@ export default function Home() {
     },
   };
 
+  // FAQ Schema for AI Q&A optimization
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is ActorRating?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "ActorRating is a community-driven platform that allows users to rate and analyze individual acting performances in films, not the movies themselves. We use Oscar-inspired criteria including emotional range, character believability, technical skill, screen presence, and chemistry with other actors."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "How does ActorRating work?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Users select an actor's performance in a specific film, then rate it across five professional criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction. These scores are aggregated to provide comprehensive performance ratings."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "What makes ActorRating different from other rating platforms?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Unlike platforms like IMDB or Rotten Tomatoes that rate entire films, ActorRating focuses exclusively on individual acting performances. This allows for nuanced evaluation of an actor's work, separating great performances from mediocre films and vice versa."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "Who can rate performances on ActorRating?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Anyone can create a free account and start rating performances. Our community-driven approach ensures diverse perspectives while maintaining quality through standardized criteria."
+        }
+      }
+    ]
+  };
+
+  // HowTo Schema for instruction content
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How to Rate Acting Performances on ActorRating",
+    description: "Step-by-step guide to rating an actor's performance using Oscar-inspired criteria",
+    step: [
+      {
+        "@type": "HowToStep",
+        name: "Select an Actor's Performance",
+        text: "Choose an actor and a specific film role you want to rate",
+        position: 1
+      },
+      {
+        "@type": "HowToStep",
+        name: "Rate Across Five Criteria",
+        text: "Evaluate the performance on: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
+        position: 2
+      },
+      {
+        "@type": "HowToStep",
+        name: "View Aggregated Scores",
+        text: "See how your rating compares with the community and view comprehensive performance analytics",
+        position: 3
+      }
+    ]
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
       <LandingLayout>
         <HomePageClient />

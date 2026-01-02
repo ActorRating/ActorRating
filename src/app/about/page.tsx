@@ -4,13 +4,18 @@
 import { HomeLayout } from "@/components/layout";
 import { motion } from "framer-motion";
 import { FaStar, FaChartLine, FaArrowRight, FaTheaterMasks } from "react-icons/fa";
-import { GiClapperboard } from "react-icons/gi";
 import Link from "next/link";
-import Head from "next/head";
 import React from "react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About ActorRating — Rate the acting, not the movie",
+  description: "ActorRating is a platform dedicated to evaluating individual acting performances, not overall films.",
+  robots: "index, follow",
+};
 
 export default function AboutPage() {
-  // JSON-LD structured data
+  // JSON-LD structured data - Fixed syntax
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
@@ -22,23 +27,79 @@ export default function AboutPage() {
       "@type": "Organization",
       name: "ActorRating",
       url: "https://www.actorrating.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://www.actorrating.com/logo.png"
+      }
     },
+  };
+
+  // HowTo Schema for rating process
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How ActorRating Works",
+    description: "Learn how to rate acting performances on ActorRating",
+    step: [
+      {
+        "@type": "HowToStep",
+        name: "Select",
+        text: "Choose an actor's role in a specific film",
+        position: 1
+      },
+      {
+        "@type": "HowToStep",
+        name: "Rate",
+        text: "Score across five standardized categories",
+        position: 2
+      },
+      {
+        "@type": "HowToStep",
+        name: "Compare",
+        text: "View aggregated scores across films and actors",
+        position: 3
+      }
+    ]
+  };
+
+  // FAQ Schema
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Why does ActorRating exist?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "ActorRating exists to separate great acting from overall movie quality. A great performance can exist in a mediocre movie, and vice versa. We provide a platform to evaluate the craft of acting independently."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "What criteria does ActorRating use?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "We use five Oscar-inspired criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction with other actors."
+        }
+      }
+    ]
   };
 
   return (
     <>
-      <Head>
-        <title>About ActorRating — Rate the acting, not the movie</title>
-        <meta
-          name="description"
-          content="ActorRating is a platform dedicated to evaluating individual acting performances, not overall films."
-        />
-        <meta name="robots" content="index, follow" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </Head>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
 
       <HomeLayout>
         <div className="min-h-screen bg-black w-full" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>

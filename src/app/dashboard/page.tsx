@@ -115,6 +115,24 @@ export default function DashboardPage() {
   return (
     <AuthGuard>
       <SignedInLayout>
+        {/* JSON-LD Schema for Dashboard */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Dashboard - ActorRating",
+              url: "https://www.actorrating.com/dashboard",
+              description: "Your personal dashboard for rating and tracking acting performances",
+              isPartOf: {
+                "@type": "WebSite",
+                name: "ActorRating",
+                url: "https://www.actorrating.com"
+              }
+            })
+          }}
+        />
         <div className="min-h-screen bg-black">
           {/* Hero Section */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
