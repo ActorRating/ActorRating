@@ -18,6 +18,7 @@ import { useUser } from '@/components/providers/SessionProvider'
 import { ratingsApi } from '@/lib/api'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
+import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
 
 export default function SlugBasedRatePage() {
   const params = useParams()
@@ -171,6 +172,14 @@ export default function SlugBasedRatePage() {
 
   return (
     <Layout>
+      {/* SEO Content - Only visible to crawlers when logged out */}
+      <PerformanceSEOContent
+        actorName={actor.name}
+        movieTitle={movie.title}
+        movieYear={movie.year}
+        isLoggedIn={!!user}
+      />
+      
       <PerformanceRatingClientWrapper
         performance={{
           id: `${actor.id}-${movie.id}`,
