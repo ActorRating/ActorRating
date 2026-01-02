@@ -6,7 +6,7 @@ import HomePageClient from "@/components/HomePageClient";
 // --- SEO Metadata ---
 export const metadata: Metadata = {
   title: "ActorRating - Rate Acting Performances, Not Just Movies",
-  description: "Rate and analyze acting performances using Oscar-inspired criteria. Join our community-driven platform to discover acclaimed performances.",
+  description: "Rate and analyze acting performances using Oscar-inspired criteria. Join our community-driven platform to discover and explore acclaimed performances from cinema history.",
   keywords: [
     "actor rating", "acting performance", "movie ratings", "community-driven ratings",
     "Oscar-inspired criteria", "film performance analysis", "rate actors", "cinema"

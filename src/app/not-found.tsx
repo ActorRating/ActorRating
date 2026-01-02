@@ -15,7 +15,6 @@ export default function NotFound() {
 
   const quickLinks = [
     { href: '/', icon: FaHome, label: 'Home', description: 'Return to homepage' },
-    { href: '/rate', icon: FaStar, label: 'Rate Performance', description: 'Rate an actor' },
     { href: '/search', icon: FaSearch, label: 'Search', description: 'Find actors & movies' },
     { href: '/performances', icon: FaTheaterMasks, label: 'Performances', description: 'Browse all performances' },
     { href: '/dashboard', icon: FaChartLine, label: 'Dashboard', description: 'Your ratings' },

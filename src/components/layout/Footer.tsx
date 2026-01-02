@@ -31,9 +31,6 @@ export function Footer() {
               <Link href="/search" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
                 Search Actors
               </Link>
-              <Link href="/rate" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                Rate a Performance
-              </Link>
               <Link href="/dashboard" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
                 Your Dashboard
               </Link>
