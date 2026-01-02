@@ -27,45 +27,91 @@ export default function AboutPage() {
     },
   };
 
-  // HowTo Schema for rating process
+  // HowTo Schema for rating process - Enhanced with 4 clear steps
   const howToSchema = {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How ActorRating Works",
-    description: "Learn how to rate acting performances on ActorRating",
+    description: "Step-by-step guide to rating acting performances on ActorRating",
     step: [
       {
         "@type": "HowToStep",
-        name: "Select",
-        text: "Choose an actor's role in a specific film",
+        name: "Select a Performance",
+        text: "Choose an actor's role in a specific film that you want to rate",
         position: 1
       },
       {
         "@type": "HowToStep",
-        name: "Rate",
-        text: "Score across five standardized categories",
+        name: "Rate Using 5 Criteria",
+        text: "Evaluate the performance across five standardized categories: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
         position: 2
       },
       {
         "@type": "HowToStep",
-        name: "Compare",
-        text: "View aggregated scores across films and actors",
+        name: "Scores Are Normalized",
+        text: "Individual category scores are normalized and weighted to create a 0-100 overall performance score",
         position: 3
+      },
+      {
+        "@type": "HowToStep",
+        name: "Community Scores Form Final Rating",
+        text: "Your rating combines with community ratings to form the final aggregated performance score, allowing for comprehensive performance analysis",
+        position: 4
       }
     ]
   };
 
-  // FAQ Schema
+  // Comprehensive FAQ Schema - 7 key questions for AI Q&A optimization
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: [
       {
         "@type": "Question",
-        name: "Why does ActorRating exist?",
+        name: "What is ActorRating?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "ActorRating exists to separate great acting from overall movie quality. A great performance can exist in a mediocre movie, and vice versa. We provide a platform to evaluate the craft of acting independently."
+          text: "ActorRating is a community-driven platform that allows users to rate and analyze individual acting performances in films, not the movies themselves. We use Oscar-inspired criteria to evaluate the craft of acting independently from overall film quality."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "How are actor performances rated?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Performances are rated across five professional criteria: Emotional Range & Depth (ability to convey complex emotions), Character Believability (creating convincing characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention), and Chemistry & Interaction (working effectively with other actors). Each category is scored individually, then normalized to create an overall 0-100 performance score."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "What does a 0-100 score represent?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The 0-100 score represents the overall quality of an acting performance. Scores are calculated by normalizing and weighting the five individual category ratings (Emotional Range, Character Believability, Technical Skill, Screen Presence, and Chemistry). Higher scores indicate stronger performances, with community ratings aggregated to provide comprehensive performance analysis."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "Are ratings based on movies or performances?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Ratings are based on individual acting performances, not the overall movie. This allows us to separate great performances from mediocre films and vice versa. A single film may have multiple performance ratings - one for each actor's role."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "Who can submit ratings?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Anyone can create a free account and submit ratings on ActorRating. Our community-driven approach ensures diverse perspectives while maintaining quality through standardized criteria. All ratings contribute to the aggregated community scores."
+        }
+      },
+      {
+        "@type": "Question",
+        name: "How is bias reduced?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Bias is reduced through multiple mechanisms: standardized five-criteria evaluation system ensures consistent assessment, community aggregation balances individual perspectives, anonymous rating system prevents popularity bias, and the focus on performance quality rather than actor fame helps surface overlooked work. Multiple ratings per performance create a more accurate representation."
         }
       },
       {
@@ -73,7 +119,7 @@ export default function AboutPage() {
         name: "What criteria does ActorRating use?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We use five Oscar-inspired criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction with other actors."
+          text: "ActorRating uses five Oscar-inspired criteria: Emotional Range & Depth (conveying complex emotions authentically), Character Believability (creating convincing, memorable characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention and making an impression), and Chemistry & Interaction (working effectively with other actors). These criteria are inspired by Academy Award evaluation standards."
         }
       }
     ]
