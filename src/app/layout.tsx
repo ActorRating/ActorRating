@@ -6,6 +6,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -97,6 +98,10 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-status-bar-style": "black-translucent", // Allows content behind status bar
     "viewport-fit": "cover", // CRITICAL: iOS safe area support
   },
+  // Preconnect hints to reduce render-blocking (Next.js will add these to head)
+  alternates: {
+    canonical: "https://www.actorrating.com",
+  },
 };
 
 // ✅ Modern Next.js viewport handling with iOS safe area support
@@ -120,14 +125,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${cormorantGaramond.variable} antialiased`}
         suppressHydrationWarning
       >
-        {/* Preconnects for critical external resources */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>
+            <GoogleAnalytics />
             <Suspense fallback={null}>
               <RouteChangeScroll />
             </Suspense>

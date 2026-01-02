@@ -36,11 +36,6 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
         {children}
       </main>
 
-      {/* Footer */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        <Footer />
-      </div>
-
       {/* Feedback Section */}
       <FeedbackSection />
     </div>

@@ -1,6 +1,6 @@
 // src/app/page.tsx (Server Component)
 import { Metadata } from "next";
-import { HomeLayout } from "@/components/layout";
+import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 
 // --- SEO Metadata ---
@@ -56,9 +56,9 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <HomeLayout transparentBackground>
+      <LandingLayout>
         <HomePageClient />
-      </HomeLayout>
+      </LandingLayout>
     </>
   );
 }

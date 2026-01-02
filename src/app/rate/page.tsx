@@ -20,6 +20,7 @@ import Image from 'next/image'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
+import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -43,6 +44,8 @@ function RatePageContent() {
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { executeRecaptcha } = useRecaptchaV3()
+  const [showSignUpModal, setShowSignUpModal] = useState(false)
+  const [pendingRatingData, setPendingRatingData] = useState<any>(null)
 
   // Scroll to top when success page loads
   useEffect(() => {
@@ -214,8 +217,10 @@ function RatePageContent() {
     technicalSkill: number
     screenPresence: number
     chemistry: number
-  }) => {
-    if (!actor || !movie) return
+  }): Promise<void> => {
+    if (!actor || !movie) {
+      return Promise.resolve()
+    }
 
     // Map the shorter field names to API field names
     const apiRatingData = {
@@ -226,9 +231,8 @@ function RatePageContent() {
       chemistryInteraction: ratingData.chemistry,
     }
 
-    // If user is not signed in, redirect to signup with rating data
+    // If user is not signed in, show modal and reject to prevent success animation
     if (!user) {
-      // Store rating data in localStorage for after signup
       const ratingDataToStore = {
         ...ratingData,
         actorId: actor.id,
@@ -237,14 +241,12 @@ function RatePageContent() {
         movieTitle: movie.title,
         movieYear: movie.year,
         comment: characterName,
-        timestamp: new Date().toISOString()
       }
       
-      localStorage.setItem('pendingRating', JSON.stringify(ratingDataToStore))
-      
-      // Redirect to signup page
-      router.push('/auth/signup')
-      return
+      setPendingRatingData(ratingDataToStore)
+      setShowSignUpModal(true)
+      // Return a rejected promise without error to prevent success animation but avoid console error
+      return Promise.reject()
     }
 
     setSubmitting(true)
@@ -339,14 +341,26 @@ function RatePageContent() {
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 text-center">
-                <div className="animate-pulse">
-                  <div className="h-8 bg-muted rounded mb-4 max-w-md mx-auto"></div>
-                  <div className="h-4 bg-muted rounded mb-8 max-w-lg mx-auto"></div>
-                </div>
+          <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="w-3 h-3 bg-[#FFD700] rounded-full"
+                    animate={{
+                      y: [0, -12, 0],
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.15,
+                    }}
+                  />
+                ))}
               </div>
+              <p className="text-foreground text-base">Loading</p>
             </div>
           </div>
         )}
@@ -569,6 +583,22 @@ function RatePageContent() {
             </div>
           </div>
         )}
+        
+        {/* Sign Up Modal */}
+        {showSignUpModal && pendingRatingData && actor && movie && (
+          <SignUpToSaveModal
+            isOpen={showSignUpModal}
+            onClose={() => {
+              setShowSignUpModal(false)
+              setPendingRatingData(null)
+            }}
+            totalScore={Number(((pendingRatingData.emotionalDepth + pendingRatingData.believability + pendingRatingData.technicalSkill + pendingRatingData.screenPresence + pendingRatingData.chemistry) / 5 / 10).toFixed(1))}
+            actorName={actor.name}
+            movieTitle={movie.title}
+            movieYear={movie.year}
+            ratingData={pendingRatingData}
+          />
+        )}
       </Suspense>
     )
   }
@@ -715,14 +745,26 @@ function RatePageContent() {
 export default function RatePage() {
   return (
     <Suspense fallback={
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded mb-4 max-w-md mx-auto"></div>
-              <div className="h-4 bg-muted rounded mb-8 max-w-lg mx-auto"></div>
-            </div>
+      <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {[0, 1, 2].map((index) => (
+              <motion.div
+                key={index}
+                className="w-3 h-3 bg-[#FFD700] rounded-full"
+                animate={{
+                  y: [0, -12, 0],
+                }}
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: index * 0.15,
+                }}
+              />
+            ))}
           </div>
+          <p className="text-foreground text-base">Loading</p>
         </div>
       </div>
     }>

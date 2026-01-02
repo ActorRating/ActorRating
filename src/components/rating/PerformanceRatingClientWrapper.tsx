@@ -3,19 +3,22 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock } from 'lucide-react'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
-function useNumberRoll(startValue: number, endValue: number, duration: number = 1000) {
-  const [currentValue, setCurrentValue] = useState(startValue)
+function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
+  const [currentValue, setCurrentValue] = useState(endValue)
   const [isAnimating, setIsAnimating] = useState(false)
   const animationRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
+  const startValueRef = useRef<number>(endValue)
 
   useEffect(() => {
-    // Only animate if value actually changed
-    if (Math.abs(endValue - startValue) < 0.01) {
+    // If values are the same (within 0.01), just set it immediately
+    if (Math.abs(endValue - startValueRef.current) < 0.01) {
       setCurrentValue(endValue)
+      setIsAnimating(false)
+      startValueRef.current = endValue
       return
     }
 
@@ -23,6 +26,10 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current)
     }
+
+    // Use current displayed value as start for smooth transitions
+    const actualStart = currentValue
+    startValueRef.current = actualStart
 
     setIsAnimating(true)
     const startTime = performance.now()
@@ -37,15 +44,8 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
       // Ease out cubic for smooth deceleration (like lotto machine)
       const easeOut = 1 - Math.pow(1 - progress, 3)
 
-      // Calculate current value - show integers during roll, decimal at end
-      let current: number
-      if (progress < 0.95) {
-        // During animation: show integer values rolling
-        current = Math.floor(startValue + (endValue - startValue) * easeOut)
-      } else {
-        // Final 5%: show decimal value
-        current = startValue + (endValue - startValue) * easeOut
-      }
+      // Calculate current value - smooth decimal increments (1.0, 1.1, 1.2, etc.)
+      const current = actualStart + (endValue - actualStart) * easeOut
       
       setCurrentValue(current)
 
@@ -56,6 +56,7 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
         setCurrentValue(endValue)
         setIsAnimating(false)
         animationRef.current = null
+        startValueRef.current = endValue
       }
     }
 
@@ -67,7 +68,7 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
       }
       setIsAnimating(false)
     }
-  }, [startValue, endValue, duration])
+  }, [endValue, duration])
 
   return { value: currentValue, isAnimating }
 }
@@ -130,6 +131,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
   label,
   value,
   onValueChange,
+  onSliderStart,
+  onSliderEnd,
   disabled = false,
   touched = false,
   spotlightActive = false
@@ -137,6 +140,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
   label: string
   value: number
   onValueChange: (value: number) => void
+  onSliderStart?: () => void
+  onSliderEnd?: () => void
   disabled?: boolean
   touched?: boolean
   spotlightActive?: boolean
@@ -163,21 +168,21 @@ const RatingSliderCard = memo(function RatingSliderCard({
       </div>
 
       {/* Slider Container */}
-      <div className="relative pt-2">
-        {/* Track Background */}
-        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5">
+      <div className="relative pt-2 pb-2">
+        {/* Track Background - with padding to contain thumb at edges */}
+        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '14px', paddingRight: '14px' }}>
           {/* Fill - Gold gradient */}
           <motion.div
             className="absolute top-0 left-0 h-full rounded-full"
             style={{ 
-              width: `${value}%`,
+              width: value === 0 ? '0px' : `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
           
-          {/* Hidden input for interaction */}
+          {/* Hidden input for interaction - larger touch/click target */}
           <input
             type="range"
             min="0"
@@ -185,20 +190,38 @@ const RatingSliderCard = memo(function RatingSliderCard({
             step="1"
             value={value}
             onChange={(e) => onValueChange(Number(e.target.value))}
-            onMouseDown={() => setIsActive(true)}
-            onMouseUp={() => setIsActive(false)}
-            onTouchStart={() => setIsActive(true)}
-            onTouchEnd={() => setIsActive(false)}
+            onMouseDown={() => {
+              setIsActive(true)
+              onSliderStart?.()
+            }}
+            onMouseUp={() => {
+              setIsActive(false)
+              onSliderEnd?.()
+            }}
+            onTouchStart={() => {
+              setIsActive(true)
+              onSliderStart?.()
+            }}
+            onTouchEnd={() => {
+              setIsActive(false)
+              onSliderEnd?.()
+            }}
             disabled={disabled}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+            className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+            style={{ 
+              touchAction: 'none',
+              WebkitTapHighlightColor: 'transparent',
+              paddingLeft: '14px',
+              paddingRight: '14px',
+            }}
             aria-label={label}
           />
           
-          {/* Visible Thumb - Grows when active */}
+          {/* Visible Thumb - Grows when active, constrained to track */}
           <motion.div
             className="absolute top-1/2 rounded-full shadow-lg pointer-events-none"
             style={{
-              left: `${value}%`,
+              left: `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               transform: `translate(-50%, -50%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
@@ -256,23 +279,34 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const scoreRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const previousScoreRef = useRef(0)
+  const isDraggingRef = useRef<boolean>(false)
+  const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
 
   // Calculate average of 5 sliders, convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
     const sliders = [
-      emotionalRangeDepth,
-      characterBelievability,
-      technicalSkill,
-      screenPresence,
-      chemistryInteraction
+      Number(emotionalRangeDepth) || 0,
+      Number(characterBelievability) || 0,
+      Number(technicalSkill) || 0,
+      Number(screenPresence) || 0,
+      Number(chemistryInteraction) || 0
     ]
-    const average = sliders.reduce((a, b) => a + b, 0) / 5
+    
+    // Ensure all values are valid numbers between 0-100
+    const validSliders = sliders.filter(v => !isNaN(v) && v >= 0 && v <= 100)
+    if (validSliders.length === 0) return 0
+    
+    const sum = validSliders.reduce((a, b) => a + b, 0)
+    const average = sum / validSliders.length
     const totalScore = average / 10
-    return Number(totalScore.toFixed(1)) // Round to 1 decimal place
+    
+    // Clamp between 0 and 10
+    const clamped = Math.max(0, Math.min(10, totalScore))
+    return Number(clamped.toFixed(1)) // Round to 1 decimal place
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction])
 
-  // Lotto roll animation - rolls every time score changes
-  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 1000)
+  // Lotto roll animation - shorter duration for more responsive feel
+  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 300)
   
   // Update previous score when animation completes
   useEffect(() => {
@@ -294,7 +328,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setSpotlightPhase('none')
     }
     
-    // Clear any existing timeout to reset the 5 second timer
+    // Clear any existing timeout to reset the timer
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
       spotlightTimeoutRef.current = null
@@ -319,52 +353,77 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [spotlightPhase])
 
+  const handleSliderStart = useCallback(() => {
+    isDraggingRef.current = true
+    // Clear any existing timeout when starting to drag
+    if (spotlightTimeoutRef.current) {
+      clearTimeout(spotlightTimeoutRef.current)
+      spotlightTimeoutRef.current = null
+    }
+    // Reset spotlight if animating
+    if (spotlightPhase !== 'none') {
+      setSpotlightPhase('none')
+    }
+  }, [spotlightPhase])
 
-  // Trigger spotlight animation 100ms after last slider interaction
+  const handleSliderEnd = useCallback(() => {
+    isDraggingRef.current = false
+    const releaseTime = Date.now()
+    lastInteractionTime.current = releaseTime
+    setSliderReleaseTime(releaseTime) // Trigger useEffect
+  }, [])
+
+  // Function to trigger spotlight animation
+  const triggerSpotlightAnimation = useCallback(() => {
+    if (!allSlidersTouched) return
+    if (spotlightPhase !== 'none') return // Don't restart if already animating
+    if (isDraggingRef.current) return // Don't trigger if still dragging
+
+    // Effect 1: Score pulse
+    setSpotlightPhase('score')
+    
+    // Effect 2: Scroll to score (after 200ms)
+    setTimeout(() => {
+      scoreRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'center'
+      })
+    }, 200)
+    
+    // Effect 3: Button glow (after 1.2s, total ~1.8s)
+    setTimeout(() => {
+      setSpotlightPhase('button')
+      
+      // Scroll to button
+      setTimeout(() => {
+        buttonRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        })
+      }, 200)
+    }, 1200)
+  }, [allSlidersTouched, spotlightPhase])
+
+  // Trigger spotlight animation after slider release (not just when slider stops moving)
   useEffect(() => {
     if (!allSlidersTouched) return
     if (spotlightPhase !== 'none') return // Don't restart if already animating
+    if (isDraggingRef.current) return // Don't trigger if still dragging
+    if (sliderReleaseTime === 0) return // No release yet
 
     // Clear any existing timeout
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
     }
 
-    const triggerAnimation = () => {
-      const timeSinceLastInteraction = Date.now() - lastInteractionTime.current
-      
-      // Trigger after 100ms of inactivity
-      if (timeSinceLastInteraction >= 100 && spotlightPhase === 'none') {
-        // Effect 1: Score pulse
-        setSpotlightPhase('score')
-        
-        // Effect 2: Scroll to score (after 200ms)
-        setTimeout(() => {
-          scoreRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'center'
-          })
-        }, 200)
-        
-        // Effect 3: Button glow (after 1.2s, total ~1.8s)
-        setTimeout(() => {
-          setSpotlightPhase('button')
-          
-          // Scroll to button
-          setTimeout(() => {
-            buttonRef.current?.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center',
-              inline: 'center'
-            })
-          }, 200)
-        }, 1200)
+    // Trigger animation 100ms after slider release
+    spotlightTimeoutRef.current = setTimeout(() => {
+      if (!isDraggingRef.current && spotlightPhase === 'none') {
+        triggerSpotlightAnimation()
       }
-    }
-
-    // Set up a timeout to check after 100ms
-    spotlightTimeoutRef.current = setTimeout(triggerAnimation, 100)
+    }, 100)
 
     return () => {
       if (spotlightTimeoutRef.current) {
@@ -372,7 +431,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         spotlightTimeoutRef.current = null
       }
     }
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, allSlidersTouched, spotlightPhase])
+  }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -421,7 +480,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       }, successDelay)
       
     } catch (err) {
-      console.error(err)
+      // Only log actual errors, not intentional rejections (e.g., when user is not signed in)
+      if (err) {
+        console.error(err)
+      }
       setSubmitPhase('idle')
     }
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
@@ -512,7 +574,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 pt-20 sm:pt-10 md:pt-12 lg:pt-16 pb-16 sm:pb-20 md:pb-24">
+      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 pt-24 sm:pt-16 md:pt-20 lg:pt-24 pb-16 sm:pb-20 md:pb-24">
 
         {/* Header Section - Mobile optimized */}
         <motion.div
@@ -624,7 +686,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
                       <AnimatePresence mode="wait">
                         <motion.span
-                          key={isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                          key={totalScoreOutOf10.toFixed(1)}
                           initial={{ y: 40, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: -40, opacity: 0 }}
@@ -639,7 +701,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             verticalAlign: 'baseline',
                           }}
                         >
-                          {isAnimating ? Math.floor(animatedScore) : animatedScore.toFixed(1)}
+                          {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
                         </motion.span>
                       </AnimatePresence>
                     </div>
@@ -700,6 +762,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   label="Emotional Impact" 
                   value={emotionalRangeDepth} 
                   onValueChange={(v) => handleSliderChange('emotionalRangeDepth', v)}
+                  onSliderStart={handleSliderStart}
+                  onSliderEnd={handleSliderEnd}
                   disabled={submitting}
                   touched={touchedSliders.emotionalRangeDepth}
                   spotlightActive={spotlightPhase !== 'none'}
@@ -709,6 +773,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   label="Character Depth" 
                   value={characterBelievability} 
                   onValueChange={(v) => handleSliderChange('characterBelievability', v)}
+                  onSliderStart={handleSliderStart}
+                  onSliderEnd={handleSliderEnd}
                   disabled={submitting}
                   touched={touchedSliders.characterBelievability}
                   spotlightActive={spotlightPhase !== 'none'}
@@ -718,6 +784,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   label="Technical Skill" 
                   value={technicalSkill} 
                   onValueChange={(v) => handleSliderChange('technicalSkill', v)}
+                  onSliderStart={handleSliderStart}
+                  onSliderEnd={handleSliderEnd}
                   disabled={submitting}
                   touched={touchedSliders.technicalSkill}
                   spotlightActive={spotlightPhase !== 'none'}
@@ -727,6 +795,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   label="Screen Presence" 
                   value={screenPresence} 
                   onValueChange={(v) => handleSliderChange('screenPresence', v)}
+                  onSliderStart={handleSliderStart}
+                  onSliderEnd={handleSliderEnd}
                   disabled={submitting}
                   touched={touchedSliders.screenPresence}
                   spotlightActive={spotlightPhase !== 'none'}
@@ -736,6 +806,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   label="Originality" 
                   value={chemistryInteraction} 
                   onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
+                  onSliderStart={handleSliderStart}
+                  onSliderEnd={handleSliderEnd}
                   disabled={submitting}
                   touched={touchedSliders.chemistryInteraction}
                   spotlightActive={spotlightPhase !== 'none'}
@@ -744,7 +816,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
               {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
               <motion.div 
-                className="pt-4 sm:pt-6 relative"
+                className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto"
                 style={{
                   filter: 'blur(0px)',
                   opacity: 1,
@@ -755,11 +827,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
                 transition={{ duration: 0.6 }}
               >
-                <button
+                <motion.button
                   ref={buttonRef}
                   type="submit"
                   disabled={!allSlidersTouched || submitting}
-                  className="group w-full py-4 sm:py-5 md:py-6 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full py-4 sm:py-5 md:py-6 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: allSlidersTouched && !submitting
                       ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
@@ -770,6 +842,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       : 'none',
                     border: allSlidersTouched && !submitting ? 'none' : '1px solid #333',
                   }}
+                  whileHover={allSlidersTouched && !submitting ? {
+                    scale: 1.02,
+                  } : {}}
+                  whileTap={allSlidersTouched && !submitting ? {
+                    scale: 0.98,
+                  } : {}}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
                 >
                   {/* Button glow animation when spotlight phase is 'button' */}
                   {spotlightPhase === 'button' && (
@@ -817,7 +896,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'
                     )}
                   </span>
-                </button>
+                </motion.button>
               </motion.div>
             </motion.div>
               )}

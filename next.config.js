@@ -23,7 +23,20 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
+    // Allow images from CDN if configured
+    ...(process.env.CDN_BASE_URL && {
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: new URL(process.env.CDN_BASE_URL).hostname,
+        },
+      ],
+    }),
   },
+  // CDN configuration for static assets (JS, CSS)
+  ...(process.env.CDN_BASE_URL && {
+    assetPrefix: process.env.CDN_BASE_URL.replace(/\/$/, ''),
+  }),
 }
 
 module.exports = nextConfig

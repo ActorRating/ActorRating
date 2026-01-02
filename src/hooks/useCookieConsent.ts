@@ -40,25 +40,23 @@ export function useCookieConsent() {
     }
   }, [])
 
-  // Apply consent settings (simulate enabling/disabling scripts)
+  // Apply consent settings (analytics scripts are handled by GoogleAnalytics component)
   const applyConsentSettings = useCallback((consentData: CookieConsent) => {
+    // Analytics consent is handled by the GoogleAnalytics component
+    // which checks consent.analytics before loading scripts
     if (consentData.analytics) {
-      console.log('Analytics cookies enabled - would initialize analytics scripts here')
-      // Example: gtag('config', 'GA_TRACKING_ID')
+      // Analytics will be enabled when GoogleAnalytics component re-renders
     } else {
-      console.log('Analytics cookies disabled - would disable analytics scripts here')
-      // Example: gtag('config', 'GA_TRACKING_ID', { 'anonymize_ip': true })
+      // Analytics will be disabled when GoogleAnalytics component re-renders
     }
 
     if (consentData.marketing) {
-      console.log('Marketing cookies enabled - would initialize marketing scripts here')
-      // Example: Enable Facebook Pixel, Google Ads, etc.
+      // Marketing cookies can be enabled here if needed
     } else {
-      console.log('Marketing cookies disabled - would disable marketing scripts here')
+      // Marketing cookies disabled
     }
 
     // Essential cookies are always enabled
-    console.log('Essential cookies enabled - required for site functionality')
   }, [])
 
   // Save consent to localStorage and apply settings

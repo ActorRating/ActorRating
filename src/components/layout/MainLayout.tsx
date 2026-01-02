@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, SkipForward } from 'lucide-react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
-import { Footer } from './Footer'
 import { Breadcrumb } from './Breadcrumb'
 import { cn } from '@/lib/utils'
 import { fadeIn, fadeInUp, getMotionProps } from '@/lib/animations'
@@ -171,12 +170,6 @@ export function MainLayout({
         </main>
       </div>
 
-      {/* Footer */}
-      {showFooter && (
-        <motion.div variants={fadeIn} {...getMotionProps()}>
-          <Footer />
-        </motion.div>
-      )}
     </div>
   )
 } 

@@ -1,7 +1,6 @@
 "use client"
 
 import { SignedInNavbar } from './SignedInNavbar'
-import { Footer } from './Footer'
 import { FeedbackSection } from '../FeedbackSection'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
@@ -32,15 +31,6 @@ export function SignedInLayout({ children }: SignedInLayoutProps) {
       >
         {children}
       </motion.main>
-
-      {/* Footer */}
-      <motion.div 
-        variants={fadeIn} 
-        initial={mounted ? "hidden" : false}
-        animate={mounted ? "show" : undefined}
-      >
-        <Footer />
-      </motion.div>
 
       {/* Feedback Section */}
       <FeedbackSection />
