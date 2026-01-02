@@ -6,6 +6,7 @@
  * - Visually hidden but screen-reader accessible (sr-only)
  * - Present in HTML on first load (SSR)
  * - Not cloaking - truthfully describes the page
+ * - JSON-LD moved to layout.tsx for guaranteed SSR
  */
 
 import React from 'react'
@@ -30,60 +31,21 @@ export function PerformanceSEOContent({
 
   const fullMovieTitle = movieYear ? `${movieTitle} (${movieYear})` : movieTitle
 
-  // JSON-LD structured data for the performance rating page
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: `Rate ${actorName}'s Performance in ${fullMovieTitle}`,
-    description: `Rate ${actorName}'s acting performance in ${fullMovieTitle} using ActorRating's comprehensive 0-100 scoring system based on five Oscar-inspired criteria.`,
-    mainEntity: {
-      "@type": "Review",
-      itemReviewed: {
-        "@type": "PerformanceRole",
-        actor: {
-          "@type": "Person",
-          name: actorName
-        },
-        workFeatured: {
-          "@type": "Movie",
-          name: movieTitle,
-          ...(movieYear && { dateCreated: movieYear.toString() })
-        }
-      },
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: "0-100",
-        worstRating: 0,
-        bestRating: 100
-      }
-    },
-    isPartOf: {
-      "@type": "WebSite",
-      name: "ActorRating",
-      url: "https://www.actorrating.com"
-    }
-  }
-
   return (
-    <>
-      {/* JSON-LD Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      
+    <>      
       {/* SEO Content - Hidden visually but accessible to crawlers and screen readers */}
       <div className="sr-only">
-        <h1>{actorName}'s Acting Performance in {fullMovieTitle}</h1>
+        <h1>Rate {actorName}'s Acting Performance in {fullMovieTitle}</h1>
         <p>
-          This page allows you to rate {actorName}'s specific acting performance in {fullMovieTitle} using 
-          ActorRating's comprehensive 0-100 scoring system. Our rating methodology is based on five 
-          Oscar-inspired criteria that evaluate the craft of acting independently from the overall film quality.
+          This page allows users to rate an acting performance by {actorName} in {fullMovieTitle} using 
+          ActorRating's 0-100 performance rating system based on five Oscar-inspired criteria. 
+          Our rating methodology evaluates the craft of acting independently from the overall film quality.
         </p>
         <p>
-          Rate this performance across Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, 
-          Screen Presence & Impact, and Chemistry & Interaction. Your rating will contribute to the community's 
-          aggregated performance score, helping identify career-defining roles and overlooked work.
+          Rate this acting performance across five professional criteria: Emotional Range & Depth, 
+          Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and 
+          Chemistry & Interaction. Your performance rating will contribute to the community's 
+          aggregated score, helping identify career-defining roles and overlooked performances.
         </p>
       </div>
     </>

@@ -583,16 +583,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
           {/* Actor Name */}
-          <h1 
+          <h2 
             id="actor-name-header" 
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 sm:mb-4 tracking-tight px-2"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             {performance.actor.name}
-          </h1>
+          </h2>
           
           {/* Movie Title */}
-          <h2 
+          <h3 
             className="text-lg sm:text-xl md:text-2xl font-semibold mb-2 sm:mb-3 px-2"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -601,7 +601,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             }}
           >
             {performance.movie.title}
-          </h2>
+          </h3>
           
           {/* Role/Comment */}
           {performance.comment && (

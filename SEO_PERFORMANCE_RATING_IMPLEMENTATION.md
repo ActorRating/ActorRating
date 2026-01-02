@@ -11,6 +11,9 @@ Added logged-out, read-only, crawlable content to performance rating pages for i
 ✅ **Visually Hidden**: Uses `sr-only` class (screen-reader accessible, not `display: none`)  
 ✅ **Not Cloaking**: Content truthfully describes the page's purpose  
 ✅ **No UI Changes**: Existing rating interface remains unchanged  
+✅ **Single H1**: One H1 per page (SEO H1 hidden, visible headings are H2/H3)  
+✅ **JSON-LD SSR**: Structured data always rendered server-side for crawlers  
+✅ **Keyword Optimized**: Natural keyword placement without spam  
 
 ## Implementation Details
 
@@ -30,15 +33,21 @@ Added logged-out, read-only, crawlable content to performance rating pages for i
   if (isLoggedIn) return null // Don't render for logged-in users
   ```
 - **Content Structure**:
-  - **H1**: `{Actor}'s Acting Performance in {Movie} ({Year})`
-  - **Paragraph 1**: Explains the rating system and methodology
+  - **H1**: `Rate {Actor}'s Acting Performance in {Movie} ({Year})`
+    - This is the ONLY H1 on the page
+    - Visible UI headings are H2/H3 to maintain proper hierarchy
+  - **Paragraph 1**: Keyword-optimized description of the rating system
+    - Includes: "acting performance", "performance rating system", "Oscar-inspired criteria"
   - **Paragraph 2**: Details the five criteria and community aggregation
+    - Natural keyword placement throughout
 - **Styling**: Uses Tailwind's `sr-only` class
   - Visually hidden but accessible to screen readers
   - Accessible to search engine crawlers
   - Not `display: none` (which some crawlers might ignore)
 
-### 3. JSON-LD Structured Data
+### 3. JSON-LD Structured Data (Server-Side Only)
+
+**IMPORTANT**: JSON-LD is now in `layout.tsx` (server component) for guaranteed SSR.
 
 Added minimal schema for performance rating pages:
 
@@ -60,7 +69,24 @@ Added minimal schema for performance rating pages:
 }
 ```
 
-### 4. Integration (`src/app/rate/[movieSlug]/[actorSlug]/page.tsx`)
+**Why in layout.tsx?**
+- Always rendered server-side (not conditional on client auth)
+- Guaranteed to be in HTML source for crawlers
+- No hydration timing issues
+- Best practice for structured data
+
+### 4. Heading Hierarchy Fix (`src/components/rating/PerformanceRatingClientWrapper.tsx`)
+
+**Changed visible headings to avoid duplicate H1:**
+- Actor name: `<h1>` → `<h2>` (still visually large, semantically correct)
+- Movie title: `<h2>` → `<h3>` (maintains hierarchy)
+
+**Result:**
+- One H1 per page: The SEO H1 (hidden with sr-only)
+- Visible UI: H2 → H3 → proper hierarchy
+- No duplicate H1 issues for search engines
+
+### 5. Integration (`src/app/rate/[movieSlug]/[actorSlug]/page.tsx`)
 
 - Component imported and rendered before main rating UI
 - Receives actor/movie data and user login state
@@ -150,31 +176,77 @@ Already available in Tailwind CSS (used throughout the codebase):
 When a crawler or logged-out user visits `/rate/the-wolf-of-wall-street-2013/leonardo-dicaprio`, the HTML contains:
 
 ```html
+<!-- JSON-LD (always in SSR HTML) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Rate Leonardo DiCaprio's Performance in The Wolf of Wall Street",
+  ...
+}
+</script>
+
+<!-- SEO Content (only when logged out) -->
 <div class="sr-only">
-  <h1>Leonardo DiCaprio's Acting Performance in The Wolf of Wall Street (2013)</h1>
+  <h1>Rate Leonardo DiCaprio's Acting Performance in The Wolf of Wall Street (2013)</h1>
   <p>
-    This page allows you to rate Leonardo DiCaprio's specific acting performance 
-    in The Wolf of Wall Street (2013) using ActorRating's comprehensive 0-100 
-    scoring system. Our rating methodology is based on five Oscar-inspired criteria 
-    that evaluate the craft of acting independently from the overall film quality.
+    This page allows users to rate an acting performance by Leonardo DiCaprio 
+    in The Wolf of Wall Street (2013) using ActorRating's 0-100 performance 
+    rating system based on five Oscar-inspired criteria. Our rating methodology 
+    evaluates the craft of acting independently from the overall film quality.
   </p>
   <p>
-    Rate this performance across Emotional Range & Depth, Character Believability, 
-    Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & 
-    Interaction. Your rating will contribute to the community's aggregated 
-    performance score, helping identify career-defining roles and overlooked work.
+    Rate this acting performance across five professional criteria: Emotional 
+    Range & Depth, Character Believability, Technical Skill & Authenticity, 
+    Screen Presence & Impact, and Chemistry & Interaction. Your performance 
+    rating will contribute to the community's aggregated score, helping identify 
+    career-defining roles and overlooked performances.
   </p>
 </div>
+
+<!-- Visible UI (for everyone) -->
+<h2>Leonardo DiCaprio</h2> <!-- Changed from h1 -->
+<h3>The Wolf of Wall Street</h3> <!-- Changed from h2 -->
 ```
+
+**Key Improvements:**
+- ✅ Single H1: Only the SEO H1 exists (sr-only)
+- ✅ Keyword optimization: "acting performance", "performance rating", "rate an acting performance"
+- ✅ JSON-LD always in SSR: Not conditional on auth state
+- ✅ Proper heading hierarchy: H1 → H2 → H3
+
+## Best Practices Followed
+
+### ✅ H1 Hierarchy
+- **One H1 per page**: SEO H1 is the only H1 (sr-only)
+- **Visible headings**: H2 → H3 (proper semantic hierarchy)
+- **No visual change**: Headings still look the same (CSS size unchanged)
+
+### ✅ JSON-LD Placement
+- **Server-side only**: In `layout.tsx` (server component)
+- **Always rendered**: Not conditional on client auth state
+- **Guaranteed in HTML**: Crawlers always see it on first load
+
+### ✅ Keyword Optimization
+- **Natural placement**: "acting performance", "performance rating system"
+- **Not spam**: Reads naturally, provides value
+- **High ROI**: Strengthens ranking without looking manipulative
+
+### ✅ Future-Proof Auth Detection
+- **SSR default**: Content always renders on server
+- **Client removal**: Removed on hydration if logged in
+- **No timing issues**: Crawlers always see content
 
 ## Notes
 
-- Implementation does not affect existing users or UI
+- Implementation does not affect existing users or UI visually
 - Content is generated server-side for optimal crawling
 - Metadata is dynamic per performance
 - No additional API calls required (data fetched during SSR)
 - Compatible with all screen readers
 - Follows WAI-ARIA best practices
+- **Heading hierarchy now correct** (one H1, proper H2/H3 sequence)
+- **JSON-LD guaranteed SSR** (not dependent on client state)
 
 ## Future Enhancements
 

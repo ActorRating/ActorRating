@@ -1,5 +1,4 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -53,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Rate ${actor.name}'s Performance in ${fullMovieTitle} - ActorRating`,
-    description: `Rate ${actor.name}'s acting performance in ${fullMovieTitle} using our 0-100 scoring system based on five Oscar-inspired criteria. Join the community in evaluating this performance.`,
+    description: `Rate ${actor.name}'s acting performance in ${fullMovieTitle} using our 0-100 performance rating system based on five Oscar-inspired criteria. Join the community in evaluating this performance.`,
     openGraph: {
       title: `Rate ${actor.name} in ${fullMovieTitle}`,
       description: `Rate ${actor.name}'s performance using ActorRating's comprehensive scoring system.`,
@@ -68,7 +67,55 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function RateLayout({ children }: Props) {
-  return <>{children}</>
+export default async function RateLayout({ params, children }: Props) {
+  const { actorSlug, movieSlug } = await params
+  const data = await fetchActorAndMovie(actorSlug, movieSlug)
+
+  // JSON-LD - Always rendered on SSR for crawlers (not conditional on auth)
+  const jsonLd = data ? {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: `Rate ${data.actor.name}'s Performance in ${data.movie.title}`,
+    description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-100 performance rating system based on five Oscar-inspired criteria.`,
+    mainEntity: {
+      "@type": "Review",
+      itemReviewed: {
+        "@type": "PerformanceRole",
+        actor: {
+          "@type": "Person",
+          name: data.actor.name
+        },
+        workFeatured: {
+          "@type": "Movie",
+          name: data.movie.title,
+          ...(data.movie.year && { dateCreated: data.movie.year.toString() })
+        }
+      },
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: "0-100",
+        worstRating: 0,
+        bestRating: 100
+      }
+    },
+    isPartOf: {
+      "@type": "WebSite",
+      name: "ActorRating",
+      url: "https://www.actorrating.com"
+    }
+  } : null
+
+  return (
+    <>
+      {/* JSON-LD Schema - Server-side only, always rendered for crawlers */}
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {children}
+    </>
+  )
 }
 
