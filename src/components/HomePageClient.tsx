@@ -1446,8 +1446,9 @@ export default function HomePageClient() {
                   display: 'inline-block'
                 }}
               >
-                <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }}>RATE THE </span>
-                <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }}>RATE THE </span>
+                <span className="sr-only">RATE THE CRAFT</span>
+                <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }} aria-hidden="true">RATE THE </span>
+                <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }} aria-hidden="true">RATE THE </span>
                 <span 
                   className="inline sm:hidden craft-glow-animation"
                   style={{
@@ -1458,6 +1459,7 @@ export default function HomePageClient() {
                     filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.08em',
                   }}
+                  aria-hidden="true"
                 >
                   CRAFT
                 </span>
@@ -1471,6 +1473,7 @@ export default function HomePageClient() {
                     filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.02em',
                   }}
+                  aria-hidden="true"
                 >
                   CRAFT
                 </span>
