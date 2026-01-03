@@ -44,8 +44,10 @@ export function PerformanceSEOContent({
         <p>
           Rate this acting performance across five professional criteria: Emotional Range & Depth, 
           Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and 
-          Chemistry & Interaction. Your performance rating will contribute to the community's 
-          aggregated score, helping identify career-defining roles and overlooked performances.
+          Chemistry & Interaction. Each criterion is scored on a 0-100 scale internally, then averaged 
+          and converted into a final score out of 10 for clarity and consistency. Your performance rating 
+          will contribute to the community's aggregated score, helping identify career-defining roles 
+          and overlooked performances.
         </p>
       </div>
     </>

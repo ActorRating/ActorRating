@@ -87,7 +87,7 @@ export default function AboutPage() {
         name: "What does a 0-10 score represent?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The 0-10 score represents the overall quality of an acting performance. Scores are calculated by normalizing and weighting the five individual category ratings (Emotional Range, Character Believability, Technical Skill, Screen Presence, and Chemistry). Higher scores indicate stronger performances, with community ratings aggregated to provide comprehensive performance analysis."
+          text: "The 0-10 score represents the overall quality of an acting performance on ActorRating. Each performance is evaluated across five criteria scored from 0 to 100, averaged, and then converted into a final score out of 10 for easier comparison. Higher scores indicate stronger performances, with community ratings aggregated to provide comprehensive performance analysis."
         }
       },
       {
