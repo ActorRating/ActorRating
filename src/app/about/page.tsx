@@ -49,7 +49,7 @@ export default function AboutPage() {
       {
         "@type": "HowToStep",
         name: "Scores Are Normalized",
-        text: "Individual category scores are normalized and weighted to create a 0-100 overall performance score",
+        text: "Individual category scores are normalized and weighted to create a 0-10 overall performance score",
         position: 3
       },
       {
@@ -79,15 +79,15 @@ export default function AboutPage() {
         name: "How are actor performances rated?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Performances are rated across five professional criteria: Emotional Range & Depth (ability to convey complex emotions), Character Believability (creating convincing characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention), and Chemistry & Interaction (working effectively with other actors). Each category is scored individually, then normalized to create an overall 0-100 performance score."
+          text: "Performances are rated across five professional criteria: Emotional Range & Depth (ability to convey complex emotions), Character Believability (creating convincing characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention), and Chemistry & Interaction (working effectively with other actors). Each category is scored individually, then normalized to create an overall 0-10 performance score."
         }
       },
       {
         "@type": "Question",
-        name: "What does a 0-100 score represent?",
+        name: "What does a 0-10 score represent?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The 0-100 score represents the overall quality of an acting performance. Scores are calculated by normalizing and weighting the five individual category ratings (Emotional Range, Character Believability, Technical Skill, Screen Presence, and Chemistry). Higher scores indicate stronger performances, with community ratings aggregated to provide comprehensive performance analysis."
+          text: "The 0-10 score represents the overall quality of an acting performance. Scores are calculated by normalizing and weighting the five individual category ratings (Emotional Range, Character Believability, Technical Skill, Screen Presence, and Chemistry). Higher scores indicate stronger performances, with community ratings aggregated to provide comprehensive performance analysis."
         }
       },
       {

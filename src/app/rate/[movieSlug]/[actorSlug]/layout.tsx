@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Rate ${actor.name}'s Performance in ${fullMovieTitle} - ActorRating`,
-    description: `Rate ${actor.name}'s acting performance in ${fullMovieTitle} using our 0-100 performance rating system based on five Oscar-inspired criteria. Join the community in evaluating this performance.`,
+    description: `Rate ${actor.name}'s acting performance in ${fullMovieTitle} using our 0-10 performance rating system based on five Oscar-inspired criteria. Join the community in evaluating this performance.`,
     openGraph: {
       title: `Rate ${actor.name} in ${fullMovieTitle}`,
       description: `Rate ${actor.name}'s performance using ActorRating's comprehensive scoring system.`,
@@ -76,7 +76,7 @@ export default async function RateLayout({ params, children }: Props) {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: `Rate ${data.actor.name}'s Performance in ${data.movie.title}`,
-    description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-100 performance rating system based on five Oscar-inspired criteria.`,
+    description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria.`,
     mainEntity: {
       "@type": "Review",
       itemReviewed: {
@@ -93,9 +93,9 @@ export default async function RateLayout({ params, children }: Props) {
       },
       reviewRating: {
         "@type": "Rating",
-        ratingValue: "0-100",
+        ratingValue: "0-10",
         worstRating: 0,
-        bestRating: 100
+        bestRating: 10
       }
     },
     isPartOf: {

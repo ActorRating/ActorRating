@@ -38,7 +38,7 @@ export function PerformanceSEOContent({
         <h1>Rate {actorName}'s Acting Performance in {fullMovieTitle}</h1>
         <p>
           This page allows users to rate an acting performance by {actorName} in {fullMovieTitle} using 
-          ActorRating's 0-100 performance rating system based on five Oscar-inspired criteria. 
+          ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria. 
           Our rating methodology evaluates the craft of acting independently from the overall film quality.
         </p>
         <p>
