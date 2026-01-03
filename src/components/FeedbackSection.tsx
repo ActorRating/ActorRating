@@ -78,7 +78,7 @@ export function FeedbackSection() {
           >
             <button
               onClick={() => setIsOpen(true)}
-              className="relative rounded-full w-14 h-14 p-0 border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] group flex items-center justify-center"
+              className="relative rounded-full w-14 h-14 sm:w-14 sm:h-14 min-w-[56px] min-h-[56px] p-0 border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] group flex items-center justify-center touch-manipulation"
               style={{
                 boxShadow: `
                   0 15px 40px -10px rgba(0, 0, 0, 0.8),

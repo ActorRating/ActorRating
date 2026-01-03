@@ -18,12 +18,12 @@ export function Logo({
   const LogoContent = () => (
     <div className={cn("flex items-center", className)} suppressHydrationWarning>
       {/* Logo Image - Responsive sizing to match button */}
-      <div className="relative w-11 h-11 md:w-14 md:h-14 lg:w-12 lg:h-12">
+      <div className="relative w-12 h-12 md:w-16 md:h-16 lg:w-14 lg:h-14">
         <Image
           src="/logo_navbar.png"
           alt="ActorRating Logo"
-          width={56}
-          height={56}
+          width={64}
+          height={64}
           className="object-contain"
           priority
           suppressHydrationWarning

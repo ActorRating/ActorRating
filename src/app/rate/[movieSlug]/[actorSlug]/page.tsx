@@ -39,7 +39,7 @@ export default function SlugBasedRatePage() {
       const actorSlug = params?.actorSlug as string
 
       if (!movieSlug || !actorSlug) {
-        router.replace('/search')
+        router.push('/search')
         return
       }
 
@@ -71,7 +71,8 @@ export default function SlugBasedRatePage() {
     }
 
     fetchData()
-  }, [params, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params?.movieSlug, params?.actorSlug])
 
   if (loading) {
     return (

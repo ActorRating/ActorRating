@@ -126,7 +126,7 @@ interface PerformanceRatingClientWrapperProps {
   }) => void
 }
 
-// Individual Slider Component - Premium Gold Design
+// Individual Slider Component - Premium Gold Design (Optimized for mobile)
 const RatingSliderCard = memo(function RatingSliderCard({
   label,
   value,
@@ -171,15 +171,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="relative pt-2 pb-2">
         {/* Track Background - with padding to contain thumb at edges */}
         <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '14px', paddingRight: '14px' }}>
-          {/* Fill - Gold gradient */}
-          <motion.div
-            className="absolute top-0 left-0 h-full rounded-full"
+          {/* Fill - Gold gradient - No animation for performance */}
+          <div
+            className="absolute top-0 left-0 h-full rounded-full transition-all duration-75 ease-linear will-change-[width]"
             style={{ 
               width: value === 0 ? '0px' : `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
             }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
           
           {/* Hidden input for interaction - larger touch/click target */}
@@ -217,20 +216,17 @@ const RatingSliderCard = memo(function RatingSliderCard({
             aria-label={label}
           />
           
-          {/* Visible Thumb - Grows when active, constrained to track */}
-          <motion.div
-            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none"
+          {/* Visible Thumb - Optimized for smooth dragging */}
+          <div
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none transition-all duration-75 ease-linear will-change-[left,width,height]"
             style={{
               left: `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               transform: `translate(-50%, -50%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
-            }}
-            animate={{
               width: isActive ? '28px' : '24px',
               height: isActive ? '28px' : '24px',
             }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
           />
         </div>
       </div>
@@ -323,16 +319,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
     lastInteractionTime.current = Date.now()
     
-    // Reset spotlight when slider moves
-    if (spotlightPhase !== 'none') {
-      setSpotlightPhase('none')
-    }
-    
     // Clear any existing timeout to reset the timer
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
       spotlightTimeoutRef.current = null
     }
+    
+    // Reset spotlight phase only if needed (avoid state update during drag)
+    setSpotlightPhase('none')
     
     switch(key) {
       case 'emotionalRangeDepth':
@@ -351,7 +345,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setChemistryInteraction(value)
         break
     }
-  }, [spotlightPhase])
+  }, [])
 
   const handleSliderStart = useCallback(() => {
     isDraggingRef.current = true
@@ -360,11 +354,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       clearTimeout(spotlightTimeoutRef.current)
       spotlightTimeoutRef.current = null
     }
-    // Reset spotlight if animating
-    if (spotlightPhase !== 'none') {
-      setSpotlightPhase('none')
-    }
-  }, [spotlightPhase])
+  }, [])
 
   const handleSliderEnd = useCallback(() => {
     isDraggingRef.current = false
@@ -612,7 +602,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         <form onSubmit={handleSubmit}>
           <div className="relative">
             
-            {/* Score Display - Responsive size, prevent cutoff */}
+            {/* Score Display - Responsive size, prevent cutoff, optimized for mobile */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
             <motion.div
@@ -631,7 +621,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : 'easeOut'
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
-                  style={{ marginTop: '0', marginBottom: '2rem' }}
+                  style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}
             >
               <div 
                 className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
@@ -682,16 +672,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       position: 'relative',
                     }}
                   >
-                    {/* Lotto roll effect - numbers rolling from bottom to top */}
+                    {/* Optimized score display - smooth updates on mobile */}
                     <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          key={totalScoreOutOf10.toFixed(1)}
-                          initial={{ y: 40, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -40, opacity: 0 }}
-                          transition={{ duration: 0.1, ease: 'easeOut' }}
-                          className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl"
+                        <span
+                          className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                             WebkitBackgroundClip: 'text',
@@ -699,11 +683,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             backgroundClip: 'text',
                             lineHeight: '1',
                             verticalAlign: 'baseline',
+                            willChange: 'transform',
                           }}
                         >
                           {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
-                        </motion.span>
-                      </AnimatePresence>
+                        </span>
                     </div>
                     <span 
                       className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
