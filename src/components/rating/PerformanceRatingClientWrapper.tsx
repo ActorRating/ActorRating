@@ -147,6 +147,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   spotlightActive?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   return (
     <motion.div 
@@ -171,9 +172,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="relative pt-2 pb-2">
         {/* Track Background - with padding to contain thumb at edges */}
         <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '14px', paddingRight: '14px' }}>
-          {/* Fill - Gold gradient - No animation for performance */}
+          {/* Fill - Gold gradient - Instant updates during drag, smooth transition when idle */}
           <div
-            className="absolute top-0 left-0 h-full rounded-full transition-all duration-75 ease-linear will-change-[width]"
+            className={`absolute top-0 left-0 h-full rounded-full will-change-[width] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{ 
               width: value === 0 ? '0px' : `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
@@ -188,21 +189,44 @@ const RatingSliderCard = memo(function RatingSliderCard({
             max="100"
             step="1"
             value={value}
-            onChange={(e) => onValueChange(Number(e.target.value))}
+            onInput={(e) => {
+              // onInput fires immediately during drag for instant feedback
+              onValueChange(Number((e.target as HTMLInputElement).value))
+            }}
+            onChange={(e) => {
+              // onChange as fallback
+              onValueChange(Number(e.target.value))
+            }}
             onMouseDown={() => {
               setIsActive(true)
+              setIsDragging(true)
               onSliderStart?.()
             }}
             onMouseUp={() => {
               setIsActive(false)
+              setIsDragging(false)
               onSliderEnd?.()
+            }}
+            onMouseLeave={() => {
+              if (isActive) {
+                setIsActive(false)
+                setIsDragging(false)
+                onSliderEnd?.()
+              }
             }}
             onTouchStart={() => {
               setIsActive(true)
+              setIsDragging(true)
               onSliderStart?.()
             }}
             onTouchEnd={() => {
               setIsActive(false)
+              setIsDragging(false)
+              onSliderEnd?.()
+            }}
+            onTouchCancel={() => {
+              setIsActive(false)
+              setIsDragging(false)
               onSliderEnd?.()
             }}
             disabled={disabled}
@@ -216,9 +240,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
             aria-label={label}
           />
           
-          {/* Visible Thumb - Optimized for smooth dragging */}
+          {/* Visible Thumb - Instant updates during drag */}
           <div
-            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none transition-all duration-75 ease-linear will-change-[left,width,height]"
+            className={`absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{
               left: `calc(14px + ${value}% * (100% - 28px) / 100%)`,
               transform: `translate(-50%, -50%)`,
