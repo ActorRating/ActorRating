@@ -596,11 +596,42 @@ function PerformanceSection() {
     const container = document.querySelector('.performance-scroll-container');
     if (!container) return;
 
+    let rafId: number | null = null;
+    let ticking = false;
+
     const updateCardDepth = () => {
       // Only apply depth effect on desktop
       const desktop = window.innerWidth >= 1024;
       setIsDesktop(desktop);
       
+      // On mobile, use simpler calculation for active card only
+      if (!desktop) {
+        const containerRect = container.getBoundingClientRect();
+        const containerCenter = containerRect.left + containerRect.width / 2;
+        
+        let closestIndex = 0;
+        let closestDistance = Infinity;
+        
+        // Only check visible cards on mobile for better performance
+        cardRefs.current.forEach((card, index) => {
+          if (!card) return;
+          
+          const cardRect = card.getBoundingClientRect();
+          const cardCenter = cardRect.left + cardRect.width / 2;
+          const distance = Math.abs(containerCenter - cardCenter);
+          
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+        
+        setActiveCard(closestIndex);
+        ticking = false;
+        return;
+      }
+      
+      // Desktop: full depth effect calculation
       const containerRect = container.getBoundingClientRect();
       const containerCenter = containerRect.left + containerRect.width / 2;
       
@@ -619,31 +650,43 @@ function PerformanceSection() {
           closestIndex = index;
         }
         
-        if (desktop) {
-          // Calculate depth effect based on distance from center
-          const maxDistance = containerRect.width / 2;
-          const normalizedDistance = Math.min(distance / maxDistance, 1);
-          const scale = 1 - (normalizedDistance * 0.08); // Scale from 1 to 0.92
-          const opacity = 1 - (normalizedDistance * 0.4); // Opacity from 1 to 0.6
-          const translateY = normalizedDistance * 10; // Move down by up to 10px
-          
-          card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
-          card.style.opacity = `${opacity}`;
-        } else {
-          // Reset on mobile
-          card.style.transform = 'scale(1) translateY(0)';
-          card.style.opacity = '1';
-        }
+        // Calculate depth effect based on distance from center
+        const maxDistance = containerRect.width / 2;
+        const normalizedDistance = Math.min(distance / maxDistance, 1);
+        const scale = 1 - (normalizedDistance * 0.08); // Scale from 1 to 0.92
+        const opacity = 1 - (normalizedDistance * 0.4); // Opacity from 1 to 0.6
+        const translateY = normalizedDistance * 10; // Move down by up to 10px
+        
+        card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+        card.style.opacity = `${opacity}`;
       });
       
       setActiveCard(closestIndex);
+      ticking = false;
     };
 
-    container.addEventListener('scroll', updateCardDepth, { passive: true });
-    window.addEventListener('resize', updateCardDepth, { passive: true });
+    const handleScroll = () => {
+      if (!ticking) {
+        rafId = requestAnimationFrame(() => {
+          updateCardDepth();
+        });
+        ticking = true;
+      }
+    };
+
+    const handleResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        updateCardDepth();
+      });
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
     
-    // On initial load, apply depth effect immediately, then center first card on desktop
+    // On initial load, apply depth effect immediately
     const desktop = window.innerWidth >= 1024;
+    setIsDesktop(desktop);
     
     // Ensure first card is active initially
     setActiveCard(0);
@@ -652,13 +695,13 @@ function PerformanceSection() {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         updateCardDepth();
-        // Removed auto-scroll to prevent page from scrolling to this section on load
       });
     });
     
     return () => {
-      container.removeEventListener('scroll', updateCardDepth);
-      window.removeEventListener('resize', updateCardDepth);
+      if (rafId) cancelAnimationFrame(rafId);
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
     };
   }, [PERFORMANCE_HIGHLIGHTS.length]);
 
@@ -728,28 +771,29 @@ function PerformanceSection() {
             <div className="relative -mx-4 sm:-mx-0">
               <div 
                 className="overflow-hidden"
-                style={{
+                style={isDesktop ? {
                   maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                }}
+                } : {}}
               >
-                <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]" style={{ contain: 'layout style paint', willChange: 'scroll-position' }}>
                   {PERFORMANCE_HIGHLIGHTS.map((highlight, index) => (
                   <motion.div
                     key={index}
                     ref={(el) => cardRefs.current[index] = el}
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    initial={isDesktop ? { opacity: 0, y: 8 } : { opacity: 1, y: 0 }}
+                    whileInView={isDesktop ? { opacity: 1, y: 0 } : undefined}
+                    viewport={isDesktop ? { once: true, amount: 0.15, margin: "0px 0px -50px 0px" } : undefined}
+                    transition={isDesktop ? { duration: 0.4, ease: [0.22, 1, 0.36, 1] } : undefined}
                     className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
                     style={{ 
-                      willChange: 'transform, opacity',
+                      willChange: isDesktop ? 'transform, opacity' : 'auto',
                       paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
                       paddingRight: index === PERFORMANCE_HIGHLIGHTS.length - 1 && !isDesktop ? '1rem' : '0',
                       /* Hardware acceleration for smooth scrolling */
                       transform: 'translateZ(0)',
                       WebkitTransform: 'translateZ(0)',
+                      contain: 'layout style paint',
                     }}
                     onClick={() => {
                       if (window.innerWidth >= 1024) {
@@ -762,15 +806,20 @@ function PerformanceSection() {
                   >
               {/* Premium Card - Clean & Cinematic */}
               <div 
-                className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 overflow-hidden ${isDesktop ? 'backdrop-blur-2xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]' : ''}`}
                 style={{
-                  boxShadow: `
+                  boxShadow: isDesktop ? `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
                     0 15px 40px -10px rgba(0, 0, 0, 0.7),
                     0 0 0 1px rgba(255, 255, 255, 0.05),
                     inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
                     inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  ` : `
+                    0 10px 30px -5px rgba(0, 0, 0, 0.8),
+                    0 0 0 1px rgba(255, 255, 255, 0.05)
                   `,
+                  backdropFilter: isDesktop ? 'blur(24px)' : 'none',
+                  WebkitBackdropFilter: isDesktop ? 'blur(24px)' : 'none',
                 }}
               >
                 {/* Glow effect - CLIPPED to card corners */}

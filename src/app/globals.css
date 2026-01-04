@@ -322,12 +322,28 @@ html {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: scroll-position;
+  /* Performance optimizations for mobile */
+  contain: layout style paint;
+  isolation: isolate;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
 }
 
 /* Remove transitions on mobile for smoother scrolling */
 @media (max-width: 1023px) {
   .performance-card-mobile {
     transition: none !important;
+    animation: none !important;
+  }
+  
+  .performance-scroll-container,
+  .recent-scroll-container {
+    /* Optimize for mobile scrolling */
+    scroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 }
 

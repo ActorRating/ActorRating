@@ -54,6 +54,17 @@ export default function PerformancesPage() {
   const [loading, setLoading] = useState(true)
   const [activeRecentCard, setActiveRecentCard] = useState(0)
   const [activeIconicCard, setActiveIconicCard] = useState(0)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  // Detect desktop for conditional mask styling
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024)
+    }
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -203,7 +214,17 @@ export default function PerformancesPage() {
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
-    updateCardDepth() // Initial call
+    
+    // Center first card on initial load
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const firstCard = container.querySelector('.recent-scroll-container > div:first-child') as HTMLElement
+        if (firstCard) {
+          firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
+        }
+        updateCardDepth()
+      })
+    })
     
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
@@ -260,7 +281,17 @@ export default function PerformancesPage() {
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
-    updateCardDepth() // Initial call
+    
+    // Center first card on initial load
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const firstCard = container.querySelector('.iconic-scroll-container > div:first-child') as HTMLElement
+        if (firstCard) {
+          firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
+        }
+        updateCardDepth()
+      })
+    })
     
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
@@ -319,14 +350,14 @@ export default function PerformancesPage() {
                   <div className="relative -mx-4 sm:-mx-0">
                     <div 
                       className="overflow-hidden"
-                      style={{
+                      style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                      }}
+                      } : {}}
                     >
                       <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
                         {[...Array(6)].map((_, i) => (
-                          <div key={i} className="animate-pulse flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw]">
+                          <div key={i} className="animate-pulse flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw]">
                             <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
                               style={{
                                 boxShadow: `
@@ -350,17 +381,17 @@ export default function PerformancesPage() {
                   <div className="relative -mx-4 sm:-mx-0">
                     <div 
                       className="overflow-hidden"
-                      style={{
+                      style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                      }}
+                      } : {}}
                     >
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
                       <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
                         {recentPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center lg:cursor-pointer"
+                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center lg:cursor-pointer"
                             style={{
                               /* Hardware acceleration for smooth scrolling */
                               transform: 'translateZ(0)',
@@ -412,11 +443,11 @@ export default function PerformancesPage() {
                               }
                             }}
                             style={{
-                              width: index === activeRecentCard ? '20px' : '5px',
-                              height: '5px',
-                              minWidth: index === activeRecentCard ? '20px' : '5px',
-                              minHeight: '5px',
-                              padding: 0,
+                              width: index === activeRecentCard ? '20px' : '8px',
+                              height: '8px',
+                              minWidth: '8px',
+                              minHeight: '8px',
+                              padding: '8px',
                               border: 'none',
                               backgroundColor: index === activeRecentCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',
@@ -485,17 +516,17 @@ export default function PerformancesPage() {
                   <div className="relative -mx-4 sm:-mx-0">
                     <div 
                       className="overflow-hidden"
-                      style={{
+                      style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                      }}
+                      } : {}}
                     >
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
                       <div className="iconic-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
                         {iconicPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[75vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
                           onClick={() => {
                             if (window.innerWidth >= 1024) {
                               const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
@@ -542,11 +573,11 @@ export default function PerformancesPage() {
                               }
                             }}
                             style={{
-                              width: index === activeIconicCard ? '20px' : '5px',
-                              height: '5px',
-                              minWidth: index === activeIconicCard ? '20px' : '5px',
-                              minHeight: '5px',
-                              padding: 0,
+                              width: index === activeIconicCard ? '20px' : '8px',
+                              height: '8px',
+                              minWidth: '8px',
+                              minHeight: '8px',
+                              padding: '8px',
                               border: 'none',
                               backgroundColor: index === activeIconicCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',
