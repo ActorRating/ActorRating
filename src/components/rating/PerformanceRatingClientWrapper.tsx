@@ -4,6 +4,7 @@ import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from '
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock } from 'lucide-react'
+import { useUser } from '@/components/providers/SessionProvider'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -169,14 +170,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
       </div>
 
       {/* Slider Container */}
-      <div className="relative pt-2 pb-2">
+      <div className="relative pt-3 pb-3">
         {/* Track Background - with padding to contain thumb at edges */}
-        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '14px', paddingRight: '14px' }}>
+        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
           {/* Fill - Gold gradient - Instant updates during drag, smooth transition when idle */}
           <div
             className={`absolute top-0 left-0 h-full rounded-full will-change-[width] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{ 
-              width: value === 0 ? '0px' : `calc(14px + ${value}% * (100% - 28px) / 100%)`,
+              width: value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
             }}
@@ -234,8 +235,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
             style={{ 
               touchAction: 'none',
               WebkitTapHighlightColor: 'transparent',
-              paddingLeft: '14px',
-              paddingRight: '14px',
+              paddingLeft: '16px',
+              paddingRight: '16px',
             }}
             aria-label={label}
           />
@@ -244,12 +245,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
           <div
             className={`absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{
-              left: `calc(14px + ${value}% * (100% - 28px) / 100%)`,
+              left: `calc(16px + ${value}% * (100% - 32px) / 100%)`,
               transform: `translate(-50%, -50%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
-              width: isActive ? '28px' : '24px',
-              height: isActive ? '28px' : '24px',
+              width: isActive ? '32px' : '28px',
+              height: isActive ? '32px' : '28px',
             }}
           />
         </div>
@@ -272,10 +273,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   onSuccess
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
+  const user = useUser()
   
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>('idle')
   const [finalScore, setFinalScore] = useState<number | null>(null)
+  const [hasAnimatedOnce, setHasAnimatedOnce] = useState(false)
 
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
   const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)
@@ -392,6 +395,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (!allSlidersTouched) return
     if (spotlightPhase !== 'none') return // Don't restart if already animating
     if (isDraggingRef.current) return // Don't trigger if still dragging
+    if (hasAnimatedOnce) return // Only animate once
+
+    // Mark as animated
+    setHasAnimatedOnce(true)
 
     // Effect 1: Score pulse
     setSpotlightPhase('score')
@@ -418,7 +425,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         })
       }, 200)
     }, 1200)
-  }, [allSlidersTouched, spotlightPhase])
+  }, [allSlidersTouched, spotlightPhase, hasAnimatedOnce])
 
   // Trigger spotlight animation after slider release (not just when slider stops moving)
   useEffect(() => {
@@ -426,6 +433,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (spotlightPhase !== 'none') return // Don't restart if already animating
     if (isDraggingRef.current) return // Don't trigger if still dragging
     if (sliderReleaseTime === 0) return // No release yet
+    if (hasAnimatedOnce) return // Only animate once
 
     // Clear any existing timeout
     if (spotlightTimeoutRef.current) {
@@ -434,7 +442,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
     // Trigger animation 100ms after slider release
     spotlightTimeoutRef.current = setTimeout(() => {
-      if (!isDraggingRef.current && spotlightPhase === 'none') {
+      if (!isDraggingRef.current && spotlightPhase === 'none' && !hasAnimatedOnce) {
         triggerSpotlightAnimation()
       }
     }, 100)
@@ -445,7 +453,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         spotlightTimeoutRef.current = null
       }
     }
-  }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation])
+  }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation, hasAnimatedOnce])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -588,12 +596,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
 
-      <div className="relative max-w-[900px] mx-auto px-2 sm:px-6 pt-24 sm:pt-16 md:pt-20 lg:pt-24 pb-16 sm:pb-20 md:pb-24">
+      <div className={`relative max-w-[900px] mx-auto px-2 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}>
 
         {/* Header Section - Mobile optimized */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
           {/* Actor Name */}
@@ -631,24 +640,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {submitPhase !== 'success' && (
             <motion.div
                   ref={scoreRef}
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -30, scale: 0.95 }}
                   animate={{ 
                     opacity: submitPhase === 'success' ? 0 : 1, 
                     y: submitPhase === 'success' ? -20 : 0,
-                    scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
+                    scale: submitPhase === 'success' ? 0.95 : (spotlightPhase === 'score' ? [1, 1.05, 1] : 1)
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
-                    delay: 0.2, 
-                    duration: 1.0,
+                    delay: 0.3, 
+                    duration: 0.8,
                     times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
-                    ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : 'easeOut'
+                    ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : [0.22, 1, 0.36, 1]
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
                   style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}
             >
               <div 
-                className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
+                className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                 style={{
                   width: '100%',
                   minHeight: '130px',
@@ -679,7 +688,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         times: [0, 0.5, 1],
                         ease: ['easeOut', 'easeIn'],
                       }}
-                      className="absolute inset-0 pointer-events-none rounded-3xl"
+                      className="absolute inset-0 pointer-events-none rounded-[2.5rem] sm:rounded-[3rem]"
                       style={{
                         background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 200, 0, 0.2) 40%, transparent 70%)',
                         filter: 'blur(40px)',
@@ -733,13 +742,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <AnimatePresence>
               {submitPhase !== 'success' && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
                   animate={{ 
                     opacity: submitPhase === 'success' ? 0 : 1,
                     y: submitPhase === 'success' ? -20 : 0,
                   }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: 0.1, duration: 0.6 }}
+                  transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
                   style={{
                     boxShadow: `
@@ -765,7 +774,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               />
               
               {/* Sliders - Mobile optimized spacing, slightly narrower on mobile */}
-              <div className="space-y-6 sm:space-y-8 relative z-10 max-w-[calc(100%-24px)] sm:max-w-[600px] mx-auto">
+              <div className="space-y-6 sm:space-y-8 relative z-10 max-w-[calc(100%-24px)] sm:max-w-[600px] mx-auto pb-2">
                 <RatingSliderCard 
                   label="Emotional Impact" 
                   value={emotionalRangeDepth} 
@@ -839,7 +848,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   ref={buttonRef}
                   type="submit"
                   disabled={!allSlidersTouched || submitting}
-                  className="group w-full py-4 sm:py-5 md:py-6 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: allSlidersTouched && !submitting
                       ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
@@ -968,7 +977,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   className="text-center mb-8"
                 >
                   <div 
-                    className="relative backdrop-blur-xl rounded-3xl px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
+                    className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
                     style={{
                       width: '240px',
                       minHeight: '130px',

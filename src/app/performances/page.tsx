@@ -335,7 +335,7 @@ export default function PerformancesPage() {
                         WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                       } : {}}
                     >
-                      <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                      <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
                         {[...Array(6)].map((_, i) => (
                           <div key={i} className="animate-pulse flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw]">
                             <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
@@ -367,7 +367,7 @@ export default function PerformancesPage() {
                       } : {}}
                     >
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
-                      <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                      <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
                         {recentPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
@@ -502,7 +502,7 @@ export default function PerformancesPage() {
                       } : {}}
                     >
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
-                      <div className="iconic-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]">
+                      <div className="iconic-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
                         {iconicPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 

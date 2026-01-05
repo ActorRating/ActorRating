@@ -132,7 +132,7 @@ export function SignUpToSaveModal({
                 damping: 30,
                 duration: 0.3
               }}
-              className="relative max-w-md w-full rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-7 md:p-8 pointer-events-auto"
+              className="relative max-w-md w-full rounded-[2rem] p-6 sm:p-7 md:p-8 pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
               style={{
                 background: 'linear-gradient(to bottom right, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.90), rgba(0, 0, 0, 0.95))',
@@ -175,7 +175,7 @@ export function SignUpToSaveModal({
                 className="text-center mb-5 sm:mb-6 mt-12 sm:mt-0"
               >
                 <div 
-                  className="relative backdrop-blur-xl rounded-xl sm:rounded-2xl md:rounded-3xl px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-7 shadow-2xl mx-auto flex items-center justify-center"
+                  className="relative backdrop-blur-xl rounded-3xl px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-7 shadow-2xl mx-auto flex items-center justify-center"
                   style={{
                     width: 'clamp(180px, 80%, 240px)',
                     maxWidth: '240px',
@@ -236,7 +236,7 @@ export function SignUpToSaveModal({
               <button 
                 onClick={handleGoogleSignUp}
                 disabled={isGoogleLoading}
-                className="w-full py-3 sm:py-3.5 md:py-4 px-4 sm:px-5 md:px-6 rounded-xl sm:rounded-2xl text-sm sm:text-base text-white font-semibold flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group mb-4 sm:mb-5"
+                className="w-full py-4 sm:py-3.5 md:py-4 px-4 sm:px-5 md:px-6 rounded-xl sm:rounded-2xl text-sm sm:text-base text-white font-semibold flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group mb-4 sm:mb-5"
                 style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
