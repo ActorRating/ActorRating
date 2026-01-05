@@ -37,7 +37,14 @@ export default function AuthCallback() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
             console.log('✅ Found existing session despite OAuth error')
-            router.push('/dashboard')
+            // Check if there's a pending rating to submit
+            const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
+            if (pendingRating) {
+              console.log('📝 Found pending rating, redirecting to signup-success')
+              router.push('/auth/signup-success')
+            } else {
+              router.push('/dashboard')
+            }
             return
           }
           setError(`Authentication failed: ${error_description || error}`)
@@ -62,7 +69,14 @@ export default function AuthCallback() {
               const { data: { session } } = await supabase.auth.getSession()
               if (session) {
                 console.log('✅ Found existing session despite PKCE error')
-                router.push('/dashboard')
+                // Check if there's a pending rating to submit
+                const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
+                if (pendingRating) {
+                  console.log('📝 Found pending rating, redirecting to signup-success')
+                  router.push('/auth/signup-success')
+                } else {
+                  router.push('/dashboard')
+                }
                 return
               }
               
@@ -80,8 +94,15 @@ export default function AuthCallback() {
 
           if (data.session) {
             console.log('✅ Successfully authenticated via OAuth')
-            // Successfully authenticated, redirect to dashboard
-            router.push('/dashboard')
+            // Check if there's a pending rating to submit
+            const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
+            if (pendingRating) {
+              console.log('📝 Found pending rating, redirecting to signup-success')
+              router.push('/auth/signup-success')
+            } else {
+              // Successfully authenticated, redirect to dashboard
+              router.push('/dashboard')
+            }
             return
           }
         }
@@ -99,8 +120,15 @@ export default function AuthCallback() {
 
         if (session) {
           console.log('✅ Found existing session')
-          // Successfully authenticated, redirect to dashboard
-          router.push('/dashboard')
+          // Check if there's a pending rating to submit
+          const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
+          if (pendingRating) {
+            console.log('📝 Found pending rating, redirecting to signup-success')
+            router.push('/auth/signup-success')
+          } else {
+            // Successfully authenticated, redirect to dashboard
+            router.push('/dashboard')
+          }
         } else {
           console.log('❌ No session found, redirecting to sign-in')
           // No session found, redirect to sign-in
@@ -113,7 +141,14 @@ export default function AuthCallback() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session) {
             console.log('✅ Found session despite callback error')
-            router.push('/dashboard')
+            // Check if there's a pending rating to submit
+            const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
+            if (pendingRating) {
+              console.log('📝 Found pending rating, redirecting to signup-success')
+              router.push('/auth/signup-success')
+            } else {
+              router.push('/dashboard')
+            }
             return
           }
         } catch {

@@ -28,31 +28,37 @@ export default function SignupSuccessPage() {
         try {
           const ratingData = JSON.parse(pendingRating)
           
+          // Map the rating data fields (modal uses shorter names)
+          const apiRatingData = {
+            actorId: ratingData.actorId,
+            movieId: ratingData.movieId,
+            emotionalRangeDepth: ratingData.emotionalRangeDepth ?? ratingData.emotionalDepth,
+            characterBelievability: ratingData.characterBelievability ?? ratingData.believability,
+            technicalSkill: ratingData.technicalSkill,
+            screenPresence: ratingData.screenPresence,
+            chemistryInteraction: ratingData.chemistryInteraction ?? ratingData.chemistry,
+            comment: ratingData.comment,
+            recaptchaToken: 'bypass' // Skip reCAPTCHA for post-signup submission
+          }
+          
           // Submit the pending rating
           const ratingResponse = await fetch('/api/ratings', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              actorId: ratingData.actorId,
-              movieId: ratingData.movieId,
-              emotionalRangeDepth: ratingData.emotionalRangeDepth,
-              characterBelievability: ratingData.characterBelievability,
-              technicalSkill: ratingData.technicalSkill,
-              screenPresence: ratingData.screenPresence,
-              chemistryInteraction: ratingData.chemistryInteraction,
-              comment: ratingData.comment,
-              recaptchaToken: 'bypass' // Skip reCAPTCHA for post-signup submission
-            }),
+            body: JSON.stringify(apiRatingData),
           })
 
           if (ratingResponse.ok) {
             // Clear the pending rating
             localStorage.removeItem('pendingRating')
             
-            // Redirect to the rating success page
-            const successUrl = `/rating-success?actorName=${encodeURIComponent(ratingData.actorName)}&movieTitle=${encodeURIComponent(ratingData.movieTitle)}&movieYear=${ratingData.movieYear}&emotionalRangeDepth=${ratingData.emotionalRangeDepth}&characterBelievability=${ratingData.characterBelievability}&technicalSkill=${ratingData.technicalSkill}&screenPresence=${ratingData.screenPresence}&chemistryInteraction=${ratingData.chemistryInteraction}${ratingData.comment ? `&comment=${encodeURIComponent(ratingData.comment)}` : ''}`
+            // Redirect to the rating success page with correct field names
+            const emotionalRangeDepth = apiRatingData.emotionalRangeDepth
+            const characterBelievability = apiRatingData.characterBelievability
+            const chemistryInteraction = apiRatingData.chemistryInteraction
+            const successUrl = `/rating-success?actorName=${encodeURIComponent(ratingData.actorName)}&movieTitle=${encodeURIComponent(ratingData.movieTitle)}&movieYear=${ratingData.movieYear}&emotionalRangeDepth=${emotionalRangeDepth}&characterBelievability=${characterBelievability}&technicalSkill=${apiRatingData.technicalSkill}&screenPresence=${apiRatingData.screenPresence}&chemistryInteraction=${chemistryInteraction}${apiRatingData.comment ? `&comment=${encodeURIComponent(apiRatingData.comment)}` : ''}`
             router.push(successUrl)
             return
           } else {
