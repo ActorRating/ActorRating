@@ -214,17 +214,7 @@ export default function PerformancesPage() {
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
-    
-    // Center first card on initial load
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const firstCard = container.querySelector('.recent-scroll-container > div:first-child') as HTMLElement
-        if (firstCard) {
-          firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
-        }
-        updateCardDepth()
-      })
-    })
+    updateCardDepth() // Initial call
     
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
@@ -281,17 +271,7 @@ export default function PerformancesPage() {
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
-    
-    // Center first card on initial load
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const firstCard = container.querySelector('.iconic-scroll-container > div:first-child') as HTMLElement
-        if (firstCard) {
-          firstCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' })
-        }
-        updateCardDepth()
-      })
-    })
+    updateCardDepth() // Initial call
     
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
