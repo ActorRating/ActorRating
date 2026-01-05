@@ -15,6 +15,14 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       if (isProcessing) return
       setIsProcessing(true)
+      
+      // Prevent multiple executions
+      if (typeof window !== 'undefined' && (window as any).__authCallbackProcessing) {
+        return
+      }
+      if (typeof window !== 'undefined') {
+        (window as any).__authCallbackProcessing = true
+      }
 
       try {
         console.log('🔄 Starting auth callback...')
@@ -158,10 +166,19 @@ export default function AuthCallback() {
         setIsLoading(false)
       } finally {
         setIsProcessing(false)
+        if (typeof window !== 'undefined') {
+          (window as any).__authCallbackProcessing = false
+        }
       }
     }
 
     handleAuthCallback()
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        (window as any).__authCallbackProcessing = false
+      }
+    }
   }, [router, searchParams, isProcessing])
 
   if (error) {

@@ -4,19 +4,25 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser } from '@/components/providers/SessionProvider'
+import { useSession } from '@/components/providers/SessionProvider'
 import { CheckCircle, Loader2 } from 'lucide-react'
+import supabase from '@/lib/supabaseClient'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
-  const user = useUser()
+  const { user, isInitialized } = useSession()
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handlePendingRating = async () => {
+      // Wait for session to be initialized
+      if (!isInitialized) {
+        return
+      }
+
       if (!user) {
-        // If no session, redirect to signin
+        // If no session after initialization, redirect to signin
         router.push('/auth/signin')
         return
       }
@@ -25,6 +31,18 @@ export default function SignupSuccessPage() {
       const pendingRating = localStorage.getItem('pendingRating')
       if (pendingRating) {
         setIsSubmittingRating(true)
+        
+        // Wait a bit for the session to be fully established on the server
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Verify session is still valid
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setError('Session expired. Please try signing in again.')
+          setIsSubmittingRating(false)
+          return
+        }
+
         try {
           const ratingData = JSON.parse(pendingRating)
           
@@ -41,16 +59,41 @@ export default function SignupSuccessPage() {
             recaptchaToken: 'bypass' // Skip reCAPTCHA for post-signup submission
           }
           
-          // Submit the pending rating
-          const ratingResponse = await fetch('/api/ratings', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(apiRatingData),
-          })
+          // Retry logic for rating submission
+          let ratingResponse: Response | null = null
+          let lastError: Error | null = null
+          
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              ratingResponse = await fetch('/api/ratings', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiRatingData),
+              })
 
-          if (ratingResponse.ok) {
+              if (ratingResponse.ok) {
+                break
+              } else if (ratingResponse.status === 403 || ratingResponse.status === 401) {
+                // If auth error, wait a bit longer and retry
+                if (attempt < 2) {
+                  await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+                  continue
+                }
+              }
+              
+              const errorData = await ratingResponse.json().catch(() => ({}))
+              throw new Error(errorData.error || `Failed to submit rating (${ratingResponse.status})`)
+            } catch (err) {
+              lastError = err instanceof Error ? err : new Error('Unknown error')
+              if (attempt < 2) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+              }
+            }
+          }
+
+          if (ratingResponse && ratingResponse.ok) {
             // Clear the pending rating
             localStorage.removeItem('pendingRating')
             
@@ -62,13 +105,13 @@ export default function SignupSuccessPage() {
             router.push(successUrl)
             return
           } else {
-            throw new Error('Failed to submit rating')
+            throw lastError || new Error('Failed to submit rating after retries')
           }
         } catch (error) {
           console.error('Failed to submit pending rating:', error)
-          setError('Failed to submit your rating. Please try again.')
-          // Clear the pending rating even if submission failed
-          localStorage.removeItem('pendingRating')
+          const errorMessage = error instanceof Error ? error.message : 'Failed to submit your rating. Please try again.'
+          setError(errorMessage)
+          // Don't clear the pending rating on error - let user retry
         } finally {
           setIsSubmittingRating(false)
         }
@@ -79,9 +122,9 @@ export default function SignupSuccessPage() {
     }
 
     handlePendingRating()
-  }, [user, router])
+  }, [user, isInitialized, router])
 
-  if (user === undefined || isSubmittingRating) {
+  if (!isInitialized || user === undefined || isSubmittingRating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
