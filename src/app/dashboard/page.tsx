@@ -403,6 +403,7 @@ export default function DashboardPage() {
                               <div className="mt-auto pt-6 border-t border-white/10 transition-colors duration-200">
                                 <div className="flex items-center justify-between gap-4">
                                   <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-400 mb-2">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
                                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                         <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
