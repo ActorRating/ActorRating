@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
@@ -960,7 +960,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-8 sm:p-12 max-w-md w-full border border-white/10 shadow-2xl overflow-hidden"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -971,6 +971,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   `,
                 }}
               >
+                {/* Close Button */}
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="absolute top-4 right-4 z-50 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                  aria-label="Close and go to dashboard"
+                >
+                  <X className="w-5 h-5" />
+                </button>
                 {/* Checkmark */}
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
