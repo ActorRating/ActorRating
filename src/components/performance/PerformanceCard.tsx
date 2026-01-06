@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Star, User, Award, TrendingUp, Eye } from 'lucide-react'
+import { Star, User, Award, TrendingUp, Eye, Pencil } from 'lucide-react'
 import { Performance } from '@/types'
 import { calculateOverallScore, getScoreLevel, DEFAULT_WEIGHTS } from '@/utils/ratingCalculator'
 import { Button } from '../ui/Button'
@@ -25,6 +25,8 @@ interface PerformanceCardProps {
   performanceType?: 'lead' | 'supporting'
   genres?: string[]
   onClick?: () => void
+  ratingId?: string // For edit functionality
+  showEditButton?: boolean // Show edit button for user's own ratings
 }
 
 export function PerformanceCard({ 
@@ -38,7 +40,9 @@ export function PerformanceCard({
   oscarStatus = null,
   performanceType = 'lead',
   genres = [],
-  onClick
+  onClick,
+  ratingId,
+  showEditButton = false
 }: PerformanceCardProps) {
   const router = useRouter()
   const cardRef = React.useRef<HTMLDivElement | null>(null)
@@ -56,6 +60,11 @@ export function PerformanceCard({
         { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
       )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
+  
+  // Edit URL with rating ID
+  const editUrl = ratingId 
+    ? `/rate?actor=${performance.actorId}&movie=${performance.movieId}&rating=${ratingId}`
+    : rateUrl
 
   const prefetchTargets = React.useCallback(() => {
     if (prefetchedRef.current) return
@@ -167,10 +176,21 @@ export function PerformanceCard({
       animate="show"
       whileHover={{ y: -2, transition: { duration: 0.2, ease: 'easeOut' } }}
       className={`
-        bg-card rounded-2xl border border-border shadow-sm hover:shadow-lg 
+        relative rounded-[2rem] border border-transparent
         transition-all duration-300 group cursor-pointer overflow-hidden
         h-full flex flex-col ${cardVariants[variant]} ${className}
       `}
+      style={{
+        background: 'linear-gradient(to bottom right, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.90), rgba(0, 0, 0, 0.95))',
+        backdropFilter: 'blur(24px)',
+        boxShadow: `
+          0 25px 70px -15px rgba(0, 0, 0, 0.9),
+          0 15px 40px -10px rgba(0, 0, 0, 0.7),
+          0 0 0 1px rgba(255, 255, 255, 0.05),
+          inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+        `,
+      }}
        onMouseEnter={prefetchTargets}
        onFocus={prefetchTargets}
        onClick={onClick}
@@ -178,6 +198,24 @@ export function PerformanceCard({
       tabIndex={0}
       aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
     >
+      {/* Edit Button - Top Left */}
+      {showEditButton && ratingId && (
+        <Link
+          href={editUrl}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 left-4 z-10"
+        >
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
+            style={{
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            }}
+            aria-label="Edit rating"
+          >
+            <Pencil className="w-4 h-4 text-[#FFD700]" />
+          </button>
+        </Link>
+      )}
       {/* Header with badges */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
@@ -284,19 +322,21 @@ export function PerformanceCard({
         </div>
       )}
 
-      {/* Action Button (Rate only) */}
-      <div className="flex mt-auto">
-        <Button
-          asChild
-          variant="premium"
-          size={variant === 'compact' ? 'sm' : 'md'}
-          className="flex-1"
-        >
-          <Link href={rateUrl}>
-            {ratingCount > 0 ? 'Rate This' : 'Be the first to rate'}
-          </Link>
-        </Button>
-      </div>
+      {/* Action Button (Rate only) - Hidden if user has already rated */}
+      {!showEditButton && (
+        <div className="flex mt-auto">
+          <Button
+            asChild
+            variant="premium"
+            size={variant === 'compact' ? 'sm' : 'md'}
+            className="flex-1"
+          >
+            <Link href={rateUrl}>
+              Rate This
+            </Link>
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 } 
