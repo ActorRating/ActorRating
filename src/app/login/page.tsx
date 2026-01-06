@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 function LoginContent() {
   const router = useRouter()
@@ -28,10 +29,12 @@ export default function Login() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-300">Loading...</p>
-        </div>
+        <BouncingBallsLoader 
+          size="lg" 
+          color="#FFD700"
+          showText={true}
+          text="Loading..."
+        />
       </div>
     }>
       <LoginContent />

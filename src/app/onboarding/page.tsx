@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/Button"
 import { User, Star, Heart, CheckCircle } from "lucide-react"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 export default function OnboardingPage() {
   const user = useUser()
@@ -92,10 +93,12 @@ export default function OnboardingPage() {
   if (isLoadingUser || isCheckingUser) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+        <BouncingBallsLoader 
+          size="lg" 
+          color="#FFD700"
+          showText={true}
+          text="Loading..."
+        />
       </div>
     )
   }

@@ -3,6 +3,7 @@
 import { useSession } from "@/components/providers/SessionProvider"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -34,9 +35,13 @@ export function AuthGuard({
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <h1 className="text-xl font-semibold text-foreground mb-2">Loading...</h1>
-          <p className="text-muted-foreground">Please wait while we verify your session.</p>
+          <BouncingBallsLoader 
+            size="md" 
+            color="#FFD700"
+            showText={true}
+            text="Loading..."
+          />
+          <p className="text-muted-foreground mt-2">Please wait while we verify your session.</p>
         </div>
       </div>
     )

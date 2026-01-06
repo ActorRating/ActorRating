@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Star, Film, Heart, Target, Zap, Eye, Users, SortAsc } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
@@ -238,8 +239,8 @@ export default function ActorDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-white text-base">Loading actor data...</p>
+          <BouncingBallsLoader size="md" color="#FFD700" showText={true} text="Loading actor data..." />
+          
         </div>
       </div>
     )

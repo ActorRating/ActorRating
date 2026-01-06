@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import supabase from '@/lib/supabaseClient'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface SignUpToSaveModalProps {
   isOpen: boolean
@@ -259,7 +260,7 @@ export function SignUpToSaveModal({
                 <div className="relative flex items-center justify-center gap-3">
                   {isGoogleLoading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <BouncingBallsLoader size="sm" color="#FFFFFF" className="mb-0" />
                       <span>Signing up...</span>
                     </>
                   ) : (

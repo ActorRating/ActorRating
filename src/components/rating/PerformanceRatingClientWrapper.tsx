@@ -125,6 +125,14 @@ interface PerformanceRatingClientWrapperProps {
     screenPresence: number
     chemistry: number
   }) => void
+  submittedRating?: {
+    id: string
+    emotionalRangeDepth: number
+    characterBelievability: number
+    technicalSkill: number
+    screenPresence: number
+    chemistryInteraction: number
+  } | null
 }
 
 // Individual Slider Component - Premium Gold Design (Optimized for mobile)
@@ -270,15 +278,32 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   onSubmit,
   submitting = false,
   initialRating,
-  onSuccess
+  onSuccess,
+  submittedRating: externalSubmittedRating
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
   
   // Success animation states
-  const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>('idle')
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
+    externalSubmittedRating ? 'success' : 'idle'
+  )
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [hasAnimatedOnce, setHasAnimatedOnce] = useState(false)
+  
+  // Set final score if external submitted rating is provided
+  useEffect(() => {
+    if (externalSubmittedRating) {
+      const score = (
+        externalSubmittedRating.emotionalRangeDepth * 0.25 +
+        externalSubmittedRating.characterBelievability * 0.25 +
+        externalSubmittedRating.technicalSkill * 0.20 +
+        externalSubmittedRating.screenPresence * 0.15 +
+        externalSubmittedRating.chemistryInteraction * 0.15
+      ) / 10
+      setFinalScore(Number(score.toFixed(1)))
+    }
+  }, [externalSubmittedRating])
 
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
   const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)

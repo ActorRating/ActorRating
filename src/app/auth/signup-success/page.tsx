@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/providers/SessionProvider'
-import { CheckCircle, Loader2 } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import supabase from '@/lib/supabaseClient'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
@@ -94,15 +95,18 @@ export default function SignupSuccessPage() {
           }
 
           if (ratingResponse && ratingResponse.ok) {
+            // Get the rating data from response
+            const submittedRating = await ratingResponse.json()
+            
             // Clear the pending rating
             localStorage.removeItem('pendingRating')
             
-            // Redirect to the rating success page with correct field names
-            const emotionalRangeDepth = apiRatingData.emotionalRangeDepth
-            const characterBelievability = apiRatingData.characterBelievability
-            const chemistryInteraction = apiRatingData.chemistryInteraction
-            const successUrl = `/rating-success?actorName=${encodeURIComponent(ratingData.actorName)}&movieTitle=${encodeURIComponent(ratingData.movieTitle)}&movieYear=${ratingData.movieYear}&emotionalRangeDepth=${emotionalRangeDepth}&characterBelievability=${characterBelievability}&technicalSkill=${apiRatingData.technicalSkill}&screenPresence=${apiRatingData.screenPresence}&chemistryInteraction=${chemistryInteraction}${apiRatingData.comment ? `&comment=${encodeURIComponent(apiRatingData.comment)}` : ''}`
-            router.push(successUrl)
+            // Store rating data temporarily for success card display
+            sessionStorage.setItem('submittedRating', JSON.stringify(submittedRating))
+            
+            // Redirect to rate page to show success card (same as logged-in users see)
+            const rateUrl = `/rate?actor=${ratingData.actorId}&movie=${ratingData.movieId}&submitted=true&ratingId=${submittedRating.id}`
+            router.push(rateUrl)
             return
           } else {
             throw lastError || new Error('Failed to submit rating after retries')
@@ -127,12 +131,12 @@ export default function SignupSuccessPage() {
   if (!isInitialized || user === undefined || isSubmittingRating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">
-            {isSubmittingRating ? 'Submitting your rating...' : 'Setting up your account...'}
-          </p>
-        </div>
+        <BouncingBallsLoader 
+          size="md" 
+          color="#FFD700"
+          showText={true}
+          text={isSubmittingRating ? 'Submitting your rating...' : 'Setting up your account...'}
+        />
       </div>
     )
   }
@@ -167,10 +171,12 @@ export default function SignupSuccessPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-        <p className="text-muted-foreground">Redirecting...</p>
-      </div>
+      <BouncingBallsLoader 
+        size="md" 
+        color="#FFD700"
+        showText={true}
+        text="Redirecting..."
+      />
     </div>
   )
 }

@@ -2,11 +2,12 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Filter, SortAsc, Loader2, Inbox } from 'lucide-react'
+import { Search, Filter, SortAsc, Inbox } from 'lucide-react'
 import { Performance } from '@/types'
 import { PerformanceCard } from './PerformanceCard'
 import { Button } from '../ui/Button'
 import { fadeInUp, getMotionProps, fadeIn } from '@/lib/animations'
+import { BouncingBallsLoader } from '../ui/BouncingBallsLoader'
 
 interface PerformanceGridProps {
   performances: Performance[]
@@ -323,7 +324,7 @@ export function PerformanceGrid({
       {loading && hasMore && (
         <div className="flex justify-center pt-6">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <BouncingBallsLoader size="sm" color="#FFD700" className="mb-0" />
             Loading more performances...
           </div>
         </div>

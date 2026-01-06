@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
 import { getActorUrl } from '@/lib/slugHelper'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (
@@ -440,12 +441,12 @@ export function SearchBar({
             <div className="max-h-96 overflow-y-auto">
             {loading ? (
               <div className="p-6 text-center">
-                <div className="animate-spin w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full mx-auto mb-3"></div>
+                <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
                 <p className="text-sm text-gray-300">Searching...</p>
               </div>
             ) : !hasSearched ? (
               <div className="p-6 text-center">
-                <div className="animate-spin w-6 h-6 border-2 border-[#FFD700] border-t-transparent rounded-full mx-auto mb-3"></div>
+                <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
                 <p className="text-sm text-gray-300">Searching...</p>
               </div>
             ) : hasResults ? (

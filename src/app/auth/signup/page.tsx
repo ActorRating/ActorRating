@@ -14,6 +14,7 @@ import { FaEye, FaEyeSlash, FaPlay, FaUserPlus, FaRocket, FaCheck, FaTimes, FaAr
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 // Local validation using requested regex rules
 
 export default function SignUp() {
@@ -316,7 +317,7 @@ export default function SignUp() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+        <BouncingBallsLoader size="md" color="#FFD700" />
       </div>
     )
   }
@@ -463,7 +464,7 @@ export default function SignUp() {
               <div className="relative flex items-center justify-center gap-3">
                 {isGoogleLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <BouncingBallsLoader size="sm" color="#FFFFFF" className="mb-0" />
                     <span>Creating account...</span>
                   </>
                 ) : (
@@ -713,7 +714,7 @@ export default function SignUp() {
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-3">
-                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                        <BouncingBallsLoader size="sm" color="#000000" className="mb-0" />
                         Creating Account...
                       </span>
                     ) : (

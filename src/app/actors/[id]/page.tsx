@@ -13,6 +13,7 @@ import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl } from '@/lib/slugHelper'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface Actor {
   id: string
@@ -215,7 +216,7 @@ export default function ActorPage() {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full"></div>
+          <BouncingBallsLoader size="lg" color="#FFD700" />
         </div>
       </Layout>
     )

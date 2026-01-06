@@ -11,6 +11,7 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { Button } from '@/components/ui/Button'
 import { motion } from 'framer-motion'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function RatingSuccessPage() {
   const searchParams = useSearchParams()
@@ -107,10 +108,12 @@ export default function RatingSuccessPage() {
   if (!ratingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+        <BouncingBallsLoader 
+          size="md" 
+          color="#FFD700"
+          showText={true}
+          text="Loading..."
+        />
       </div>
     )
   }

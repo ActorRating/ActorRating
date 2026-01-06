@@ -3,6 +3,7 @@ import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
 import supabase from "@/lib/supabaseClient"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface LoginButtonProps {
   className?: string
@@ -53,7 +54,7 @@ export function LoginButton({
       className={`flex items-center gap-2 ${className || ""}`}
     >
       {isLoading ? (
-        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <BouncingBallsLoader size="sm" color="currentColor" className="mb-0" />
       ) : (
         <FcGoogle className="w-4 h-4" />
       )}

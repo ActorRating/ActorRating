@@ -12,6 +12,7 @@ import { Film } from "lucide-react"
 import Link from "next/link"
 import { getActorUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface Actor {
   id: string
@@ -244,7 +245,7 @@ export default function SearchPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-[#FFD700] border-t-transparent rounded-full"></div>
+        <BouncingBallsLoader size="lg" color="#FFD700" />
       </div>
     }>
       <SearchPageContent />

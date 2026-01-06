@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import supabase from '@/lib/supabaseClient'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -201,9 +202,13 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <h1 className="text-xl font-semibold text-foreground mb-2">Completing sign in...</h1>
-        <p className="text-muted-foreground">Please wait while we finish setting up your account.</p>
+        <BouncingBallsLoader 
+          size="md" 
+          color="#FFD700"
+          showText={true}
+          text="Completing sign in..."
+        />
+        <p className="text-muted-foreground mt-2">Please wait while we finish setting up your account.</p>
       </div>
     </div>
   )

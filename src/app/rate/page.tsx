@@ -21,6 +21,7 @@ import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceR
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -29,6 +30,7 @@ function RatePageContent() {
   const actorId = searchParams?.get('actor')
   const movieId = searchParams?.get('movie')
   const ratingId = searchParams?.get('rating') // For editing existing ratings
+  const submittedParam = searchParams?.get('submitted') === 'true'
   
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)
@@ -46,6 +48,24 @@ function RatePageContent() {
   const { executeRecaptcha } = useRecaptchaV3()
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [pendingRatingData, setPendingRatingData] = useState<any>(null)
+
+  // Check for submitted rating from sessionStorage (after sign-in)
+  useEffect(() => {
+    if (submittedParam && typeof window !== 'undefined') {
+      const storedRating = sessionStorage.getItem('submittedRating')
+      if (storedRating) {
+        try {
+          const rating = JSON.parse(storedRating)
+          setSubmittedRating(rating)
+          setSubmitted(true)
+          // Clear sessionStorage after reading
+          sessionStorage.removeItem('submittedRating')
+        } catch (error) {
+          console.error('Failed to parse submitted rating:', error)
+        }
+      }
+    }
+  }, [submittedParam])
 
   // Scroll to top when success page loads
   useEffect(() => {
@@ -575,6 +595,14 @@ function RatePageContent() {
                 screenPresence: existingRating.screenPresence,
                 chemistry: existingRating.chemistryInteraction
               } : undefined}
+              submittedRating={submittedRating ? {
+                id: submittedRating.id,
+                emotionalRangeDepth: submittedRating.emotionalRangeDepth,
+                characterBelievability: submittedRating.characterBelievability,
+                technicalSkill: submittedRating.technicalSkill,
+                screenPresence: submittedRating.screenPresence,
+                chemistryInteraction: submittedRating.chemistryInteraction
+              } : undefined}
               onSuccess={() => {
                 // Success animation is handled in the component
               }}
@@ -642,8 +670,12 @@ function RatePageContent() {
             {/* Search Results */}
             {searching && (
               <div className="text-center py-8">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Searching...</p>
+                <BouncingBallsLoader 
+                  size="md" 
+                  color="#FFD700"
+                  showText={true}
+                  text="Searching..."
+                />
               </div>
             )}
 

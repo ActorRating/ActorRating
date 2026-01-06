@@ -9,6 +9,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { TriangleAlert, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 export default function DeleteAccountPage() {
   const user = useUser()
@@ -54,10 +55,12 @@ export default function DeleteAccountPage() {
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Yükleniyor...</p>
-        </div>
+        <BouncingBallsLoader 
+          size="lg" 
+          color="#FFD700"
+          showText={true}
+          text="Yükleniyor..."
+        />
       </div>
     )
   }

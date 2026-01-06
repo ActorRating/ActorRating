@@ -15,6 +15,7 @@ import { FaEye, FaEyeSlash, FaPlay, FaUserShield, FaRocket, FaArrowRight } from 
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 function SignInContent() {
   const router = useRouter()
@@ -255,7 +256,7 @@ function SignInContent() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+        <BouncingBallsLoader size="md" color="#FFD700" />
       </div>
     )
   }
@@ -264,14 +265,13 @@ function SignInContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto mb-4" />
-            <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-primary/10 mx-auto" />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Signing you in...</h2>
-          <p className="text-sm text-muted-foreground">Please wait while we establish your session.</p>
-        </div>
+        <BouncingBallsLoader 
+          size="lg" 
+          color="#FFD700"
+          showText={true}
+          text="Signing you in..."
+        />
+        <p className="text-sm text-muted-foreground mt-4">Please wait while we establish your session.</p>
       </div>
     )
   }
@@ -428,7 +428,7 @@ function SignInContent() {
               <div className="relative flex items-center justify-center gap-3">
                 {isGoogleLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <BouncingBallsLoader size="sm" color="#FFFFFF" className="mb-0" />
                     <span>Signing in...</span>
                   </>
                 ) : (
@@ -603,7 +603,7 @@ function SignInContent() {
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-3">
-                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                        <BouncingBallsLoader size="sm" color="#000000" className="mb-0" />
                         Signing In...
                       </span>
                     ) : (
@@ -637,10 +637,12 @@ export default function SignIn() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+        <BouncingBallsLoader 
+          size="md" 
+          color="#FFD700"
+          showText={true}
+          text="Loading..."
+        />
       </div>
     }>
       <SignInContent />

@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { LogOut, Loader2 } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import supabase from '@/lib/supabaseClient'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface LogoutButtonProps {
   variant?: "default" | "outline" | "ghost" | "destructive"
@@ -60,7 +61,7 @@ export function LogoutButton({
       className={`flex items-center gap-2 ${className}`}
     >
       {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <BouncingBallsLoader size="sm" color="currentColor" className="mb-0" />
       ) : showIcon ? (
         <LogOut className="w-4 h-4" />
       ) : null}

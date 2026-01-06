@@ -12,6 +12,7 @@ import {
   RatingFormState,
   RatingConfirmationModalProps
 } from "@/types/rating"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { 
   calculateOverallScore, 
   validateRating, 
@@ -470,7 +471,7 @@ export function RatingForm({
           >
             {formState.isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <BouncingBallsLoader size="sm" color="#FFFFFF" className="mb-0" />
                 Submitting...
               </>
             ) : (
