@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Star, User, Award, TrendingUp, Eye, Pencil } from 'lucide-react'
-import { FaStar } from 'react-icons/fa'
 import { Performance } from '@/types'
 import { calculateOverallScore, getScoreLevel, DEFAULT_WEIGHTS } from '@/utils/ratingCalculator'
 import { Button } from '../ui/Button'
@@ -222,14 +221,14 @@ export function PerformanceCard({
         <div className="flex items-center justify-between">
           {averageRating !== undefined && averageRating !== null ? (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-              <FaStar className="w-4 h-4 text-[#FFD700]" />
+              <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
               <span className="text-xl font-bold text-[#FFD700]">
                 {averageRating.toFixed(1)}
               </span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-              <FaStar className="w-4 h-4 text-[#666]" />
+              <Star className="w-4 h-4 text-[#666]" />
               <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
             </div>
           )}
