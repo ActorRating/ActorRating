@@ -197,78 +197,41 @@ export function PerformanceCard({
       tabIndex={0}
       aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
     >
+      {/* Edit Button - Top Right */}
+      {showEditButton && ratingId && (
+        <Link
+          href={editUrl}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 right-4 z-10"
+        >
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
+            style={{
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            }}
+            aria-label="Edit rating"
+          >
+            <Pencil className="w-4 h-4 text-[#FFD700]" />
+          </button>
+        </Link>
+      )}
       {/* Header with badges */}
       <div className="flex flex-col gap-4 mb-4">
-        {/* Top Row: Score Bubble and Year */}
-        <div className="flex items-center justify-between">
-          {averageRating !== undefined && averageRating !== null ? (
-            <div className="relative inline-block">
-              {/* Edit Button - Top Left of Score Bubble */}
-              {showEditButton && ratingId && (
-                <Link
-                  href={editUrl}
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute -top-2 -left-2 z-10"
-                >
-                  <button
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
-                    style={{
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                    }}
-                    aria-label="Edit rating"
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-[#FFD700]" />
-                  </button>
-                </Link>
-              )}
-              {/* Score Bubble - Matching rate page style */}
-              <div 
-                className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-6 sm:px-7 md:px-8 py-4 sm:py-5 md:py-6 shadow-2xl"
-                style={{
-                  minWidth: '140px',
-                  minHeight: '100px',
-                  background: 'rgba(26, 26, 26, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
-                  transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
-                  transformStyle: 'preserve-3d',
-                }}
-              >
-                <div className="relative text-center z-10">
-                  <div 
-                    className="font-black mb-1 flex items-baseline justify-center gap-1 min-h-[2.5rem] sm:min-h-[3rem]"
-                    style={{
-                      fontFamily: 'var(--font-cinzel), serif',
-                    }}
-                  >
-                    <span
-                      className="inline-block text-3xl sm:text-4xl md:text-5xl"
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        lineHeight: '1',
-                      }}
-                    >
-                      {averageRating.toFixed(1)}
-                    </span>
-                    <span 
-                      className="text-base sm:text-lg md:text-xl text-[#a1a1aa] leading-none"
-                    >
-                      /10
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Score</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-              <Star className="w-4 h-4 text-[#666]" />
-              <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
-            </div>
-          )}
+         {/* Top Row: Rating Badge and Year */}
+         <div className="flex items-center justify-between">
+           {averageRating !== undefined && averageRating !== null ? (
+             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+               <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
+               <span className="text-xl font-bold text-[#FFD700]">
+                 {averageRating.toFixed(1)}/10
+               </span>
+             </div>
+           ) : (
+             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+               <Star className="w-4 h-4 text-[#666]" />
+               <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+             </div>
+           )}
           
           {/* Movie Year */}
           {performance.movie?.year && (

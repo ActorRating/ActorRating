@@ -117,10 +117,10 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
     const shouldSkipRecaptcha = userId || isBypassToken
     
     if (!shouldSkipRecaptcha) {
-      if (!recaptchaToken) {
-        return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
-      }
-      
+    if (!recaptchaToken) {
+      return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
+    }
+    
       const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
       if (!recaptchaResult.success) {
         console.error("reCAPTCHA verification failed:", recaptchaResult.error)
