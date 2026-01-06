@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Star, User, Award, TrendingUp, Eye, Pencil } from 'lucide-react'
+import { FaStar } from 'react-icons/fa'
 import { Performance } from '@/types'
 import { calculateOverallScore, getScoreLevel, DEFAULT_WEIGHTS } from '@/utils/ratingCalculator'
 import { Button } from '../ui/Button'
@@ -216,64 +217,67 @@ export function PerformanceCard({
         </Link>
       )}
       {/* Header with badges */}
-      <div className="flex items-start justify-between mb-4">
-        <div className={`flex-1 min-w-0 ${showEditButton && ratingId ? 'pl-14' : ''}`}>
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className={`font-bold text-white group-hover:text-[#FFD700] transition-colors truncate ${titleVariants[variant]}`}>
-              {performance.actor?.name}
-            </h3>
-            {oscarStatus && getOscarBadge(oscarStatus)}
-          </div>
-          
-          <p className="text-gray-300 font-medium mb-1">
-            in &quot;{performance.movie?.title}&quot;
-            {performance.movie?.year && (
-              <span className="text-gray-400 ml-1">({performance.movie.year})</span>
-            )}
-            {(() => {
-              const character = resolveCharacterDisplay({ 
-                character: (performance as any).character, 
-                roleName: performance.roleName as any, 
-                comment: performance.comment as any 
-              })
-              // Only show character if it's not "Unknown"
-              if (character && character.toLowerCase() !== 'unknown') {
-                return <span className="ml-2 text-gray-400">as {character}</span>
-              }
-              return null
-            })()}
-          </p>
-        </div>
-        
-        {/* Rating Score - Out of 10 format */}
-        {averageRating !== undefined && averageRating !== null ? (
-          <div className="text-right ml-6 pr-1 flex flex-col items-end">
-            <div 
-              className="font-black flex items-baseline gap-1"
-              style={{
-                fontFamily: 'var(--font-cinzel), serif',
-              }}
-            >
-              <span
-                className={`inline-block ${scoreVariants[variant]}`}
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  lineHeight: '1',
-                }}
-              >
+      <div className="flex flex-col gap-4 mb-4">
+        {/* Top Row: Rating Badge and Year */}
+        <div className="flex items-center justify-between">
+          {averageRating !== undefined && averageRating !== null ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+              <FaStar className="w-4 h-4 text-[#FFD700]" />
+              <span className="text-xl font-bold text-[#FFD700]">
                 {averageRating.toFixed(1)}
               </span>
-              <span className="text-lg sm:text-xl md:text-2xl text-gray-400 leading-none">
-                /10
-              </span>
             </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+              <FaStar className="w-4 h-4 text-[#666]" />
+              <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+            </div>
+          )}
+          
+          {/* Movie Year */}
+          {performance.movie?.year && (
+            <div className="text-base text-[#a1a1aa] font-medium">
+              {performance.movie.year}
+            </div>
+          )}
+        </div>
+
+        {/* Actor Name */}
+        <div className={`${showEditButton && ratingId ? 'pl-14' : ''}`}>
+          <h3 
+            className={`font-bold text-white mb-2 ${titleVariants[variant]}`}
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+          >
+            {performance.actor?.name}
+          </h3>
+          
+          {/* Movie Title */}
+          <div className="mb-2">
+            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+              {performance.movie?.title}
+            </span>
           </div>
-        ) : (
-          <div className="text-sm sm:text-base text-gray-500">N/A</div>
-        )}
+          
+          {/* Character */}
+          {(() => {
+            const character = resolveCharacterDisplay({ 
+              character: (performance as any).character, 
+              roleName: performance.roleName as any, 
+              comment: performance.comment as any 
+            })
+            // Only show character if it's not "Unknown"
+            if (character && character.toLowerCase() !== 'unknown') {
+              return (
+                <div className="mb-2">
+                  <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
+                    as {character}
+                  </p>
+                </div>
+              )
+            }
+            return null
+          })()}
+        </div>
       </div>
 
       {/* Genre Tags */}
