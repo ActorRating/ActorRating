@@ -197,12 +197,12 @@ export function PerformanceCard({
       tabIndex={0}
       aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
     >
-      {/* Edit Button - Top Left */}
+      {/* Edit Button - Top Right */}
       {showEditButton && ratingId && (
         <Link
           href={editUrl}
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-4 left-4 z-10"
+          className="absolute top-4 right-4 z-10"
         >
           <button
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
@@ -241,10 +241,10 @@ export function PerformanceCard({
           )}
         </div>
 
-        {/* Actor Name */}
-        <div className={`${showEditButton && ratingId ? 'pl-14' : ''}`}>
+        {/* Actor Name and Movie Title - Centered */}
+        <div className="text-center">
           <h3 
-            className={`font-bold text-white mb-2 ${titleVariants[variant]}`}
+            className={`font-bold text-white mb-2 ${titleVariants[variant]} break-words`}
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             {performance.actor?.name}
@@ -252,7 +252,7 @@ export function PerformanceCard({
           
           {/* Movie Title */}
           <div className="mb-2">
-            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+            <span className="text-lg text-[#FFD700] font-semibold tracking-wide break-words inline-block">
               {performance.movie?.title}
             </span>
           </div>
@@ -268,7 +268,7 @@ export function PerformanceCard({
             if (character && character.toLowerCase() !== 'unknown') {
               return (
                 <div className="mb-2">
-                  <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
+                  <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light break-words">
                     as {character}
                   </p>
                 </div>
