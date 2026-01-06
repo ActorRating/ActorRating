@@ -399,17 +399,51 @@ export default function DashboardPage() {
                                 </div>
                               </div>
 
-                              {/* Stats - Always show section */}
+                              {/* Stats - Score Bubble matching recent ratings */}
                               <div className="mt-auto pt-6 border-t border-white/10 transition-colors duration-200">
                                 <div className="flex items-center justify-between gap-4">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-gray-400 mb-2">Career Score</p>
+                                    <p className="text-xs text-gray-400 mb-3">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
-                                      <div className="flex items-baseline gap-2">
-                                        <p className="text-2xl sm:text-3xl font-bold text-white">
-                                          {apiActor.careerScore.toFixed(1)}
-                                        </p>
-                                        <span className="text-xs text-gray-500">/100</span>
+                                      <div 
+                                        className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-5 sm:px-6 py-3 sm:py-4 shadow-2xl inline-block"
+                                        style={{
+                                          minWidth: '120px',
+                                          minHeight: '80px',
+                                          background: 'rgba(26, 26, 26, 0.8)',
+                                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                                          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                                          transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
+                                          transformStyle: 'preserve-3d',
+                                        }}
+                                      >
+                                        <div className="relative text-center z-10">
+                                          <div 
+                                            className="font-black mb-1 flex items-baseline justify-center gap-1 min-h-[2rem] sm:min-h-[2.5rem]"
+                                            style={{
+                                              fontFamily: 'var(--font-cinzel), serif',
+                                            }}
+                                          >
+                                            <span
+                                              className="inline-block text-2xl sm:text-3xl md:text-4xl"
+                                              style={{
+                                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                backgroundClip: 'text',
+                                                lineHeight: '1',
+                                              }}
+                                            >
+                                              {(apiActor.careerScore / 10).toFixed(1)}
+                                            </span>
+                                            <span 
+                                              className="text-sm sm:text-base md:text-lg text-[#a1a1aa] leading-none"
+                                            >
+                                              /10
+                                            </span>
+                                          </div>
+                                          <p className="text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Score</p>
+                                        </div>
                                       </div>
                                     ) : (
                                       <p className="text-2xl sm:text-3xl font-bold text-gray-500">
