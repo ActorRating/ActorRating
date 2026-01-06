@@ -120,8 +120,8 @@ export default function SignupSuccessPage() {
           setIsSubmittingRating(false)
         }
       } else {
-        // No pending rating, redirect to onboarding
-        router.push('/onboarding')
+        // No pending rating, redirect to dashboard (skip onboarding)
+        router.push('/dashboard')
       }
     }
 
@@ -152,7 +152,7 @@ export default function SignupSuccessPage() {
           <p className="text-muted-foreground mb-6">{error}</p>
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/onboarding')}
+              onClick={() => router.push('/dashboard')}
               className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Continue to App

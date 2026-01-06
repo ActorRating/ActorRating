@@ -14,6 +14,7 @@ import { Star, TrendingUp, Film, ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
+import { InteractiveTutorial } from "@/components/tutorial/InteractiveTutorial"
 
 interface Actor {
   id: string
@@ -68,6 +69,21 @@ export default function DashboardPage() {
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [popularActors, setPopularActors] = useState<Actor[]>([])
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  // Check if user needs to see tutorial (first time on dashboard)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user && isInitialized) {
+      const hasSeenTutorial = localStorage.getItem('hasSeenTutorial')
+      if (!hasSeenTutorial) {
+        // Show tutorial after a short delay to let dashboard load
+        const timer = setTimeout(() => {
+          setShowTutorial(true)
+        }, 1000)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [user, isInitialized])
 
   useEffect(() => {
     if (user && isInitialized) {
@@ -175,6 +191,16 @@ export default function DashboardPage() {
       }
     ]
   };
+
+  const handleTutorialComplete = () => {
+    localStorage.setItem('hasSeenTutorial', 'true')
+    setShowTutorial(false)
+  }
+
+  const handleTutorialSkip = () => {
+    localStorage.setItem('hasSeenTutorial', 'true')
+    setShowTutorial(false)
+  }
 
   return (
     <AuthGuard>
@@ -553,6 +579,14 @@ export default function DashboardPage() {
             </motion.div>
           </section>
         </main>
+
+        {/* Interactive Tutorial */}
+        {showTutorial && (
+          <InteractiveTutorial 
+            onComplete={handleTutorialComplete}
+            onSkip={handleTutorialSkip}
+          />
+        )}
       </SignedInLayout>
     </AuthGuard>
   )

@@ -521,8 +521,8 @@ function RatePageContent() {
     )
   }
 
-  // Show rating form when both actor and movie are selected
-  if (actor && movie && !submitted) {
+  // Show rating form when both actor and movie are selected (or success state)
+  if (actor && movie) {
     return (
       <Suspense fallback={null}>
         {getLayout(

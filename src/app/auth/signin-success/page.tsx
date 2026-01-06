@@ -120,8 +120,8 @@ export default function SigninSuccessPage() {
           setIsSubmittingRating(false)
         }
       } else {
-        // No pending rating, redirect to onboarding
-        router.push('/onboarding')
+        // No pending rating, redirect to dashboard (skip onboarding)
+        router.push('/dashboard')
       }
     }
 
