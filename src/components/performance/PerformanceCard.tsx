@@ -218,71 +218,64 @@ export function PerformanceCard({
       )}
       {/* Header with badges */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0">
+        <div className={`flex-1 min-w-0 ${showEditButton && ratingId ? 'pl-14' : ''}`}>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors truncate ${titleVariants[variant]}`}>
+            <h3 className={`font-bold text-white group-hover:text-[#FFD700] transition-colors truncate ${titleVariants[variant]}`}>
               {performance.actor?.name}
             </h3>
             {oscarStatus && getOscarBadge(oscarStatus)}
           </div>
           
-          <p className="text-muted-foreground font-medium mb-1">
+          <p className="text-gray-300 font-medium mb-1">
             in &quot;{performance.movie?.title}&quot;
             {performance.movie?.year && (
-              <span className="text-muted-foreground/70 ml-1">({performance.movie.year})</span>
+              <span className="text-gray-400 ml-1">({performance.movie.year})</span>
             )}
-            <span className="ml-2 text-muted-foreground/90">as {resolveCharacterDisplay({ character: (performance as any).character, roleName: performance.roleName as any, comment: performance.comment as any })}</span>
-            {performance.comment ? ` ${performance.comment}` : ''}
+            {(() => {
+              const character = resolveCharacterDisplay({ 
+                character: (performance as any).character, 
+                roleName: performance.roleName as any, 
+                comment: performance.comment as any 
+              })
+              // Only show character if it's not "Unknown"
+              if (character && character.toLowerCase() !== 'unknown') {
+                return <span className="ml-2 text-gray-400">as {character}</span>
+              }
+              return null
+            })()}
           </p>
-          
-          {performanceType && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-              <span className={`px-2 py-1 rounded-full ${
-                performanceType === 'lead' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {performanceType === 'lead' ? 'Lead' : 'Supporting'}
-              </span>
-            </div>
-          )}
         </div>
         
-        {/* Rating Score */}
-        <div className="text-right ml-6 pr-1 flex flex-col items-end space-y-2">
-          {ratingCount > 0 ? (
-            <>
-              <div 
-                className={`font-bold ${scoreVariants[variant]}`}
-                style={{ color: scoreLevel.color }}
+        {/* Rating Score - Out of 10 format */}
+        {averageRating !== undefined && averageRating !== null ? (
+          <div className="text-right ml-6 pr-1 flex flex-col items-end">
+            <div 
+              className="font-black flex items-baseline gap-1"
+              style={{
+                fontFamily: 'var(--font-cinzel), serif',
+              }}
+            >
+              <span
+                className={`inline-block ${scoreVariants[variant]}`}
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  lineHeight: '1',
+                }}
               >
-                {formattedScore.toFixed(1)}
-              </div>
-              <div className="text-sm text-white">
-                {scoreLevel.level}
-              </div>
-              <div className="flex items-center gap-3 mt-2">
-                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" aria-hidden="true" />
-                <span className="px-3 py-1 rounded-full bg-muted text-white text-[10px] leading-none font-medium">
-                  {ratingCount}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="text-sm sm:text-base text-muted-foreground">N/A</div>
-          )}
-        </div>
+                {averageRating.toFixed(1)}
+              </span>
+              <span className="text-lg sm:text-xl md:text-2xl text-gray-400 leading-none">
+                /10
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm sm:text-base text-gray-500">N/A</div>
+        )}
       </div>
-
-      {/* Rating Visualization */}
-      {variant !== 'compact' && (
-        <div className="mb-4">
-          <RatingVisualization 
-            criteria={oscarCriteria}
-            size={variant === 'featured' ? 'large' : 'medium'}
-          />
-        </div>
-      )}
 
       {/* Genre Tags */}
       {genres.length > 0 && variant !== 'compact' && (
