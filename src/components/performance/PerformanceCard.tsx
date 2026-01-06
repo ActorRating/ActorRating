@@ -197,39 +197,39 @@ export function PerformanceCard({
       tabIndex={0}
       aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
     >
-      {/* Edit Button - Top Right */}
-      {showEditButton && ratingId && (
-        <Link
-          href={editUrl}
-          onClick={(e) => e.stopPropagation()}
-          className="absolute top-4 right-4 z-10"
-        >
-          <button
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
-            style={{
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            }}
-            aria-label="Edit rating"
-          >
-            <Pencil className="w-4 h-4 text-[#FFD700]" />
-          </button>
-        </Link>
-      )}
       {/* Header with badges */}
       <div className="flex flex-col gap-4 mb-4">
          {/* Top Row: Rating Badge and Year */}
          <div className="flex items-center justify-between">
            {averageRating !== undefined && averageRating !== null ? (
-             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-               <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
-               <span className="text-xl font-bold text-[#FFD700]">
+             <div className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+               {/* Edit Button - Top Right of Score Bubble */}
+               {showEditButton && ratingId && (
+                 <Link
+                   href={editUrl}
+                   onClick={(e) => e.stopPropagation()}
+                   className="absolute -top-2 -right-2 z-10"
+                 >
+                   <button
+                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
+                     style={{
+                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                     }}
+                     aria-label="Edit rating"
+                   >
+                     <Pencil className="w-4 h-4 text-[#FFD700]" />
+                   </button>
+                 </Link>
+               )}
+               <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
+               <span className="text-2xl font-bold text-[#FFD700]">
                  {averageRating.toFixed(1)}/10
                </span>
              </div>
            ) : (
-             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-               <Star className="w-4 h-4 text-[#666]" />
-               <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+             <div className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+               <Star className="w-5 h-5 text-[#666]" />
+               <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
              </div>
            )}
           

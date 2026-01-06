@@ -103,12 +103,13 @@ export default function DashboardPage() {
   }
 
   const calculateAverage = (rating: Rating) => {
+    // Ratings are stored as 0-100, so divide by 10 to get 0-10 scale
     return (
       (rating.emotionalRangeDepth +
         rating.characterBelievability +
         rating.technicalSkill +
         rating.screenPresence +
-        rating.chemistryInteraction) / 5
+        rating.chemistryInteraction) / 5 / 10
     ).toFixed(1)
   }
 
@@ -324,7 +325,7 @@ export default function DashboardPage() {
               </div>
 
               {isLoadingData ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
                       <div className="h-48 bg-gray-800 rounded-[2rem]"></div>
@@ -332,7 +333,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {POPULAR_ACTORS.map((actor, index) => {
                     // Find matching actor from API if available - improved matching
                     const apiActor = popularActors.find(a => {
@@ -405,16 +406,16 @@ export default function DashboardPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-gray-400 mb-2">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
-                                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                        <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
-                                        <span className="text-xl font-bold text-[#FFD700]">
+                                      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                        <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
+                                        <span className="text-2xl font-bold text-[#FFD700]">
                                           {(apiActor.careerScore / 10).toFixed(1)}/10
                                         </span>
                                       </div>
                                     ) : (
-                                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                                        <Star className="w-4 h-4 text-[#666]" />
-                                        <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+                                      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                        <Star className="w-5 h-5 text-[#666]" />
+                                        <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                                       </div>
                                     )}
                                   </div>
@@ -472,7 +473,7 @@ export default function DashboardPage() {
               </div>
 
               {isLoadingData ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
                       <div className="h-64 bg-gray-800 rounded-2xl"></div>
@@ -480,7 +481,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : ratings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {ratings.map((rating, index) => (
                     <motion.div
                       key={rating.id}
