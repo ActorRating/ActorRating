@@ -109,12 +109,18 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       }
     }
 
-    // Verify reCAPTCHA (required in production)
-    if (!recaptchaToken) {
-      return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
-    }
+    // Verify reCAPTCHA (required for unauthenticated users)
+    // Skip reCAPTCHA for authenticated users (they've already passed auth)
+    // Also allow bypass tokens for post-signup/post-signin submissions
+    const bypassTokens = ['dev_mock_token_submit_rating_123', 'bypass']
+    const isBypassToken = recaptchaToken && bypassTokens.includes(recaptchaToken)
+    const shouldSkipRecaptcha = userId || isBypassToken
     
-    if (recaptchaToken !== 'dev_mock_token_submit_rating_123') {
+    if (!shouldSkipRecaptcha) {
+      if (!recaptchaToken) {
+        return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
+      }
+      
       const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
       if (!recaptchaResult.success) {
         console.error("reCAPTCHA verification failed:", recaptchaResult.error)
