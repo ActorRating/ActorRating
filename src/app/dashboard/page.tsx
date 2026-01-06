@@ -511,6 +511,8 @@ export default function DashboardPage() {
                         averageRating={parseFloat(calculateAverage(rating))}
                         variant="default"
                         className="h-full"
+                        ratingId={rating.id}
+                        showEditButton={true}
                       />
                     </motion.div>
                   ))}
