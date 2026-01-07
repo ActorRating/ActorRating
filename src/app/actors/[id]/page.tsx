@@ -297,16 +297,16 @@ export default function ActorPage() {
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
               className="mb-8"
             >
-              <div className="inline-flex items-center gap-4 px-8 py-4 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                <Star className="w-6 h-6 text-[#FFD700] fill-[#FFD700]" />
+              <div className="inline-flex items-center gap-3 px-10 py-6 rounded-[2rem] bg-gradient-to-r from-[#FFD700]/20 via-[#FFD700]/15 to-[#FFA500]/15 border-2 border-[#FFD700]/50 shadow-[0_0_30px_rgba(255,215,0,0.3)]">
+                <Star className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700] fill-[#FFD700]" />
                 <div className="text-left">
-                  <div className="text-3xl sm:text-4xl font-bold text-[#FFD700]">
-                    {careerScore !== null ? `${careerScore.toFixed(1)}/100` : 'N/A'}
+                  <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#FFD700] leading-tight">
+                    {careerScore !== null ? `${careerScore.toFixed(1)}` : 'N/A'}
                   </div>
-                  <div className="text-sm text-[#FFD700]/80 font-medium">
+                  <div className="text-base sm:text-lg text-[#FFD700]/90 font-medium mt-1">
                     {careerScore !== null 
-                      ? `out of ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'performance' : 'performances'}`
-                      : `out of ${performances.length} ${performances.length === 1 ? 'performance' : 'performances'}`
+                      ? `Career Score • ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'performance' : 'performances'}`
+                      : `No ratings yet`
                     }
                   </div>
                 </div>
@@ -348,11 +348,6 @@ export default function ActorPage() {
                       Filmography
                     </span>
                   </h2>
-                  {performances.length > 0 && (
-                    <span className="hidden sm:inline-flex items-center px-4 py-2 rounded-full bg-gray-600/30 border border-gray-500/40 text-sm font-medium text-gray-200 whitespace-nowrap flex-shrink-0">
-                      {performances.length} {performances.length === 1 ? 'Performance' : 'Performances'}
-                    </span>
-                  )}
                 </div>
                 
                 {/* Right side: Search Bar and Sort */}

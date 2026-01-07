@@ -141,7 +141,7 @@ export function SearchBar({
       const inputRect = inputRef.current.getBoundingClientRect()
       const containerRect = containerRef.current.getBoundingClientRect()
       setDropdownPosition({
-        top: inputRect.bottom + window.scrollY + 8,
+        top: inputRect.bottom + window.scrollY,
         left: containerRect.left + window.scrollX,
         width: containerRect.width
       })
@@ -422,7 +422,7 @@ export function SearchBar({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.1, ease: 'easeOut' }}
-              className="fixed border border-white/10 rounded-[2rem] shadow-2xl max-h-96 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl z-[9999] overflow-hidden"
+              className="fixed border-t-0 border-l border-r border-b border-white/10 rounded-b-[2rem] shadow-2xl max-h-96 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl z-[9999] overflow-hidden"
               style={{ 
                 top: `${dropdownPosition.top}px`,
                 left: `${dropdownPosition.left}px`,

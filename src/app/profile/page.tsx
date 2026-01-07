@@ -292,7 +292,7 @@ export default function ProfilePage() {
                   </p>
                   <button
                     onClick={handleExportData}
-                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2 relative z-10"
+                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex items-center justify-center gap-2 relative z-10"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -325,7 +325,7 @@ export default function ProfilePage() {
                   </p>
                   <button
                     onClick={() => handleLogout(router)}
-                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:shadow-[0_0_15px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2 relative z-10"
+                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex items-center justify-center gap-2 relative z-10"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out
@@ -368,7 +368,7 @@ export default function ProfilePage() {
                   <div className="flex justify-center sm:justify-start">
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="relative px-4 py-3 rounded-full border border-gray-500/30 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 font-medium transition-all duration-300 hover:border-gray-500/50 hover:shadow-[0_0_15px_rgba(156,163,175,0.2)] flex items-center justify-center gap-2 h-12 relative z-10"
+                      className="relative px-4 py-3 rounded-full border border-gray-500/30 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 font-medium transition-all duration-300 flex items-center justify-center gap-2 h-12 relative z-10"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete Account
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-4 py-3 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 hover:border-[#FFD700]/50 flex-1 h-12 flex items-center justify-center"
+                        className="px-4 py-3 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex-1 h-12 flex items-center justify-center"
                       >
                         Cancel
                       </button>

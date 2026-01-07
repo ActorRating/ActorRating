@@ -203,12 +203,12 @@ export function PerformanceCard({
          <div className="flex items-center justify-between">
            {averageRating !== undefined && averageRating !== null ? (
              <div className="relative inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-               {/* Edit Button - Top Right of Score Bubble */}
+               {/* Edit Button - Outside Top Right of Score Bubble */}
                {showEditButton && ratingId && (
                  <Link
                    href={editUrl}
                    onClick={(e) => e.stopPropagation()}
-                   className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 z-10"
+                   className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10"
                  >
                    <button
                      className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
@@ -225,7 +225,7 @@ export function PerformanceCard({
                )}
                <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
                <span className="text-2xl font-bold text-[#FFD700]">
-                 {averageRating.toFixed(1)}/10
+                 {averageRating.toFixed(1)}
                </span>
              </div>
            ) : (

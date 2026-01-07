@@ -86,24 +86,56 @@ export async function GET(
       console.error("❌ Ratings fetch error:", ratingsError)
     }
 
-    // Create a map of rating data by (userId, movieId) for quick lookup
+    // Create a map of rating data by (actorId, movieId) for quick lookup
+    // Also create a map to aggregate ratings by movie (for career score calculation)
     const ratingMap = new Map<string, any>()
+    const ratingsByMovie = new Map<string, any[]>()
+    
     if (ratings) {
       ratings.forEach(rating => {
-        const key = `${rating.userId}:${rating.movieId}`
-        ratingMap.set(key, rating)
+        // Match by actorId:movieId (not userId:movieId) since ratings are per actor-movie pair
+        const key = `${rating.movieId}`
+        if (!ratingsByMovie.has(key)) {
+          ratingsByMovie.set(key, [])
+        }
+        ratingsByMovie.get(key)!.push(rating)
+        
+        // For matching to specific performances, use movieId only
+        // (since multiple users can rate the same actor-movie pair)
+        if (!ratingMap.has(key)) {
+          // Use the first rating found for this movie (or could average them)
+          ratingMap.set(key, rating)
+        }
       })
     }
 
-    // Combine performances with their rating data
+    // Get all unique movies that have ratings
+    const ratedMovieIds = new Set(ratings?.map(r => r.movieId) || [])
+    
+    // Fetch movie details for rated movies that might not have performances
+    const { data: ratedMovies } = await supabaseServer
+      .from('Movie')
+      .select('id, title, year, director, slug')
+      .in('id', Array.from(ratedMovieIds))
+    
+    // Create a map of existing performances by movieId
+    const performanceMap = new Map<string, any>()
+    if (performances) {
+      performances.forEach(perf => {
+        performanceMap.set(perf.movieId, perf)
+      })
+    }
+    
+    // Combine existing performances with their rating data
     const enrichedPerformances = (performances || []).map(performance => {
-      const key = `${performance.userId}:${performance.movieId}`
+      const key = performance.movieId
       const rating = ratingMap.get(key)
       
       return {
         ...performance,
         roleName: rating?.roleName || null,
         // Add the rating scores to the performance for the frontend
+        // Use the first rating found, or average if multiple exist
         emotionalRangeDepth: rating?.emotionalRangeDepth || 0,
         characterBelievability: rating?.characterBelievability || 0,
         technicalSkill: rating?.technicalSkill || 0,
@@ -111,11 +143,55 @@ export async function GET(
         chemistryInteraction: rating?.chemistryInteraction || 0,
         // Add user info for display
         user: {
-          name: `User ${performance.userId.slice(-4)}`, // Simple user display
+          name: `User ${performance.userId?.slice(-4) || 'Unknown'}`, // Simple user display
           email: `user@example.com` // Placeholder
         }
       }
     })
+    
+    // Add performances for movies that have ratings but no performance entry
+    if (ratedMovies) {
+      ratedMovies.forEach(movie => {
+        if (!performanceMap.has(movie.id)) {
+          // Get the first rating for this movie to use as default
+          const movieRatings = ratingsByMovie.get(movie.id) || []
+          if (movieRatings.length > 0) {
+            const firstRating = movieRatings[0]
+            // Calculate average rating for this movie across all users
+            const avgRating = {
+              emotionalRangeDepth: Math.round(movieRatings.reduce((sum, r) => sum + (r.emotionalRangeDepth || 0), 0) / movieRatings.length),
+              characterBelievability: Math.round(movieRatings.reduce((sum, r) => sum + (r.characterBelievability || 0), 0) / movieRatings.length),
+              technicalSkill: Math.round(movieRatings.reduce((sum, r) => sum + (r.technicalSkill || 0), 0) / movieRatings.length),
+              screenPresence: Math.round(movieRatings.reduce((sum, r) => sum + (r.screenPresence || 0), 0) / movieRatings.length),
+              chemistryInteraction: Math.round(movieRatings.reduce((sum, r) => sum + (r.chemistryInteraction || 0), 0) / movieRatings.length),
+            }
+            
+            enrichedPerformances.push({
+              id: `rating-${movie.id}`,
+              userId: firstRating.userId,
+              actorId: actor.id,
+              movieId: movie.id,
+              comment: null,
+              character: firstRating.roleName || null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              movie: movie,
+              actor: { id: actor.id, name: actor.name, slug: actor.slug },
+              roleName: firstRating.roleName || null,
+              emotionalRangeDepth: avgRating.emotionalRangeDepth,
+              characterBelievability: avgRating.characterBelievability,
+              technicalSkill: avgRating.technicalSkill,
+              screenPresence: avgRating.screenPresence,
+              chemistryInteraction: avgRating.chemistryInteraction,
+              user: {
+                name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
+                email: `user@example.com`
+              }
+            })
+          }
+        }
+      })
+    }
 
     // Combine the data
     const actorData = {

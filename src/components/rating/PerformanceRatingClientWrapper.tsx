@@ -127,6 +127,7 @@ interface PerformanceRatingClientWrapperProps {
   }) => void
   submittedRating?: {
     id: string
+    slug?: string | null
     emotionalRangeDepth: number
     characterBelievability: number
     technicalSkill: number
@@ -535,15 +536,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
 
-  // Share functionality
+  // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined' 
-    ? (performance.actor.slug && performance.movie.slug
-        ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
-        : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`)
+    ? (submittedRating?.slug 
+        ? `${window.location.origin}/r/${submittedRating.slug}`
+        : submittedRating?.id
+        ? `${window.location.origin}/r/${submittedRating.id}`
+        : (performance.actor.slug && performance.movie.slug
+            ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
+            : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`))
     : ''
+  
+  // Check if URL is in slug format (/rate/[movie-slug]/[actor-slug])
+  const isSlugFormat = shareUrl.includes('/rate/') && !shareUrl.includes('?')
+  
+  // Build share text - include URL only if it's in slug format, always add ActorRating
   const shareText = finalScore !== null 
-    ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating? ${shareUrl}`
-    : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}" ${shareUrl}`
+    ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating?${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
+    : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}"${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
 
   const handleShare = async () => {
     if (navigator.share) {
