@@ -46,6 +46,131 @@ async function fetchActorCredits(actorId) {
   return await makeApiRequest(url);
 }
 
+// Protected films that must never be auto-deleted
+const PROTECTED_FILMS = new Set([
+  'East of Eden (1955)',
+  'East of Eden',
+  'The Onion Movie (2008)',
+  'The Onion Movie',
+  'Miracle Apples (2013)',
+  'Miracle Apples',
+]);
+
+function isProtectedFilm(title, year) {
+  const titleWithYear = year ? `${title} (${year})` : title;
+  return PROTECTED_FILMS.has(title) || PROTECTED_FILMS.has(titleWithYear);
+}
+
+// Check if a movie is a joke performance that should be excluded
+function isJokePerformance(title, overview, year, director) {
+  if (!title) return false;
+
+  // Check allowlist - protected films are NEVER deleted
+  if (isProtectedFilm(title, year)) {
+    return false;
+  }
+
+  // Protect older films (pre-2010) - they're likely legitimate classics
+  const isOlderFilm = year && year < 2010;
+  const hasDirector = director && director.trim() !== '' && director.toLowerCase() !== 'unknown';
+
+  const titleLower = title.toLowerCase().trim();
+  const overviewLower = (overview || '').toLowerCase().trim();
+  const searchText = `${titleLower} ${overviewLower}`;
+
+  // Safe-to-delete patterns (high confidence, always exclude)
+  const safeToDeletePatterns = [
+    /\btiktok\s+saga\b/i,
+    /\btik\s*tok\s+saga\b/i,
+    /\bdirector'?s\s+cut.*tiktok\b/i,
+    /\btiktok.*director'?s\s+cut\b/i,
+    /\b(dvd|blu.?ray)\s+(compilation|collection|set)\b/i,
+    /\bcompilation\s+(dvd|blu.?ray|collection)\b/i,
+    /\bvolume\s+\d+\s+(compilation|collection)\b/i,
+    /\bbloopers?\s+(uncensored|compilation|collection|dvd)\b/i,
+    /\b(uncensored|compilation).*bloopers?\b/i,
+    /\bbest\s+of\s+(.*?)\s+(compilation|collection|dvd)\b/i,
+    /\bcompilation.*best\s+of\b/i,
+    /\b(clip|clips)\s+compilation\b/i,
+    /\bcompilation\s+of\s+clips\b/i,
+    /\btrailer\s+compilation\b/i,
+    /\bcompilation\s+of\s+trailers\b/i,
+    /\bmeme\s+(video|compilation)\b/i,
+    /\bcompilation.*meme\b/i,
+    /\bfan\s+(edit|made|video)\b/i,
+    /\binstagram\s+(story|reel|video|short)\b/i,
+    /\bsnapchat\s+(story|video|short)\b/i,
+    /\btwitter\s+(video|thread)\b/i,
+    /\bx\s+(video|thread)\b/i,
+    /\byoutube\s+(skit|short|series)\b/i,
+    /\byoutube\s+original\s+(skit|short)\b/i,
+    /\bweb\s+short\b/i,
+    /\bdigital\s+short\b/i,
+    /\bonline\s+short\b/i,
+    /\breaction\s+(video|to)\b/i,
+    /\bcompilation\s+of\s+(tiktok|youtube|videos)\b/i,
+    /\bbehind\s+the\s+scenes\s+(of\s+)?(tiktok|youtube|social\s+media)\b/i,
+    /\b(tiktok|youtube)\s+(as\s+a\s+)?movie\b/i,
+    /\b(tiktok|youtube)\s+cinematic\b/i,
+  ];
+
+  // Check safe-to-delete patterns first
+  for (const pattern of safeToDeletePatterns) {
+    if (pattern.test(searchText)) {
+      // Even safe patterns don't delete older films with directors
+      if (isOlderFilm && hasDirector) {
+        continue;
+      }
+      return true;
+    }
+  }
+
+  // Review-needed patterns (only delete if not protected)
+  const reviewNeededPatterns = [
+    /\bparody\s+(only|video|skit)\b/i,
+  ];
+
+  for (const pattern of reviewNeededPatterns) {
+    if (pattern.test(searchText)) {
+      // Protect older films and films with directors
+      if (isOlderFilm && hasDirector) {
+        continue;
+      }
+      
+      // Only flag if it's clearly a video/skit compilation, not a standalone film
+      const isVideoSkit = /\b(video|skit|compilation)\b/i.test(searchText);
+      const isStandaloneFilm = hasDirector && !isVideoSkit;
+      
+      if (isStandaloneFilm) {
+        continue;
+      }
+      
+      return true;
+    }
+  }
+
+  // Suspicious title patterns
+  const suspiciousTitlePatterns = [
+    /^tiktok\s*$/i,
+    /^youtube\s*$/i,
+    /^instagram\s*$/i,
+    /^snapchat\s*$/i,
+    /^meme\s*$/i,
+  ];
+
+  for (const pattern of suspiciousTitlePatterns) {
+    if (pattern.test(titleLower)) {
+      // Protect older films even with suspicious titles
+      if (isOlderFilm && hasDirector) {
+        continue;
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // Create or find movie in database
 async function findOrCreateMovie(prisma, movieData) {
   try {
@@ -95,6 +220,13 @@ async function processActorFilmography(prisma, actor, actorIndex, totalActors) {
       try {
         // Skip if no release date (unreleased movies)
         if (!credit.release_date) {
+          continue;
+        }
+
+        // Skip joke performances (TikTok, YouTube skits, memes, etc.)
+        const creditYear = credit.release_date ? new Date(credit.release_date).getFullYear() : null;
+        if (isJokePerformance(credit.title, credit.overview, creditYear, null)) {
+          console.log(`   ⏭️  Skipping joke performance: "${credit.title}"`);
           continue;
         }
 

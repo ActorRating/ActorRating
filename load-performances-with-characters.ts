@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as bcrypt from 'bcrypt';
 import { getMovieCredits } from './src/lib/tmdb';
+import { isJokePerformance } from './src/lib/joke-performance-filter';
 
 const prisma = new PrismaClient();
 
@@ -186,6 +187,11 @@ async function main() {
       const movie = movieMap.get(perf.movieId);
       
       if (!actor || !movie) continue;
+      
+      // Skip joke performances (TikTok, YouTube skits, memes, etc.)
+      if (isJokePerformance(movie.title, movie.overview, movie.year, movie.director)) {
+        continue;
+      }
       
       // Create unique combination key
       const userIndex = i % users.length;

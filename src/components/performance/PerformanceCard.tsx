@@ -126,7 +126,7 @@ export function PerformanceCard({
   }
 
   const titleVariants = {
-    default: "text-base sm:text-lg lg:text-xl",
+    default: "text-lg sm:text-lg lg:text-xl",
     featured: "text-lg sm:text-xl lg:text-2xl",
     compact: "text-sm sm:text-base lg:text-lg"
   }
@@ -208,7 +208,7 @@ export function PerformanceCard({
                  <Link
                    href={editUrl}
                    onClick={(e) => e.stopPropagation()}
-                   className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 z-10"
+                   className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 z-10"
                  >
                    <button
                      className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"

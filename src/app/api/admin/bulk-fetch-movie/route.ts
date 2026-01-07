@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { searchMovie, getMovieCredits } from "@/lib/tmdb";
+import { isJokePerformance } from "@/lib/joke-performance-filter";
+import { validateContent } from "@/lib/content-validator";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,11 +24,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Get movie credits
+    // 2. Get movie credits first (we need director for the filter)
     const credits = await getMovieCredits(movieData.id);
     
     // Extract year from release date
     const year = new Date(movieData.release_date).getFullYear();
+
+    // Check if this is a joke performance that should be excluded
+    if (isJokePerformance(movieData.title, movieData.overview, year, credits.director)) {
+      return NextResponse.json(
+        { 
+          error: `This appears to be a joke performance (TikTok, YouTube skit, meme, etc.) and will not be added. Only legitimate acting credits are accepted.`,
+          title: movieData.title
+        },
+        { status: 400 }
+      );
+    }
 
     // 3. Check for existing movie
     const existingMovie = await prisma.movie.findFirst({
@@ -47,7 +60,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Create new movie
+    // 4. Validate content (non-blocking warnings for admins)
+    const contentWarnings = validateContent(movieData.title, movieData.overview);
+
+    // 5. Create new movie
     const movie = await prisma.movie.create({
       data: {
         title: movieData.title,
@@ -117,7 +133,8 @@ export async function POST(request: NextRequest) {
       movie,
       actorsCreated: createdActors.length,
       performancesCreated: createdPerformances.length,
-      exists: false
+      exists: false,
+      warnings: contentWarnings.length > 0 ? contentWarnings : undefined, // Only include if warnings exist
     });
 
   } catch (error) {

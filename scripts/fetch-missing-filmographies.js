@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import axios from 'axios';
+import { isJokePerformance } from '../src/lib/joke-performance-filter';
 
 const prisma = new PrismaClient();
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
@@ -86,6 +87,13 @@ async function processActorFilmography(prisma, actor, actorIndex, totalActors) {
       try {
         // Skip if no release date (unreleased movies)
         if (!credit.release_date) {
+          continue;
+        }
+
+        // Skip joke performances (TikTok, YouTube skits, memes, etc.)
+        const creditYear = credit.release_date ? new Date(credit.release_date).getFullYear() : null;
+        if (isJokePerformance(credit.title, credit.overview, creditYear, null)) {
+          console.log(`   ⏭️  Skipping joke performance: "${credit.title}"`);
           continue;
         }
 
