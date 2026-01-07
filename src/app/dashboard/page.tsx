@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [popularActors, setPopularActors] = useState<Actor[]>([])
+  const [visibleRatingsCount, setVisibleRatingsCount] = useState(6)
 
   useEffect(() => {
     if (user && isInitialized) {
@@ -85,7 +86,7 @@ export default function DashboardPage() {
       const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
       if (ratingsRes.ok) {
         const ratingsData = await ratingsRes.json()
-        setRatings(ratingsData.slice(0, 6)) // Only show 6 most recent
+        setRatings(ratingsData) // Store all ratings
       }
 
       // Fetch popular actors by specific names
@@ -325,15 +326,15 @@ export default function DashboardPage() {
               </div>
 
               {isLoadingData ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
-                      <div className="h-48 bg-gray-800 rounded-[2rem]"></div>
+                      <div className="h-48 bg-[#1a1a1a] rounded-[2rem]"></div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {POPULAR_ACTORS.map((actor, index) => {
                     // Find matching actor from API if available - improved matching
                     const apiActor = popularActors.find(a => {
@@ -406,7 +407,7 @@ export default function DashboardPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-gray-400 mb-2">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
-                                      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                      <div className="inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                         <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
                                         <span className="text-2xl font-bold text-[#FFD700]">
                                           {(apiActor.careerScore / 10).toFixed(1)}/10
@@ -473,16 +474,17 @@ export default function DashboardPage() {
               </div>
 
               {isLoadingData ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
-                      <div className="h-64 bg-gray-800 rounded-2xl"></div>
+                      <div className="h-64 bg-[#1a1a1a] rounded-2xl"></div>
                     </div>
                   ))}
                 </div>
               ) : ratings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                  {ratings.map((rating, index) => (
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                  {ratings.slice(0, visibleRatingsCount).map((rating, index) => (
                     <motion.div
                       key={rating.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -519,6 +521,40 @@ export default function DashboardPage() {
                     </motion.div>
                   ))}
                 </div>
+                {ratings.length > 6 && visibleRatingsCount < ratings.length && (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      onClick={() => setVisibleRatingsCount(prev => Math.min(prev + 6, ratings.length))}
+                      className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] relative overflow-hidden group"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                        transform: 'scale(1)',
+                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.03)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)'
+                      }}
+                    >
+                      {/* White light sweep effect */}
+                      <span 
+                        className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      />
+                      <span className="flex items-center justify-center gap-3 whitespace-nowrap relative z-10">
+                        Show More
+                        <ArrowUpRight className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45" />
+                      </span>
+                    </button>
+                  </div>
+                )}
+                </>
               ) : (
                 <div className="text-center py-16">
                   <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />

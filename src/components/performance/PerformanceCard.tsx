@@ -202,7 +202,7 @@ export function PerformanceCard({
          {/* Top Row: Rating Badge and Year */}
          <div className="flex items-center justify-between">
            {averageRating !== undefined && averageRating !== null ? (
-             <div className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+             <div className="relative inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                {/* Edit Button - Top Right of Score Bubble */}
                {showEditButton && ratingId && (
                  <Link
@@ -227,7 +227,7 @@ export function PerformanceCard({
                </span>
              </div>
            ) : (
-             <div className="relative inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+             <div className="relative inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
                <Star className="w-5 h-5 text-[#666]" />
                <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
              </div>
