@@ -328,7 +328,7 @@ export default function ActorPage() {
               {/* Mobile: Stacked layout, Desktop: Same line */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 mb-8 sm:mb-6">
                 {/* Left side: Filmography heading and bubble */}
-                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start px-4 sm:px-0">
+                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start">
                   <Film className="w-7 h-7 sm:w-6 sm:h-6 text-[#FFD700] flex-shrink-0" />
                   <h2 
                     className="text-4xl sm:text-5xl md:text-6xl font-bold text-center sm:text-left flex-shrink-0"
@@ -351,10 +351,10 @@ export default function ActorPage() {
                 </div>
                 
                 {/* Right side: Search Bar and Sort */}
-                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto px-4 sm:px-0">
-                  <div className="relative flex-1 sm:w-96 lg:w-[28rem]">
+                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-96 lg:w-[28rem] max-w-full">
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
@@ -364,7 +364,8 @@ export default function ActorPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search performances..."
-                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:rounded-full transition-all text-base"
+                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
+                        style={{ borderRadius: '9999px' }}
                       />
                       {searchQuery && (
                         <button
@@ -461,7 +462,7 @@ export default function ActorPage() {
                   { id: performance.movie.id, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
                 )
                 const character = performance.character || "—"
-                const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}/10` : null
+                const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}` : null
 
                 return (
                   <motion.div
