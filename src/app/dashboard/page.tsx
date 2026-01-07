@@ -296,13 +296,13 @@ export default function DashboardPage() {
           </header>
 
           {/* Popular Actors */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="popular-actors-heading">
+          <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="popular-actors-heading">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div className="flex items-center gap-3 mb-8 justify-center sm:justify-start">
+              <div className="flex items-center gap-3 mb-8 justify-start">
                 <TrendingUp className="w-6 h-6 text-[#FFD700]" />
                 <h2 
                   className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
@@ -443,13 +443,13 @@ export default function DashboardPage() {
           </section>
 
           {/* Recent Ratings */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="recent-ratings-heading">
+          <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="recent-ratings-heading">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="flex items-center gap-3 mb-8 justify-center sm:justify-start">
+              <div className="flex items-center gap-3 mb-8 justify-start">
                 <Star className="w-6 h-6 text-[#FFD700]" />
                 <h2 
                   id="recent-ratings-heading"
@@ -514,7 +514,7 @@ export default function DashboardPage() {
                         }}
                         averageRating={parseFloat(calculateAverage(rating))}
                         variant="default"
-                        className="h-full"
+                        className="h-full min-h-[320px] md:min-h-0"
                         ratingId={rating.id}
                         showEditButton={true}
                       />

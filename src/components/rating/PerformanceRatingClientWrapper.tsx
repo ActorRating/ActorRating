@@ -538,10 +538,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined' 
-    ? (submittedRating?.slug 
-        ? `${window.location.origin}/r/${submittedRating.slug}`
-        : submittedRating?.id
-        ? `${window.location.origin}/r/${submittedRating.id}`
+    ? (externalSubmittedRating?.slug 
+        ? `${window.location.origin}/r/${externalSubmittedRating.slug}`
+        : externalSubmittedRating?.id
+        ? `${window.location.origin}/r/${externalSubmittedRating.id}`
         : (performance.actor.slug && performance.movie.slug
             ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
             : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`))

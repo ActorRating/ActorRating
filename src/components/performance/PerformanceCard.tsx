@@ -126,7 +126,7 @@ export function PerformanceCard({
   }
 
   const titleVariants = {
-    default: "text-lg sm:text-lg lg:text-xl",
+    default: "text-xl sm:text-xl lg:text-xl",
     featured: "text-lg sm:text-xl lg:text-2xl",
     compact: "text-sm sm:text-base lg:text-lg"
   }

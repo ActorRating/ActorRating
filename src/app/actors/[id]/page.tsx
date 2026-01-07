@@ -297,11 +297,11 @@ export default function ActorPage() {
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
               className="mb-8"
             >
-              <div className="inline-flex items-center gap-3 px-10 py-6 rounded-[2rem] bg-gradient-to-r from-[#FFD700]/20 via-[#FFD700]/15 to-[#FFA500]/15 border-2 border-[#FFD700]/50 shadow-[0_0_30px_rgba(255,215,0,0.3)]">
+              <div className="inline-flex items-center gap-3 px-10 py-6 rounded-[2rem] bg-gradient-to-r from-[#FFD700]/20 via-[#FFD700]/15 to-[#FFA500]/15 border-2 border-[#FFD700]/50">
                 <Star className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700] fill-[#FFD700]" />
                 <div className="text-left">
                   <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#FFD700] leading-tight">
-                    {careerScore !== null ? `${careerScore.toFixed(1)}` : 'N/A'}
+                    {careerScore !== null ? `${(careerScore / 10).toFixed(1)}/10` : 'N/A'}
                   </div>
                   <div className="text-base sm:text-lg text-[#FFD700]/90 font-medium mt-1">
                     {careerScore !== null 
@@ -328,7 +328,7 @@ export default function ActorPage() {
               {/* Mobile: Stacked layout, Desktop: Same line */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 mb-8 sm:mb-6">
                 {/* Left side: Filmography heading and bubble */}
-                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start">
+                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start px-4 sm:px-0">
                   <Film className="w-7 h-7 sm:w-6 sm:h-6 text-[#FFD700] flex-shrink-0" />
                   <h2 
                     className="text-4xl sm:text-5xl md:text-6xl font-bold text-center sm:text-left flex-shrink-0"
@@ -351,7 +351,7 @@ export default function ActorPage() {
                 </div>
                 
                 {/* Right side: Search Bar and Sort */}
-                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto px-4 sm:px-0">
                   <div className="relative flex-1 sm:w-96 lg:w-[28rem]">
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
@@ -364,7 +364,7 @@ export default function ActorPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search performances..."
-                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 transition-all text-base"
+                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:rounded-full transition-all text-base"
                       />
                       {searchQuery && (
                         <button
@@ -461,7 +461,7 @@ export default function ActorPage() {
                   { id: performance.movie.id, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
                 )
                 const character = performance.character || "—"
-                const rating = performance.averageScore ? performance.averageScore.toFixed(1) : null
+                const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}/10` : null
 
                 return (
                   <motion.div
