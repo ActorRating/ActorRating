@@ -140,8 +140,28 @@ export function SearchBar({
     if (inputRef.current && containerRef.current) {
       const inputRect = inputRef.current.getBoundingClientRect()
       const containerRect = containerRef.current.getBoundingClientRect()
+      
+      // Find the parent container with the border (the wrapper div from dashboard/search pages)
+      // Look for parent with backdrop-blur or specific styling
+      let parentContainer = containerRef.current.parentElement
+      let foundParent = null
+      while (parentContainer && parentContainer !== document.body) {
+        const computedStyle = window.getComputedStyle(parentContainer)
+        if (computedStyle.backdropFilter !== 'none' || 
+            computedStyle.borderRadius === '2rem' ||
+            parentContainer.classList.toString().includes('backdrop-blur')) {
+          foundParent = parentContainer
+          break
+        }
+        parentContainer = parentContainer.parentElement
+      }
+      
+      // Use the parent container's bottom if found, otherwise use input bottom
+      const targetRect = foundParent?.getBoundingClientRect() || inputRect
+      const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
+      
       setDropdownPosition({
-        top: inputRect.bottom + window.scrollY,
+        top: bottomEdge + window.scrollY,
         left: containerRect.left + window.scrollX,
         width: containerRect.width
       })
