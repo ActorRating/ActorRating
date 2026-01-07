@@ -407,14 +407,14 @@ export default function DashboardPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-gray-400 mb-2">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
-                                      <div className="inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                      <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                         <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
                                         <span className="text-2xl font-bold text-[#FFD700]">
                                           {(apiActor.careerScore / 10).toFixed(1)}/10
                                         </span>
                                       </div>
                                     ) : (
-                                      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                      <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
                                         <Star className="w-5 h-5 text-[#666]" />
                                         <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                                       </div>

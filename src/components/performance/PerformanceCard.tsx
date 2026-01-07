@@ -202,22 +202,24 @@ export function PerformanceCard({
          {/* Top Row: Rating Badge and Year */}
          <div className="flex items-center justify-between">
            {averageRating !== undefined && averageRating !== null ? (
-             <div className="relative inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+             <div className="relative inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                {/* Edit Button - Top Right of Score Bubble */}
                {showEditButton && ratingId && (
                  <Link
                    href={editUrl}
                    onClick={(e) => e.stopPropagation()}
-                   className="absolute -top-2 -right-2 z-10"
+                   className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 z-10"
                  >
                    <button
-                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg"
+                     className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
                      style={{
                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                       minWidth: '44px',
+                       minHeight: '44px',
                      }}
                      aria-label="Edit rating"
                    >
-                     <Pencil className="w-4 h-4 text-[#FFD700]" />
+                     <Pencil className="w-5 h-5 sm:w-4 sm:h-4 text-[#FFD700]" />
                    </button>
                  </Link>
                )}
