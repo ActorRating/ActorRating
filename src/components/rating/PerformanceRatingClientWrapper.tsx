@@ -970,7 +970,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-hidden border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -984,10 +984,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 {/* Close Button */}
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="absolute top-4 right-4 z-50 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                  className="absolute top-4 right-4 z-50 text-gray-400 hover:text-white transition-colors"
                   aria-label="Close and go to dashboard"
                 >
-                  <X className="w-5 h-5" />
+                  <div className="w-8 h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors">
+                    <X className="w-4 h-4" />
+                  </div>
                 </button>
                 {/* Checkmark */}
                 <motion.div

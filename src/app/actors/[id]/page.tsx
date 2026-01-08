@@ -305,7 +305,7 @@ export default function ActorPage() {
                   </div>
                   <div className="text-base sm:text-lg text-[#FFD700]/90 font-medium mt-1">
                     {careerScore !== null 
-                      ? `Career Score • ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'performance' : 'performances'}`
+                      ? `Career Score • ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
                       : `No ratings yet`
                     }
                   </div>
@@ -496,10 +496,10 @@ export default function ActorPage() {
                         <div className="flex-1">
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-6">
-                            {/* Score Pill - Top Left */}
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                              <FaStar className="w-4 h-4 text-[#FFD700]" />
-                              <span className="text-xl font-bold text-[#FFD700]">
+                            {/* Score Pill - Top Left - Bigger */}
+                            <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                              <FaStar className="w-5 h-5 text-[#FFD700]" />
+                              <span className="text-2xl font-bold text-[#FFD700]">
                                 {rating || 'N/A'}
                               </span>
                             </div>

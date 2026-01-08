@@ -302,27 +302,29 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div className="flex items-center gap-3 mb-8 justify-start">
-                <TrendingUp className="w-6 h-6 text-[#FFD700]" />
-                <h2 
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
-                  style={{ 
-                    fontFamily: 'var(--font-cinzel), serif',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  <span 
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center gap-3 mb-8 justify-start">
+                  <TrendingUp className="w-6 h-6 text-[#FFD700]" />
+                  <h2 
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
+                    style={{ 
+                      fontFamily: 'var(--font-cinzel), serif',
+                      letterSpacing: '0.02em',
                     }}
                   >
-                    Popular
-                  </span>{' '}
-                  <span className="text-white">Actors</span>
-                </h2>
+                    <span 
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      Popular
+                    </span>{' '}
+                    <span className="text-white">Actors</span>
+                  </h2>
+                </div>
               </div>
 
               {isLoadingData ? (
@@ -449,28 +451,30 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="flex items-center gap-3 mb-8 justify-start">
-                <Star className="w-6 h-6 text-[#FFD700]" />
-                <h2 
-                  id="recent-ratings-heading"
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
-                  style={{ 
-                    fontFamily: 'var(--font-cinzel), serif',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  <span 
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center gap-3 mb-8 justify-start">
+                  <Star className="w-6 h-6 text-[#FFD700]" />
+                  <h2 
+                    id="recent-ratings-heading"
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
+                    style={{ 
+                      fontFamily: 'var(--font-cinzel), serif',
+                      letterSpacing: '0.02em',
                     }}
                   >
-                    Recent
-                  </span>{' '}
-                  <span className="text-white">Ratings</span>
-                </h2>
+                    <span 
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      Recent
+                    </span>{' '}
+                    <span className="text-white">Ratings</span>
+                  </h2>
+                </div>
               </div>
 
               {isLoadingData ? (

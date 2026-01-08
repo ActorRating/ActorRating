@@ -160,8 +160,9 @@ export function SearchBar({
       const targetRect = foundParent?.getBoundingClientRect() || inputRect
       const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
       
+      // Remove any gap - position directly below the container
       setDropdownPosition({
-        top: bottomEdge + window.scrollY,
+        top: bottomEdge + window.scrollY - 1, // -1 to connect seamlessly
         left: containerRect.left + window.scrollX,
         width: containerRect.width
       })
@@ -449,6 +450,7 @@ export function SearchBar({
                 width: `${dropdownPosition.width}px`,
                 position: 'fixed',
                 zIndex: 9999,
+                marginTop: '-1px', // Connect seamlessly to search bar
                 boxShadow: `
                   0 25px 70px -15px rgba(0, 0, 0, 0.9),
                   0 15px 40px -10px rgba(0, 0, 0, 0.7),

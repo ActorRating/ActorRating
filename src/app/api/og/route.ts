@@ -47,15 +47,14 @@ export async function GET(req: NextRequest) {
       return new Response('ratingId or (actorName, movieTitle, score) required', { status: 400 })
     }
 
-    const dims = size === 'feed' ? { w: 1080, h: 1080 } : size === 'story' ? { w: 1080, h: 1920 } : { w: 1200, h: 630 }
+    // For Instagram feed, use 4:5 aspect ratio (1080x1350)
+    const dims = size === 'feed' ? { w: 1080, h: 1350 } : size === 'story' ? { w: 1080, h: 1920 } : { w: 1200, h: 630 }
     const bg = '#000000'
     const fg = '#FFFFFF'
     const gold = '#FFD700'
     const goldLight = '#FFE55C'
     const scoreOutOf10 = (score / 10).toFixed(1)
 
-    // Shareable image: "I rated [Actor] a [Score]/10 in [Movie]"
-    // Using Cinzel font and proper styling - black background, gold accents
     // Escape XML entities in text content
     const escapeXml = (str: string) => {
       return str
@@ -66,10 +65,46 @@ export async function GET(req: NextRequest) {
         .replace(/'/g, '&apos;')
     }
     
+    // Truncate movie title if too long (max 36 characters)
+    const truncateTitle = (title: string, maxLength: number = 36) => {
+      if (title.length <= maxLength) return title
+      return title.substring(0, maxLength - 3) + '...'
+    }
+    
     const escapedActorName = escapeXml(actorName)
-    const escapedMovieTitle = escapeXml(movieTitle)
+    const escapedMovieTitle = escapeXml(truncateTitle(movieTitle))
+    
+    // For Instagram feed (4:5), use the new format
+    if (size === 'feed') {
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&amp;display=swap');
+    </style>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:${goldLight};stop-opacity:1" />
+      <stop offset="50%" style="stop-color:${gold};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="${bg}"/>
+  <!-- Actor Name (Primary) - Top -->
+  <text x="${dims.w/2}" y="280" font-family="Cinzel, Georgia, serif" font-size="72" font-weight="800" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
+  <!-- Movie Name (Secondary) - Below Actor -->
+  <text x="${dims.w/2}" y="360" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="${fg}" opacity="0.8" text-anchor="middle">${escapedMovieTitle}</text>
+  <!-- Score (Primary) - Large and prominent -->
+  <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
+  <!-- "Rated on ActorRating" - Bottom -->
+  <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="${fg}" opacity="0.6" text-anchor="middle">Rated on ActorRating</text>
+  <!-- Logo placeholder (small, bottom) -->
+  <text x="${dims.w/2}" y="1320" font-family="Cinzel, Georgia, serif" font-size="20" fill="${fg}" opacity="0.4" text-anchor="middle">actorrating.com</text>
+</svg>`
+      return new Response(svg, { status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' } })
+    }
+    
+    // For other sizes (story, og), use the original format
     const centerY = dims.h / 2
-
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -83,11 +118,11 @@ export async function GET(req: NextRequest) {
     </linearGradient>
   </defs>
   <rect width="100%" height="100%" fill="${bg}"/>
-  <text x="${dims.w/2}" y="${centerY - 180}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?56:size==='feed'?48:40}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">I rated</text>
-  <text x="${dims.w/2}" y="${centerY - 100}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?96:size==='feed'?80:64}" font-weight="800" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
-  <text x="${dims.w/2}" y="${centerY - 20}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?64:size==='feed'?56:48}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">a <tspan fill="${goldLight}">${scoreOutOf10}/10</tspan> in</text>
-  <text x="${dims.w/2}" y="${centerY + 60}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?80:size==='feed'?72:56}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedMovieTitle}</text>
-  <text x="${dims.w/2}" y="${centerY + 160}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?120:size==='feed'?100:80}" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10}/10</text>
+  <text x="${dims.w/2}" y="${centerY - 180}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?56:40}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">I rated</text>
+  <text x="${dims.w/2}" y="${centerY - 100}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?96:64}" font-weight="800" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
+  <text x="${dims.w/2}" y="${centerY - 20}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?64:48}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">a <tspan fill="${goldLight}">${scoreOutOf10}/10</tspan> in</text>
+  <text x="${dims.w/2}" y="${centerY + 60}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?80:56}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedMovieTitle}</text>
+  <text x="${dims.w/2}" y="${centerY + 160}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?120:80}" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10}/10</text>
   <text x="${dims.w/2}" y="${centerY + 220}" font-family="Cinzel, Georgia, serif" font-size="${size==='story'?28:24}" fill="${fg}" opacity="0.6" text-anchor="middle">actorrating.com</text>
 </svg>`
 
