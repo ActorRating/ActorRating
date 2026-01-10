@@ -161,9 +161,9 @@ export function SearchBar({
       const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
       
       // For fixed positioning, use viewport coordinates directly (no scroll offset needed)
-      // Remove any gap - position directly below the container
+      // Position directly below the container with no gap for seamless connection
       setDropdownPosition({
-        top: bottomEdge, // Fixed positioning is relative to viewport, so no scrollY needed
+        top: bottomEdge - 1, // -1px to overlap slightly for seamless connection
         left: containerRect.left, // Fixed positioning is relative to viewport, so no scrollX needed
         width: containerRect.width
       })
@@ -444,14 +444,15 @@ export function SearchBar({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.1, ease: 'easeOut' }}
-              className="fixed border-t-0 border-l border-r border-b border-white/10 rounded-b-[2rem] shadow-2xl max-h-96 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl z-[9999] overflow-hidden"
+              className="fixed border-l border-r border-b border-white/10 rounded-b-[2rem] shadow-2xl max-h-96 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl z-[9999] overflow-hidden"
               style={{ 
                 top: `${dropdownPosition.top}px`,
                 left: `${dropdownPosition.left}px`,
                 width: `${dropdownPosition.width}px`,
                 position: 'fixed',
                 zIndex: 9999,
-                marginTop: '-1px', // Connect seamlessly to search bar
+                borderRadius: '0 0 2rem 2rem', // Match search bar border radius
+                borderTop: 'none', // Remove top border for seamless connection
                 boxShadow: `
                   0 25px 70px -15px rgba(0, 0, 0, 0.9),
                   0 15px 40px -10px rgba(0, 0, 0, 0.7),

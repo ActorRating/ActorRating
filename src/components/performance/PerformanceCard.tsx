@@ -200,7 +200,7 @@ export function PerformanceCard({
       {/* Header with badges */}
       <div className="flex flex-col gap-4 mb-4">
          {/* Top Row: Rating Badge and Year */}
-         <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between pt-3 sm:pt-0">
            {averageRating !== undefined && averageRating !== null ? (
              <div className="relative inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                {/* Edit Button - Outside Top Right of Score Bubble */}
@@ -208,7 +208,7 @@ export function PerformanceCard({
                  <Link
                    href={editUrl}
                    onClick={(e) => e.stopPropagation()}
-                   className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10"
+                   className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10 sm:translate-y-0 sm:translate-x-0 sm:top-2 sm:right-2"
                  >
                    <button
                      className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
