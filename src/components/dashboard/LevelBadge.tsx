@@ -2,11 +2,26 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Film, Star, Award, Sparkles } from 'lucide-react'
 
 interface LevelData {
   level: string
-  levelEmoji: string
   ratingCount: number
+}
+
+const getLevelIcon = (level: string) => {
+  switch (level) {
+    case 'Viewer':
+      return Film
+    case 'Critic':
+      return Star
+    case 'Senior Critic':
+      return Award
+    case 'Elite Critic':
+      return Sparkles
+    default:
+      return Film
+  }
 }
 
 export function LevelBadge() {
@@ -24,7 +39,6 @@ export function LevelBadge() {
         const data = await response.json()
         setLevelData({
           level: data.level,
-          levelEmoji: data.levelEmoji,
           ratingCount: data.ratingCount
         })
       }
@@ -39,6 +53,8 @@ export function LevelBadge() {
     return null
   }
 
+  const Icon = getLevelIcon(levelData.level)
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -46,7 +62,7 @@ export function LevelBadge() {
       transition={{ duration: 0.3 }}
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1a1a]/50 border border-white/5 backdrop-blur-sm"
     >
-      <span className="text-lg">{levelData.levelEmoji}</span>
+      <Icon className="w-4 h-4 text-gray-400" />
       <span className="text-sm font-medium text-gray-300">{levelData.level}</span>
     </motion.div>
   )
