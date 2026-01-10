@@ -210,6 +210,7 @@ export function FeaturedPerformancesCarousel() {
               </motion.div>
             )
           })}
+          </div>
         </div>
 
         {/* Navigation Arrows - Desktop Only */}
