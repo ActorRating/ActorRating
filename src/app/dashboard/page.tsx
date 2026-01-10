@@ -14,6 +14,8 @@ import { Star, TrendingUp, Film, ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
+import { FeaturedPerformancesCarousel } from "@/components/dashboard/FeaturedPerformancesCarousel"
+import { LevelBadge } from "@/components/dashboard/LevelBadge"
 
 interface Actor {
   id: string
@@ -294,6 +296,14 @@ export default function DashboardPage() {
             </motion.div>
           </nav>
           </header>
+
+          {/* Level Badge */}
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+            <LevelBadge />
+          </div>
+
+          {/* Featured Performances Carousel */}
+          <FeaturedPerformancesCarousel />
 
           {/* Popular Actors */}
           <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="popular-actors-heading">

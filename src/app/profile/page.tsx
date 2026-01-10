@@ -18,6 +18,7 @@ import {
   LogOut
 } from "lucide-react"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
+import { LevelBadge } from "@/components/dashboard/LevelBadge"
 
 export default function ProfilePage() {
   const user = useUser()
@@ -184,6 +185,11 @@ export default function ProfilePage() {
                 Profile
               </span>
             </h1>
+            
+            {/* Level Badge */}
+            <div className="flex justify-center mb-6">
+              <LevelBadge />
+            </div>
             
             {/* Gold Divider */}
             <motion.div
