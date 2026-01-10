@@ -85,29 +85,31 @@ export function FeaturedPerformancesCarousel() {
         className="mb-8"
       >
         <h2 
-          className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
+          className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left mb-2"
           style={{ 
             fontFamily: 'var(--font-cinzel), serif',
             letterSpacing: '0.02em',
           }}
         >
-          <span 
-            style={{
-              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
+          <span className="text-white">
             Start Rating
           </span>
         </h2>
-        <p className="text-gray-400 text-center sm:text-left mt-2 text-sm sm:text-base">
-          Rate these iconic performances and join the community
+        <p className="text-gray-400 text-center sm:text-left text-sm sm:text-base">
+          Rate iconic performances
         </p>
       </motion.div>
 
       <div className="relative">
+        {/* Desktop: Fade edges */}
+        <div className="hidden lg:block absolute inset-0 pointer-events-none z-10"
+          style={{
+            background: 'linear-gradient(to right, black 0%, transparent 10%, transparent 90%, black 100%)',
+            maskImage: 'linear-gradient(to right, black 0%, transparent 10%, transparent 90%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 10%, transparent 90%, black 100%)',
+          }}
+        />
+        
         {/* Carousel Container */}
         <div
           ref={scrollContainerRef}
@@ -213,16 +215,14 @@ export function FeaturedPerformancesCarousel() {
           </button>
         </div>
 
-        {/* Dots Indicator */}
-        <div className="flex justify-center gap-2 mt-6">
+        {/* Dots Indicator - Same as performances page */}
+        <div className="flex justify-center gap-2 mt-6 performance-carousel-dots">
           {FEATURED_PERFORMANCES.map((_, index) => (
             <button
               key={index}
               onClick={() => scrollToIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'bg-[#FFD700] w-8'
-                  : 'bg-gray-600/40 hover:bg-gray-600/60'
+              className={`performance-dot ${
+                index === currentIndex ? 'performance-dot-active' : 'performance-dot-inactive'
               }`}
               aria-label={`Go to performance ${index + 1}`}
             />

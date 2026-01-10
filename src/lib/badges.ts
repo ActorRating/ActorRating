@@ -1,0 +1,177 @@
+/**
+ * Badge system configuration for ActorRating
+ * Defines Founding Member badge and level-based badges
+ */
+
+export type BadgeType = 'founding-member' | 'level'
+
+export interface BadgeConfig {
+  id: string
+  name: string
+  type: BadgeType
+  color: string // Gradient or solid color
+  textColor: string
+  minRatings?: number // For level badges
+  maxRatings?: number // For level badges
+  icon?: string // Custom icon/symbol
+  animated?: boolean // For higher-level badges
+}
+
+/**
+ * Badge configurations
+ * Founding Member badge is special and always appears first
+ */
+export const BADGE_CONFIGS: BadgeConfig[] = [
+  // Special Badge: Founding Member (for early adopters)
+  {
+    id: 'founding-member',
+    name: 'Founding Member',
+    type: 'founding-member',
+    color: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+    textColor: '#000000',
+    icon: '★',
+    animated: true
+  },
+  
+  // Level Badges based on rating count
+  {
+    id: 'viewer',
+    name: 'Viewer',
+    type: 'level',
+    color: '#3b82f6', // Blue
+    textColor: '#ffffff',
+    minRatings: 1,
+    maxRatings: 9,
+    icon: '◆',
+    animated: false
+  },
+  {
+    id: 'critic',
+    name: 'Critic',
+    type: 'level',
+    color: '#8b5cf6', // Purple
+    textColor: '#ffffff',
+    minRatings: 10,
+    maxRatings: 49,
+    icon: '◆',
+    animated: false
+  },
+  {
+    id: 'senior-critic',
+    name: 'Senior Critic',
+    type: 'level',
+    color: '#ec4899', // Pink
+    textColor: '#ffffff',
+    minRatings: 50,
+    maxRatings: 199,
+    icon: '◆',
+    animated: true
+  },
+  {
+    id: 'elite-critic',
+    name: 'Elite Critic',
+    type: 'level',
+    color: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+    textColor: '#000000',
+    minRatings: 200,
+    icon: '◆',
+    animated: true
+  }
+]
+
+/**
+ * Get user's level badge based on rating count
+ */
+export function getLevelBadge(ratingCount: number): BadgeConfig | null {
+  const levelBadges = BADGE_CONFIGS.filter(b => b.type === 'level')
+  
+  for (const badge of levelBadges) {
+    if (badge.minRatings !== undefined && ratingCount >= badge.minRatings) {
+      if (badge.maxRatings === undefined || ratingCount <= badge.maxRatings) {
+        return badge
+      }
+    }
+  }
+  
+  return null
+}
+
+/**
+ * Get Founding Member badge
+ */
+export function getFoundingMemberBadge(): BadgeConfig | null {
+  return BADGE_CONFIGS.find(b => b.id === 'founding-member') || null
+}
+
+/**
+ * Get all badges for a user
+ * Returns Founding Member badge first (if applicable), then level badge
+ */
+export function getUserBadges(ratingCount: number, isFoundingMember: boolean = false): BadgeConfig[] {
+  const badges: BadgeConfig[] = []
+  
+  // Founding Member badge always comes first
+  if (isFoundingMember) {
+    const foundingBadge = getFoundingMemberBadge()
+    if (foundingBadge) badges.push(foundingBadge)
+  }
+  
+  // Add level badge
+  const levelBadge = getLevelBadge(ratingCount)
+  if (levelBadge) badges.push(levelBadge)
+  
+  return badges
+}
+
+/**
+ * Calculate progress to next level
+ */
+export function getLevelProgress(ratingCount: number): {
+  currentBadge: BadgeConfig | null
+  nextBadge: BadgeConfig | null
+  progress: number // 0-100
+  ratingsNeeded: number
+} {
+  const currentBadge = getLevelBadge(ratingCount)
+  
+  if (!currentBadge) {
+    return {
+      currentBadge: null,
+      nextBadge: null,
+      progress: 0,
+      ratingsNeeded: 0
+    }
+  }
+  
+  // Find next level badge
+  const levelBadges = BADGE_CONFIGS.filter(b => b.type === 'level').sort((a, b) => 
+    (a.minRatings || 0) - (b.minRatings || 0)
+  )
+  
+  const currentIndex = levelBadges.findIndex(b => b.id === currentBadge.id)
+  const nextBadge = currentIndex < levelBadges.length - 1 ? levelBadges[currentIndex + 1] : null
+  
+  if (!nextBadge || !nextBadge.minRatings) {
+    // Max level reached
+    return {
+      currentBadge,
+      nextBadge: null,
+      progress: 100,
+      ratingsNeeded: 0
+    }
+  }
+  
+  const currentMin = currentBadge.minRatings || 0
+  const nextMin = nextBadge.minRatings
+  const range = nextMin - currentMin
+  const progressCount = ratingCount - currentMin
+  const progress = Math.min(100, Math.max(0, (progressCount / range) * 100))
+  const ratingsNeeded = Math.max(0, nextMin - ratingCount)
+  
+  return {
+    currentBadge,
+    nextBadge,
+    progress,
+    ratingsNeeded
+  }
+}
