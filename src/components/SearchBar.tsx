@@ -160,10 +160,11 @@ export function SearchBar({
       const targetRect = foundParent?.getBoundingClientRect() || inputRect
       const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
       
+      // For fixed positioning, use viewport coordinates directly (no scroll offset needed)
       // Remove any gap - position directly below the container
       setDropdownPosition({
-        top: bottomEdge + window.scrollY - 1, // -1 to connect seamlessly
-        left: containerRect.left + window.scrollX,
+        top: bottomEdge, // Fixed positioning is relative to viewport, so no scrollY needed
+        left: containerRect.left, // Fixed positioning is relative to viewport, so no scrollX needed
         width: containerRect.width
       })
     }

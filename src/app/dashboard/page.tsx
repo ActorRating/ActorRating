@@ -518,7 +518,7 @@ export default function DashboardPage() {
                         }}
                         averageRating={parseFloat(calculateAverage(rating))}
                         variant="default"
-                        className="h-full min-h-[320px] md:min-h-0"
+                        className="h-full min-h-[380px] md:min-h-0"
                         ratingId={rating.id}
                         showEditButton={true}
                       />

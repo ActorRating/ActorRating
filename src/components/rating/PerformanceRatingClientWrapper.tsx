@@ -987,8 +987,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   className="absolute top-4 right-4 z-50 text-gray-400 hover:text-white transition-colors"
                   aria-label="Close and go to dashboard"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors">
-                    <X className="w-4 h-4" />
+                  <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors">
+                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
                   </div>
                 </button>
                 {/* Checkmark */}
