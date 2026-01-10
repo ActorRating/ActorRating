@@ -15,7 +15,8 @@ import Link from "next/link"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
 import { FeaturedPerformancesCarousel } from "@/components/dashboard/FeaturedPerformancesCarousel"
-import { LevelBadge } from "@/components/dashboard/LevelBadge"
+import { UserBadges } from "@/components/dashboard/UserBadges"
+import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
 
 interface Actor {
   id: string
@@ -297,10 +298,13 @@ export default function DashboardPage() {
           </nav>
           </header>
 
-          {/* Level Badge */}
+          {/* User Badges */}
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-            <LevelBadge />
+            <UserBadges />
           </div>
+
+          {/* Progress Bar */}
+          <UserProgressBar />
 
           {/* Featured Performances Carousel */}
           <FeaturedPerformancesCarousel />

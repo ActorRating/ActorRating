@@ -156,18 +156,16 @@ export function SearchBar({
         parentContainer = parentContainer.parentElement
       }
       
-      // Use the parent container's position if found
-      const targetRect = foundParent?.getBoundingClientRect() || containerRect
-      const top = targetRect.top
-      const left = targetRect.left
-      const width = targetRect.width
+      // Use the parent container's bottom if found, otherwise use input bottom
+      const targetRect = foundParent?.getBoundingClientRect() || inputRect
+      const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
       
       // For fixed positioning, use viewport coordinates directly (no scroll offset needed)
-      // Position to create seamless oval extension
+      // Position directly at the bottom edge for seamless connection
       setDropdownPosition({
-        top: top, // Start from the search bar top
-        left: left, // Match the left edge
-        width: width // Match the width
+        top: bottomEdge, // Exact position for seamless connection
+        left: containerRect.left, // Fixed positioning is relative to viewport, so no scrollX needed
+        width: containerRect.width
       })
     }
   }, [])
@@ -353,6 +351,7 @@ export function SearchBar({
             ref={inputRef}
             type="text"
             value={query}
+            style={{ position: 'relative', zIndex: 10000 }}
             onChange={(e) => {
               const newValue = e.target.value
               setQuery(newValue)
@@ -442,20 +441,24 @@ export function SearchBar({
           {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
             <motion.div
               ref={dropdownRef}
-              initial={{ paddingTop: 0 }}
-              animate={{ paddingTop: '64px' }} // Input height + spacing
-              exit={{ paddingTop: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed z-[9998] overflow-hidden" // Lower z-index so input is on top
+              className="fixed max-h-96 z-[9999] overflow-hidden"
               style={{ 
                 top: `${dropdownPosition.top}px`,
                 left: `${dropdownPosition.left}px`,
                 width: `${dropdownPosition.width}px`,
                 position: 'fixed',
-                borderRadius: '2rem', // Full oval shape
+                borderRadius: '0 0 2rem 2rem', // Bottom rounded only
                 background: '#1a1a1a', // Match search bar container background
                 backdropFilter: 'blur(24px)', // Match search bar backdrop blur
-                border: '1px solid rgba(255, 255, 255, 0.05)',
+                border: 'none',
+                borderTop: 'none', // No top border for seamless connection
+                borderLeft: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                 boxShadow: `
                   0 25px 70px -15px rgba(0, 0, 0, 0.9),
                   0 15px 40px -10px rgba(0, 0, 0, 0.7),
@@ -465,7 +468,7 @@ export function SearchBar({
                 `,
               }}
             >
-            <div className="max-h-96 overflow-y-auto pb-4">
+            <div className="max-h-96 overflow-y-auto">
             {loading ? (
               <div className="p-6 text-center">
                 <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
