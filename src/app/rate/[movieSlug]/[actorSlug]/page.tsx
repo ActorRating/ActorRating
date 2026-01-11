@@ -51,9 +51,19 @@ export default function SlugBasedRatePage() {
         ])
 
         if (!movieResponse.ok || !actorResponse.ok) {
-          console.error('Failed to resolve movie or actor')
-          setError('Performance not found')
-          setLoading(false)
+          // Check which one failed for better error message
+          const movieError = !movieResponse.ok ? await movieResponse.json().catch(() => null) : null
+          const actorError = !actorResponse.ok ? await actorResponse.json().catch(() => null) : null
+          
+          console.error('Failed to resolve movie or actor', { 
+            movieSlug, 
+            actorSlug, 
+            movieStatus: movieResponse.status,
+            actorStatus: actorResponse.status 
+          })
+          
+          // Redirect to search page with a helpful message
+          router.push(`/search?error=notfound&movie=${encodeURIComponent(movieSlug)}&actor=${encodeURIComponent(actorSlug)}`)
           return
         }
 
@@ -65,8 +75,8 @@ export default function SlugBasedRatePage() {
         setLoading(false)
       } catch (error) {
         console.error('Error fetching data:', error)
-        setError('Failed to load performance data')
-        setLoading(false)
+        // Redirect to search page on error
+        router.push('/search?error=loadfailed')
       }
     }
 
