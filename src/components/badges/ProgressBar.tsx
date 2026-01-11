@@ -26,14 +26,9 @@ export function ProgressBar({
       {showLabels && (currentLabel || nextLabel) && (
         <div className="flex items-center justify-between mb-2 text-xs text-gray-400">
           {currentLabel && <span>{currentLabel}</span>}
-          {nextLabel && (
-            <div className="flex items-center gap-2">
-              <span>{nextLabel}</span>
-              {nextBadge && (
-                <div className="scale-75 origin-right">
-                  <Badge badge={nextBadge} />
-                </div>
-              )}
+          {nextBadge && (
+            <div className="scale-75 origin-right">
+              <Badge badge={nextBadge} />
             </div>
           )}
         </div>
