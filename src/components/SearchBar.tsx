@@ -309,13 +309,15 @@ export function SearchBar({
               inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
               inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
             `,
-            transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
             transformStyle: 'preserve-3d',
           }}
           animate={{
             borderRadius: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions 
               ? '2rem 2rem 2rem 2rem' 
-              : '2rem'
+              : '2rem',
+            transform: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions
+              ? 'translateY(0) perspective(1000px) rotateX(0deg)'
+              : 'translateY(-4px) perspective(1000px) rotateX(1deg)',
           }}
         >
           {/* Input Row - Always visible at top */}
