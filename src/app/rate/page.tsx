@@ -533,15 +533,12 @@ function RatePageContent() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-8"
+                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-4 sm:mb-6"
               >
-                <div className="text-center mb-4">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                <div className="text-center">
+                  <h1 className="text-lg sm:text-xl font-semibold text-foreground/80 mb-1">
                     Edit Rating
                   </h1>
-                  <p className="text-muted-foreground">
-                    Update your rating for {actor?.name} in "{movie?.title}"
-                  </p>
                 </div>
                 </motion.div>
               )}

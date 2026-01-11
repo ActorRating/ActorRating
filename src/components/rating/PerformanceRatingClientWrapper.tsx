@@ -631,7 +631,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
 
-      <div className={`relative max-w-[900px] mx-auto px-2 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}>
+      <div className={`relative max-w-[900px] mx-auto px-4 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}>
 
         {/* Header Section - Mobile optimized */}
         <motion.div
@@ -640,25 +640,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
-          {/* Actor Name */}
+          {/* Movie Title - More Prominent */}
           <h2 
-            id="actor-name-header" 
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 sm:mb-4 tracking-tight px-2"
-            style={{ fontFamily: 'var(--font-cinzel), serif' }}
-          >
-            {performance.actor.name}
-          </h2>
-          
-          {/* Movie Title */}
-          <h3 
-            className="text-lg sm:text-xl md:text-2xl font-semibold mb-2 sm:mb-3 px-2"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 tracking-tight px-2"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              fontFamily: 'var(--font-cinzel), serif',
             }}
           >
             {performance.movie.title}
+          </h2>
+          
+          {/* Actor Name - Smaller, Secondary */}
+          <h3 
+            id="actor-name-header" 
+            className="text-xl sm:text-2xl md:text-3xl font-semibold text-white/70 mb-2 sm:mb-3 tracking-tight px-2"
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+          >
+            {performance.actor.name}
           </h3>
           
           {/* Role/Comment */}
@@ -808,8 +809,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
               />
               
-              {/* Sliders - Mobile optimized spacing, slightly narrower on mobile */}
-              <div className="space-y-6 sm:space-y-8 relative z-10 max-w-[calc(100%-24px)] sm:max-w-[600px] mx-auto pb-2">
+              {/* Sliders - Mobile optimized spacing, consistent width */}
+              <div className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] mx-auto pb-2">
                 <RatingSliderCard 
                   label="Emotional Impact" 
                   value={emotionalRangeDepth} 

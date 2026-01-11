@@ -102,9 +102,14 @@ export function UserProgressBar() {
           showLabels={true}
           nextBadge={progressData.nextBadge}
         />
-        <p className="text-sm text-[#FFD700] font-medium mt-4 text-center">
-          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} {progressData.currentLabel ? 'to reach' : 'to earn'} {progressData.nextLabel}
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-[#FFD700] mb-1">
+            {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} {progressData.currentLabel ? 'to reach' : 'to earn'}
+          </p>
+          <p className="text-lg sm:text-xl font-semibold text-white">
+            {progressData.nextLabel}
+          </p>
+        </div>
       </div>
     </motion.div>
   )

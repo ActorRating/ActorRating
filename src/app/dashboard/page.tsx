@@ -298,11 +298,6 @@ export default function DashboardPage() {
           </nav>
           </header>
 
-          {/* User Badges */}
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-            <UserBadges />
-          </div>
-
           {/* Progress Bar */}
           <UserProgressBar />
 
