@@ -88,35 +88,47 @@ export async function GET(req: NextRequest) {
       <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:0.95" />
-      <stop offset="50%" style="stop-color:#0f0f0f;stop-opacity:0.90" />
-      <stop offset="100%" style="stop-color:#000000;stop-opacity:0.95" />
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#000000;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dividerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:transparent;stop-opacity:1" />
+      <stop offset="15%" style="stop-color:rgba(255,229,92,0.4);stop-opacity:1" />
+      <stop offset="40%" style="stop-color:rgba(255,215,0,0.9);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:rgba(255,215,0,1);stop-opacity:1" />
+      <stop offset="60%" style="stop-color:rgba(255,215,0,0.9);stop-opacity:1" />
+      <stop offset="85%" style="stop-color:rgba(255,229,92,0.4);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:transparent;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <!-- Background with gradient - matching Performance card -->
-  <rect width="100%" height="100%" fill="url(#bgGradient)"/>
+  <!-- Background - pure black -->
+  <rect width="100%" height="100%" fill="#000000"/>
   <!-- Actor Name (Primary) - Center Top -->
   <text x="${dims.w/2}" y="280" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="${goldLight}" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
   <!-- Movie Name (Secondary) - Below Actor -->
   <text x="${dims.w/2}" y="340" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">${escapedMovieTitle}</text>
-  <!-- Decorative divider - pointy edges -->
-  <g>
-    <line x1="${dims.w/2 - 200}" y1="400" x2="${dims.w/2 - 20}" y2="400" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
-    <polygon points="${dims.w/2 - 20},395 ${dims.w/2},400 ${dims.w/2 - 20},405" fill="${gold}" opacity="0.4"/>
-    <polygon points="${dims.w/2 + 20},395 ${dims.w/2},400 ${dims.w/2 + 20},405" fill="${gold}" opacity="0.4"/>
-    <line x1="${dims.w/2 + 20}" y1="400" x2="${dims.w/2 + 200}" y2="400" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
-  </g>
+  <!-- Decorative divider - dashboard style -->
+  <rect x="${dims.w/2 - 90}" y="398" width="180" height="2" fill="url(#dividerGradient)" opacity="1">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <filter id="dividerGlow">
+    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+    <feMerge>
+      <feMergeNode in="coloredBlur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+  <rect x="${dims.w/2 - 90}" y="398" width="180" height="2" fill="url(#dividerGradient)" filter="url(#dividerGlow)" opacity="0.6"/>
   <!-- Score (Primary) - Large and prominent, no glow -->
   <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
   <!-- "What's your rating?" text - Below score, white -->
   <text x="${dims.w/2}" y="650" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
-  <!-- Decorative divider - pointy edges -->
-  <g>
-    <line x1="${dims.w/2 - 200}" y1="700" x2="${dims.w/2 - 20}" y2="700" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
-    <polygon points="${dims.w/2 - 20},695 ${dims.w/2},700 ${dims.w/2 - 20},705" fill="${gold}" opacity="0.4"/>
-    <polygon points="${dims.w/2 + 20},695 ${dims.w/2},700 ${dims.w/2 + 20},705" fill="${gold}" opacity="0.4"/>
-    <line x1="${dims.w/2 + 20}" y1="700" x2="${dims.w/2 + 200}" y2="700" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
-  </g>
+  <!-- Decorative divider - dashboard style -->
+  <rect x="${dims.w/2 - 90}" y="698" width="180" height="2" fill="url(#dividerGradient)" opacity="1">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="${dims.w/2 - 90}" y="698" width="180" height="2" fill="url(#dividerGradient)" filter="url(#dividerGlow)" opacity="0.6"/>
   <!-- "Rated on ActorRating" - Bottom -->
   <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${fg}" opacity="0.7" text-anchor="middle">Rated on ActorRating</text>
   <!-- Logo placeholder (small, bottom) -->
