@@ -13,6 +13,7 @@ export function UserProgressBar() {
     ratingsNeeded: number
     currentLabel: string
     nextLabel: string
+    nextBadge: any | null
   } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -32,7 +33,8 @@ export function UserProgressBar() {
           progress: levelProgress.progress,
           ratingsNeeded: levelProgress.ratingsNeeded,
           currentLabel: levelProgress.currentBadge?.name || '',
-          nextLabel: levelProgress.nextBadge?.name || ''
+          nextLabel: levelProgress.nextBadge?.name || '',
+          nextBadge: levelProgress.nextBadge
         })
       }
     } catch (error) {
@@ -98,6 +100,7 @@ export function UserProgressBar() {
           currentLabel={progressData.currentLabel || 'No badge yet'}
           nextLabel={progressData.nextLabel}
           showLabels={true}
+          nextBadge={progressData.nextBadge}
         />
         <p className="text-sm text-[#FFD700] font-medium mt-4 text-center">
           {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} {progressData.currentLabel ? 'to reach' : 'to earn'} {progressData.nextLabel}

@@ -1,6 +1,8 @@
 "use client"
 
 import { motion } from 'framer-motion'
+import { BadgeConfig } from '@/lib/badges'
+import { Badge } from './Badge'
 
 interface ProgressBarProps {
   progress: number // 0-100
@@ -8,6 +10,7 @@ interface ProgressBarProps {
   nextLabel?: string
   showLabels?: boolean
   className?: string
+  nextBadge?: BadgeConfig | null
 }
 
 export function ProgressBar({ 
@@ -15,14 +18,24 @@ export function ProgressBar({
   currentLabel,
   nextLabel,
   showLabels = true,
-  className = ''
+  className = '',
+  nextBadge
 }: ProgressBarProps) {
   return (
     <div className={`w-full ${className}`}>
       {showLabels && (currentLabel || nextLabel) && (
         <div className="flex items-center justify-between mb-2 text-xs text-gray-400">
           {currentLabel && <span>{currentLabel}</span>}
-          {nextLabel && <span>{nextLabel}</span>}
+          {nextLabel && (
+            <div className="flex items-center gap-2">
+              <span>{nextLabel}</span>
+              {nextBadge && (
+                <div className="scale-75 origin-right">
+                  <Badge badge={nextBadge} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       
