@@ -109,26 +109,13 @@ export async function GET(req: NextRequest) {
   <!-- Movie Name (Secondary) - Below Actor -->
   <text x="${dims.w/2}" y="340" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">${escapedMovieTitle}</text>
   <!-- Decorative divider - dashboard style -->
-  <rect x="${dims.w/2 - 90}" y="398" width="180" height="2" fill="url(#dividerGradient)" opacity="1">
-    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
-  </rect>
-  <filter id="dividerGlow">
-    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-    <feMerge>
-      <feMergeNode in="coloredBlur"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-  <rect x="${dims.w/2 - 90}" y="398" width="180" height="2" fill="url(#dividerGradient)" filter="url(#dividerGlow)" opacity="0.6"/>
+  <rect x="${dims.w/2 - 90}" y="399" width="180" height="2" fill="url(#dividerGradient)"/>
   <!-- Score (Primary) - Large and prominent, no glow -->
   <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
   <!-- "What's your rating?" text - Below score, white -->
   <text x="${dims.w/2}" y="650" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
   <!-- Decorative divider - dashboard style -->
-  <rect x="${dims.w/2 - 90}" y="698" width="180" height="2" fill="url(#dividerGradient)" opacity="1">
-    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
-  </rect>
-  <rect x="${dims.w/2 - 90}" y="698" width="180" height="2" fill="url(#dividerGradient)" filter="url(#dividerGlow)" opacity="0.6"/>
+  <rect x="${dims.w/2 - 90}" y="699" width="180" height="2" fill="url(#dividerGradient)"/>
   <!-- "Rated on ActorRating" - Bottom -->
   <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${fg}" opacity="0.7" text-anchor="middle">Rated on ActorRating</text>
   <!-- Logo placeholder (small, bottom) -->
