@@ -99,34 +99,28 @@ export async function GET(req: NextRequest) {
   </defs>
   <!-- Background with gradient -->
   <rect width="100%" height="100%" fill="url(#bgGradient)"/>
-  <!-- Spotlight effect -->
+  <!-- Spotlight effect - reduced glow -->
   <rect width="100%" height="100%" fill="url(#spotlight)"/>
-  <!-- Decorative top border -->
-  <rect x="0" y="0" width="100%" height="4" fill="url(#goldGradient)" opacity="0.8"/>
-  <!-- "What's your rating?" text - Top, cinematic style -->
-  <text x="${dims.w/2}" y="140" font-family="Cinzel, Georgia, serif" font-size="48" font-weight="700" fill="${goldLight}" text-anchor="middle" opacity="0.95">What&apos;s your rating?</text>
-  <!-- Decorative line under question -->
-  <line x1="${dims.w/2 - 200}" y1="170" x2="${dims.w/2 + 200}" y2="170" stroke="url(#goldGradient)" stroke-width="2" opacity="0.6"/>
   <!-- Actor Name (Primary) - Center Top -->
   <text x="${dims.w/2}" y="280" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="${goldLight}" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
   <!-- Movie Name (Secondary) - Below Actor -->
   <text x="${dims.w/2}" y="340" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">${escapedMovieTitle}</text>
-  <!-- Decorative divider -->
-  <line x1="${dims.w/2 - 150}" y1="400" x2="${dims.w/2 + 150}" y2="400" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
-  <!-- Score (Primary) - Large and prominent with glow effect -->
+  <!-- Decorative divider - nicer style -->
+  <line x1="${dims.w/2 - 180}" y1="400" x2="${dims.w/2 + 180}" y2="400" stroke="${gold}" stroke-width="1" opacity="0.3" stroke-dasharray="4,4"/>
+  <!-- Score (Primary) - Large and prominent with reduced glow -->
   <g>
-    <!-- Glow effect behind score -->
-    <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="${gold}" text-anchor="middle" opacity="0.3" transform="translate(2, 2)">${scoreOutOf10} / 10</text>
+    <!-- Reduced glow effect behind score -->
+    <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="${gold}" text-anchor="middle" opacity="0.15" transform="translate(2, 2)">${scoreOutOf10} / 10</text>
     <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
   </g>
-  <!-- Decorative bottom elements -->
-  <line x1="${dims.w/2 - 150}" y1="680" x2="${dims.w/2 + 150}" y2="680" stroke="${gold}" stroke-width="1.5" opacity="0.4"/>
+  <!-- "What's your rating?" text - Below score, white -->
+  <text x="${dims.w/2}" y="650" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
+  <!-- Decorative divider - nicer style -->
+  <line x1="${dims.w/2 - 180}" y1="700" x2="${dims.w/2 + 180}" y2="700" stroke="${gold}" stroke-width="1" opacity="0.3" stroke-dasharray="4,4"/>
   <!-- "Rated on ActorRating" - Bottom -->
   <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${fg}" opacity="0.7" text-anchor="middle">Rated on ActorRating</text>
   <!-- Logo placeholder (small, bottom) -->
   <text x="${dims.w/2}" y="1320" font-family="Cinzel, Georgia, serif" font-size="22" fill="${gold}" opacity="0.5" text-anchor="middle">actorrating.com</text>
-  <!-- Decorative bottom border -->
-  <rect x="0" y="${dims.h - 4}" width="100%" height="4" fill="url(#goldGradient)" opacity="0.8"/>
 </svg>`
       return new Response(svg, { status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' } })
     }

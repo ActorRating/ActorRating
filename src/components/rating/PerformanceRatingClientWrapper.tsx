@@ -970,7 +970,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-10 lg:p-12 max-w-md md:max-w-lg lg:max-w-xl w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-10 max-w-md md:max-w-lg lg:max-w-xl w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -983,12 +983,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               >
                 {/* Close Button */}
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className="absolute top-4 right-4 z-50 text-gray-400 hover:text-white transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    router.push('/dashboard')
+                  }}
+                  className="absolute top-4 right-4 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
                   aria-label="Close and go to dashboard"
                 >
-                  <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors">
-                    <X className="w-5 h-5 sm:w-4 sm:h-4" />
+                  <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
+                    <X className="w-5 h-5 sm:w-4 sm:h-4 pointer-events-none" />
                   </div>
                 </button>
                 {/* Checkmark */}
@@ -996,10 +1001,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
-                  className="flex justify-center mb-6"
+                  className="flex justify-center mb-4 md:mb-5"
                 >
-                  <div className="w-20 h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-12 h-12 text-black" />
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg">
+                    <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-black" />
                   </div>
                 </motion.div>
 
@@ -1008,7 +1013,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 md:mb-8"
+                  className="text-2xl sm:text-3xl md:text-3xl font-bold text-white text-center mb-4 md:mb-5"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   Rating Submitted!
@@ -1019,7 +1024,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-center mb-8 md:mb-10"
+                  className="text-center mb-5 md:mb-6"
                 >
                   <div 
                     className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
@@ -1072,7 +1077,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="space-y-4 md:space-y-5"
+                  className="space-y-3 md:space-y-4"
                 >
                   <button
                     onClick={handleShare}
