@@ -153,8 +153,8 @@ export function FeaturedPerformancesCarousel() {
       <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {FEATURED_PERFORMANCES.map((performance, index) => {
           const rateUrl = getRateUrl(
-            { id: performance.actorId, name: performance.actorName, slug: performance.actorId },
-            { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: performance.movieId }
+            { id: performance.actorId, name: performance.actorName, slug: null }, // Let helper generate slug
+            { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: null } // Let helper generate slug
           )
 
           return (
@@ -251,8 +251,8 @@ export function FeaturedPerformancesCarousel() {
         >
           {FEATURED_PERFORMANCES.map((performance, index) => {
             const rateUrl = getRateUrl(
-              { id: performance.actorId, name: performance.actorName, slug: performance.actorId },
-              { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: performance.movieId }
+              { id: performance.actorId, name: performance.actorName, slug: null }, // Let helper generate slug
+              { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: null } // Let helper generate slug
             )
 
             return (
