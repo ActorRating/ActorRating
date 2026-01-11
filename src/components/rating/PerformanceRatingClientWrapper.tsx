@@ -970,7 +970,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-12 max-w-md md:max-w-md lg:max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-hidden border border-white/10 shadow-2xl relative mx-auto"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-12 max-w-md md:max-w-md lg:max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
