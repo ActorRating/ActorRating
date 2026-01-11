@@ -70,15 +70,12 @@ export function FeaturedPerformancesCarousel() {
     scrollToIndex(prevIndex)
   }
 
-  // Focus logic - same as performances page
+  // Track active card for nav dots and depth effect - same as performances page
   useEffect(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
-    const updateCardDepth = () => {
-      const isDesktop = window.innerWidth >= 1024
-      if (!isDesktop) return
-
+    const updateActiveCard = () => {
       const containerRect = container.getBoundingClientRect()
       const containerCenter = containerRect.left + containerRect.width / 2
 
@@ -97,26 +94,36 @@ export function FeaturedPerformancesCarousel() {
           closestIndex = index
         }
 
-        const maxDistance = containerRect.width / 2
-        const normalizedDistance = Math.min(distance / maxDistance, 1)
-        const scale = 1 - (normalizedDistance * 0.08)
-        const opacity = 1 - (normalizedDistance * 0.4)
-        const translateY = normalizedDistance * 10
+        // Desktop: apply depth effect
+        const isDesktop = window.innerWidth >= 1024
+        if (isDesktop) {
+          const maxDistance = containerRect.width / 2
+          const normalizedDistance = Math.min(distance / maxDistance, 1)
+          const scale = 1 - (normalizedDistance * 0.08)
+          const opacity = 1 - (normalizedDistance * 0.4)
+          const translateY = normalizedDistance * 10
 
-        card.style.transform = `scale(${scale}) translateY(${translateY}px)`
-        card.style.opacity = `${opacity}`
+          card.style.transform = `scale(${scale}) translateY(${translateY}px)`
+          card.style.opacity = `${opacity}`
+        } else {
+          // Reset on mobile
+          card.style.transform = 'scale(1) translateY(0)'
+          card.style.opacity = '1'
+        }
       })
 
+      // Update both activeCard (for desktop) and currentIndex (for nav dots)
       setActiveCard(closestIndex)
+      setCurrentIndex(closestIndex)
     }
 
-    container.addEventListener('scroll', updateCardDepth, { passive: true })
-    window.addEventListener('resize', updateCardDepth, { passive: true })
-    updateCardDepth()
+    container.addEventListener('scroll', updateActiveCard, { passive: true })
+    window.addEventListener('resize', updateActiveCard, { passive: true })
+    updateActiveCard()
 
     return () => {
-      container.removeEventListener('scroll', updateCardDepth)
-      window.removeEventListener('resize', updateCardDepth)
+      container.removeEventListener('scroll', updateActiveCard)
+      window.removeEventListener('resize', updateActiveCard)
     }
   }, [])
 
