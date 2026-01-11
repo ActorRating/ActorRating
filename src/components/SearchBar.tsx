@@ -297,9 +297,8 @@ export function SearchBar({
         {/* Container that extends downward - same styling as input */}
         <motion.div
           className={cn(
-            "relative rounded-2xl bg-[#1a1a1a] border border-transparent overflow-hidden transition-all duration-200",
-            isFocused && "border-primary/50",
-            showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && "rounded-b-2xl"
+            "relative bg-[#1a1a1a] border border-transparent overflow-hidden transition-all duration-200",
+            isFocused && "border-primary/50"
           )}
           style={{
             backdropFilter: 'blur(24px)',
