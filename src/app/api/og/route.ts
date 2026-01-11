@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
     </linearGradient>
     <radialGradient id="spotlight" cx="50%" cy="30%" r="40%">
-      <stop offset="0%" style="stop-color:${gold};stop-opacity:0.15" />
+      <stop offset="0%" style="stop-color:${gold};stop-opacity:0.08" />
       <stop offset="100%" style="stop-color:${gold};stop-opacity:0" />
     </radialGradient>
   </defs>
