@@ -57,9 +57,9 @@ export function getMovieUrl(movie: Movie): string {
  * Always prefers new slug-based format, generates slugs on-the-fly if needed
  */
 export function getRateUrl(actor: Actor, movie: Movie): string {
-  // Always use slug-based format
-  const actorSlugOrId = actor.slug || actor.id
-  const movieSlugOrId = movie.slug || movie.id
+  // Use slug generation helpers to ensure correct format
+  const actorSlugOrId = getActorSlugOrGenerate(actor)
+  const movieSlugOrId = getMovieSlugOrGenerate(movie)
   
   return `/rate/${movieSlugOrId}/${actorSlugOrId}`
 }

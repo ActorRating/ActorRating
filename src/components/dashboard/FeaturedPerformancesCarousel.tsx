@@ -21,7 +21,7 @@ const FEATURED_PERFORMANCES: FeaturedPerformance[] = [
     actorName: 'Heath Ledger',
     actorId: 'heath-ledger',
     movieTitle: 'The Dark Knight',
-    movieId: 'the-dark-knight',
+    movieId: 'the-dark-knight-2008', // Include year in slug
     character: 'The Joker',
     year: 2008
   },
@@ -29,7 +29,7 @@ const FEATURED_PERFORMANCES: FeaturedPerformance[] = [
     actorName: 'Cillian Murphy',
     actorId: 'cillian-murphy',
     movieTitle: 'Oppenheimer',
-    movieId: 'oppenheimer',
+    movieId: 'oppenheimer-2023', // Include year in slug
     character: 'J. Robert Oppenheimer',
     year: 2023
   },
@@ -37,7 +37,7 @@ const FEATURED_PERFORMANCES: FeaturedPerformance[] = [
     actorName: 'Timothée Chalamet',
     actorId: 'timothee-chalamet',
     movieTitle: 'Dune',
-    movieId: 'dune',
+    movieId: 'dune-2021', // Include year in slug
     character: 'Paul Atreides',
     year: 2021
   }
@@ -371,15 +371,35 @@ export function FeaturedPerformancesCarousel() {
                     const container = scrollContainerRef.current
                     if (container) {
                       const cards = container.querySelectorAll('.recent-scroll-container > div')
-                      if (cards[index]) {
-                        (cards[index] as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                      const targetCard = cards[index] as HTMLElement
+                      if (targetCard) {
+                        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
                         setCurrentIndex(index)
                       }
                     }
                   }}
-                  className={`performance-dot ${
-                    index === currentIndex ? 'performance-dot-active' : 'performance-dot-inactive'
-                  }`}
+                  style={{
+                    width: index === currentIndex ? '20px' : '8px',
+                    height: '8px',
+                    minWidth: '8px',
+                    minHeight: '8px',
+                    padding: '8px',
+                    border: 'none',
+                    backgroundColor: index === currentIndex ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
+                    borderRadius: '9999px',
+                    transition: 'all 0.3s',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (index !== currentIndex) {
+                      e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.6)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (index !== currentIndex) {
+                      e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)'
+                    }
+                  }}
                   aria-label={`Go to performance ${index + 1}`}
                 />
               ))}
