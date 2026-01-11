@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { UserBadges } from "@/components/dashboard/UserBadges"
+import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
 
 export default function ProfilePage() {
   const user = useUser()
@@ -186,8 +187,9 @@ export default function ProfilePage() {
               </span>
             </h1>
             
-            {/* User Badges */}
-            <div className="flex justify-center mb-6">
+            {/* User Badges - Next to username */}
+            <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
+              <span className="text-gray-400 text-sm">Level:</span>
               <UserBadges />
             </div>
             
@@ -206,6 +208,11 @@ export default function ProfilePage() {
                 }}
               />
             </motion.div>
+
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <UserProgressBar />
+            </div>
 
             <motion.p
               initial={{ opacity: 0 }}

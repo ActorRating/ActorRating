@@ -45,7 +45,9 @@ const FEATURED_PERFORMANCES: FeaturedPerformance[] = [
 
 export function FeaturedPerformancesCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [activeCard, setActiveCard] = useState(0)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const scrollToIndex = (index: number) => {
     if (scrollContainerRef.current) {
@@ -68,14 +70,55 @@ export function FeaturedPerformancesCarousel() {
     scrollToIndex(prevIndex)
   }
 
-  // Auto-scroll on desktop (optional, can be removed if not desired)
+  // Focus logic - same as performances page
   useEffect(() => {
-    const interval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % FEATURED_PERFORMANCES.length
-      scrollToIndex(nextIndex)
-    }, 5000) // Change card every 5 seconds
-    return () => clearInterval(interval)
-  }, [currentIndex])
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const updateCardDepth = () => {
+      const isDesktop = window.innerWidth >= 1024
+      if (!isDesktop) return
+
+      const containerRect = container.getBoundingClientRect()
+      const containerCenter = containerRect.left + containerRect.width / 2
+
+      const cards = cardRefs.current.filter(Boolean)
+      let closestIndex = 0
+      let closestDistance = Infinity
+
+      cards.forEach((card, index) => {
+        if (!card) return
+        const cardRect = card.getBoundingClientRect()
+        const cardCenter = cardRect.left + cardRect.width / 2
+        const distance = Math.abs(containerCenter - cardCenter)
+
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestIndex = index
+        }
+
+        const maxDistance = containerRect.width / 2
+        const normalizedDistance = Math.min(distance / maxDistance, 1)
+        const scale = 1 - (normalizedDistance * 0.08)
+        const opacity = 1 - (normalizedDistance * 0.4)
+        const translateY = normalizedDistance * 10
+
+        card.style.transform = `scale(${scale}) translateY(${translateY}px)`
+        card.style.opacity = `${opacity}`
+      })
+
+      setActiveCard(closestIndex)
+    }
+
+    container.addEventListener('scroll', updateCardDepth, { passive: true })
+    window.addEventListener('resize', updateCardDepth, { passive: true })
+    updateCardDepth()
+
+    return () => {
+      container.removeEventListener('scroll', updateCardDepth)
+      window.removeEventListener('resize', updateCardDepth)
+    }
+  }, [])
 
   return (
     <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-12" aria-label="Featured performances">
@@ -86,7 +129,7 @@ export function FeaturedPerformancesCarousel() {
         className="mb-8"
       >
         <h2 
-          className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
+          className="text-3xl sm:text-4xl md:text-5xl font-bold text-center"
           style={{ 
             fontFamily: 'var(--font-cinzel), serif',
             letterSpacing: '0.02em',
@@ -127,12 +170,22 @@ export function FeaturedPerformancesCarousel() {
             )
 
             return (
-              <motion.div
+              <div
                 key={performance.actorId + performance.movieId}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center group"
+                ref={(el) => cardRefs.current[index] = el}
+                className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[calc(33.333%-16px)] snap-center group lg:cursor-pointer"
+                style={{
+                  transform: 'translateZ(0)',
+                  WebkitTransform: 'translateZ(0)',
+                }}
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    const element = cardRefs.current[index]
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                    }
+                  }
+                }}
               >
                 <Link href={rateUrl} className="block h-full">
                   {/* Premium Card - Clean & Cinematic - Matching actor pages */}
@@ -207,7 +260,7 @@ export function FeaturedPerformancesCarousel() {
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             )
           })}
           </div>

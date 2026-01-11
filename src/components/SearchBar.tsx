@@ -161,11 +161,11 @@ export function SearchBar({
       const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
       
       // For fixed positioning, use viewport coordinates directly (no scroll offset needed)
-      // Position directly at the bottom edge for seamless connection
+      // Position directly at the bottom edge - dropdown extends from search bar container
       setDropdownPosition({
-        top: bottomEdge, // Exact position for seamless connection
-        left: containerRect.left, // Fixed positioning is relative to viewport, so no scrollX needed
-        width: containerRect.width
+        top: bottomEdge, // Start right below the search bar container
+        left: containerRect.left, // Match left edge
+        width: containerRect.width // Match width
       })
     }
   }, [])
@@ -242,7 +242,9 @@ export function SearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleClear = () => {
+  const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     setQuery('')
     setSuggestions(null)
     setShowSuggestionsDropdown(false)
@@ -426,7 +428,8 @@ export function SearchBar({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors z-50"
+                style={{ position: 'relative', zIndex: 10001 }}
               >
                 <IconX className="w-4 h-4" />
               </motion.button>
@@ -441,9 +444,9 @@ export function SearchBar({
           {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
             <motion.div
               ref={dropdownRef}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0, maxHeight: 0 }}
+              animate={{ opacity: 1, maxHeight: '384px' }}
+              exit={{ opacity: 0, maxHeight: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="fixed max-h-96 z-[9999] overflow-hidden"
               style={{ 
@@ -451,8 +454,8 @@ export function SearchBar({
                 left: `${dropdownPosition.left}px`,
                 width: `${dropdownPosition.width}px`,
                 position: 'fixed',
-                borderRadius: '0 0 2rem 2rem', // Bottom rounded only
-                background: '#1a1a1a', // Match search bar container background
+                borderRadius: '0 0 2rem 2rem', // Bottom rounded only - extends from search bar
+                background: '#1a1a1a', // Match search bar container background exactly
                 backdropFilter: 'blur(24px)', // Match search bar backdrop blur
                 border: 'none',
                 borderTop: 'none', // No top border for seamless connection

@@ -64,14 +64,31 @@ export function UserProgressBar() {
           `,
         }}
       >
+        {/* Level Info Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-1" style={{ fontFamily: 'var(--font-cinzel), serif' }}>
+              Level Progress
+            </h3>
+            <p className="text-sm text-gray-400">
+              {progressData.ratingCount} {progressData.ratingCount === 1 ? 'rating' : 'ratings'} submitted
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl sm:text-3xl font-bold text-[#FFD700]">
+              {Math.round(progressData.progress)}%
+            </div>
+          </div>
+        </div>
+
         <ProgressBar
           progress={progressData.progress}
           currentLabel={progressData.currentLabel}
           nextLabel={progressData.nextLabel}
           showLabels={true}
         />
-        <p className="text-sm text-gray-400 mt-3 text-center">
-          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to {progressData.nextLabel}
+        <p className="text-sm text-[#FFD700] font-medium mt-4 text-center">
+          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to reach {progressData.nextLabel}
         </p>
       </div>
     </motion.div>
