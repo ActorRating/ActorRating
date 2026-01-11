@@ -2,7 +2,7 @@
 
 import { useSession } from "@/components/providers/SessionProvider"
 import { useRouter, usePathname } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface AuthGuardProps {
@@ -19,6 +19,11 @@ export function AuthGuard({
   const { user, loading, isInitialized } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!isInitialized || loading) return
@@ -31,7 +36,8 @@ export function AuthGuard({
   }, [user, loading, isInitialized, requireAuth, redirectTo, router, pathname])
 
   // Show loading state while session is being initialized
-  if (!isInitialized || loading) {
+  // Use mounted to prevent hydration mismatch
+  if (!mounted || !isInitialized || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

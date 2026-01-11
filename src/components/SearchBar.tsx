@@ -419,7 +419,7 @@ export function SearchBar({
                 animate={{ opacity: 1, maxHeight: '384px' }}
                 exit={{ opacity: 0, maxHeight: 0 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="overflow-y-auto max-h-96 border-t border-white/5"
+                className="overflow-y-auto max-h-96 border-t border-white/5 rounded-b-2xl"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
