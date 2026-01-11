@@ -110,8 +110,8 @@ export async function GET(req: NextRequest) {
   <rect width="100%" height="100%" fill="#000000"/>
   <!-- Radial spotlight from bottom right -->
   <rect width="100%" height="100%" fill="url(#bottomRightSpotlight)"/>
-  <!-- Actor Name (Primary) - Moved lower, white color -->
-  <text x="${dims.w/2}" y="320" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="${fg}" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
+  <!-- Actor Name (Primary) - Moved lower, gold gradient like section headings -->
+  <text x="${dims.w/2}" y="320" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="url(#goldGradient)" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
   <!-- Movie Name (Secondary) - Below Actor, with "in" prefix -->
   <text x="${dims.w/2}" y="380" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">in ${escapedMovieTitle}</text>
   <!-- Decorative divider - dashboard style, longer -->
