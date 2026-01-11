@@ -189,9 +189,11 @@ export function SearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleClear = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     setQuery('')
     setSuggestions(null)
     setShowSuggestionsDropdown(false)
@@ -381,11 +383,7 @@ export function SearchBar({
               {showClear && query && (
                 <motion.button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    handleClear()
-                  }}
+                  onClick={handleClear}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
