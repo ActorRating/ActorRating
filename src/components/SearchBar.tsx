@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -84,7 +83,6 @@ export function SearchBar({
   const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -135,52 +133,6 @@ export function SearchBar({
     [performSearch]
   )
 
-  // Update dropdown position when input changes or window scrolls/resizes
-  const updateDropdownPosition = useCallback(() => {
-    if (inputRef.current && containerRef.current) {
-      const inputRect = inputRef.current.getBoundingClientRect()
-      const containerRect = containerRef.current.getBoundingClientRect()
-      
-      // Find the parent container with the border (the wrapper div from dashboard/search pages)
-      // Look for parent with backdrop-blur or specific styling
-      let parentContainer = containerRef.current.parentElement
-      let foundParent = null
-      while (parentContainer && parentContainer !== document.body) {
-        const computedStyle = window.getComputedStyle(parentContainer)
-        if (computedStyle.backdropFilter !== 'none' || 
-            computedStyle.borderRadius === '2rem' ||
-            parentContainer.classList.toString().includes('backdrop-blur')) {
-          foundParent = parentContainer
-          break
-        }
-        parentContainer = parentContainer.parentElement
-      }
-      
-      // Use the parent container's bottom if found, otherwise use input bottom
-      const targetRect = foundParent?.getBoundingClientRect() || inputRect
-      const bottomEdge = foundParent ? targetRect.bottom : inputRect.bottom
-      
-      // For fixed positioning, use viewport coordinates directly (no scroll offset needed)
-      // Position directly at the bottom edge - dropdown extends from search bar container
-      setDropdownPosition({
-        top: bottomEdge, // Start right below the search bar container
-        left: containerRect.left, // Match left edge
-        width: containerRect.width // Match width
-      })
-    }
-  }, [])
-
-  useEffect(() => {
-    if (showSuggestionsDropdown) {
-      updateDropdownPosition()
-      window.addEventListener('scroll', updateDropdownPosition, true)
-      window.addEventListener('resize', updateDropdownPosition)
-      return () => {
-        window.removeEventListener('scroll', updateDropdownPosition, true)
-        window.removeEventListener('resize', updateDropdownPosition)
-      }
-    }
-  }, [showSuggestionsDropdown, updateDropdownPosition])
 
   useEffect(() => {
     if (query.trim() && query.trim().length >= 2 && showSuggestions && showSuggestionsDropdown) {
@@ -347,213 +299,211 @@ export function SearchBar({
         e.preventDefault()
         handleSubmit(e)
       }}>
-        <div className="relative">
-          <IconSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            style={{ position: 'relative', zIndex: 10000 }}
-            onChange={(e) => {
-              const newValue = e.target.value
-              setQuery(newValue)
-              
-              // Show dropdown instantly when typing (optimistic UI)
-              if (newValue.trim().length >= 2 && showSuggestions) {
-                setShowSuggestionsDropdown(true)
-              } else {
-                setShowSuggestionsDropdown(false)
-              }
-            }}
-            onClick={(e) => {
-              // Also trigger scroll on click
-              e.preventDefault()
-              requestAnimationFrame(() => {
-                if (inputRef.current) {
-                  const inputRect = inputRef.current.getBoundingClientRect()
-                  const currentScroll = window.scrollY || window.pageYOffset
-                  const inputTop = inputRect.top + currentScroll
-                  const viewportHeight = window.innerHeight
-                  const targetScroll = inputTop - (viewportHeight / 3)
-                  
-                  window.scrollTo({
-                    top: Math.max(0, targetScroll),
-                    behavior: 'smooth'
-                  })
+        {/* Container that extends downward - same styling as input */}
+        <motion.div
+          className={cn(
+            "relative rounded-2xl bg-background border border-border overflow-hidden transition-all duration-200",
+            isFocused && "border-primary/50",
+            showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && "rounded-b-2xl"
+          )}
+          style={{
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+          }}
+          animate={{
+            borderRadius: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions 
+              ? '2rem 2rem 2rem 2rem' 
+              : '2rem'
+          }}
+        >
+          {/* Input Row - Always visible at top */}
+          <div className="relative">
+            <IconSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 z-10" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => {
+                const newValue = e.target.value
+                setQuery(newValue)
+                
+                // Show dropdown instantly when typing (optimistic UI)
+                if (newValue.trim().length >= 2 && showSuggestions) {
+                  setShowSuggestionsDropdown(true)
+                } else {
+                  setShowSuggestionsDropdown(false)
                 }
-              })
-            }}
-            onFocus={(e) => {
-              setIsFocused(true)
-              
-              // Smooth scroll to position search bar in upper third of screen
-              requestAnimationFrame(() => {
-                if (inputRef.current) {
-                  const inputRect = inputRef.current.getBoundingClientRect()
-                  const currentScroll = window.scrollY || window.pageYOffset
-                  const inputTop = inputRect.top + currentScroll
-                  const viewportHeight = window.innerHeight
-                  const targetScroll = inputTop - (viewportHeight / 3)
-                  
-                  window.scrollTo({
-                    top: Math.max(0, targetScroll),
-                    behavior: 'smooth'
-                  })
+              }}
+              onClick={(e) => {
+                // Also trigger scroll on click
+                e.preventDefault()
+                requestAnimationFrame(() => {
+                  if (inputRef.current) {
+                    const inputRect = inputRef.current.getBoundingClientRect()
+                    const currentScroll = window.scrollY || window.pageYOffset
+                    const inputTop = inputRect.top + currentScroll
+                    const viewportHeight = window.innerHeight
+                    const targetScroll = inputTop - (viewportHeight / 3)
+                    
+                    window.scrollTo({
+                      top: Math.max(0, targetScroll),
+                      behavior: 'smooth'
+                    })
+                  }
+                })
+              }}
+              onFocus={(e) => {
+                setIsFocused(true)
+                
+                // Smooth scroll to position search bar in upper third of screen
+                requestAnimationFrame(() => {
+                  if (inputRef.current) {
+                    const inputRect = inputRef.current.getBoundingClientRect()
+                    const currentScroll = window.scrollY || window.pageYOffset
+                    const inputTop = inputRect.top + currentScroll
+                    const viewportHeight = window.innerHeight
+                    const targetScroll = inputTop - (viewportHeight / 3)
+                    
+                    window.scrollTo({
+                      top: Math.max(0, targetScroll),
+                      behavior: 'smooth'
+                    })
+                  }
+                })
+                
+                // Warm suggestions cache on first focus using current query if present
+                if (query.trim().length >= 2 && !loading && showSuggestions) {
+                  debouncedSearch(query, showSuggestions)
+                  setShowSuggestionsDropdown(true)
                 }
-              })
-              
-              // Warm suggestions cache on first focus using current query if present
-              if (query.trim().length >= 2 && !loading && showSuggestions) {
-                debouncedSearch(query, showSuggestions)
-                setShowSuggestionsDropdown(true)
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            onBlur={() => {
-              // Delay blur to allow clicking on dropdown items
-              setTimeout(() => setIsFocused(false), 150)
-            }}
-            placeholder={placeholder}
-            autoFocus={autoFocus}
-            className={cn(
-              "w-full pl-12 pr-10 py-3 bg-background border border-border rounded-2xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200",
-              isFocused && "border-primary/50"
-            )}
-          />
+              }}
+              onKeyDown={handleKeyDown}
+              onBlur={() => {
+                // Delay blur to allow clicking on dropdown items
+                setTimeout(() => setIsFocused(false), 150)
+              }}
+              placeholder={placeholder}
+              autoFocus={autoFocus}
+              className={cn(
+                "w-full pl-12 pr-10 py-3 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 border-0 transition-all duration-200"
+              )}
+            />
+            <AnimatePresence>
+              {showClear && query && (
+                <motion.button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleClear()
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors z-10"
+                >
+                  <IconX className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Suggestions - Container extends downward */}
           <AnimatePresence>
-            {showClear && query && (
-              <motion.button
-                type="button"
-                onClick={handleClear}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors z-50"
-                style={{ position: 'relative', zIndex: 10001 }}
+            {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
+              <motion.div
+                ref={dropdownRef}
+                initial={{ opacity: 0, maxHeight: 0 }}
+                animate={{ opacity: 1, maxHeight: '384px' }}
+                exit={{ opacity: 0, maxHeight: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="overflow-y-auto max-h-96 border-t border-white/5"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+                }}
               >
-                <IconX className="w-4 h-4" />
-              </motion.button>
+                {loading ? (
+                  <div className="p-6 text-center">
+                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
+                    <p className="text-sm text-gray-300">Searching...</p>
+                  </div>
+                ) : !hasSearched ? (
+                  <div className="p-6 text-center">
+                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
+                    <p className="text-sm text-gray-300">Searching...</p>
+                  </div>
+                ) : hasResults ? (
+                  <motion.div className="p-2" initial={{}} animate={{}}>
+                    {/* Actors */}
+                    {suggestions?.actors && suggestions.actors.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
+                          Actors
+                        </div>
+                        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+                          {suggestions.actors.slice(0, 10).map((actor, index) => {
+                            const isHighlighted = highlightedIndex === index
+                            return (
+                              <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
+                                <PrefetchLink
+                                  href={getActorUrl(actor)}
+                                  onClick={handleSuggestionClick}
+                                  onMouseEnter={() => setHighlightedIndex(index)}
+                                  data-highlight-index={index}
+                                  className={cn(
+                                    "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 cursor-pointer group relative",
+                                    isHighlighted ? "bg-[#1a1a1a]/50" : "hover:bg-[#1a1a1a]/30"
+                                  )}
+                                >
+                                  {/* Vertical bar indicator for highlighted item */}
+                                  {isHighlighted && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
+                                  )}
+                                  <IconUser className={cn(
+                                    "w-4 h-4 flex-shrink-0 transition-colors",
+                                    isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
+                                  )} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className={cn(
+                                      "truncate transition-all",
+                                      isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
+                                    )}>
+                                      {actor.name}
+                                    </div>
+                                  </div>
+                                </PrefetchLink>
+                              </motion.div>
+                            )
+                          })}
+                        </motion.div>
+                      </div>
+                    )}
+
+                    {/* View All Results */}
+                    <div className="border-t border-white/10 pt-2 mt-2">
+                      <motion.div variants={fadeInUp}>
+                        <PrefetchLink
+                          href={`/search?q=${encodeURIComponent(query)}`}
+                          className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
+                          onClick={() => setShowSuggestionsDropdown(false)}
+                        >
+                          View all {totalSuggestions} results
+                        </PrefetchLink>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                ) : hasSearched && !loading && !hasResults ? (
+                  <div className="p-6 text-center">
+                    <p className="text-sm text-white">No results found</p>
+                    <p className="text-xs text-gray-400 mt-1">Try different keywords</p>
+                  </div>
+                ) : null}
+              </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </form>
-
-            {/* Suggestions Dropdown - Optimized for instant appearance */}
-      {typeof window !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
-            <motion.div
-              ref={dropdownRef}
-              initial={{ opacity: 0, maxHeight: 0 }}
-              animate={{ opacity: 1, maxHeight: '384px' }}
-              exit={{ opacity: 0, maxHeight: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed max-h-96 z-[9998] overflow-hidden"
-              style={{ 
-                top: `${dropdownPosition.top}px`,
-                left: `${dropdownPosition.left}px`,
-                width: `${dropdownPosition.width}px`,
-                position: 'fixed',
-                borderRadius: '0 0 2rem 2rem', // Bottom rounded only - extends from search bar
-                background: '#1a1a1a', // Match search bar container background exactly
-                backdropFilter: 'blur(24px)', // Match search bar backdrop blur
-                border: 'none',
-                borderTop: 'none', // No top border for seamless connection
-                borderLeft: '1px solid rgba(255, 255, 255, 0.05)',
-                borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                boxShadow: `
-                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                  0 0 0 1px rgba(255, 255, 255, 0.05),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                `,
-              }}
-            >
-            <div className="max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="p-6 text-center">
-                <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
-                <p className="text-sm text-gray-300">Searching...</p>
-              </div>
-            ) : !hasSearched ? (
-              <div className="p-6 text-center">
-                <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
-                <p className="text-sm text-gray-300">Searching...</p>
-              </div>
-            ) : hasResults ? (
-              <motion.div className="p-2" initial={{}} animate={{}}>
-                {/* Actors */}
-                {suggestions?.actors && suggestions.actors.length > 0 && (
-                  <div className="mb-2">
-                    <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
-                      Actors
-                    </div>
-                    <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                      {suggestions.actors.slice(0, 10).map((actor, index) => {
-                        const isHighlighted = highlightedIndex === index
-                        return (
-                          <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
-                            <PrefetchLink
-                              href={getActorUrl(actor)}
-                              onClick={handleSuggestionClick}
-                              onMouseEnter={() => setHighlightedIndex(index)}
-                              data-highlight-index={index}
-                              className={cn(
-                                "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 cursor-pointer group relative",
-                                isHighlighted ? "bg-[#1a1a1a]/50" : "hover:bg-[#1a1a1a]/30"
-                              )}
-                            >
-                              {/* Vertical bar indicator for highlighted item */}
-                              {isHighlighted && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
-                              )}
-                              <IconUser className={cn(
-                                "w-4 h-4 flex-shrink-0 transition-colors",
-                                isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
-                              )} />
-                              <div className="flex-1 min-w-0">
-                                <div className={cn(
-                                  "truncate transition-all",
-                                  isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
-                                )}>
-                                  {actor.name}
-                                </div>
-                              </div>
-                            </PrefetchLink>
-                          </motion.div>
-                        )
-                      })}
-                    </motion.div>
-                  </div>
-                )}
-
-                {/* View All Results */}
-                <div className="border-t border-white/10 pt-2 mt-2">
-                  <motion.div variants={fadeInUp}>
-                    <PrefetchLink
-                    href={`/search?q=${encodeURIComponent(query)}`}
-                    className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
-                    onClick={() => setShowSuggestionsDropdown(false)}
-                    >
-                    View all {totalSuggestions} results
-                    </PrefetchLink>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ) : hasSearched && !loading && !hasResults ? (
-              <div className="p-6 text-center">
-                <p className="text-sm text-white">No results found</p>
-                <p className="text-xs text-gray-400 mt-1">Try different keywords</p>
-              </div>
-            ) : null}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>,
-      document.body
-      )}
     </div>
   )
 }
