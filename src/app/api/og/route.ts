@@ -101,21 +101,27 @@ export async function GET(req: NextRequest) {
       <stop offset="85%" style="stop-color:rgba(255,229,92,0.4);stop-opacity:1" />
       <stop offset="100%" style="stop-color:transparent;stop-opacity:1" />
     </linearGradient>
+    <radialGradient id="bottomRightSpotlight" cx="100%" cy="100%" r="50%">
+      <stop offset="0%" style="stop-color:${gold};stop-opacity:0.12" />
+      <stop offset="100%" style="stop-color:${gold};stop-opacity:0" />
+    </radialGradient>
   </defs>
   <!-- Background - pure black -->
   <rect width="100%" height="100%" fill="#000000"/>
-  <!-- Actor Name (Primary) - Center Top -->
-  <text x="${dims.w/2}" y="280" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="${goldLight}" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
-  <!-- Movie Name (Secondary) - Below Actor -->
-  <text x="${dims.w/2}" y="340" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">${escapedMovieTitle}</text>
-  <!-- Decorative divider - dashboard style -->
-  <rect x="${dims.w/2 - 90}" y="399" width="180" height="2" fill="url(#dividerGradient)"/>
-  <!-- Score (Primary) - Large and prominent, no glow -->
-  <text x="${dims.w/2}" y="580" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
+  <!-- Radial spotlight from bottom right -->
+  <rect width="100%" height="100%" fill="url(#bottomRightSpotlight)"/>
+  <!-- Actor Name (Primary) - Moved lower, white color -->
+  <text x="${dims.w/2}" y="320" font-family="Cinzel, Georgia, serif" font-size="76" font-weight="900" fill="${fg}" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
+  <!-- Movie Name (Secondary) - Below Actor, with "in" prefix -->
+  <text x="${dims.w/2}" y="380" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">in ${escapedMovieTitle}</text>
+  <!-- Decorative divider - dashboard style, longer -->
+  <rect x="${dims.w/2 - 140}" y="419" width="280" height="2" fill="url(#dividerGradient)"/>
+  <!-- Score (Primary) - Large and prominent, no glow, moved lower -->
+  <text x="${dims.w/2}" y="620" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
   <!-- "What's your rating?" text - Below score, white -->
-  <text x="${dims.w/2}" y="650" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
-  <!-- Decorative divider - dashboard style -->
-  <rect x="${dims.w/2 - 90}" y="699" width="180" height="2" fill="url(#dividerGradient)"/>
+  <text x="${dims.w/2}" y="690" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
+  <!-- Decorative divider - dashboard style, longer -->
+  <rect x="${dims.w/2 - 140}" y="739" width="280" height="2" fill="url(#dividerGradient)"/>
   <!-- "Rated on ActorRating" - Bottom -->
   <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${fg}" opacity="0.7" text-anchor="middle">Rated on ActorRating</text>
   <!-- Logo placeholder (small, bottom) -->
