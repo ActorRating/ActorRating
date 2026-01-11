@@ -970,7 +970,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-hidden border border-white/10 shadow-2xl relative mx-auto"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-10 lg:p-12 max-w-md md:max-w-lg lg:max-w-xl w-[calc(100%-2rem)] sm:w-full max-h-[95vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -1008,7 +1008,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="text-2xl sm:text-3xl font-bold text-white text-center mb-4"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-6 md:mb-8"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   Rating Submitted!
@@ -1019,7 +1019,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-center mb-8"
+                  className="text-center mb-8 md:mb-10"
                 >
                   <div 
                     className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
@@ -1072,7 +1072,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="space-y-4"
+                  className="space-y-4 md:space-y-5"
                 >
                   <button
                     onClick={handleShare}
