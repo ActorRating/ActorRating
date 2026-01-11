@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ProgressBar } from '@/components/badges/ProgressBar'
 import { getLevelProgress } from '@/lib/badges'
 import { motion } from 'framer-motion'
+import { UserBadges } from './UserBadges'
 
 export function UserProgressBar() {
   const [progressData, setProgressData] = useState<{
@@ -64,6 +65,11 @@ export function UserProgressBar() {
           `,
         }}
       >
+        {/* Badge - Aligned with left edge */}
+        <div className="mb-4">
+          <UserBadges />
+        </div>
+
         {/* Level Info Header */}
         <div className="flex items-center justify-between mb-4">
           <div>

@@ -16,7 +16,7 @@ export function Badge({ badge, className = '' }: BadgeProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${className}`}
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${className}`}
       style={{
         background: badge.color,
         color: badge.textColor,

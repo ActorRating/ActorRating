@@ -448,7 +448,7 @@ export function SearchBar({
               animate={{ opacity: 1, maxHeight: '384px' }}
               exit={{ opacity: 0, maxHeight: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed max-h-96 z-[9999] overflow-hidden"
+              className="fixed max-h-96 z-[9998] overflow-hidden"
               style={{ 
                 top: `${dropdownPosition.top}px`,
                 left: `${dropdownPosition.left}px`,

@@ -208,7 +208,7 @@ export function PerformanceCard({
                  <Link
                    href={editUrl}
                    onClick={(e) => e.stopPropagation()}
-                   className="absolute -top-3 -right-3 md:top-0 md:right-0 md:translate-x-1/2 md:-translate-y-1/2 z-10"
+                   className="absolute -top-4 -right-4 md:top-0 md:right-0 md:translate-x-1/2 md:-translate-y-1/2 z-10"
                  >
                    <button
                      className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
