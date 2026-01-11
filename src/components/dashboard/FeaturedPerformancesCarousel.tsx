@@ -164,7 +164,115 @@ export function FeaturedPerformancesCarousel() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
-              <Link href={rateUrl} className="block h-full">
+              {/* Premium Card - Clean & Cinematic - Matching actor pages */}
+              <div 
+                className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                style={{
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                }}
+              >
+                {/* Glow effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="flex-1">
+                    {/* Top Row: Rating Badge and Year */}
+                    <div className="flex items-center justify-between mb-6">
+                      {/* Score Pill - Top Left */}
+                      <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                        <FaStar className="w-5 h-5 text-[#FFD700]" />
+                        <span className="text-2xl font-bold text-[#FFD700]">
+                          N/A
+                        </span>
+                      </div>
+                      
+                      {/* Movie Year - Top Right */}
+                      <div className="text-[#a3a3a3] text-base font-medium">
+                        {performance.year}
+                      </div>
+                    </div>
+
+                    {/* Movie Title */}
+                    <div className="mb-4">
+                      <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+                        {performance.movieTitle}
+                      </span>
+                    </div>
+
+                    {/* Character */}
+                    <div className="mb-6">
+                      <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
+                        as {performance.character}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Rate Button */}
+                  <div className="mt-auto pt-4">
+                    <Link href={rateUrl} className="block">
+                      <div 
+                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 text-center cursor-pointer"
+                        style={{
+                          background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                        }}
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          Rate
+                          <FaStar className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Decorative accent */}
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Mobile: Carousel with nav dots */}
+      <div className="lg:hidden relative -mx-4 sm:-mx-0">
+        {/* Carousel Container */}
+        <div
+          ref={scrollContainerRef}
+          className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
+        >
+          {FEATURED_PERFORMANCES.map((performance, index) => {
+            const rateUrl = getRateUrl(
+              { id: performance.actorId, name: performance.actorName, slug: performance.actorId },
+              { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: performance.movieId }
+            )
+
+            return (
+              <div
+                key={performance.actorId + performance.movieId}
+                ref={(el) => cardRefs.current[index] = el}
+                className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[calc(33.333%-16px)] snap-center group lg:cursor-pointer"
+                style={{
+                  transform: 'translateZ(0)',
+                  WebkitTransform: 'translateZ(0)',
+                }}
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    const element = cardRefs.current[index]
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                    }
+                  }
+                }}
+              >
                 {/* Premium Card - Clean & Cinematic - Matching actor pages */}
                 <div 
                   className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
@@ -221,7 +329,7 @@ export function FeaturedPerformancesCarousel() {
                     <div className="mt-auto pt-4">
                       <Link href={rateUrl} className="block">
                         <div 
-                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 text-center"
+                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 text-center cursor-pointer"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                           }}
@@ -238,118 +346,6 @@ export function FeaturedPerformancesCarousel() {
                   {/* Decorative accent */}
                   <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                 </div>
-              </Link>
-            </motion.div>
-          )
-        })}
-      </div>
-
-      {/* Mobile: Carousel with nav dots */}
-      <div className="lg:hidden relative -mx-4 sm:-mx-0">
-        {/* Carousel Container */}
-        <div
-          ref={scrollContainerRef}
-          className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
-        >
-          {FEATURED_PERFORMANCES.map((performance, index) => {
-            const rateUrl = getRateUrl(
-              { id: performance.actorId, name: performance.actorName, slug: performance.actorId },
-              { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: performance.movieId }
-            )
-
-            return (
-              <div
-                key={performance.actorId + performance.movieId}
-                ref={(el) => cardRefs.current[index] = el}
-                className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[calc(33.333%-16px)] snap-center group lg:cursor-pointer"
-                style={{
-                  transform: 'translateZ(0)',
-                  WebkitTransform: 'translateZ(0)',
-                }}
-                onClick={() => {
-                  if (window.innerWidth >= 1024) {
-                    const element = cardRefs.current[index]
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                    }
-                  }
-                }}
-              >
-                <Link href={rateUrl} className="block h-full">
-                  {/* Premium Card - Clean & Cinematic - Matching actor pages */}
-                  <div 
-                    className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                    style={{
-                      boxShadow: `
-                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                      `,
-                    }}
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col h-full">
-                      <div className="flex-1">
-                        {/* Top Row: Rating Badge and Year */}
-                        <div className="flex items-center justify-between mb-6">
-                          {/* Score Pill - Top Left */}
-                          <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                            <FaStar className="w-5 h-5 text-[#FFD700]" />
-                            <span className="text-2xl font-bold text-[#FFD700]">
-                              N/A
-                            </span>
-                          </div>
-                          
-                          {/* Movie Year - Top Right */}
-                          <div className="text-[#a3a3a3] text-base font-medium">
-                            {performance.year}
-                          </div>
-                        </div>
-
-                        {/* Movie Title */}
-                        <div className="mb-4">
-                          <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
-                            {performance.movieTitle}
-                          </span>
-                        </div>
-
-                        {/* Character */}
-                        <div className="mb-6">
-                          <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                            as {performance.character}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Rate Button */}
-                      <div className="mt-auto pt-4">
-                        <Link href={rateUrl} className="block">
-                          <div 
-                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105 text-center"
-                            style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                            }}
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              Rate
-                              <FaStar className="w-4 h-4" />
-                            </span>
-                          </div>
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Decorative accent */}
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                  </div>
-                </Link>
               </div>
             )
           })}

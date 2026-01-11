@@ -2,9 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { prisma } from '@/lib/prisma'
 import { getLevelInfo, calculateProgress, getRatingsNeeded, getNextLevelName } from '@/lib/levels'
+import { isDevMode, getDevUser } from '@/lib/devAuth'
 
 export async function GET(req: NextRequest) {
   try {
+    // Development mode: bypass auth and return mock data
+    if (isDevMode) {
+      const devUser = getDevUser()
+      if (devUser) {
+        // Return mock level progress for dev mode
+        const mockRatingCount = 0
+        const levelInfo = getLevelInfo(mockRatingCount)
+        const nextLevelName = getNextLevelName(levelInfo.levelName)
+        const progressPercent = calculateProgress(mockRatingCount, levelInfo)
+        const ratingsNeeded = getRatingsNeeded(mockRatingCount, levelInfo)
+        
+        return NextResponse.json({
+          ratingCount: mockRatingCount,
+          level: levelInfo.levelName,
+          levelEmoji: levelInfo.emoji,
+          nextLevel: nextLevelName,
+          currentLevelMin: levelInfo.levelMin,
+          nextLevelAt: levelInfo.nextLevelAt,
+          progressPercent: Math.round(progressPercent),
+          ratingsNeeded
+        })
+      }
+    }
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

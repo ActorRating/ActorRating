@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { prisma } from "@/lib/prisma"
+import { isDevMode, getDevUser } from "@/lib/devAuth"
 
 export async function GET(request: NextRequest) {
   try {
+    // Development mode: bypass auth
+    if (isDevMode) {
+      const devUser = getDevUser()
+      if (devUser) {
+        // Return empty array in dev mode
+        return NextResponse.json([])
+      }
+    }
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
