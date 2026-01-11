@@ -1,0 +1,35 @@
+/**
+ * Development authentication bypass
+ * Only works in development mode when NEXT_PUBLIC_DEV_MODE=true
+ */
+
+export const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true' && process.env.NODE_ENV === 'development'
+
+export const getDevUser = () => {
+  if (!isDevMode) return null
+  
+  // Return a mock user object that matches Supabase user structure
+  return {
+    id: 'dev-user-id',
+    email: 'dev@actorrating.com',
+    user_metadata: {
+      name: 'Dev User'
+    },
+    app_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString()
+  }
+}
+
+export const getDevSession = () => {
+  if (!isDevMode) return null
+  
+  return {
+    access_token: 'dev-token',
+    refresh_token: 'dev-refresh-token',
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: 'bearer',
+    user: getDevUser()
+  }
+}

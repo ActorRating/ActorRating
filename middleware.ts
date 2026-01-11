@@ -32,6 +32,14 @@ export async function middleware(req: NextRequest) {
     }
   )
 
+  // Development mode: bypass auth checks
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true' && process.env.NODE_ENV === 'development'
+  
+  if (isDevMode && req.nextUrl.pathname.startsWith('/dashboard')) {
+    // Allow access to dashboard in dev mode
+    return response
+  }
+  
   // Get the session and validate it
   const { data: { session }, error } = await supabase.auth.getSession()
   

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { User, Session } from "@supabase/supabase-js"
 import { useRouter, usePathname } from "next/navigation"
 import supabase from "@/lib/supabaseClient"
+import { isDevMode, getDevSession } from "@/lib/devAuth"
 
 interface SessionContextType {
   session: Session | null
@@ -47,6 +48,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     const initializeAuth = async () => {
       try {
+        // Development mode: use mock session
+        if (isDevMode) {
+          const devSession = getDevSession()
+          if (mounted) {
+            setSession(devSession as Session)
+            setLoading(false)
+            setIsInitialized(true)
+            console.log('🔧 Dev mode: Using mock authentication')
+          }
+          return
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -87,11 +100,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
 
-    // Listen for auth changes
+    // Listen for auth changes (skip in dev mode)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
+      
+      // Skip auth state changes in dev mode
+      if (isDevMode) return
 
       setSession(session)
       setLoading(false)
