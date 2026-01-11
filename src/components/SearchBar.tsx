@@ -294,30 +294,15 @@ export function SearchBar({
         e.preventDefault()
         handleSubmit(e)
       }}>
-        {/* Container that extends downward - same styling as input */}
+        {/* Container that extends downward - simple container, wrapper provides 3D styling */}
         <motion.div
           className={cn(
-            "relative bg-[#1a1a1a] border border-transparent overflow-hidden transition-all duration-200"
+            "relative overflow-hidden transition-all duration-200"
           )}
-          style={{
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            boxShadow: `
-              0 25px 70px -15px rgba(0, 0, 0, 0.9),
-              0 15px 40px -10px rgba(0, 0, 0, 0.7),
-              0 0 0 1px rgba(255, 255, 255, 0.05),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-            `,
-            transformStyle: 'preserve-3d',
-          }}
           animate={{
             borderRadius: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions 
               ? '2rem 2rem 2rem 2rem' 
-              : '2rem',
-            transform: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions
-              ? 'translateY(0) perspective(1000px) rotateX(0deg)'
-              : 'translateY(-4px) perspective(1000px) rotateX(1deg)',
+              : '2rem'
           }}
         >
           {/* Input Row - Always visible at top */}
