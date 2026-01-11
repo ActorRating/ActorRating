@@ -297,13 +297,22 @@ export function SearchBar({
         {/* Container that extends downward - same styling as input */}
         <motion.div
           className={cn(
-            "relative rounded-2xl bg-background border border-border overflow-hidden transition-all duration-200",
+            "relative rounded-2xl bg-[#1a1a1a] border border-transparent overflow-hidden transition-all duration-200",
             isFocused && "border-primary/50",
             showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && "rounded-b-2xl"
           )}
           style={{
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
+            boxShadow: `
+              0 25px 70px -15px rgba(0, 0, 0, 0.9),
+              0 15px 40px -10px rgba(0, 0, 0, 0.7),
+              0 0 0 1px rgba(255, 255, 255, 0.05),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+            `,
+            transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
+            transformStyle: 'preserve-3d',
           }}
           animate={{
             borderRadius: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions 
