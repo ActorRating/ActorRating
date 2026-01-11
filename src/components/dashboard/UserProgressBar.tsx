@@ -42,7 +42,13 @@ export function UserProgressBar() {
     }
   }
 
-  if (loading || !progressData || progressData.ratingsNeeded === 0) {
+  if (loading || !progressData) {
+    return null
+  }
+
+  // Show progress bar even at 0 ratings to encourage first rating
+  // Only hide if user has reached max level (Elite Critic with 200+ ratings)
+  if (progressData.ratingsNeeded === 0 && progressData.ratingCount >= 200) {
     return null
   }
 
@@ -89,12 +95,12 @@ export function UserProgressBar() {
 
         <ProgressBar
           progress={progressData.progress}
-          currentLabel={progressData.currentLabel}
+          currentLabel={progressData.currentLabel || 'No badge yet'}
           nextLabel={progressData.nextLabel}
           showLabels={true}
         />
         <p className="text-sm text-[#FFD700] font-medium mt-4 text-center">
-          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to reach {progressData.nextLabel}
+          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} {progressData.currentLabel ? 'to reach' : 'to earn'} {progressData.nextLabel}
         </p>
       </div>
     </motion.div>

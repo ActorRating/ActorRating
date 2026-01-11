@@ -134,7 +134,27 @@ export function getLevelProgress(ratingCount: number): {
 } {
   const currentBadge = getLevelBadge(ratingCount)
   
+  // Find all level badges sorted by minRatings
+  const levelBadges = BADGE_CONFIGS.filter(b => b.type === 'level').sort((a, b) => 
+    (a.minRatings || 0) - (b.minRatings || 0)
+  )
+  
+  // If user has no badge yet (0 ratings), show progress to first badge (Viewer)
   if (!currentBadge) {
+    const firstBadge = levelBadges[0] // Viewer badge (minRatings: 1)
+    if (firstBadge && firstBadge.minRatings) {
+      const nextMin = firstBadge.minRatings
+      const progress = Math.min(100, Math.max(0, (ratingCount / nextMin) * 100))
+      const ratingsNeeded = Math.max(0, nextMin - ratingCount)
+      
+      return {
+        currentBadge: null,
+        nextBadge: firstBadge,
+        progress,
+        ratingsNeeded
+      }
+    }
+    
     return {
       currentBadge: null,
       nextBadge: null,
@@ -144,10 +164,6 @@ export function getLevelProgress(ratingCount: number): {
   }
   
   // Find next level badge
-  const levelBadges = BADGE_CONFIGS.filter(b => b.type === 'level').sort((a, b) => 
-    (a.minRatings || 0) - (b.minRatings || 0)
-  )
-  
   const currentIndex = levelBadges.findIndex(b => b.id === currentBadge.id)
   const nextBadge = currentIndex < levelBadges.length - 1 ? levelBadges[currentIndex + 1] : null
   
