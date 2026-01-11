@@ -134,11 +134,6 @@ export function SearchBar({
   )
 
 
-  useEffect(() => {
-    if (query.trim() && query.trim().length >= 2 && showSuggestions && showSuggestionsDropdown) {
-      updateDropdownPosition()
-    }
-  }, [query, showSuggestionsDropdown, showSuggestions, updateDropdownPosition])
 
   useEffect(() => {
     if (query.trim() && query.trim().length >= 2 && showSuggestions) {
