@@ -147,7 +147,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
   onSliderEnd,
   disabled = false,
   touched = false,
-  spotlightActive = false
+  spotlightActive = false,
+  isDemoing = false
 }: {
   label: string
   value: number
@@ -157,6 +158,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   disabled?: boolean
   touched?: boolean
   spotlightActive?: boolean
+  isDemoing?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -186,11 +188,13 @@ const RatingSliderCard = memo(function RatingSliderCard({
         <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
           {/* Fill - Gold gradient - Instant updates during drag, smooth transition when idle */}
           <div
-            className={`absolute top-0 left-0 h-full rounded-full will-change-[width] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
+            className={`absolute top-0 left-0 h-full rounded-full will-change-[width] ${isDragging || isDemoing ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{ 
               width: value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-              boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)'
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
+              // Use transform for buttery smooth animation during demo
+              transform: isDemoing ? 'translateZ(0)' : 'none',
             }}
           />
           
@@ -252,12 +256,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
             aria-label={label}
           />
           
-          {/* Visible Thumb - Instant updates during drag */}
+          {/* Visible Thumb - Instant updates during drag, buttery smooth during demo */}
           <div
-            className={`absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height] ${isDragging ? '' : 'transition-all duration-75 ease-linear'}`}
+            className={`absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height] ${isDragging || isDemoing ? '' : 'transition-all duration-75 ease-linear'}`}
             style={{
               left: `calc(16px + ${value}% * (100% - 32px) / 100%)`,
-              transform: `translate(-50%, -50%)`,
+              transform: `translate(-50%, -50%)${isDemoing ? ' translateZ(0)' : ''}`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
               width: isActive ? '32px' : '28px',
@@ -287,95 +291,123 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const router = useRouter()
   const user = useUser()
   
-  // Check if user has any ratings
-  const [userHasRatings, setUserHasRatings] = useState<boolean | null>(null)
-  const [showTip, setShowTip] = useState(false)
+  // Auto-demo first slider on first load
   const [isDemoing, setIsDemoing] = useState(false)
   const [demoValue, setDemoValue] = useState(0)
+  const hasDemoedRef = useRef(false)
+  const firstSliderRef = useRef<HTMLDivElement>(null)
+  const animationFrameRef = useRef<number | null>(null)
   
+  // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
-    const checkUserRatings = async () => {
-      if (!user) {
-        // Not logged in - show tip
-        setUserHasRatings(false)
-        setShowTip(true)
-        return
+    // Only run once on mount
+    if (hasDemoedRef.current) return
+    hasDemoedRef.current = true
+    
+    let scrollTimer: NodeJS.Timeout | null = null
+    let animationStartTimer: NodeJS.Timeout | null = null
+    let holdTimer: NodeJS.Timeout | null = null
+    
+    // Wait for next frame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      // Wait a tiny bit after first load, then scroll to first slider
+      scrollTimer = setTimeout(() => {
+      // Smooth scroll to first slider
+      const scrollToSlider = () => {
+        if (firstSliderRef.current) {
+          firstSliderRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          })
+          return true
+        }
+        return false
       }
       
-      try {
-        const response = await fetch('/api/ratings/me')
-        if (response.ok) {
-          const ratings = await response.json()
-          const hasRatings = Array.isArray(ratings) && ratings.length > 0
-          setUserHasRatings(hasRatings)
-          if (!hasRatings) {
-            setShowTip(true)
-          }
-        } else {
-          setUserHasRatings(false)
-          setShowTip(true)
-        }
-      } catch (error) {
-        console.error('Error checking user ratings:', error)
-        setUserHasRatings(false)
-        setShowTip(true)
+      // Try to scroll, retry if ref not ready
+      if (!scrollToSlider()) {
+        // Retry after a short delay if ref not ready
+        setTimeout(scrollToSlider, 100)
       }
-    }
-    
-    checkUserRatings()
-  }, [user])
-  
-  // Auto-demo first slider after tip appears
-  useEffect(() => {
-    if (showTip && !isDemoing) {
-      const timer = setTimeout(() => {
+      
+      // Start demo animation after scroll starts
+      animationStartTimer = setTimeout(() => {
         setIsDemoing(true)
-        // Animate slider to 75 over 1.5 seconds
-        const duration = 1500
-        const startTime = Date.now()
+        
+        // Buttery smooth animation using requestAnimationFrame timestamp
+        const duration = 2000 // 2 seconds for smooth movement
         const startValue = 0
         const endValue = 75
         
-        const animate = () => {
-          const elapsed = Date.now() - startTime
+        // Easing function for buttery smooth motion (ease-in-out cubic)
+        const easeInOutCubic = (t: number): number => {
+          return t < 0.5 
+            ? 4 * t * t * t 
+            : 1 - Math.pow(-2 * t + 2, 3) / 2
+        }
+        
+        let startTime: number | null = null
+        
+        const animate = (timestamp: number) => {
+          if (startTime === null) {
+            startTime = timestamp
+          }
+          
+          const elapsed = timestamp - startTime
           const progress = Math.min(elapsed / duration, 1)
-          const easeOut = 1 - Math.pow(1 - progress, 3)
-          const currentValue = startValue + (endValue - startValue) * easeOut
+          const eased = easeInOutCubic(progress)
+          const currentValue = startValue + (endValue - startValue) * eased
+          
           setDemoValue(currentValue)
           
           if (progress < 1) {
-            requestAnimationFrame(animate)
+            animationFrameRef.current = requestAnimationFrame(animate)
           } else {
-            // Hold at 75 for 1 second, then return to 0
-            setTimeout(() => {
-              const returnDuration = 1000
-              const returnStartTime = Date.now()
-              const returnAnimate = () => {
-                const returnElapsed = Date.now() - returnStartTime
+            // Hold at 75 for 150ms, then smoothly return to 0
+            holdTimer = setTimeout(() => {
+              let returnStartTime: number | null = null
+              const returnDuration = 1500
+              
+              const returnAnimate = (timestamp: number) => {
+                if (returnStartTime === null) {
+                  returnStartTime = timestamp
+                }
+                
+                const returnElapsed = timestamp - returnStartTime
                 const returnProgress = Math.min(returnElapsed / returnDuration, 1)
-                const returnEaseOut = 1 - Math.pow(1 - returnProgress, 3)
-                const returnValue = endValue - (endValue - startValue) * returnEaseOut
+                const returnEased = easeInOutCubic(returnProgress)
+                const returnValue = endValue - (endValue - startValue) * returnEased
+                
                 setDemoValue(returnValue)
                 
                 if (returnProgress < 1) {
-                  requestAnimationFrame(returnAnimate)
+                  animationFrameRef.current = requestAnimationFrame(returnAnimate)
                 } else {
                   setIsDemoing(false)
                   setDemoValue(0)
-                  // Hide tip after demo completes
-                  setTimeout(() => setShowTip(false), 500)
                 }
               }
-              requestAnimationFrame(returnAnimate)
-            }, 1000)
+              animationFrameRef.current = requestAnimationFrame(returnAnimate)
+            }, 150) // Hold at 75 for 150ms
           }
         }
-        requestAnimationFrame(animate)
-      }, 1000) // Wait 1 second after tip appears
-      
-      return () => clearTimeout(timer)
+        
+        animationFrameRef.current = requestAnimationFrame(animate)
+      }, 600) // Wait 600ms after scroll starts
+      }, 550) // Wait 550ms after first load
+    })
+    
+    return () => {
+      if (scrollTimer) clearTimeout(scrollTimer)
+      if (animationStartTimer) clearTimeout(animationStartTimer)
+      if (holdTimer) clearTimeout(holdTimer)
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
     }
-  }, [showTip, isDemoing])
+  }, []) // Empty dependency array - run once on mount
   
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
@@ -430,7 +462,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Calculate average of 5 sliders, convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
     const sliders = [
-      Number(emotionalRangeDepth) || 0,
+      Number(isDemoing ? demoValue : emotionalRangeDepth) || 0,
       Number(characterBelievability) || 0,
       Number(technicalSkill) || 0,
       Number(screenPresence) || 0,
@@ -448,7 +480,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Clamp between 0 and 10
     const clamped = Math.max(0, Math.min(10, totalScore))
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction])
+  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
 
   // Lotto roll animation - shorter duration for more responsive feel
   const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 300)
@@ -864,14 +896,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   ref={scoreRef}
               initial={{ opacity: 0, y: -30, scale: 0.95 }}
                   animate={{ 
-                    opacity: 1, 
+                    opacity: isSticky ? 0 : 1, 
                     y: 0,
                     scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
                     delay: 0.3, 
-                    duration: 0.8,
+                    duration: isSticky ? 0.3 : 0.8,
                     times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
                     ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : [0.22, 1, 0.36, 1]
                   }}
@@ -997,37 +1029,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
               <div className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-2">
-                {/* Tip Popup for New Users */}
-                <AnimatePresence>
-                  {showTip && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.3 }}
-                      className="relative mb-4"
-                    >
-                      <div className="relative inline-block px-4 py-3 rounded-xl bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 backdrop-blur-sm"
-                        style={{
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.1)',
-                        }}
-                      >
-                        <p className="text-sm sm:text-base text-white font-medium">
-                          💡 Tip: Move the sliders to rate this performance
-                        </p>
-                        <button
-                          onClick={() => setShowTip(false)}
-                          className="absolute top-1 right-1 p-1 rounded-full hover:bg-white/10 transition-colors"
-                          aria-label="Close tip"
-                        >
-                          <X className="w-4 h-4 text-white/70" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <div className="relative">
+                <div className="relative" ref={firstSliderRef}>
                   <RatingSliderCard 
                     label="Emotional Impact" 
                     value={isDemoing ? demoValue : emotionalRangeDepth} 
@@ -1041,6 +1043,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     disabled={submitting || isDemoing}
                     touched={touchedSliders.emotionalRangeDepth}
                     spotlightActive={spotlightPhase !== 'none'}
+                    isDemoing={isDemoing}
                   />
                 </div>
                 
