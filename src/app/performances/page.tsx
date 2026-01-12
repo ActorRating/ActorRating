@@ -371,7 +371,7 @@ export default function PerformancesPage() {
                         {recentPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center lg:cursor-pointer"
+                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] lg:max-w-md xl:max-w-md snap-center lg:cursor-pointer"
                             style={{
                               /* Hardware acceleration for smooth scrolling */
                               transform: 'translateZ(0)',
@@ -506,7 +506,7 @@ export default function PerformancesPage() {
                         {iconicPerformances.map((performance, index) => (
                           <div 
                             key={performance.id} 
-                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] snap-center transition-all duration-300 ease-out lg:cursor-pointer"
+                            className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] lg:max-w-md xl:max-w-md snap-center transition-all duration-300 ease-out lg:cursor-pointer"
                           onClick={() => {
                             if (window.innerWidth >= 1024) {
                               const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
@@ -609,7 +609,10 @@ function LandingPageCard({
       )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
   const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
-  const rating = hasRating ? performance.averageRating.toFixed(1) : null
+  // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+  const rating = hasRating && performance.averageRating != null 
+    ? (performance.averageRating / 10).toFixed(1) 
+    : null
   const character = performance.character || "—"
 
   return (
@@ -645,14 +648,14 @@ function LandingPageCard({
             {/* Top Row: Rating Badge and Year */}
             <div className="flex items-center justify-between mb-6">
               {rating ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                  <FaStar className="w-4 h-4 text-[#FFD700]" />
-                  <span className="text-xl font-bold text-[#FFD700]">{rating}</span>
+                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                  <FaStar className="w-5 h-5 text-[#FFD700]" />
+                  <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                  <FaStar className="w-4 h-4 text-[#666]" />
-                  <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                  <FaStar className="w-5 h-5 text-[#666]" />
+                  <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                 </div>
               )}
               

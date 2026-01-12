@@ -890,26 +890,35 @@ nav {
   animation: shimmer 3s ease-in-out infinite;
 }
 
-/* Premium glow pulse for CRAFT text - LCP optimized */
+/* Premium glow pulse for CRAFT text - Static on mobile, reduced on desktop */
 @keyframes craft-glow {
   0%, 100% {
     filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.3));
   }
   50% {
-    filter: drop-shadow(0 0 60px rgba(255, 215, 0, 0.5));
+    filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.4));
   }
 }
 
 .craft-glow-animation {
-  animation: craft-glow 3s ease-in-out infinite;
-  animation-delay: 0.5s; /* Start after LCP */
+  /* Disable animation on mobile and reduced motion */
+  animation: none;
 }
 
-/* Fade in animation for hero text - LCP optimized */
+@media (prefers-reduced-motion: no-preference) {
+  @media (min-width: 768px) {
+    .craft-glow-animation {
+      animation: craft-glow 4s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+  }
+}
+
+/* Fade in animation for hero text - GPU-safe, disabled on mobile */
 @keyframes fade-in-hero {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -918,9 +927,19 @@ nav {
 }
 
 .hero-text-fade-in {
-  animation: fade-in-hero 1s ease-out forwards;
-  animation-delay: 0.3s; /* Start after LCP */
-  opacity: 0; /* Start hidden, animation will show it */
+  /* Disable on mobile and reduced motion */
+  animation: none;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @media (min-width: 768px) {
+    .hero-text-fade-in {
+      animation: fade-in-hero 0.6s ease-out forwards;
+      animation-delay: 0.2s;
+      opacity: 0;
+    }
+  }
 }
 
 /* Modern card hover effect */
@@ -945,10 +964,35 @@ nav {
 }
 
 
-/* Optimize animation performance */
+/* Prefers-reduced-motion support - CRITICAL for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize animation performance - only GPU-safe properties */
 @media (prefers-reduced-motion: no-preference) {
   [style*="willChange"] {
     will-change: transform, opacity;
+  }
+  
+  /* Disable animations on mobile for better scroll performance */
+  @media (max-width: 768px) {
+    .animate-on-scroll,
+    [data-animate] {
+      animation: none !important;
+    }
+    
+    /* Only allow opacity transitions on mobile */
+    * {
+      transition-property: opacity !important;
+    }
   }
 }
 

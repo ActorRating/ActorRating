@@ -16,13 +16,12 @@ export async function handleLogout(router?: ReturnType<typeof useRouter>) {
     // Clear any local storage items
     localStorage.removeItem('pendingRating')
     
-    // Redirect to landing page
-    if (router) {
-      router.push('/')
-    } else {
-      // Fallback for cases where router is not available
-      window.location.href = '/'
-    }
+    // Wait a moment for the session to clear, then force a full page reload
+    // This ensures the session is fully cleared before redirecting
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Always use window.location.href for a full page reload to ensure session is cleared
+    window.location.href = '/'
   } catch (error) {
     console.error('Logout error:', error)
     // Force redirect even if logout fails
@@ -37,6 +36,10 @@ export async function handleLogoutWithRedirect() {
   try {
     await supabase.auth.signOut()
     localStorage.removeItem('pendingRating')
+    
+    // Wait a moment for the session to clear
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     window.location.href = '/'
   } catch (error) {
     console.error('Logout error:', error)

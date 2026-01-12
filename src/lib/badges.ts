@@ -13,7 +13,8 @@ export interface BadgeConfig {
   textColor: string
   minRatings?: number // For level badges
   maxRatings?: number // For level badges
-  icon?: string // Custom icon/symbol
+  icon?: string // Custom icon/symbol (for emoji/unicode)
+  iconName?: string // Icon name for lucide-react icons
   animated?: boolean // For higher-level badges
 }
 
@@ -29,7 +30,7 @@ export const BADGE_CONFIGS: BadgeConfig[] = [
     type: 'founding-member',
     color: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
     textColor: '#000000',
-    icon: '★',
+    iconName: 'Crown',
     animated: true
   },
   
@@ -60,7 +61,7 @@ export const BADGE_CONFIGS: BadgeConfig[] = [
     id: 'senior-critic',
     name: 'Senior Critic',
     type: 'level',
-    color: '#ec4899', // Pink
+    color: '#B87333', // Bronze - prestigious and serious
     textColor: '#ffffff',
     minRatings: 50,
     maxRatings: 199,

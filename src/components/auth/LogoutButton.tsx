@@ -40,8 +40,11 @@ export function LogoutButton({
       // Clear any local storage items
       localStorage.removeItem('pendingRating')
       
-      // Immediately redirect to landing page
-      router.push('/')
+      // Wait a moment for the session to clear, then force a full page reload
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Always use window.location.href for a full page reload to ensure session is cleared
+      window.location.href = '/'
       
     } catch (error) {
       console.error('Logout error:', error)

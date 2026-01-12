@@ -7,13 +7,31 @@ import { useEffect, useState, useRef } from "react";
 import { FaStar, FaHandshake, FaTheaterMasks, FaUsers, FaChartLine, FaArrowRight, FaCheckCircle, FaRocket, FaCog, FaBolt, FaShieldAlt, FaMagic, FaGlobe, FaLightbulb, FaTrophy } from "react-icons/fa";
 import { GiClapperboard, GiHeartWings } from "react-icons/gi";
 import { motion } from "framer-motion";
-import { fadeInUp, getMotionProps, fadeIn } from "@/lib/animations";
+import { fadeInUp, getMotionProps, fadeIn, getOptimizedVariant, getStaggerContainer } from "@/lib/animations";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 // How It Works Section - Clean Grid Layout with Fan
 function HowItWorksSection() {
   const [topCardIndex, setTopCardIndex] = useState(0);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobileDevice(window.innerWidth < 768);
+      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
@@ -26,19 +44,19 @@ function HowItWorksSection() {
       number: "01",
       icon: FaTheaterMasks,
       title: "Discover",
-      description: "Browse 25,000+ acclaimed performances across cinema history"
+      description: "Find a performance you've watched"
     },
     {
       number: "02",
       icon: FaStar,
       title: "Rate",
-      description: "Evaluate using five professional criteria inspired by Academy standards"
+      description: "Move five sliders, submit your score"
     },
     {
       number: "03",
       icon: FaChartLine,
       title: "Compare",
-      description: "Explore community consensus and discover new perspectives"
+      description: "See how your rating compares"
     }
   ];
 
@@ -205,20 +223,18 @@ function HowItWorksSection() {
 
   return (
     <div className="relative z-10 bg-black mt-4 sm:-mt-24 md:-mt-28 lg:-mt-32 xl:-mt-36 pt-4 sm:pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-8 sm:py-40 md:py-48 lg:py-60" style={{ willChange: 'auto' }}>
-      {/* Background ambient glow */}
+      {/* Background ambient glow - Reduced blur on mobile */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
+        <div className={`absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full ${isMobileDevice ? 'blur-[80px]' : 'blur-[150px]'}`} />
+        <div className={`absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full ${isMobileDevice ? 'blur-[80px]' : 'blur-[150px]'}`} />
       </div>
 
       <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <div className="grid grid-cols-12">
           {/* Title - Centered with gutters */}
           <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            {...getMotionProps()}
+            variants={getOptimizedVariant('fadeInUp')}
             className="col-span-12 lg:col-span-12 text-center mb-16 sm:mb-32 lg:mb-40"
           >
             <h2 
@@ -231,7 +247,7 @@ function HowItWorksSection() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
               }}
             >
               How
@@ -239,11 +255,15 @@ function HowItWorksSection() {
             It Works
           </h2>
           <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            whileInView={{ width: "220px", opacity: 1 }}
+            initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
+            whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'width, opacity' }}
+            transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{ 
+              width: '220px',
+              transformOrigin: 'center',
+              willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
+            }}
             className="h-[2px] mx-auto mb-8 relative"
           >
             <div 
@@ -261,109 +281,93 @@ function HowItWorksSection() {
 
           {/* Container for centered 3-column cards */}
           <div className="col-span-12 lg:col-span-12">
-            {/* Mobile: Stacked Deck - Top Card Draggable */}
-            <div className="md:hidden relative pb-8 pt-2" style={{ height: '520px' }}>
-              <div className="relative w-full h-full flex items-center justify-center">
-                {steps.map((step, index) => {
-                  const StepIcon = step.icon;
-                  
-                  // Calculate position in the circular queue
-                  const queuePosition = (index - topCardIndex + steps.length) % steps.length;
-                  const isTopCard = queuePosition === 0;
-                  const isVisible = queuePosition < steps.length;
-                  
-                  // Z-index: top card highest, then decreasing
-                  const zIndex = isTopCard ? 10 : (10 - queuePosition);
-                  
-                  // Only top card can be dragged to the left
-                  // If animating out, smoothly slide it all the way off screen
-                  const finalTranslateX = isTopCard && isAnimatingOut ? -400 : (isTopCard ? -dragOffset : 0);
-                  const finalOpacity = isTopCard && isAnimatingOut ? 0 : (isVisible ? 1 : 0);
-                  
-                  // Cards underneath peek more - larger offset and progressive rotation
-                  const peekOffset = isTopCard ? 0 : queuePosition * 20; // More visible peek
-                  const peekRotation = isTopCard ? 0 : queuePosition === 1 ? 3 : queuePosition === 2 ? 6 : 0; // Progressive tilt (positive)
-                  const peekDown = isTopCard ? 0 : queuePosition * 8; // Move down slightly when tilted
-                  
-                  return (
-                    <div
-                      key={index}
-                      ref={(el) => { cardRefs.current[index] = el; }}
-                      className={`absolute top-1/2 left-1/2 w-72 ${isTopCard ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            {/* Mobile: Vertical Stack with Curved Arrows */}
+            <div className="md:hidden relative pb-8 pt-2 space-y-6">
+              {steps.map((step, index) => {
+                const StepIcon = step.icon;
+                const isLast = index === steps.length - 1;
+                
+                return (
+                  <div key={index} className="relative flex flex-col items-center">
+                    {/* Card */}
+                    <div 
+                      className="relative w-full max-w-sm p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden"
                       style={{
-                        transform: `translate(-50%, -50%) translateX(${finalTranslateX + peekOffset}px) translateY(${peekDown}px) rotate(${peekRotation}deg)`,
-                        transformOrigin: 'center center',
-                        zIndex: zIndex,
-                        opacity: finalOpacity,
-                        willChange: isTopCard ? 'transform' : 'opacity, transform',
-                        transition: isTopCard && isDragging
-                          ? 'none'
-                          : isTopCard && isAnimatingOut
-                          ? 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease-out'
-                          : isTopCard
-                          ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out'
-                          : 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                        pointerEvents: isTopCard ? 'auto' : 'none',
-                        touchAction: isTopCard ? 'pan-x pan-y' : 'auto',
-                        WebkitTransform: `translate(-50%, -50%) translateX(${finalTranslateX + peekOffset}px) translateY(${peekDown}px) rotate(${peekRotation}deg)`,
+                        boxShadow: `
+                          0 35px 90px -20px rgba(0, 0, 0, 0.95),
+                          0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                          0 0 0 1px rgba(255, 255, 255, 0.06),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
+                        `,
                       }}
-                      onTouchStart={isTopCard ? handleTouchStart : undefined}
-                      onTouchMove={isTopCard ? handleTouchMove : undefined}
-                      onTouchEnd={isTopCard ? handleTouchEnd : undefined}
-                      onMouseDown={isTopCard ? handleMouseDown : undefined}
-                      onMouseMove={isTopCard ? handleMouseMove : undefined}
-                      onMouseUp={isTopCard ? handleMouseUp : undefined}
                     >
-                      <div 
-                        className="relative h-full p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden"
-                        style={{
-                          boxShadow: `
-                            0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                            0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                            0 0 0 1px rgba(255, 255, 255, 0.06),
-                            inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                            inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                          `,
-                        }}
-                      >
-                        <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
-                          <div className="mb-6">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
-                              <StepIcon className="w-8 h-8 text-[#FFD700]" />
-                            </div>
+                      <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                        <div className="mb-6">
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
+                            <StepIcon className="w-8 h-8 text-[#FFD700]" />
                           </div>
-                          <div className="mb-6">
-                            <div className="inline-block px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
-                              <span 
-                                className="text-2xl font-extrabold"
-                                style={{ 
-                                  fontFamily: 'var(--font-cinzel), serif',
-                                  background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                                  WebkitBackgroundClip: 'text',
-                                  WebkitTextFillColor: 'transparent',
-                                }}
-                              >
-                                {step.number}
-                              </span>
-                            </div>
-                          </div>
-                          <h3 
-                            className="text-3xl font-bold text-white mb-6 leading-tight"
-                            style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                          >
-                            {step.title}
-                          </h3>
-                          <p className="text-base text-[#d4d4d8] leading-relaxed max-w-sm mx-auto">
-                            {step.description}
-                          </p>
                         </div>
-                        <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-[#FFD700]/8 to-transparent rounded-tl-[100px] pointer-events-none" />
-                        <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
+                        <div className="mb-6">
+                          <div className="inline-block px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
+                            <span 
+                              className="text-2xl font-extrabold"
+                              style={{ 
+                                fontFamily: 'var(--font-cinzel), serif',
+                                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                              }}
+                            >
+                              {step.number}
+                            </span>
+                          </div>
+                        </div>
+                        <h3 
+                          className="text-3xl font-bold text-white mb-6 leading-tight"
+                          style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                        >
+                          {step.title}
+                        </h3>
+                        <p className="text-base text-[#d4d4d8] leading-relaxed max-w-sm mx-auto">
+                          {step.description}
+                        </p>
                       </div>
+                      <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-[#FFD700]/8 to-transparent rounded-tl-[100px] pointer-events-none" />
+                      <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Downward Arrow in Circle - Centered between cards */}
+                    {!isLast && (
+                      <div className="relative w-full flex items-center justify-center pointer-events-none my-4">
+                        <div className="relative w-12 h-12 flex items-center justify-center">
+                          {/* Circle */}
+                          <div 
+                            className="absolute inset-0 rounded-full border border-[#FFD700]/30"
+                            style={{
+                              background: 'rgba(255, 215, 0, 0.05)',
+                            }}
+                          />
+                          {/* Downward Arrow - Pointing straight down */}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            className="relative z-10"
+                          >
+                            <path
+                              d="M 8 12 L 4 6 L 8 8 L 12 6 Z"
+                              fill="#FFD700"
+                              opacity="0.6"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Desktop: Fan Layout */}
@@ -378,12 +382,12 @@ function HowItWorksSection() {
                 return (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 8, rotate: rotation }}
-                  whileInView={{ opacity: 1, y: translateY, rotate: rotation }}
-                  viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-                  transition={{ duration: 0.4, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: translateY, rotate: rotation } : { opacity: 0, y: 8, rotate: rotation }}
+                  whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: translateY, rotate: rotation } : { opacity: 1, y: translateY, rotate: rotation }}
+                  viewport={{ once: true, amount: isMobileDevice ? 0.1 : 0.15, margin: isMobileDevice ? "0px 0px -30px 0px" : "0px 0px -50px 0px" }}
+                  transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
                   style={{ 
-                    willChange: 'transform, opacity',
+                    willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity',
                     transform: `rotate(${rotation}deg) translateY(${translateY}px)`,
                     zIndex: zIndex,
                   }}
@@ -404,15 +408,17 @@ function HowItWorksSection() {
                   transformStyle: 'preserve-3d',
                 }}
               >
-                {/* Subtle glow effect on hover - CLIPPED with enhanced visibility */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-[2rem] overflow-hidden">
-                  <div 
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full blur-3xl"
-                    style={{
-                      background: 'radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.08) 50%, transparent 100%)',
-                    }}
-                  />
-                </div>
+                {/* Subtle glow effect on hover - Disabled on mobile for performance */}
+                {!isMobileDevice && !prefersReducedMotionDevice && (
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-[2rem] overflow-hidden">
+                    <div 
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full blur-3xl"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.08) 50%, transparent 100%)',
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
@@ -467,15 +473,12 @@ function HowItWorksSection() {
           {/* Call to action */}
           <motion.div
             className="col-span-12 lg:col-span-12 text-center mt-12 sm:mt-20 lg:mt-24"
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'transform, opacity' }}
+            {...getMotionProps()}
+            variants={getOptimizedVariant('fadeInUp')}
           >
           <Link href="/performances">
             <button 
-              className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
+                className={`group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-transform duration-300 min-h-[72px] ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
@@ -524,12 +527,6 @@ const PERFORMANCE_HIGHLIGHTS = [
     year: "2023",
   },
   {
-    actor: "Paul Mescal",
-    movie: "Aftersun",
-    quote: "Subtlety and heartbreak in perfect measure",
-    year: "2022",
-  },
-  {
     actor: "Cate Blanchett",
     movie: "TÁR",
     quote: "A masterclass in power and vulnerability",
@@ -540,6 +537,24 @@ const PERFORMANCE_HIGHLIGHTS = [
 // Performance Section with active card tracking and depth effect
 function PerformanceSection() {
   const [activeCard, setActiveCard] = useState(0);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobileDevice(window.innerWidth < 768);
+      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
   const [isDesktop, setIsDesktop] = useState(false);
   const [performancesData, setPerformancesData] = useState<Map<string, any>>(new Map());
   const [isLoadingRatings, setIsLoadingRatings] = useState(true);
@@ -721,11 +736,8 @@ function PerformanceSection() {
         <div className="grid grid-cols-12">
           {/* Title with gutters */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'transform, opacity' }}
+            {...getMotionProps()}
+            variants={getOptimizedVariant('fadeInUp')}
             className="col-span-12 lg:col-span-12 text-center mb-24 sm:mb-32 lg:mb-40"
           >
             <h2 
@@ -739,18 +751,22 @@ function PerformanceSection() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
               }}
             >
               Highlights
             </span>
             </h2>
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              whileInView={{ width: "220px", opacity: 1 }}
+              initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
+              whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-              style={{ willChange: 'width, opacity' }}
+              transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+              style={{ 
+                width: '220px',
+                transformOrigin: 'center',
+                willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
+              }}
               className="h-[2px] mx-auto mb-8 relative"
             >
               <div 
@@ -780,14 +796,14 @@ function PerformanceSection() {
                   {PERFORMANCE_HIGHLIGHTS.map((highlight, index) => (
                   <motion.div
                     key={index}
-                    ref={(el) => cardRefs.current[index] = el}
-                    initial={isDesktop ? { opacity: 0, y: 8 } : { opacity: 1, y: 0 }}
-                    whileInView={isDesktop ? { opacity: 1, y: 0 } : undefined}
-                    viewport={isDesktop ? { once: true, amount: 0.15, margin: "0px 0px -50px 0px" } : undefined}
-                    transition={isDesktop ? { duration: 0.4, ease: [0.22, 1, 0.36, 1] } : undefined}
+                    ref={(el) => { cardRefs.current[index] = el }}
+                    initial={isDesktop && !prefersReducedMotionDevice ? { opacity: 0, y: 4 } : { opacity: 1, y: 0 }}
+                    whileInView={isDesktop && !prefersReducedMotionDevice ? { opacity: 1, y: 0 } : undefined}
+                    viewport={isDesktop && !prefersReducedMotionDevice ? { once: true, amount: 0.1, margin: "0px 0px -30px 0px" } : undefined}
+                    transition={isDesktop && !prefersReducedMotionDevice ? { duration: 0.2, ease: [0.22, 1, 0.36, 1] } : undefined}
                     className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
                     style={{ 
-                      willChange: isDesktop ? 'transform, opacity' : 'auto',
+                      willChange: isDesktop && !prefersReducedMotionDevice ? 'transform, opacity' : 'auto',
                       paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
                       paddingRight: index === PERFORMANCE_HIGHLIGHTS.length - 1 && !isDesktop ? '1rem' : '0',
                       /* Hardware acceleration for smooth scrolling */
@@ -806,7 +822,7 @@ function PerformanceSection() {
                   >
               {/* Premium Card - Clean & Cinematic */}
               <div 
-                className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 overflow-hidden ${isDesktop ? 'backdrop-blur-2xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]' : ''}`}
+                className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 overflow-hidden ${isDesktop ? 'backdrop-blur-2xl transition-transform duration-300' : ''} ${isDesktop && !prefersReducedMotionDevice ? 'hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]' : ''}`}
                 style={{
                   boxShadow: isDesktop ? `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -822,10 +838,12 @@ function PerformanceSection() {
                   WebkitBackdropFilter: isDesktop ? 'blur(24px)' : 'none',
                 }}
               >
-                {/* Glow effect - CLIPPED to card corners */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                </div>
+                {/* Glow effect - Disabled on mobile for performance */}
+                {!isMobileDevice && !prefersReducedMotionDevice && (
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col h-full">
@@ -919,7 +937,7 @@ function PerformanceSection() {
           </div>
 
           {/* Navigation Dots */}
-          <div className="col-span-12 relative flex justify-center items-center mt-8 px-4">
+          <div className="col-span-12 flex flex-col items-center mt-8 px-4">
             <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
               style={{
                 boxShadow: `
@@ -971,6 +989,13 @@ function PerformanceSection() {
                 ))}
               </div>
             </div>
+
+            {/* Additional performances text */}
+            <div className="text-center mt-6 w-full">
+              <p className="text-sm sm:text-base text-[#a3a3a3] font-light tracking-wide">
+                +25,000 more performances
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -980,6 +1005,26 @@ function PerformanceSection() {
 
 // Features Section - Clean Vertical Stack (No Carousel)
 function FeaturesSection() {
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobileDevice(window.innerWidth < 768);
+      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
   const features = [
     {
       icon: FaUsers,
@@ -1032,7 +1077,7 @@ function FeaturesSection() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
               }}
             >
               Why
@@ -1101,8 +1146,16 @@ function FeaturesSection() {
                     </div>
                   </div>
                   <p className="text-sm text-[#d4d4d8] leading-relaxed">
-                    {feature.description}
+                    {expandedFeatures.has(index) ? feature.descriptionFull : feature.description}
                   </p>
+                  {!expandedFeatures.has(index) && (
+                    <button
+                      onClick={() => setExpandedFeatures(prev => new Set(prev).add(index))}
+                      className="mt-2 text-xs text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200"
+                    >
+                      Read more
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -1163,9 +1216,16 @@ function FeaturesSection() {
                       </div>
                     </div>
                     <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#e4e4e7] leading-relaxed">
-                      <span className="hidden md:inline">{feature.descriptionFull}</span>
-                      <span className="md:hidden">{feature.description}</span>
+                      {expandedFeatures.has(index) ? feature.descriptionFull : feature.description}
                     </p>
+                    {!expandedFeatures.has(index) && (
+                      <button
+                        onClick={() => setExpandedFeatures(prev => new Set(prev).add(index))}
+                        className="mt-3 text-sm text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200"
+                      >
+                        Read more
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1182,6 +1242,25 @@ function FeaturesSection() {
 
 // About Section - Visual & Minimal
 function AboutSection() {
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobileDevice(window.innerWidth < 768);
+      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
   const stats = [
     { value: "25K+", label: "Performances" },
     { value: "5", label: "Rating Criteria" },
@@ -1216,7 +1295,7 @@ function AboutSection() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-                filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
               }}
             >
               About
@@ -1240,7 +1319,7 @@ function AboutSection() {
             />
           </motion.div>
           <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto px-6 sm:px-4">
-            Be among the first to join us and be a part of the journey
+            Be part of the early community shaping the platform.
           </p>
           </motion.div>
 
@@ -1440,27 +1519,50 @@ function AboutSection() {
 }
 
 export default function HomePageClient() {
+  // Runtime detection for mobile and reduced motion
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+
   // Fix scroll to top on mount
   useEffect(() => {
     // Ensure page starts at top
     if (typeof window !== 'undefined' && window.scrollY > 0) {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
+
+    // Detect mobile and reduced motion at runtime
+    const checkDevice = () => {
+      setIsMobileDevice(window.innerWidth < 768);
+      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
   }, []);
 
   return (
     <>
       <div className="hero min-h-[85vh] relative flex items-start justify-center bg-black w-full overflow-visible" style={{ willChange: 'auto', maxWidth: '100vw' }}>
-        {/* Spotlight effect - Award show aesthetic with premium gold */}
+        {/* Spotlight effect - Static on mobile, minimal animation on desktop */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 0.15, scale: 1 }}
-          transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+          initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 0.15 } : { opacity: 0, scale: 0.95 }}
+          animate={prefersReducedMotionDevice || isMobileDevice ? { opacity: 0.15 } : { opacity: 0.15, scale: 1 }}
+          transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full blur-[140px] z-[1] pointer-events-none"
           style={{
             background: 'radial-gradient(circle, rgba(255, 200, 0, 0.28) 0%, rgba(255, 180, 0, 0.18) 35%, rgba(255, 160, 0, 0.08) 55%, transparent 75%)',
             maxWidth: '100vw',
-            maxHeight: '100dvh'
+            maxHeight: '100dvh',
+            willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
           }}
         />
         
@@ -1505,7 +1607,7 @@ export default function HomePageClient() {
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                    filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.08em',
                   }}
                   aria-hidden="true"
@@ -1519,7 +1621,7 @@ export default function HomePageClient() {
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                    filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.02em',
                   }}
                   aria-hidden="true"
@@ -1529,12 +1631,17 @@ export default function HomePageClient() {
               </h1>
             </motion.div>
 
-            {/* Gold Divider - Cinematic */}
+            {/* Gold Divider - GPU-safe animation (scaleX instead of width) */}
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "180px", opacity: 1 }}
-              transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
+              animate={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
+              transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="h-[2px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 relative"
+              style={{ 
+                width: '180px',
+                transformOrigin: 'center',
+                willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
+              }}
             >
               <div 
                 className="h-full w-full"
@@ -1550,7 +1657,7 @@ export default function HomePageClient() {
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-12 xs:mb-14 sm:mb-12 md:mb-14 lg:mb-16 font-light text-center px-4"
+              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-4"
               style={{ 
                 letterSpacing: '0.005em',
                 opacity: 1,
@@ -1558,6 +1665,19 @@ export default function HomePageClient() {
               }}
             >
               Judge performances like the Academy.
+            </motion.p>
+            <motion.p
+              initial={false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="text-base xs:text-lg sm:text-xl md:text-2xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-6 xs:mb-7 sm:mb-6 md:mb-7 lg:mb-8 font-light text-center px-4"
+              style={{ 
+                letterSpacing: '0.005em',
+                opacity: 1,
+                transform: 'translateY(0)'
+              }}
+            >
+              Five clear criteria. Anyone can rate.
             </motion.p>
 
             {/* CTA Button - Convert with Elegance */}

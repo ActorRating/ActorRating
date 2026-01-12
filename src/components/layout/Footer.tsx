@@ -2,9 +2,17 @@
 
 import Link from 'next/link'
 import { useCookieConsentContext } from '@/components/providers/CookieConsentProvider'
+import { useUser } from '@/components/providers/SessionProvider'
+import { useState, useEffect } from 'react'
 
 export function Footer() {
   const { openSettings } = useCookieConsentContext()
+  const user = useUser()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   return (
     <footer className="bg-black w-full mt-auto border-t border-[#1a1a1a]">
@@ -31,9 +39,11 @@ export function Footer() {
               <Link href="/search" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
                 Search Actors
               </Link>
-              <Link href="/dashboard" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                Your Dashboard
-              </Link>
+              {mounted && user && (
+                <Link href="/dashboard" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+                  Your Dashboard
+                </Link>
+              )}
             </nav>
           </div>
 

@@ -80,12 +80,14 @@ interface Performance {
     id: string
     name: string
     imageUrl?: string
+    slug?: string
   }
   movie: {
     id: string
     title: string
     year: number
     director?: string
+    slug?: string
   }
   emotionalRangeDepth: number
   characterBelievability: number
@@ -285,6 +287,96 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const router = useRouter()
   const user = useUser()
   
+  // Check if user has any ratings
+  const [userHasRatings, setUserHasRatings] = useState<boolean | null>(null)
+  const [showTip, setShowTip] = useState(false)
+  const [isDemoing, setIsDemoing] = useState(false)
+  const [demoValue, setDemoValue] = useState(0)
+  
+  useEffect(() => {
+    const checkUserRatings = async () => {
+      if (!user) {
+        // Not logged in - show tip
+        setUserHasRatings(false)
+        setShowTip(true)
+        return
+      }
+      
+      try {
+        const response = await fetch('/api/ratings/me')
+        if (response.ok) {
+          const ratings = await response.json()
+          const hasRatings = Array.isArray(ratings) && ratings.length > 0
+          setUserHasRatings(hasRatings)
+          if (!hasRatings) {
+            setShowTip(true)
+          }
+        } else {
+          setUserHasRatings(false)
+          setShowTip(true)
+        }
+      } catch (error) {
+        console.error('Error checking user ratings:', error)
+        setUserHasRatings(false)
+        setShowTip(true)
+      }
+    }
+    
+    checkUserRatings()
+  }, [user])
+  
+  // Auto-demo first slider after tip appears
+  useEffect(() => {
+    if (showTip && !isDemoing) {
+      const timer = setTimeout(() => {
+        setIsDemoing(true)
+        // Animate slider to 75 over 1.5 seconds
+        const duration = 1500
+        const startTime = Date.now()
+        const startValue = 0
+        const endValue = 75
+        
+        const animate = () => {
+          const elapsed = Date.now() - startTime
+          const progress = Math.min(elapsed / duration, 1)
+          const easeOut = 1 - Math.pow(1 - progress, 3)
+          const currentValue = startValue + (endValue - startValue) * easeOut
+          setDemoValue(currentValue)
+          
+          if (progress < 1) {
+            requestAnimationFrame(animate)
+          } else {
+            // Hold at 75 for 1 second, then return to 0
+            setTimeout(() => {
+              const returnDuration = 1000
+              const returnStartTime = Date.now()
+              const returnAnimate = () => {
+                const returnElapsed = Date.now() - returnStartTime
+                const returnProgress = Math.min(returnElapsed / returnDuration, 1)
+                const returnEaseOut = 1 - Math.pow(1 - returnProgress, 3)
+                const returnValue = endValue - (endValue - startValue) * returnEaseOut
+                setDemoValue(returnValue)
+                
+                if (returnProgress < 1) {
+                  requestAnimationFrame(returnAnimate)
+                } else {
+                  setIsDemoing(false)
+                  setDemoValue(0)
+                  // Hide tip after demo completes
+                  setTimeout(() => setShowTip(false), 500)
+                }
+              }
+              requestAnimationFrame(returnAnimate)
+            }, 1000)
+          }
+        }
+        requestAnimationFrame(animate)
+      }, 1000) // Wait 1 second after tip appears
+      
+      return () => clearTimeout(timer)
+    }
+  }, [showTip, isDemoing])
+  
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
     externalSubmittedRating ? 'success' : 'idle'
@@ -330,6 +422,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const previousScoreRef = useRef(0)
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
+  
+  // Sticky score pill state
+  const [isSticky, setIsSticky] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Calculate average of 5 sliders, convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
@@ -363,6 +459,32 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       previousScoreRef.current = totalScoreOutOf10
     }
   }, [isAnimating, totalScoreOutOf10])
+
+  // Sticky score pill - IntersectionObserver to detect when scrolled past
+  useEffect(() => {
+    if (!sentinelRef.current || submitPhase === 'success') {
+      setIsSticky(false)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // When sentinel is not visible (scrolled past), make score pill sticky
+        setIsSticky(!entries[0].isIntersecting)
+      },
+      {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0,
+      }
+    )
+
+    observer.observe(sentinelRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [submitPhase])
 
   const allSlidersTouched = useMemo(() => {
     return Object.values(touchedSliders).every(touched => touched)
@@ -653,6 +775,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {performance.movie.title}
           </h2>
           
+          {/* Performance by - Subtitle */}
+          <p className="text-sm sm:text-base md:text-lg text-[#a1a1aa] mb-2 sm:mb-3 px-2">
+            Performance by
+          </p>
+          
           {/* Actor Name - Smaller, Secondary */}
           <h3 
             id="actor-name-header" 
@@ -670,6 +797,65 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
         <form onSubmit={handleSubmit}>
           <div className="relative">
+            {/* Sentinel element to detect when scrolled past */}
+            <div ref={sentinelRef} className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
+            
+            {/* Sticky Score Display - Appears at top when scrolled past */}
+            <AnimatePresence>
+              {isSticky && submitPhase !== 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  <div 
+                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-300 overflow-hidden border border-white/10"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(26, 26, 26, 0.95)',
+                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                    }}
+                  >
+                    <div className="relative text-center z-10">
+                      <div 
+                        className="font-black mb-1 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[2.5rem] sm:min-h-[3rem]"
+                        style={{
+                          fontFamily: 'var(--font-cinzel), serif',
+                        }}
+                      >
+                        <div className="relative inline-block overflow-visible min-w-[60px] sm:min-w-[70px] h-[2.5rem] sm:h-[3rem] leading-[2.5rem] sm:leading-[3rem]">
+                          <span
+                            className="inline-block text-3xl sm:text-4xl md:text-5xl transition-all duration-75 ease-linear"
+                            style={{
+                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              lineHeight: '1',
+                              verticalAlign: 'baseline',
+                            }}
+                          >
+                            {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
+                          </span>
+                        </div>
+                        <span 
+                          className="text-base sm:text-lg md:text-xl text-[#a1a1aa] leading-none"
+                          style={{
+                            verticalAlign: 'baseline',
+                          }}
+                        >
+                          /10
+                        </span>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             {/* Score Display - Responsive size, prevent cutoff, optimized for mobile */}
             <AnimatePresence>
@@ -678,9 +864,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   ref={scoreRef}
               initial={{ opacity: 0, y: -30, scale: 0.95 }}
                   animate={{ 
-                    opacity: submitPhase === 'success' ? 0 : 1, 
-                    y: submitPhase === 'success' ? -20 : 0,
-                    scale: submitPhase === 'success' ? 0.95 : (spotlightPhase === 'score' ? [1, 1.05, 1] : 1)
+                    opacity: 1, 
+                    y: 0,
+                    scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
@@ -780,12 +966,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <motion.div
               initial={{ opacity: 0, y: 30 }}
                   animate={{ 
-                    opacity: submitPhase === 'success' ? 0 : 1,
-                    y: submitPhase === 'success' ? -20 : 0,
+                    opacity: 1,
+                    y: 0,
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-[calc(100%-16px)] sm:max-w-full mx-auto"
+                  className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
                   style={{
                     boxShadow: `
                       0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -810,17 +996,53 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               />
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
-              <div className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] mx-auto pb-2">
-                <RatingSliderCard 
-                  label="Emotional Impact" 
-                  value={emotionalRangeDepth} 
-                  onValueChange={(v) => handleSliderChange('emotionalRangeDepth', v)}
-                  onSliderStart={handleSliderStart}
-                  onSliderEnd={handleSliderEnd}
-                  disabled={submitting}
-                  touched={touchedSliders.emotionalRangeDepth}
-                  spotlightActive={spotlightPhase !== 'none'}
-                />
+              <div className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-2">
+                {/* Tip Popup for New Users */}
+                <AnimatePresence>
+                  {showTip && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="relative mb-4"
+                    >
+                      <div className="relative inline-block px-4 py-3 rounded-xl bg-gradient-to-br from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 backdrop-blur-sm"
+                        style={{
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.1)',
+                        }}
+                      >
+                        <p className="text-sm sm:text-base text-white font-medium">
+                          💡 Tip: Move the sliders to rate this performance
+                        </p>
+                        <button
+                          onClick={() => setShowTip(false)}
+                          className="absolute top-1 right-1 p-1 rounded-full hover:bg-white/10 transition-colors"
+                          aria-label="Close tip"
+                        >
+                          <X className="w-4 h-4 text-white/70" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                
+                <div className="relative">
+                  <RatingSliderCard 
+                    label="Emotional Impact" 
+                    value={isDemoing ? demoValue : emotionalRangeDepth} 
+                    onValueChange={(v) => {
+                      if (!isDemoing) {
+                        handleSliderChange('emotionalRangeDepth', v)
+                      }
+                    }}
+                    onSliderStart={handleSliderStart}
+                    onSliderEnd={handleSliderEnd}
+                    disabled={submitting || isDemoing}
+                    touched={touchedSliders.emotionalRangeDepth}
+                    spotlightActive={spotlightPhase !== 'none'}
+                  />
+                </div>
                 
                 <RatingSliderCard 
                   label="Character Depth" 
