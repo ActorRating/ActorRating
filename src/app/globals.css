@@ -505,13 +505,29 @@ a:focus-visible {
 }
 
 /* Reduce layout shift */
-img, video, canvas, svg {
+img, canvas, svg {
   max-width: 100%;
   height: auto;
 }
 
-img, video {
+img {
   display: block;
+}
+
+/* Video quality and sizing optimizations */
+video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Force high quality rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Prevent quality degradation */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Safari-specific fixes for blur and animation issues */

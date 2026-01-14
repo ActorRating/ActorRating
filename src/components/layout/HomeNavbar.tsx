@@ -112,8 +112,11 @@ export function HomeNavbar() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/performances" className="group">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Link href="/auth/signin" className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200">
+                  Sign In
+                </Link>
+                <Link href="/auth/signup" className="group">
                   <button
                     className="relative px-5 sm:px-6 py-2.5 sm:py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] min-h-[48px] touch-manipulation"
                     style={{
@@ -127,16 +130,13 @@ export function HomeNavbar() {
                       transform: 'translateY(-3px) perspective(1000px) rotateX(1deg)',
                       transformStyle: 'preserve-3d',
                     }}
-                    aria-label="Start rating performances"
+                    aria-label="Sign up"
                   >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                       <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
                     </div>
-                    <span className="text-sm font-medium text-white group-hover:text-white transition-colors duration-200 relative z-10">Start Rating</span>
+                    <span className="text-sm font-medium text-white group-hover:text-white transition-colors duration-200 relative z-10">Sign Up</span>
                   </button>
-                </Link>
-                <Link href="/auth/signin" className="text-xs text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200">
-                  Sign in
                 </Link>
               </div>
             )}

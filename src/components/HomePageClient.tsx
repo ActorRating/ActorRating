@@ -4,7 +4,7 @@
 import { useUser, useSession } from "@/components/providers/SessionProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { FaStar, FaHandshake, FaTheaterMasks, FaUsers, FaChartLine, FaArrowRight, FaCheckCircle, FaRocket, FaCog, FaBolt, FaShieldAlt, FaMagic, FaGlobe, FaLightbulb, FaTrophy } from "react-icons/fa";
+import { FaStar, FaHandshake, FaTheaterMasks, FaUsers, FaChartLine, FaArrowRight, FaCheckCircle, FaRocket, FaCog, FaBolt, FaShieldAlt, FaMagic, FaGlobe, FaLightbulb, FaTrophy, FaSearch } from "react-icons/fa";
 import { GiClapperboard, GiHeartWings } from "react-icons/gi";
 import { motion } from "framer-motion";
 import { fadeInUp, getMotionProps, fadeIn, getOptimizedVariant, getStaggerContainer } from "@/lib/animations";
@@ -42,21 +42,21 @@ function HowItWorksSection() {
   const steps = [
     {
       number: "01",
-      icon: FaTheaterMasks,
-      title: "Discover",
-      description: "Find a performance you've watched"
+      icon: FaSearch,
+      title: "Find a Performance",
+      description: "Search 25,000+ actor performances from cinema history."
     },
     {
       number: "02",
       icon: FaStar,
-      title: "Rate",
-      description: "Move five sliders, submit your score"
+      title: "Rate in 2 Minutes",
+      description: "Five professional criteria. Submit your score."
     },
     {
       number: "03",
       icon: FaChartLine,
-      title: "Compare",
-      description: "See how your rating compares"
+      title: "See the Consensus",
+      description: "Compare your rating to the community average."
     }
   ];
 
@@ -274,15 +274,12 @@ function HowItWorksSection() {
               }}
             />
           </motion.div>
-            <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
-              Three simple steps to join the world's most sophisticated acting rating platform
-            </p>
           </motion.div>
 
           {/* Container for centered 3-column cards */}
           <div className="col-span-12 lg:col-span-12">
-            {/* Mobile: Vertical Stack with Curved Arrows */}
-            <div className="md:hidden relative pb-8 pt-2 space-y-6">
+            {/* Mobile: Vertical Stack */}
+            <div className="md:hidden relative pb-8 pt-2 space-y-4">
               {steps.map((step, index) => {
                 const StepIcon = step.icon;
                 const isLast = index === steps.length - 1;
@@ -324,7 +321,7 @@ function HowItWorksSection() {
                           </div>
                         </div>
                         <h3 
-                          className="text-3xl font-bold text-white mb-6 leading-tight"
+                          className="text-xl md:text-2xl font-bold text-white mb-6 leading-tight"
                           style={{ fontFamily: 'var(--font-cinzel), serif' }}
                         >
                           {step.title}
@@ -337,61 +334,28 @@ function HowItWorksSection() {
                       <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
                     </div>
 
-                    {/* Downward Arrow in Circle - Centered between cards */}
-                    {!isLast && (
-                      <div className="relative w-full flex items-center justify-center pointer-events-none my-4">
-                        <div className="relative w-12 h-12 flex items-center justify-center">
-                          {/* Circle */}
-                          <div 
-                            className="absolute inset-0 rounded-full border border-[#FFD700]/30"
-                            style={{
-                              background: 'rgba(255, 215, 0, 0.05)',
-                            }}
-                          />
-                          {/* Downward Arrow - Pointing straight down */}
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            className="relative z-10"
-                          >
-                            <path
-                              d="M 8 12 L 4 6 L 8 8 L 12 6 Z"
-                              fill="#FFD700"
-                              opacity="0.6"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
+                    {/* Arrows removed on mobile */}
                   </div>
                 );
               })}
             </div>
 
-            {/* Desktop: Fan Layout */}
-            <div className="hidden md:flex md:justify-center md:items-center md:gap-2 lg:gap-4 xl:gap-6 max-w-6xl mx-auto relative px-2 md:px-4" style={{ minHeight: '500px' }}>
+            {/* Desktop: Horizontal Layout */}
+            <div className="hidden md:flex md:justify-center md:items-stretch md:gap-4 lg:gap-6 xl:gap-8 max-w-6xl mx-auto relative px-2 md:px-4">
               {steps.map((step, index) => {
                 const StepIcon = step.icon;
-                // Fan angles: left card rotates left, center stays straight, right rotates right
-                const rotation = index === 0 ? -8 : index === 1 ? 0 : 8;
-                const translateY = index === 0 ? 20 : index === 1 ? 0 : 20;
-                const zIndex = index === 1 ? 10 : 5;
                 
                 return (
                 <motion.div
                   key={index}
-                  initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: translateY, rotate: rotation } : { opacity: 0, y: 8, rotate: rotation }}
-                  whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: translateY, rotate: rotation } : { opacity: 1, y: translateY, rotate: rotation }}
+                  initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                  whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: isMobileDevice ? 0.1 : 0.15, margin: isMobileDevice ? "0px 0px -30px 0px" : "0px 0px -50px 0px" }}
-                  transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.3, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.3, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
                   style={{ 
                     willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity',
-                    transform: `rotate(${rotation}deg) translateY(${translateY}px)`,
-                    zIndex: zIndex,
                   }}
-                  className="group relative flex-1 max-w-[280px] md:max-w-[300px] lg:max-w-sm"
+                  className="group relative w-full max-w-[300px]"
                 >
               {/* Premium Card - Clean & Centered with enhanced 3D shadow */}
               <div 
@@ -404,8 +368,6 @@ function HowItWorksSection() {
                     inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
                     inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
                   `,
-                  transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
-                  transformStyle: 'preserve-3d',
                 }}
               >
                 {/* Subtle glow effect on hover - Disabled on mobile for performance */}
@@ -448,7 +410,7 @@ function HowItWorksSection() {
 
                   {/* Title */}
                   <h3 
-                    className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 md:mb-6 leading-tight"
+                    className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 leading-tight"
                     style={{ fontFamily: 'var(--font-cinzel), serif' }}
                   >
                     {step.title}
@@ -738,24 +700,24 @@ function PerformanceSection() {
           <motion.div
             {...getMotionProps()}
             variants={getOptimizedVariant('fadeInUp')}
-            className="col-span-12 lg:col-span-12 text-center mb-24 sm:mb-32 lg:mb-40"
+            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-16 md:mb-24 lg:mb-32 xl:mb-40"
           >
             <h2 
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
-              Performance{' '}
-            <span 
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-              }}
-            >
-              Highlights
-            </span>
+              <span 
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                }}
+              >
+                Start
+              </span>{' '}
+              With These
             </h2>
             <motion.div
               initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
@@ -777,9 +739,6 @@ function PerformanceSection() {
                 }}
               />
             </motion.div>
-            <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
-              Discover the performances that define cinematic excellence
-            </p>
           </motion.div>
 
           {/* Quote Cards - Carousel with fade edges */}
@@ -857,7 +816,8 @@ function PerformanceSection() {
                             const key = `${highlight.actor}:${highlight.movie}`;
                             const perfData = performancesData.get(key);
                             if (perfData && perfData.averageRating > 0 && perfData.ratingCount > 0) {
-                              return perfData.averageRating.toFixed(1);
+                              // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+                              return (perfData.averageRating / 10).toFixed(1);
                             }
                             return "N/A";
                           })()}
@@ -875,19 +835,10 @@ function PerformanceSection() {
                     </h3>
 
                     {/* Movie Title */}
-                    <div className="mb-4">
+                    <div className="mb-6">
                       <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
                         {highlight.movie}
                       </span>
-                    </div>
-
-                    {/* Quote */}
-                    <div className="mb-6">
-                      <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                        <span className="text-[#FFD700]/60">"</span>
-                        {highlight.quote}
-                        <span className="text-[#FFD700]/60">"</span>
-                      </p>
                     </div>
                   </div>
 
@@ -1666,26 +1617,13 @@ export default function HomePageClient() {
             >
               Judge performances like the Academy.
             </motion.p>
-            <motion.p
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl w-full max-w-4xl leading-relaxed text-[#a3a3a3] mb-6 xs:mb-7 sm:mb-6 md:mb-7 lg:mb-8 font-light text-center px-4"
-              style={{ 
-                letterSpacing: '0.005em',
-                opacity: 1,
-                transform: 'translateY(0)'
-              }}
-            >
-              Five clear criteria. Anyone can rate.
-            </motion.p>
 
             {/* CTA Button - Convert with Elegance */}
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full flex justify-center"
+              className="w-full flex justify-center mt-8 sm:mt-0"
             >
               <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
                 <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
@@ -1726,6 +1664,66 @@ export default function HomePageClient() {
 
       {/* How It Works Section */}
       <HowItWorksSection />
+
+      {/* Video Section - Below How It Works Cards - TEMPORARILY HIDDEN */}
+      {false && (
+      <div className="relative w-full bg-black py-8 sm:py-16 md:py-24 lg:py-32 overflow-hidden">
+        {/* Full-width on mobile, constrained on desktop */}
+        <div className="w-full relative" style={{ 
+          maxWidth: isMobileDevice ? '100%' : '1280px', 
+          margin: '0 auto',
+          paddingLeft: isMobileDevice ? '0' : '1rem',
+          paddingRight: isMobileDevice ? '0' : '1rem',
+        }}>
+          <div 
+            className="relative w-full overflow-hidden" 
+            style={{ 
+              aspectRatio: '16/9', 
+              minHeight: '200px',
+              borderRadius: isMobileDevice ? '0' : '1rem',
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className="absolute inset-0 w-full h-full"
+              style={{
+                opacity: prefersReducedMotionDevice ? 0 : 1,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+              onLoadedMetadata={(e) => {
+                // Force high quality playback
+                const video = e.currentTarget;
+                if (video) {
+                  video.playbackRate = 1.0;
+                  // Ensure video quality is not reduced
+                  if ('webkitDecodedFrameCount' in video) {
+                    // Safari-specific quality hint
+                    (video as any).webkitDecodedFrameCount;
+                  }
+                }
+              }}
+            >
+              <source src="/hero-video.mp4" type="video/mp4" />
+              {/* Fallback for browsers that don't support video */}
+              Your browser does not support the video tag.
+            </video>
+            {/* Fallback if video doesn't load or reduced motion */}
+            {prefersReducedMotionDevice && (
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-black flex items-center justify-center">
+                <p className="text-white/50 text-sm">Video content</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
 
       {/* Performance Highlights Section */}
       <PerformanceSection />
