@@ -17,6 +17,7 @@ import { PerformanceCard } from "@/components/performance/PerformanceCard"
 import { FeaturedPerformancesCarousel } from "@/components/dashboard/FeaturedPerformancesCarousel"
 import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface Actor {
   id: string
@@ -181,6 +182,24 @@ export default function DashboardPage() {
     ]
   };
 
+  // Show loading spinner while data is being fetched
+  if (isLoadingData && isInitialized) {
+    return (
+      <AuthGuard>
+        <SignedInLayout>
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <BouncingBallsLoader 
+              size="lg" 
+              color="#FFD700"
+              showText={true}
+              text="Loading dashboard..."
+            />
+          </div>
+        </SignedInLayout>
+      </AuthGuard>
+    )
+  }
+
   return (
     <AuthGuard>
       <SignedInLayout>
@@ -301,8 +320,8 @@ export default function DashboardPage() {
           {/* Progress Bar */}
           <UserProgressBar />
 
-          {/* Featured Performances Carousel */}
-          <FeaturedPerformancesCarousel />
+          {/* Featured Performances Carousel - Only show if user hasn't rated yet */}
+          {ratings.length === 0 && <FeaturedPerformancesCarousel />}
 
           {/* Popular Actors */}
           <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-labelledby="popular-actors-heading">

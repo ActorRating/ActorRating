@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const isLoadingUser = user === undefined
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [profile, setProfile] = useState({ email: "" })
   const [termsData, setTermsData] = useState({})
@@ -42,6 +43,7 @@ export default function ProfilePage() {
 
   const loadProfile = async () => {
     try {
+      setIsLoadingProfile(true)
       const response = await fetch("/api/user/profile")
       if (response.ok) {
         const data = await response.json()
@@ -52,6 +54,8 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Failed to load profile:", error)
+    } finally {
+      setIsLoadingProfile(false)
     }
   }
 
@@ -132,15 +136,15 @@ export default function ProfilePage() {
     })
   }
 
-  if (isLoadingUser) {
+  if (isLoadingUser || isLoadingProfile) {
     return (
       <SignedInLayout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <BouncingBallsLoader 
             size="lg" 
             color="#FFD700"
             showText={true}
-            text="Loading profile..."
+            text={isLoadingUser ? "Loading profile..." : "Loading data..."}
           />
         </div>
       </SignedInLayout>

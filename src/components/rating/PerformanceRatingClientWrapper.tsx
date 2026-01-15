@@ -291,6 +291,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const router = useRouter()
   const user = useUser()
   
+  // Check if user has rated before
+  const [hasRatedBefore, setHasRatedBefore] = useState<boolean | null>(null)
+  
   // Auto-demo first slider on first load
   const [isDemoing, setIsDemoing] = useState(false)
   const [demoValue, setDemoValue] = useState(0)
@@ -298,10 +301,43 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const firstSliderRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
   
+  // Check if user has rated before
+  useEffect(() => {
+    if (!user) {
+      setHasRatedBefore(false)
+      return
+    }
+    
+    const checkUserRatings = async () => {
+      try {
+        const res = await fetch('/api/ratings/me', { cache: 'no-store' })
+        if (res.ok) {
+          const ratings = await res.json()
+          setHasRatedBefore(Array.isArray(ratings) && ratings.length > 0)
+        } else {
+          setHasRatedBefore(false)
+        }
+      } catch (error) {
+        console.error('Failed to check user ratings:', error)
+        setHasRatedBefore(false)
+      }
+    }
+    
+    checkUserRatings()
+  }, [user])
+  
   // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
     // Only run once on mount
     if (hasDemoedRef.current) return
+    // Skip demo if user has rated before
+    if (hasRatedBefore === true) {
+      hasDemoedRef.current = true
+      return
+    }
+    // Wait until we know if user has rated before
+    if (hasRatedBefore === null) return
+    
     hasDemoedRef.current = true
     
     let scrollTimer: NodeJS.Timeout | null = null
@@ -407,7 +443,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         animationFrameRef.current = null
       }
     }
-  }, []) // Empty dependency array - run once on mount
+  }, [hasRatedBefore]) // Run when hasRatedBefore changes
   
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
@@ -794,32 +830,29 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
-          {/* Movie Title - More Prominent */}
+          {/* Actor Name - Primary Focus, Largest Text, White */}
+          <h1 
+            id="actor-name-header" 
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 tracking-tight px-2 text-white"
+            style={{
+              fontFamily: 'var(--font-cinzel), serif',
+            }}
+          >
+            {performance.actor.name}
+          </h1>
+          
+          {/* Movie Title - Secondary, More Prominent, Gold Gradient, Italic */}
           <h2 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 tracking-tight px-2"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium italic mb-2 sm:mb-3 tracking-tight px-2"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontFamily: 'var(--font-cinzel), serif',
+              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
             }}
           >
-            {performance.movie.title}
+            in {performance.movie.title} ({performance.movie.year})
           </h2>
-          
-          {/* Performance by - Subtitle */}
-          <p className="text-sm sm:text-base md:text-lg text-[#a1a1aa] mb-2 sm:mb-3 px-2">
-            Performance by
-          </p>
-          
-          {/* Actor Name - Smaller, Secondary */}
-          <h3 
-            id="actor-name-header" 
-            className="text-xl sm:text-2xl md:text-3xl font-semibold text-white/70 mb-2 sm:mb-3 tracking-tight px-2"
-            style={{ fontFamily: 'var(--font-cinzel), serif' }}
-          >
-            {performance.actor.name}
-          </h3>
           
           {/* Role/Comment */}
           {performance.comment && (

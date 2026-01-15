@@ -6,7 +6,6 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -122,6 +121,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-C3JQQH5F83"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-C3JQQH5F83', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${cormorantGaramond.variable} antialiased`}
         suppressHydrationWarning
@@ -129,7 +147,6 @@ export default function RootLayout({
         {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>
-            <GoogleAnalytics />
             <Suspense fallback={null}>
               <RouteChangeScroll />
             </Suspense>
