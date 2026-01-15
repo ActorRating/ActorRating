@@ -22,6 +22,7 @@ import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { CelebrationConfetti } from '@/components/ui/Confetti'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { trackRateStart } from '@/lib/analytics'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -520,6 +521,13 @@ function RatePageContent() {
       </Suspense>
     )
   }
+
+  // Track rate_start when actor and movie are selected
+  useEffect(() => {
+    if (actor && movie && !submitted) {
+      trackRateStart(actor.name, movie.title, movie.year)
+    }
+  }, [actor, movie, submitted])
 
   // Show rating form when both actor and movie are selected (or success state)
   if (actor && movie) {

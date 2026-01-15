@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import supabase from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { trackSignUp } from '@/lib/analytics'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -103,6 +104,8 @@ export default function AuthCallback() {
 
           if (data.session) {
             console.log('✅ Successfully authenticated via OAuth')
+            // Track signup success for Google OAuth
+            trackSignUp('google')
             // Check if there's a pending rating to submit
             const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
             if (pendingRating) {
@@ -129,6 +132,11 @@ export default function AuthCallback() {
 
         if (session) {
           console.log('✅ Found existing session')
+          // Track signup success for Google OAuth (if this is a new session from OAuth)
+          // Only track if we came from OAuth flow (has code param or pending rating suggests new signup)
+          if (code || (typeof window !== 'undefined' && localStorage.getItem('pendingRating'))) {
+            trackSignUp('google')
+          }
           // Check if there's a pending rating to submit
           const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
           if (pendingRating) {

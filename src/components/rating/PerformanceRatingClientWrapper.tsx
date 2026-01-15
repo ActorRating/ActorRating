@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
+import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -712,6 +713,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       const successDelay = Math.max(0, 1300 - elapsed)
       setTimeout(() => {
         setSubmitPhase('success')
+        
+        // Calculate overall score for tracking
+        const overallScore = (
+          ratingData.emotionalDepth +
+          ratingData.believability +
+          ratingData.technicalSkill +
+          ratingData.screenPresence +
+          ratingData.chemistry
+        ) / 5 / 10
+        
+        // Track rating submission (MOST IMPORTANT)
+        trackRateSubmit(
+          performance.actor.name,
+          performance.movie.title,
+          Number(overallScore.toFixed(1))
+        )
+        
+        // Track first rating completion (only once per user)
+        trackFirstRatingComplete()
+        
         if (onSuccess) {
           onSuccess(ratingData)
         }
@@ -753,6 +774,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           text: shareText,
           url: shareUrl,
         })
+        // Track native share
+        trackShareRating('native')
       } catch (err) {
         // User cancelled or error
         console.log('Share cancelled')
@@ -761,6 +784,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(shareText)
       alert('Link copied to clipboard!')
+      // Track native share (clipboard fallback)
+      trackShareRating('native')
     }
   }
 
@@ -776,15 +801,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       if (platform === 'twitter') {
         // Twitter doesn't support custom images in share dialog, but we can include the image URL in the text
         window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
+        trackShareRating('twitter')
       } else if (platform === 'facebook') {
         // Facebook can use og:image meta tags, but for direct sharing we use the URL
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+        trackShareRating('facebook')
       } else if (platform === 'instagram') {
         // Instagram doesn't support direct URL sharing, so we copy the image URL to clipboard
         // and show instructions to the user
         const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
         await navigator.clipboard.writeText(imageUrl)
         alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
+        trackShareRating('instagram')
       }
     } catch (err) {
       console.error('Failed to generate share image:', err)
@@ -793,12 +821,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       const encodedUrl = encodeURIComponent(shareUrl)
       if (platform === 'twitter') {
         window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
+        trackShareRating('twitter')
       } else if (platform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
+        trackShareRating('facebook')
       } else if (platform === 'instagram') {
         const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
         navigator.clipboard.writeText(imageUrl).then(() => {
           alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
+          trackShareRating('instagram')
         }).catch(() => {
           alert('Failed to copy image URL. Please try again.')
         })

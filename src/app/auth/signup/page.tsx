@@ -15,6 +15,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
+import { trackSignUp } from "@/lib/analytics"
 // Local validation using requested regex rules
 
 export default function SignUp() {
@@ -246,6 +247,9 @@ export default function SignUp() {
         console.error("Auto sign-in failed:", signInError)
         // Continue to onboarding even if auto sign-in fails
       }
+
+      // Track signup success
+      trackSignUp('email')
 
       // Check if there's a pending rating to submit
       const pendingRating = localStorage.getItem('pendingRating')
