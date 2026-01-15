@@ -113,12 +113,12 @@ export function HomeNavbar() {
               </div>
             ) : (
               <div className="flex items-center gap-3 sm:gap-4">
-                <Link href="/auth/signin" className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200">
+                <Link href="/auth/signin" className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200 flex items-center min-h-[48px]">
                   Sign In
                 </Link>
                 <Link href="/auth/signup" className="group">
                   <button
-                    className="relative px-5 sm:px-6 py-2.5 sm:py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] min-h-[48px] touch-manipulation"
+                    className="relative px-5 sm:px-6 py-2.5 sm:py-2 rounded-full border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] min-h-[48px] touch-manipulation flex items-center"
                     style={{
                       boxShadow: `
                         0 15px 40px -10px rgba(0, 0, 0, 0.8),

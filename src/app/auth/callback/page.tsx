@@ -112,8 +112,20 @@ export default function AuthCallback() {
               console.log('📝 Found pending rating, redirecting to signup-success')
               router.push('/auth/signup-success')
             } else {
-              // Successfully authenticated, redirect to dashboard
-              router.push('/dashboard')
+              // Successfully authenticated, check if user has ratings
+              // If no ratings, redirect to forced first rating
+              const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
+              if (ratingsRes.ok) {
+                const ratings = await ratingsRes.json()
+                if (Array.isArray(ratings) && ratings.length === 0) {
+                  router.push('/onboarding/rate')
+                } else {
+                  router.push('/dashboard')
+                }
+              } else {
+                // If we can't check, redirect to onboarding to be safe
+                router.push('/onboarding/rate')
+              }
             }
             return
           }
@@ -143,8 +155,20 @@ export default function AuthCallback() {
             console.log('📝 Found pending rating, redirecting to signup-success')
             router.push('/auth/signup-success')
           } else {
-            // Successfully authenticated, redirect to dashboard
-            router.push('/dashboard')
+            // Successfully authenticated, check if user has ratings
+            // If no ratings, redirect to forced first rating
+            const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
+            if (ratingsRes.ok) {
+              const ratings = await ratingsRes.json()
+              if (Array.isArray(ratings) && ratings.length === 0) {
+                router.push('/onboarding/rate')
+              } else {
+                router.push('/dashboard')
+              }
+            } else {
+              // If we can't check, redirect to onboarding to be safe
+              router.push('/onboarding/rate')
+            }
           }
         } else {
           console.log('❌ No session found, redirecting to sign-in')

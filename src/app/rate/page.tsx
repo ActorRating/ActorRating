@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -522,12 +522,14 @@ function RatePageContent() {
     )
   }
 
-  // Track rate_start when actor and movie are selected
+  // Track rate_start when actor and movie are selected (only once, not when editing)
+  const hasTrackedRateStart = useRef(false)
   useEffect(() => {
-    if (actor && movie && !submitted) {
+    if (actor && movie && !submitted && !hasTrackedRateStart.current && !ratingId) {
       trackRateStart(actor.name, movie.title, movie.year)
+      hasTrackedRateStart.current = true
     }
-  }, [actor, movie, submitted])
+  }, [actor?.id, movie?.id, submitted, ratingId])
 
   // Show rating form when both actor and movie are selected (or success state)
   if (actor && movie) {

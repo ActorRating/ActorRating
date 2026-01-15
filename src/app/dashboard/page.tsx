@@ -74,14 +74,6 @@ export default function DashboardPage() {
   const [popularActors, setPopularActors] = useState<Actor[]>([])
   const [visibleRatingsCount, setVisibleRatingsCount] = useState(6)
 
-  useEffect(() => {
-    if (user && isInitialized) {
-      fetchUserData()
-    } else if (isInitialized && !sessionLoading) {
-      setIsLoadingData(false)
-    }
-  }, [user, sessionLoading, isInitialized])
-
   const fetchUserData = async () => {
     try {
       setIsLoadingData(true)
@@ -91,6 +83,12 @@ export default function DashboardPage() {
       if (ratingsRes.ok) {
         const ratingsData = await ratingsRes.json()
         setRatings(ratingsData) // Store all ratings
+        
+        // Guardrail: Redirect to onboarding if user has 0 ratings
+        if (Array.isArray(ratingsData) && ratingsData.length === 0) {
+          router.push('/onboarding/rate')
+          return
+        }
       }
 
       // Fetch popular actors by specific names
@@ -106,6 +104,14 @@ export default function DashboardPage() {
       setIsLoadingData(false)
     }
   }
+
+  useEffect(() => {
+    if (user && isInitialized) {
+      fetchUserData()
+    } else if (isInitialized && !sessionLoading) {
+      setIsLoadingData(false)
+    }
+  }, [user, sessionLoading, isInitialized, router])
 
   const calculateAverage = (rating: Rating) => {
     // Ratings are stored as 0-100, so divide by 10 to get 0-10 scale
