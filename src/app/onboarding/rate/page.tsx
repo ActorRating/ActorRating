@@ -415,110 +415,6 @@ export default function OnboardingRatePage() {
     )
   }
 
-  // Show first rating success card
-  if (showFirstRatingSuccess) {
-    return (
-      <AuthGuard>
-        <SignedInLayout>
-          <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
-                damping: 30,
-                duration: 0.6
-              }}
-              className="w-full max-w-md"
-            >
-              {/* Success Card */}
-              <div 
-                className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-8 sm:p-10"
-                style={{
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                }}
-              >
-                {/* Glow effect */}
-                <div className="absolute inset-0 opacity-30 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/20 rounded-full blur-3xl" />
-                </div>
-
-                {/* Content */}
-                <div className="relative z-10 text-center">
-                  {/* Emoji and Title */}
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 400, 
-                      damping: 15,
-                      delay: 0.2
-                    }}
-                    className="mb-6"
-                  >
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h2 
-                      className="text-2xl sm:text-3xl font-bold text-white mb-6"
-                      style={{ 
-                        fontFamily: 'var(--font-cinzel), serif',
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      Your first rating is live!
-                    </h2>
-                  </motion.div>
-
-                  {/* Achievement List */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="space-y-4 mb-8 text-left"
-                  >
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">Dashboard unlocked</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">Viewer badge earned</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">9 more ratings to Critic</span>
-                    </div>
-                  </motion.div>
-
-                  {/* Go to Dashboard Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    <button
-                      onClick={() => router.push('/dashboard')}
-                      className="w-full px-6 py-3.5 rounded-full font-semibold text-base sm:text-lg text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] hover:from-[#FFD700] hover:via-[#FFA500] hover:to-[#FF8C00] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      Go to Dashboard
-                    </button>
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </SignedInLayout>
-      </AuthGuard>
-    )
-  }
-
   // Show rating form when performance is selected
   if (selectedPerformance && actor && movie) {
     return (
@@ -893,6 +789,7 @@ export default function OnboardingRatePage() {
           </div>
         </div>
       </div>
+      </SignedInLayout>
     </AuthGuard>
   )
 }
