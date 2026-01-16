@@ -524,10 +524,6 @@ export default function OnboardingRatePage() {
           {/* Desktop: Grid layout */}
           <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {CURATED_PERFORMANCES.map((performance, index) => {
-              const rateUrl = getRateUrl(
-                { id: performance.actorId, name: performance.actorName, slug: null },
-                { id: performance.movieId, title: performance.movieTitle, year: performance.year, slug: null }
-              )
               const character = performance.character || "—"
 
               return (
