@@ -49,6 +49,9 @@ function RatePageContent() {
   const { executeRecaptcha } = useRecaptchaV3()
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [pendingRatingData, setPendingRatingData] = useState<any>(null)
+  
+  // Track rate_start ref - must be declared before any conditional returns
+  const hasTrackedRateStart = useRef(false)
 
   // Check for submitted rating from sessionStorage (after sign-in)
   useEffect(() => {
@@ -76,10 +79,8 @@ function RatePageContent() {
   }, [submitted, submittedRating])
 
   // Scroll to actor name when rating form loads
-  const hasScrolledRef = useRef<string | null>(null)
   useEffect(() => {
-    const scrollKey = `${actor?.id}-${movie?.id}`
-    if (actor?.id && movie?.id && !submitted && hasScrolledRef.current !== scrollKey) {
+    if (actor && movie && !submitted) {
       // Wait for the component to render, then scroll to actor name
       const timer = setTimeout(() => {
         const actorNameElement = document.getElementById('actor-name-header')
@@ -90,12 +91,11 @@ function RatePageContent() {
             top: elementTop - offset, 
             behavior: 'smooth' 
           })
-          hasScrolledRef.current = scrollKey
         }
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [actor?.id, movie?.id, submitted]) // Use stable IDs instead of objects
+  }, [actor, movie, submitted])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,7 +158,7 @@ function RatePageContent() {
                 }))
                 .catch(err => {
                   console.error('Failed to fetch movie:', err)
-                  setError('Failed to fetch movie data. Please try again.')
+              setError('Failed to fetch movie data. Please try again.')
                 })
             )
           }
@@ -178,7 +178,7 @@ function RatePageContent() {
     } else {
       setLoading(false)
     }
-  }, [actorId, movieId, ratingId]) // Removed actor?.id to prevent infinite loop
+  }, [actorId, movieId, ratingId]) // Removed actor?.id dependency to prevent infinite loop
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
@@ -546,7 +546,6 @@ function RatePageContent() {
   }
 
   // Track rate_start when actor and movie are selected (only once, not when editing)
-  const hasTrackedRateStart = useRef(false)
   useEffect(() => {
     if (actor && movie && !submitted && !hasTrackedRateStart.current && !ratingId) {
       trackRateStart(actor.name, movie.title, movie.year)
