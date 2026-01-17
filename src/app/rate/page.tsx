@@ -180,6 +180,15 @@ function RatePageContent() {
     }
   }, [actorId, movieId, ratingId]) // Removed actor?.id dependency to prevent infinite loop
 
+  // Track rate_start when actor and movie are selected (only once, not when editing)
+  // MUST be before any conditional returns
+  useEffect(() => {
+    if (actor && movie && !submitted && !hasTrackedRateStart.current && !ratingId) {
+      trackRateStart(actor.name, movie.title, movie.year)
+      hasTrackedRateStart.current = true
+    }
+  }, [actor?.id, movie?.id, submitted, ratingId])
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (!query.trim()) {
@@ -544,14 +553,6 @@ function RatePageContent() {
       </Suspense>
     )
   }
-
-  // Track rate_start when actor and movie are selected (only once, not when editing)
-  useEffect(() => {
-    if (actor && movie && !submitted && !hasTrackedRateStart.current && !ratingId) {
-      trackRateStart(actor.name, movie.title, movie.year)
-      hasTrackedRateStart.current = true
-    }
-  }, [actor?.id, movie?.id, submitted, ratingId])
 
   // Show rating form when both actor and movie are selected (or success state)
   if (actor && movie) {
