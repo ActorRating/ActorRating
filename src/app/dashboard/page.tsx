@@ -489,7 +489,13 @@ export default function DashboardPage() {
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
                                       <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                         <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
-                                        <span className="text-2xl font-bold text-[#FFD700]">
+                                        <span 
+                                          className="text-2xl font-bold text-[#FFD700]"
+                                          style={{
+                                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                                            fontVariantNumeric: 'tabular-nums',
+                                          }}
+                                        >
                                           {(apiActor.careerScore / 10).toFixed(1)}
                                         </span>
                                       </div>

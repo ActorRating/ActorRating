@@ -648,14 +648,22 @@ function LandingPageCard({
             {/* Top Row: Rating Badge and Year */}
             <div className="flex items-center justify-between mb-6">
               {rating ? (
-                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                  <FaStar className="w-5 h-5 text-[#FFD700]" />
-                  <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                  <FaStar className="w-6 h-6 text-[#FFD700]" />
+                  <span 
+                    className="text-3xl font-bold text-[#FFD700]"
+                    style={{
+                      fontFamily: 'var(--font-geist-sans), sans-serif',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {rating}
+                  </span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                  <FaStar className="w-5 h-5 text-[#666]" />
-                  <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                  <FaStar className="w-6 h-6 text-[#666]" />
+                  <span className="text-3xl font-bold text-[#a3a3a3]">N/A</span>
                 </div>
               )}
               

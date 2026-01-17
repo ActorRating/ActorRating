@@ -89,7 +89,13 @@ export function UserProgressBar() {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl sm:text-3xl font-bold text-[#FFD700]">
+            <div 
+              className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
+              style={{
+                fontFamily: 'var(--font-geist-sans), sans-serif',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
               {Math.round(progressData.progress)}%
             </div>
           </div>

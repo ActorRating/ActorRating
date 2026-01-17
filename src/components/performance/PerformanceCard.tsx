@@ -224,7 +224,13 @@ export function PerformanceCard({
                  </Link>
                )}
                <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
-               <span className="text-2xl font-bold text-[#FFD700]">
+               <span 
+                 className="text-2xl font-bold text-[#FFD700]"
+                 style={{
+                   fontFamily: 'var(--font-geist-sans), sans-serif',
+                   fontVariantNumeric: 'tabular-nums',
+                 }}
+               >
                  {averageRating.toFixed(1)}
                </span>
              </div>

@@ -13,7 +13,7 @@ import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SearchBar } from '@/components/SearchBar'
 import { FaStar } from 'react-icons/fa'
-import { CheckCircle, Star, Users, TrendingUp } from 'lucide-react'
+import { CheckCircle, Star, Users, TrendingUp, X } from 'lucide-react'
 import { getLevelProgress } from '@/lib/badges'
 
 // Curated performances for first rating
@@ -139,6 +139,9 @@ export default function OnboardingRatePage() {
     const container = scrollContainerRef.current
     if (!container) return
 
+    let rafId: number | null = null
+    let ticking = false
+
     const updateActiveCard = () => {
       const containerRect = container.getBoundingClientRect()
       const containerCenter = containerRect.left + containerRect.width / 2
@@ -179,14 +182,38 @@ export default function OnboardingRatePage() {
       // Update both activeCard (for desktop) and currentIndex (for nav dots)
       setActiveCard(closestIndex)
       setCurrentIndex(closestIndex)
+      ticking = false
     }
 
-    container.addEventListener('scroll', updateActiveCard, { passive: true })
+    const handleScroll = () => {
+      if (!ticking) {
+        rafId = requestAnimationFrame(() => {
+          updateActiveCard()
+        })
+        ticking = true
+      }
+    }
+
+    const handleTouchMove = () => {
+      if (!ticking) {
+        rafId = requestAnimationFrame(() => {
+          updateActiveCard()
+        })
+        ticking = true
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: true })
+    container.addEventListener('touchend', updateActiveCard, { passive: true })
     window.addEventListener('resize', updateActiveCard, { passive: true })
     updateActiveCard()
 
     return () => {
-      container.removeEventListener('scroll', updateActiveCard)
+      if (rafId) cancelAnimationFrame(rafId)
+      container.removeEventListener('scroll', handleScroll)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', updateActiveCard)
       window.removeEventListener('resize', updateActiveCard)
     }
   }, [])
@@ -459,6 +486,18 @@ export default function OnboardingRatePage() {
                   `,
                 }}
               >
+                {/* Close Button */}
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="absolute top-3 right-3 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                  aria-label="Close and go to dashboard"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
+                    <X className="w-4 h-4 pointer-events-none" />
+                  </div>
+                </button>
+
                 {/* Glow effect */}
                 <div className="absolute inset-0 opacity-30 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/20 rounded-full blur-3xl" />
@@ -503,6 +542,8 @@ export default function OnboardingRatePage() {
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
                           }}
                         >
                           {userScore.toFixed(1)}/10
@@ -529,6 +570,8 @@ export default function OnboardingRatePage() {
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
                           }}
                         >
                           {communityData ? `${communityData.average.toFixed(1)}/10` : 'N/A'}
@@ -775,7 +818,15 @@ export default function OnboardingRatePage() {
                             {rating ? (
                               <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                 <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
+                                <span 
+                                  className="text-2xl font-bold text-[#FFD700]"
+                                  style={{
+                                    fontFamily: 'var(--font-geist-sans), sans-serif',
+                                    fontVariantNumeric: 'tabular-nums',
+                                  }}
+                                >
+                                  {rating}
+                                </span>
                               </div>
                             ) : (
                               <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
@@ -897,7 +948,15 @@ export default function OnboardingRatePage() {
                             {rating ? (
                               <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                 <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
+                                <span 
+                                  className="text-2xl font-bold text-[#FFD700]"
+                                  style={{
+                                    fontFamily: 'var(--font-geist-sans), sans-serif',
+                                    fontVariantNumeric: 'tabular-nums',
+                                  }}
+                                >
+                                  {rating}
+                                </span>
                               </div>
                             ) : (
                               <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">

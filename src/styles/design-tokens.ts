@@ -62,7 +62,7 @@ export const designTokens = {
   typography: {
     fonts: {
       heading: {
-        family: "'Cinzel', serif",
+        family: "'Playfair Display', serif",
         fallback: "Georgia, 'Times New Roman', serif",
         weights: {
           regular: 400,

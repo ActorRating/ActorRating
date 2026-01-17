@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Geist, Geist_Mono, Cinzel, Cormorant_Garamond } from "next/font/google";
+import { Geist, Geist_Mono, Playfair_Display, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const cinzel = Cinzel({
+const playfairDisplay = Playfair_Display({
   variable: "--font-cinzel",
   subsets: ["latin"],
   weight: "400",
@@ -141,7 +141,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} ${cormorantGaramond.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} antialiased`}
         suppressHydrationWarning
       >
         {/* App Providers */}

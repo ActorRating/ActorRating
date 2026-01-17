@@ -809,9 +809,15 @@ function PerformanceSection() {
                   <div className="flex-1">
                     {/* Rating Badge */}
                     <div className="flex items-center justify-between mb-6">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                        <FaStar className="w-4 h-4 text-[#FFD700]" />
-                        <span className="text-xl font-bold text-[#FFD700]">
+                      <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                        <FaStar className="w-5 h-5 text-[#FFD700]" />
+                        <span 
+                          className="text-2xl font-bold text-[#FFD700]"
+                          style={{
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
                           {(() => {
                             const key = `${highlight.actor}:${highlight.movie}`;
                             const perfData = performancesData.get(key);

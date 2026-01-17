@@ -337,7 +337,8 @@ export default function ActorPage() {
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    fontFamily: 'var(--font-cinzel), serif',
+                    fontFamily: 'var(--font-geist-sans), sans-serif',
+                    fontVariantNumeric: 'tabular-nums',
                     letterSpacing: '-0.02em',
                   }}
                 >
@@ -378,12 +379,12 @@ export default function ActorPage() {
               className="mb-10 sm:mb-12"
             >
               {/* Mobile: Stacked layout, Desktop: Same line */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 mb-8 sm:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 lg:gap-6 mb-8 sm:mb-6">
                 {/* Left side: Filmography heading and bubble */}
-                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start">
+                <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start flex-shrink-0 min-w-0">
                   <Film className="w-7 h-7 sm:w-6 sm:h-6 text-[#FFD700] flex-shrink-0" />
                   <h2 
-                    className="text-4xl sm:text-5xl md:text-6xl font-bold text-center sm:text-left flex-shrink-0"
+                    className="text-4xl sm:text-5xl md:text-6xl font-bold text-center sm:text-left flex-shrink-0 min-w-0"
                     style={{ 
                       fontFamily: 'var(--font-cinzel), serif',
                       letterSpacing: '0.02em',
@@ -403,7 +404,7 @@ export default function ActorPage() {
                 </div>
                 
                 {/* Right side: Search Bar and Sort */}
-                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-4 sm:gap-3 w-full sm:w-auto flex-shrink min-w-0">
                   <div className="relative flex-1 sm:w-96 lg:w-[28rem] max-w-full">
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
@@ -565,7 +566,13 @@ export default function ActorPage() {
                             {/* Score Pill - Top Left - Bigger */}
                             <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                               <FaStar className="w-5 h-5 text-[#FFD700]" />
-                              <span className="text-2xl font-bold text-[#FFD700]">
+                              <span 
+                                className="text-2xl font-bold text-[#FFD700]"
+                                style={{
+                                  fontFamily: 'var(--font-geist-sans), sans-serif',
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}
+                              >
                                 {rating || 'N/A'}
                               </span>
                             </div>
