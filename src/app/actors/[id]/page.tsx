@@ -308,30 +308,58 @@ export default function ActorPage() {
               />
             </motion.div>
 
-            {/* Career Score - Text Layout */}
+            {/* Career Score - Enhanced Text Layout */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
               className="mb-8 text-center"
             >
-              <div className="text-sm sm:text-base text-[#a3a3a3] font-medium mb-2">
-                Career Score
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700]" />
+                <div 
+                  className="text-xs sm:text-sm uppercase tracking-wider font-semibold"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Career Score
+                </div>
               </div>
-              <div 
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-2"
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
+              <div className="flex items-baseline justify-center gap-2 mb-3">
+                <div 
+                  className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    fontFamily: 'var(--font-cinzel), serif',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
+                </div>
+                {careerScore !== null && (
+                  <div 
+                    className="text-xl sm:text-2xl lg:text-3xl font-bold opacity-60"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    /10
+                  </div>
+                )}
               </div>
-              <div className="text-sm sm:text-base text-[#a3a3a3] font-medium">
+              <div className="text-xs sm:text-sm text-[#a3a3a3] font-medium tracking-wide">
                 {careerScore !== null 
-                  ? `out of ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
+                  ? `${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
                   : `No ratings yet`
                 }
               </div>
