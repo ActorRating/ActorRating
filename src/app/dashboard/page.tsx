@@ -3,8 +3,8 @@
 export const dynamic = "force-dynamic"
 
 import { useUser, useSession } from "@/components/providers/SessionProvider"
-import { useRouter } from "next/navigation"
-import React, { useState, useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import React, { useState, useEffect, useRef } from "react"
 import { SignedInLayout } from "@/components/layout"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { SearchBar } from "@/components/SearchBar"
@@ -69,10 +69,13 @@ export default function DashboardPage() {
   const user = useUser()
   const { session, loading: sessionLoading, isInitialized } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [ratings, setRatings] = useState<Rating[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const [showBriefLoading, setShowBriefLoading] = useState(false)
   const [popularActors, setPopularActors] = useState<Actor[]>([])
   const [visibleRatingsCount, setVisibleRatingsCount] = useState(6)
+  const prevPathnameRef = useRef<string | null>(null)
 
   const fetchUserData = async () => {
     try {
@@ -104,6 +107,33 @@ export default function DashboardPage() {
       setIsLoadingData(false)
     }
   }
+
+  // Detect route changes and show brief loading state
+  useEffect(() => {
+    // Only show loading if coming from a different page (not initial load)
+    if (prevPathnameRef.current && 
+        prevPathnameRef.current !== pathname && 
+        pathname === '/dashboard' && 
+        prevPathnameRef.current !== '/dashboard' &&
+        prevPathnameRef.current !== null) {
+      // User navigated back to dashboard from another page
+      setShowBriefLoading(true)
+      const timer = setTimeout(() => {
+        setShowBriefLoading(false)
+      }, 150) // Brief 150ms loading state
+      return () => clearTimeout(timer)
+    }
+    // Update previous pathname
+    if (prevPathnameRef.current === null && pathname === '/dashboard') {
+      // Initial mount - set after a delay to avoid triggering on first render
+      const timer = setTimeout(() => {
+        prevPathnameRef.current = pathname
+      }, 50)
+      return () => clearTimeout(timer)
+    } else if (pathname) {
+      prevPathnameRef.current = pathname
+    }
+  }, [pathname])
 
   useEffect(() => {
     if (user && isInitialized) {
@@ -322,6 +352,17 @@ export default function DashboardPage() {
             </motion.div>
           </nav>
           </header>
+
+          {/* Brief Loading State on Navigation - Subtle glitch effect */}
+          {showBriefLoading && (
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-[1px] z-50 flex items-center justify-center pointer-events-none">
+              <BouncingBallsLoader 
+                size="sm" 
+                color="#FFD700"
+                showText={false}
+              />
+            </div>
+          )}
 
           {/* Progress Bar */}
           <UserProgressBar />

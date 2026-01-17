@@ -140,19 +140,38 @@ export function getLevelProgress(ratingCount: number): {
     (a.minRatings || 0) - (b.minRatings || 0)
   )
   
+  // Since users with 0 ratings can't access dashboard, minimum is 1 rating (Viewer)
   // If user has no badge yet (0 ratings), show progress to first badge (Viewer)
+  // But since dashboard requires 1+ ratings, we should never see 0 ratings here
+  // However, handle it gracefully: if 0 ratings, show progress to Viewer
+  // If 1+ ratings but no badge found (shouldn't happen), treat as Viewer
   if (!currentBadge) {
     const firstBadge = levelBadges[0] // Viewer badge (minRatings: 1)
     if (firstBadge && firstBadge.minRatings) {
-      const nextMin = firstBadge.minRatings
-      const progress = Math.min(100, Math.max(0, (ratingCount / nextMin) * 100))
-      const ratingsNeeded = Math.max(0, nextMin - ratingCount)
-      
-      return {
-        currentBadge: null,
-        nextBadge: firstBadge,
-        progress,
-        ratingsNeeded
+      // If user has 0 ratings, show progress to Viewer
+      if (ratingCount === 0) {
+        return {
+          currentBadge: null,
+          nextBadge: firstBadge,
+          progress: 0,
+          ratingsNeeded: 1
+        }
+      }
+      // If user has 1+ ratings but no badge (shouldn't happen), give them Viewer
+      // This ensures dashboard always shows Viewer as minimum
+      const nextBadge = levelBadges[1] || null // Critic badge (minRatings: 10)
+      if (nextBadge && nextBadge.minRatings) {
+        const range = nextBadge.minRatings - firstBadge.minRatings // 10 - 1 = 9
+        const progressCount = ratingCount - firstBadge.minRatings // ratingCount - 1
+        const progress = Math.min(100, Math.max(0, (progressCount / range) * 100))
+        const ratingsNeeded = Math.max(0, nextBadge.minRatings - ratingCount)
+        
+        return {
+          currentBadge: firstBadge, // Viewer
+          nextBadge: nextBadge, // Critic
+          progress,
+          ratingsNeeded
+        }
       }
     }
     

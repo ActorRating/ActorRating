@@ -478,6 +478,17 @@ button, a, input, select, textarea, [role="button"] {
   transition: all 0.2s ease-in-out;
 }
 
+/* All buttons should show pointer cursor */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+a[href] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Modern focus styles for accessibility */
 *:focus {
   outline: none;

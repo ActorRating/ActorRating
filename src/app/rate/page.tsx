@@ -120,28 +120,48 @@ function RatePageContent() {
           }
           setCharacterName(ratingData.comment || '')
         } else {
-          // Regular flow for new ratings
+          // Regular flow for new ratings - fetch in parallel for speed
+          const fetchPromises: Promise<any>[] = []
+          
           if (actorId) {
-            const actorData = await actorsApi.getById(actorId)
-            setActor(actorData)
+            // Use minimal mode for faster loading
+            fetchPromises.push(
+              fetch(`/api/actors/${actorId}?minimal=true`)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => data && setActor({
+                  id: data.id,
+                  name: data.name,
+                  imageUrl: data.imageUrl,
+                  slug: data.slug,
+                  createdAt: data.createdAt || new Date().toISOString(),
+                  updatedAt: data.updatedAt || new Date().toISOString(),
+                }))
+                .catch(err => console.error('Failed to fetch actor:', err))
+            )
           }
+          
           if (movieId) {
-            // Fetch movie data using the movies API
-            try {
-              const response = await fetch(`/api/movies/${movieId}`)
-              if (response.ok) {
-                const movieData = await response.json()
-                setMovie(movieData)
-              } else {
-                const errorData = await response.json().catch(() => ({ error: 'Failed to fetch movie' }))
-                console.error('Failed to fetch movie:', errorData)
-                setError(errorData.error || 'Failed to fetch movie data')
-              }
-            } catch (error) {
-              console.error('Failed to fetch movie:', error)
-              setError('Failed to fetch movie data. Please try again.')
-            }
+            fetchPromises.push(
+              fetch(`/api/movies/${movieId}`)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => data && setMovie({
+                  id: data.id,
+                  title: data.title,
+                  year: data.year,
+                  director: data.director || 'Unknown',
+                  slug: data.slug,
+                  createdAt: data.createdAt || new Date().toISOString(),
+                  updatedAt: data.updatedAt || new Date().toISOString(),
+                }))
+                .catch(err => {
+                  console.error('Failed to fetch movie:', err)
+                  setError('Failed to fetch movie data. Please try again.')
+                })
+            )
           }
+          
+          // Wait for all fetches to complete
+          await Promise.all(fetchPromises)
         }
       } catch (error) {
         console.error('Failed to fetch data:', error)

@@ -13,7 +13,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "md", asChild = false, noMotion = false, children, ...props }, ref) => {
     const buttonClasses = cn(
-      "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:opacity-90",
+      "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed active:opacity-90 cursor-pointer",
       {
         "bg-primary text-primary-foreground hover:bg-accent premium-shadow": variant === "default",
         "border border-border bg-secondary text-secondary-foreground hover:bg-muted hover:border-primary premium-shadow": variant === "outline",

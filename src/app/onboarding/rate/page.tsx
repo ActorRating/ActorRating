@@ -66,6 +66,17 @@ const CURATED_PERFORMANCES = [
   }
 ]
 
+interface PerformanceWithRating {
+  actorName: string
+  actorId: string
+  movieTitle: string
+  movieId: string
+  character: string
+  year: number
+  averageRating?: number | null
+  ratingCount?: number
+}
+
 export default function OnboardingRatePage() {
   const router = useRouter()
   const user = useUser()
@@ -79,6 +90,7 @@ export default function OnboardingRatePage() {
   const [submittedRating, setSubmittedRating] = useState<any>(null)
   const [showFirstRatingSuccess, setShowFirstRatingSuccess] = useState(false)
   const [isFirstRating, setIsFirstRating] = useState(false)
+  const [performancesWithRatings, setPerformancesWithRatings] = useState<PerformanceWithRating[]>([])
   
   // Carousel state for mobile
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -175,59 +187,106 @@ export default function OnboardingRatePage() {
     }
   }, [])
 
-  const handlePerformanceSelect = async (performance: typeof CURATED_PERFORMANCES[0]) => {
-    setSelectedPerformance(performance)
-    setLoading(true)
+  // Fetch real rating data for curated performances
+  useEffect(() => {
+    const fetchPerformanceRatings = async () => {
+      try {
+        // API expects targets with actor and movie names
+        const lookupData = CURATED_PERFORMANCES.map(p => ({
+          actor: p.actorName,
+          movie: p.movieTitle
+        }))
 
-    try {
-      // Fetch actor data
-      const actorRes = await fetch(`/api/actors/${performance.actorId}`)
-      if (!actorRes.ok) {
-        // Try alternative endpoint or create minimal actor object
-        setActor({
-          id: performance.actorId,
-          name: performance.actorName,
-          imageUrl: null,
-          slug: null
+        const response = await fetch('/api/performances/by-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targets: lookupData })
         })
-      } else {
-        const actorData = await actorRes.json()
-        setActor(actorData)
+
+        if (response.ok) {
+          const data = await response.json()
+          const performances = data.performances || []
+          
+          // Map the fetched data back to our curated list with ratings
+          const enriched = CURATED_PERFORMANCES.map(curated => {
+            // Find by matching actor name and movie title (API returns by name, not ID)
+            const found = performances.find((p: any) => {
+              const pActorName = (p.actor?.name || '').toLowerCase().trim()
+              const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
+              const curatedActorName = curated.actorName.toLowerCase().trim()
+              const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
+              
+              return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
+            })
+            
+            if (found) {
+              console.log(`✅ Found rating for ${curated.actorName} - ${curated.movieTitle}:`, {
+                averageRating: found.averageRating,
+                ratingCount: found.ratingCount
+              })
+            } else {
+              console.log(`❌ No rating found for ${curated.actorName} - ${curated.movieTitle}`)
+            }
+            
+            return {
+              ...curated,
+              averageRating: found?.averageRating ?? null,
+              ratingCount: found?.ratingCount ?? 0
+            }
+          })
+          
+          setPerformancesWithRatings(enriched)
+        } else {
+          // If API fails, use curated list without ratings
+          setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
+        }
+      } catch (error) {
+        console.error('Failed to fetch performance ratings:', error)
+        // On error, use curated list without ratings
+        setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
       }
+    }
 
-      // Fetch movie data
-      const movieRes = await fetch(`/api/movies/${performance.movieId}`)
-      if (!movieRes.ok) {
-        // Create minimal movie object
-        setMovie({
-          id: performance.movieId,
-          title: performance.movieTitle,
-          year: performance.year,
-          director: 'Unknown',
-          slug: null
-        })
-      } else {
+    fetchPerformanceRatings()
+  }, [])
+
+  const handlePerformanceSelect = async (performance: typeof CURATED_PERFORMANCES[0]) => {
+    // Set performance immediately with minimal data (no delay)
+    setSelectedPerformance(performance)
+    setActor({
+      id: performance.actorId,
+      name: performance.actorName,
+      imageUrl: null,
+      slug: null
+    })
+    setMovie({
+      id: performance.movieId,
+      title: performance.movieTitle,
+      year: performance.year,
+      director: 'Unknown',
+      slug: null
+    })
+    setLoading(false) // No loading state needed - show form immediately
+
+    // Fetch additional data in the background (optional enhancement)
+    try {
+      const [actorRes, movieRes] = await Promise.all([
+        fetch(`/api/actors/${performance.actorId}`),
+        fetch(`/api/movies/${performance.movieId}`)
+      ])
+
+      // Update with full data if available (non-blocking)
+      if (actorRes.ok) {
+        const actorData = await actorRes.json()
+        setActor(prev => ({ ...prev, ...actorData }))
+      }
+      if (movieRes.ok) {
         const movieData = await movieRes.json()
-        setMovie(movieData)
+        setMovie(prev => ({ ...prev, ...movieData }))
       }
     } catch (error) {
-      console.error('Failed to fetch performance data:', error)
-      // Use minimal data as fallback
-      setActor({
-        id: performance.actorId,
-        name: performance.actorName,
-        imageUrl: null,
-        slug: null
-      })
-      setMovie({
-        id: performance.movieId,
-        title: performance.movieTitle,
-        year: performance.year,
-        director: 'Unknown',
-        slug: null
-      })
-    } finally {
-      setLoading(false)
+      // Silently fail - we already have minimal data
+      console.error('Failed to fetch additional performance data:', error)
     }
   }
 
@@ -496,8 +555,15 @@ export default function OnboardingRatePage() {
               >
                 <span className="text-white">Welcome, </span>
                 {user?.email && (
-                  <span className="text-white">
-                    {user.email.split('@')[0]}! 👋
+                  <span 
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    {user.email.split('@')[0]}!
                   </span>
                 )}
               </h1>
@@ -505,15 +571,37 @@ export default function OnboardingRatePage() {
                 Choose a performance you've seen to rate
               </p>
               
-              {/* Search Bar */}
-              <div className="max-w-2xl mx-auto mb-12">
-                <SearchBar 
-                  placeholder="🔍 Search actors or movies..."
-                  showClear
-                  autoFocus={false}
-                  className="w-full [&_input]:bg-[#1a1a1a] [&_input]:border-[#333] [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-[#FFD700]/50"
-                />
-              </div>
+              {/* Search Bar - Exact same as search page */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="max-w-3xl mx-auto mb-12"
+              >
+                <div className="relative group">
+                  <div 
+                    className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
+                    style={{
+                      boxShadow: `
+                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                      `,
+                      transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
+                      transformStyle: 'preserve-3d',
+                    }}
+                  >
+                    <SearchBar
+                      placeholder="Search for actors..."
+                      showClear
+                      autoFocus={false}
+                      className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-lg"
+                    />
+                  </div>
+                </div>
+              </motion.div>
 
               {/* Divider Text */}
               <p className="text-base sm:text-lg text-[#a3a3a3] font-light mb-8">
@@ -522,9 +610,14 @@ export default function OnboardingRatePage() {
             </motion.div>
 
           {/* Desktop: Grid layout */}
-          <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {CURATED_PERFORMANCES.map((performance, index) => {
+          <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+            {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
               const character = performance.character || "—"
+              const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+              // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+              const rating = hasRating && performance.averageRating != null 
+                ? (performance.averageRating / 10).toFixed(1) 
+                : null
 
               return (
                 <motion.div
@@ -532,10 +625,11 @@ export default function OnboardingRatePage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="flex h-full"
                 >
-                  {/* Premium Card - Clean & Cinematic - Matching actor pages */}
+                  {/* Premium Card - Clean & Cinematic - Matching performances page */}
                   <div 
-                    className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                    className="relative w-full h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] flex flex-col"
                     style={{
                       boxShadow: `
                         0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -554,48 +648,54 @@ export default function OnboardingRatePage() {
                     {/* Content */}
                     <div className="relative z-10 flex flex-col h-full">
                       <div className="flex-1">
-                        {/* Top Row: Rating Badge and Year */}
-                        <div className="flex items-center justify-between mb-6">
-                          {/* Score Pill - Top Left */}
-                          <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                            <FaStar className="w-5 h-5 text-[#666]" />
-                            <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+                          {/* Top Row: Rating Badge and Year */}
+                          <div className="flex items-center justify-between mb-6">
+                            {rating ? (
+                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                <FaStar className="w-5 h-5 text-[#666]" />
+                                <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+                              </div>
+                            )}
+                            
+                            {/* Movie Year */}
+                            <div className="text-[#a3a3a3] text-base font-medium">
+                              {performance.year}
+                            </div>
                           </div>
-                          
-                          {/* Movie Year - Top Right */}
-                          <div className="text-[#a3a3a3] text-base font-medium">
-                            {performance.year}
+
+                          {/* Actor Name */}
+                          <h3 
+                            className="text-xl sm:text-2xl font-bold text-white mb-2"
+                            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                          >
+                            {performance.actorName}
+                          </h3>
+
+                          {/* Movie Title */}
+                          <div className="mb-4">
+                            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+                              {performance.movieTitle}
+                            </span>
+                          </div>
+
+                          {/* Character/Quote */}
+                          <div className="mb-4">
+                            <p className="text-base sm:text-lg text-[#e4e4e7] leading-relaxed italic font-light">
+                              as {character}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Actor Name */}
-                        <h3 
-                          className="text-2xl sm:text-3xl font-bold text-white mb-2"
-                          style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                        >
-                          {performance.actorName}
-                        </h3>
-
-                        {/* Movie Title */}
-                        <div className="mb-4">
-                          <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
-                            {performance.movieTitle}
-                          </span>
-                        </div>
-
-                        {/* Character */}
-                        <div className="mb-6">
-                          <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                            as {character}
-                          </p>
-                        </div>
-                      </div>
 
                       {/* Rate Button */}
-                      <div className="mt-auto pt-4">
+                      <div className="mt-auto pt-3">
                         <button
                           onClick={() => handlePerformanceSelect(performance)}
-                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                           }}
@@ -623,8 +723,13 @@ export default function OnboardingRatePage() {
               ref={scrollContainerRef}
               className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
             >
-              {CURATED_PERFORMANCES.map((performance, index) => {
+              {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
                 const character = performance.character || "—"
+                const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+                // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+                const rating = hasRating && performance.averageRating != null 
+                  ? (performance.averageRating / 10).toFixed(1) 
+                  : null
 
                 return (
                   <div
@@ -644,9 +749,9 @@ export default function OnboardingRatePage() {
                       }
                     }}
                   >
-                    {/* Premium Card - Clean & Cinematic - Matching actor pages */}
-                    <div 
-                      className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                  {/* Premium Card - Clean & Cinematic - Matching performances page */}
+                  <div 
+                    className="relative p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
                       style={{
                         boxShadow: `
                           0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -667,13 +772,19 @@ export default function OnboardingRatePage() {
                         <div className="flex-1">
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-6">
-                            {/* Score Pill - Top Left */}
-                            <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                              <FaStar className="w-5 h-5 text-[#666]" />
-                              <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
-                            </div>
+                            {rating ? (
+                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                <span className="text-2xl font-bold text-[#FFD700]">{rating}</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                <FaStar className="w-5 h-5 text-[#666]" />
+                                <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+                              </div>
+                            )}
                             
-                            {/* Movie Year - Top Right */}
+                            {/* Movie Year */}
                             <div className="text-[#a3a3a3] text-base font-medium">
                               {performance.year}
                             </div>
@@ -681,7 +792,7 @@ export default function OnboardingRatePage() {
 
                           {/* Actor Name */}
                           <h3 
-                            className="text-2xl sm:text-3xl font-bold text-white mb-2"
+                            className="text-xl sm:text-2xl font-bold text-white mb-2"
                             style={{ fontFamily: 'var(--font-cinzel), serif' }}
                           >
                             {performance.actorName}
@@ -694,7 +805,7 @@ export default function OnboardingRatePage() {
                             </span>
                           </div>
 
-                          {/* Character */}
+                          {/* Character/Quote */}
                           <div className="mb-6">
                             <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
                               as {character}
@@ -740,7 +851,7 @@ export default function OnboardingRatePage() {
                 }}
               >
                 <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
-                  {CURATED_PERFORMANCES.map((_, index) => (
+                  {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((_, index) => (
                     <button
                       key={index}
                       onClick={() => {

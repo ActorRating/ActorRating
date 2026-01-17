@@ -9,7 +9,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log("🎭 Fetching actor with ID or slug:", id)
+    const { searchParams } = new URL(request.url)
+    const minimal = searchParams.get('minimal') === 'true'
+    
+    console.log("🎭 Fetching actor with ID or slug:", id, minimal ? "(minimal)" : "")
     
     // Try to fetch by slug first, then fallback to ID
     let { data: actor, error: actorError } = await supabaseServer
@@ -40,6 +43,20 @@ export async function GET(
     }
 
     console.log("🎭 Actor found:", actor.name)
+    
+    // If minimal mode, return early with just basic info (much faster)
+    if (minimal) {
+      const res = NextResponse.json({
+        id: actor.id,
+        name: actor.name,
+        imageUrl: actor.imageUrl,
+        slug: actor.slug,
+        createdAt: actor.createdAt,
+        updatedAt: actor.updatedAt,
+      })
+      res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800')
+      return res
+    }
 
     // Fetch performances for this actor
     const { data: performances, error: performancesError } = await supabaseServer

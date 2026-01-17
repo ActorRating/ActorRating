@@ -19,12 +19,13 @@ import { ratingsApi } from '@/lib/api'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function SlugBasedRatePage() {
   const params = useParams()
   const router = useRouter()
   const user = useUser()
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true) // Start with loading true for immediate feedback
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,10 +45,12 @@ export default function SlugBasedRatePage() {
       }
 
       try {
-        // Fetch movie and actor by slug
+        // Fetch minimal data needed for rating form (much faster)
+        // Use lightweight queries that only get basic info
         const [movieResponse, actorResponse] = await Promise.all([
           fetch(`/api/movies/${movieSlug}`),
-          fetch(`/api/actors/${actorSlug}`)
+          // For rate page, we only need basic actor info, not all performances/ratings
+          fetch(`/api/actors/${actorSlug}?minimal=true`)
         ])
 
         if (!movieResponse.ok || !actorResponse.ok) {
@@ -70,8 +73,24 @@ export default function SlugBasedRatePage() {
         const movieData = await movieResponse.json()
         const actorData = await actorResponse.json()
 
-        setMovie(movieData)
-        setActor(actorData)
+        // Set minimal data immediately - we only need id, name, imageUrl, slug for rating
+        setMovie({
+          id: movieData.id,
+          title: movieData.title,
+          year: movieData.year,
+          director: movieData.director || 'Unknown',
+          slug: movieData.slug,
+          createdAt: movieData.createdAt || new Date().toISOString(),
+          updatedAt: movieData.updatedAt || new Date().toISOString(),
+        })
+        setActor({
+          id: actorData.id,
+          name: actorData.name,
+          imageUrl: actorData.imageUrl,
+          slug: actorData.slug,
+          createdAt: actorData.createdAt || new Date().toISOString(),
+          updatedAt: actorData.updatedAt || new Date().toISOString(),
+        })
         setLoading(false)
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -85,29 +104,18 @@ export default function SlugBasedRatePage() {
   }, [params?.movieSlug, params?.actorSlug])
 
   if (loading) {
+    const Layout = user ? SignedInLayout : HomeLayout
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            {[0, 1, 2].map((index) => (
-              <motion.div
-                key={index}
-                className="w-3 h-3 bg-[#FFD700] rounded-full"
-                animate={{
-                  y: [0, -12, 0],
-                }}
-                transition={{
-                  duration: 0.6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: index * 0.15,
-                }}
-              />
-            ))}
-          </div>
-          <p className="text-white text-base">Loading</p>
+      <Layout>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <BouncingBallsLoader 
+            size="lg" 
+            color="#FFD700"
+            showText={true}
+            text="Loading rating page..."
+          />
         </div>
-      </div>
+      </Layout>
     )
   }
 
