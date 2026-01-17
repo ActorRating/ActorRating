@@ -1254,7 +1254,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-40 flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}

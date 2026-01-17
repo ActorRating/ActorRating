@@ -59,7 +59,7 @@ export default function ActorPage() {
   const [performances, setPerformances] = useState<Performance[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating'>('year')
+  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
 
   useEffect(() => {
@@ -86,11 +86,11 @@ export default function ActorPage() {
   // Close dropdown and update sort when search query changes
   useEffect(() => {
     setSortDropdownOpen(false)
-    // Auto-switch to relevance when searching, back to year when cleared
-    if (searchQuery.trim() && sortBy === 'year') {
+    // Auto-switch to relevance when searching, back to rating when cleared
+    if (searchQuery.trim() && sortBy === 'rating') {
       setSortBy('relevance')
     } else if (!searchQuery.trim() && sortBy === 'relevance') {
-      setSortBy('year')
+      setSortBy('rating')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
@@ -190,8 +190,7 @@ export default function ActorPage() {
         })
         break
       case 'relevance':
-      default:
-        // If searching, sort by search score, otherwise by year
+        // If searching, sort by search score, otherwise by rating
         if (searchQuery.trim()) {
           sorted.sort((a, b) => {
             const aScore = (a as any).searchScore || 0
@@ -202,8 +201,27 @@ export default function ActorPage() {
             return b.movie.year - a.movie.year
           })
         } else {
-          sorted.sort((a, b) => b.movie.year - a.movie.year)
+          // Default to rating when not searching
+          sorted.sort((a, b) => {
+            const aScore = a.averageScore || 0
+            const bScore = b.averageScore || 0
+            if (bScore !== aScore) {
+              return bScore - aScore
+            }
+            return b.movie.year - a.movie.year
+          })
         }
+        break
+      default:
+        // Default to rating
+        sorted.sort((a, b) => {
+          const aScore = a.averageScore || 0
+          const bScore = b.averageScore || 0
+          if (bScore !== aScore) {
+            return bScore - aScore
+          }
+          return b.movie.year - a.movie.year
+        })
         break
     }
 
@@ -290,26 +308,32 @@ export default function ActorPage() {
               />
             </motion.div>
 
-            {/* Career Score */}
+            {/* Career Score - Text Layout */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
-              className="mb-8"
+              className="mb-8 text-center"
             >
-              <div className="inline-flex items-center gap-3 px-10 py-6 rounded-[2rem] bg-gradient-to-r from-[#FFD700]/20 via-[#FFD700]/15 to-[#FFA500]/15 border-2 border-[#FFD700]/50">
-                <Star className="w-8 h-8 sm:w-10 sm:h-10 text-[#FFD700] fill-[#FFD700]" />
-                <div className="text-left">
-                  <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#FFD700] leading-tight">
-                    {careerScore !== null ? `${(careerScore / 10).toFixed(1)}/10` : 'N/A'}
-                  </div>
-                  <div className="text-base sm:text-lg text-[#FFD700]/90 font-medium mt-1">
-                    {careerScore !== null 
-                      ? `Career Score • ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
-                      : `No ratings yet`
-                    }
-                  </div>
-                </div>
+              <div className="text-sm sm:text-base text-[#a3a3a3] font-medium mb-2">
+                Career Score
+              </div>
+              <div 
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-2"
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
+              </div>
+              <div className="text-sm sm:text-base text-[#a3a3a3] font-medium">
+                {careerScore !== null 
+                  ? `out of ${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
+                  : `No ratings yet`
+                }
               </div>
             </motion.div>
           </motion.div>
@@ -463,6 +487,7 @@ export default function ActorPage() {
                 )
                 const character = performance.character || "—"
                 const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}` : null
+                const isHighestRated = sortBy === 'rating' && index === 0 && rating && parseFloat(rating) > 0
 
                 return (
                   <motion.div
@@ -474,10 +499,21 @@ export default function ActorPage() {
                     className="group relative"
                   >
                     {/* Premium Card - Clean & Cinematic - Matching performances page */}
+                    {/* Highest Rated Card - Subtle distinction */}
                     <div 
-                      className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                      className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
+                        isHighestRated 
+                          ? 'bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 border-[#FFD700]/30 hover:shadow-[0_0_50px_rgba(255,215,0,0.15)]' 
+                          : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-transparent hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]'
+                      }`}
                       style={{
-                        boxShadow: `
+                        boxShadow: isHighestRated ? `
+                          0 30px 80px -15px rgba(0, 0, 0, 0.95),
+                          0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                          0 0 0 1px rgba(255, 215, 0, 0.15),
+                          inset 0 1px 0 0 rgba(255, 215, 0, 0.2),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                        ` : `
                           0 25px 70px -15px rgba(0, 0, 0, 0.9),
                           0 15px 40px -10px rgba(0, 0, 0, 0.7),
                           0 0 0 1px rgba(255, 255, 255, 0.05),
@@ -486,8 +522,10 @@ export default function ActorPage() {
                         `,
                       }}
                     >
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                      {/* Glow effect - Enhanced for highest rated */}
+                      <div className={`absolute inset-0 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none ${
+                        isHighestRated ? 'opacity-30' : 'opacity-0 group-hover:opacity-100'
+                      }`}>
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
                       </div>
 

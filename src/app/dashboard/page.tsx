@@ -94,9 +94,12 @@ export default function DashboardPage() {
         }
       }
 
-      // Fetch popular actors by specific names
+      // Fetch popular actors by specific names - always fresh (no cache)
       const actorNames = POPULAR_ACTORS.map(a => a.name).join(',')
-      const actorsRes = await fetch(`/api/actors/popular?names=${encodeURIComponent(actorNames)}`, { cache: 'no-store' })
+      const actorsRes = await fetch(`/api/actors/popular?names=${encodeURIComponent(actorNames)}`, { 
+        cache: 'no-store',
+        next: { revalidate: 0 } // Always fetch fresh data
+      })
       if (actorsRes.ok) {
         const actorsData = await actorsRes.json()
         setPopularActors(actorsData)
@@ -604,31 +607,14 @@ export default function DashboardPage() {
                   <div className="flex justify-center mt-8">
                     <button
                       onClick={() => setVisibleRatingsCount(prev => Math.min(prev + 6, ratings.length))}
-                      className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] relative overflow-hidden group"
+                      className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                        transform: 'scale(1)',
-                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.03)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)'
                       }}
                     >
-                      {/* White light sweep effect */}
-                      <span 
-                        className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      />
-                      <span className="flex items-center justify-center gap-3 whitespace-nowrap relative z-10">
+                      <span className="flex items-center justify-center gap-3 whitespace-nowrap">
                         Show More
-                        <ArrowUpRight className="w-5 h-5 transition-transform duration-300 group-hover:rotate-45" />
+                        <ArrowUpRight className="w-5 h-5 transition-transform duration-200 group-hover:rotate-45" />
                       </span>
                     </button>
                   </div>
