@@ -76,9 +76,10 @@ function RatePageContent() {
   }, [submitted, submittedRating])
 
   // Scroll to actor name when rating form loads
-  const hasScrolledRef = useRef(false)
+  const hasScrolledRef = useRef<string | null>(null)
   useEffect(() => {
-    if (actor?.id && movie?.id && !submitted && !hasScrolledRef.current) {
+    const scrollKey = `${actor?.id}-${movie?.id}`
+    if (actor?.id && movie?.id && !submitted && hasScrolledRef.current !== scrollKey) {
       // Wait for the component to render, then scroll to actor name
       const timer = setTimeout(() => {
         const actorNameElement = document.getElementById('actor-name-header')
@@ -89,7 +90,7 @@ function RatePageContent() {
             top: elementTop - offset, 
             behavior: 'smooth' 
           })
-          hasScrolledRef.current = true
+          hasScrolledRef.current = scrollKey
         }
       }, 100)
       return () => clearTimeout(timer)
