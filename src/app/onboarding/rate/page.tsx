@@ -13,6 +13,8 @@ import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SearchBar } from '@/components/SearchBar'
 import { FaStar } from 'react-icons/fa'
+import { CheckCircle, Star, Users, TrendingUp } from 'lucide-react'
+import { getLevelProgress } from '@/lib/badges'
 
 // Curated performances for first rating
 const CURATED_PERFORMANCES = [
@@ -91,6 +93,8 @@ export default function OnboardingRatePage() {
   const [showFirstRatingSuccess, setShowFirstRatingSuccess] = useState(false)
   const [isFirstRating, setIsFirstRating] = useState(false)
   const [performancesWithRatings, setPerformancesWithRatings] = useState<PerformanceWithRating[]>([])
+  const [communityData, setCommunityData] = useState<{ average: number; count: number } | null>(null)
+  const [levelProgress, setLevelProgress] = useState<{ ratingsNeeded: number; nextBadge: string } | null>(null)
   
   // Carousel state for mobile
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -336,8 +340,46 @@ export default function OnboardingRatePage() {
       setSubmittedRating(result)
       setSubmitted(true)
 
-      // If this is the first rating, show success card instead of redirecting
+      // If this is the first rating, fetch community data and level progress
       if (isFirstRating) {
+        // Fetch community data for this performance
+        try {
+          const communityRes = await fetch('/api/performances/by-lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targets: [{ actor: actor.name, movie: movie.title }]
+            })
+          })
+          if (communityRes.ok) {
+            const communityDataRes = await communityRes.json()
+            const perf = communityDataRes.performances?.[0]
+            if (perf) {
+              setCommunityData({
+                average: perf.averageRating ? perf.averageRating / 10 : 0,
+                count: perf.ratingCount || 0
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch community data:', error)
+        }
+
+        // Get level progress
+        try {
+          const progressRes = await fetch('/api/user/level-progress', { cache: 'no-store' })
+          if (progressRes.ok) {
+            const progressData = await progressRes.json()
+            const progress = getLevelProgress(progressData.ratingCount)
+            setLevelProgress({
+              ratingsNeeded: progress.ratingsNeeded,
+              nextBadge: progress.nextBadge?.name || 'Critic'
+            })
+          }
+        } catch (error) {
+          console.error('Failed to fetch level progress:', error)
+        }
+
         setShowFirstRatingSuccess(true)
       } else {
         // Redirect to dashboard after a short delay to show success
@@ -371,6 +413,23 @@ export default function OnboardingRatePage() {
   }
 
   // Show first rating success card
+  // Calculate user's rating score
+  const calculateUserScore = () => {
+    if (!submittedRating) return 0
+    const scores = [
+      submittedRating.emotionalRangeDepth,
+      submittedRating.characterBelievability,
+      submittedRating.technicalSkill,
+      submittedRating.screenPresence,
+      submittedRating.chemistryInteraction
+    ].filter(s => typeof s === 'number')
+    if (scores.length === 0) return 0
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+    return avg / 10 // Convert from 0-100 to 0-10
+  }
+
+  const userScore = calculateUserScore()
+
   if (showFirstRatingSuccess) {
     return (
       <AuthGuard>
@@ -406,63 +465,126 @@ export default function OnboardingRatePage() {
                 </div>
 
                 {/* Content */}
-                <div className="relative z-10 text-center">
-                  {/* Emoji and Title */}
+                <div className="relative z-10">
+                  {/* Title */}
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 400, 
-                      damping: 15,
-                      delay: 0.2
-                    }}
-                    className="mb-6"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-center mb-8"
                   >
-                    <div className="text-6xl mb-4">🎉</div>
+                    <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-[#FFD700] mx-auto mb-4" />
                     <h2 
-                      className="text-2xl sm:text-3xl font-bold text-white mb-6"
+                      className="text-2xl sm:text-3xl font-bold text-white"
                       style={{ 
                         fontFamily: 'var(--font-cinzel), serif',
                         letterSpacing: '0.02em',
                       }}
                     >
-                      Your first rating is live!
+                      Rating submitted
                     </h2>
                   </motion.div>
 
-                  {/* Achievement List */}
+                  {/* User Rating */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mb-6"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[#a3a3a3] text-sm sm:text-base">Your rating:</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
+                        <span 
+                          className="text-xl sm:text-2xl font-bold"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {userScore.toFixed(1)}/10
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Community Rating */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="space-y-4 mb-8 text-left"
+                    className="mb-6"
                   >
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">Dashboard unlocked</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">Viewer badge earned</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[#a3a3a3]">
-                      <span className="text-emerald-400 text-xl">✓</span>
-                      <span className="text-base sm:text-lg">9 more ratings to Critic</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[#a3a3a3] text-sm sm:text-base">Community:</span>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4 text-[#FFD700]" />
+                        <span 
+                          className="text-xl sm:text-2xl font-bold"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {communityData ? `${communityData.average.toFixed(1)}/10` : 'N/A'}
+                        </span>
+                        {communityData && communityData.count > 0 && (
+                          <span className="text-sm text-[#a3a3a3] ml-2">
+                            ({communityData.count.toLocaleString()})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
 
-                  {/* Go to Dashboard Button */}
+                  {/* Progress Bar */}
+                  {levelProgress && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="mb-8"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-[#a3a3a3]">
+                          {levelProgress.ratingsNeeded} to {levelProgress.nextBadge}
+                        </span>
+                        <TrendingUp className="w-4 h-4 text-[#FFD700]" />
+                      </div>
+                      <div className="w-full h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(100, (1 / 10) * 100)}%` 
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Buttons */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
+                    className="flex flex-col sm:flex-row gap-3"
                   >
                     <button
-                      onClick={() => router.push('/dashboard')}
-                      className="w-full px-6 py-3.5 rounded-full font-semibold text-base sm:text-lg text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] hover:from-[#FFD700] hover:via-[#FFA500] hover:to-[#FF8C00] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
+                      onClick={() => router.push('/onboarding/rate')}
+                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-white bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 transition-all duration-300 hover:bg-[#1a1a1a]/80"
                     >
-                      Go to Dashboard
+                      Rate Another
+                    </button>
+                    <button
+                      onClick={() => router.push('/dashboard')}
+                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] hover:from-[#FFD700] hover:via-[#FFA500] hover:to-[#FF8C00] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      Dashboard
                     </button>
                   </motion.div>
                 </div>
