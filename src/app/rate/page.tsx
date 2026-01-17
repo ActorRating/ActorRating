@@ -175,7 +175,7 @@ function RatePageContent() {
     } else {
       setLoading(false)
     }
-  }, [actorId, movieId, ratingId, actor?.id])
+  }, [actorId, movieId, ratingId]) // Removed actor?.id to prevent infinite loop
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
