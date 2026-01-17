@@ -64,45 +64,6 @@ export default function AuthCallback() {
 
         if (code) {
           console.log('🔑 Exchanging code for session...')
-          
-          // Check if code verifier exists in storage (required for PKCE)
-          const codeVerifier = typeof window !== 'undefined' 
-            ? sessionStorage.getItem(`supabase.auth.code_verifier`) 
-            : null
-          
-          if (!codeVerifier) {
-            console.warn('⚠️ No code verifier found in storage, checking for existing session...')
-            // Try to get existing session first
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session) {
-              console.log('✅ Found existing session, skipping code exchange')
-              // Check if there's a pending rating to submit
-              const pendingRating = typeof window !== 'undefined' ? localStorage.getItem('pendingRating') : null
-              if (pendingRating) {
-                console.log('📝 Found pending rating, redirecting to signup-success')
-                router.push('/auth/signup-success')
-              } else {
-                // Check if user has ratings
-                const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
-                if (ratingsRes.ok) {
-                  const ratings = await ratingsRes.json()
-                  if (Array.isArray(ratings) && ratings.length === 0) {
-                    router.push('/onboarding/rate')
-                  } else {
-                    router.push('/dashboard')
-                  }
-                } else {
-                  router.push('/onboarding/rate')
-                }
-              }
-              return
-            }
-            // No session and no code verifier - redirect to sign-in
-            console.log('🧹 No code verifier and no session, redirecting to sign-in')
-            router.push('/auth/signin?error=pkce')
-            return
-          }
-          
           // Exchange the code for a session
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
           
@@ -111,8 +72,7 @@ export default function AuthCallback() {
             
             // Handle specific PKCE errors
             if (exchangeError.message?.includes('code verifier') || 
-                exchangeError.message?.includes('PKCE') ||
-                exchangeError.message?.includes('non-empty')) {
+                exchangeError.message?.includes('PKCE')) {
               console.log('🔍 PKCE error detected, checking for existing session...')
               
               // Try to get existing session before showing error
@@ -125,18 +85,7 @@ export default function AuthCallback() {
                   console.log('📝 Found pending rating, redirecting to signup-success')
                   router.push('/auth/signup-success')
                 } else {
-                  // Check if user has ratings
-                  const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
-                  if (ratingsRes.ok) {
-                    const ratings = await ratingsRes.json()
-                    if (Array.isArray(ratings) && ratings.length === 0) {
-                      router.push('/onboarding/rate')
-                    } else {
-                      router.push('/dashboard')
-                    }
-                  } else {
-                    router.push('/onboarding/rate')
-                  }
+                  router.push('/dashboard')
                 }
                 return
               }

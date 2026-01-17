@@ -303,17 +303,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const animationFrameRef = useRef<number | null>(null)
   
   // Check if user has rated before
-  const userIdRef = useRef<string | null>(null)
   useEffect(() => {
-    const userId = user?.id || null
-    
-    // Only check if user ID changed
-    if (userIdRef.current === userId) {
-      return
-    }
-    userIdRef.current = userId
-    
-    if (!user || !userId) {
+    if (!user) {
       setHasRatedBefore(false)
       return
     }
@@ -334,7 +325,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
     
     checkUserRatings()
-  }, [user?.id]) // Use stable user ID instead of user object
+  }, [user])
   
   // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
