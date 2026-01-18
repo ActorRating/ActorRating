@@ -38,21 +38,33 @@ export function SignUpToSaveModal({
   const router = useRouter()
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll when modal is open - more robust for mobile
   useEffect(() => {
     if (isOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       const originalOverflow = document.body.style.overflow
       const originalPaddingRight = document.body.style.paddingRight
+      const originalPosition = document.body.style.position
+      const originalTop = document.body.style.top
+      const originalWidth = document.body.style.width
+      const scrollY = window.scrollY
       
+      // Lock scroll position
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
       document.documentElement.style.overflow = 'hidden'
       
       return () => {
         document.body.style.overflow = originalOverflow
         document.body.style.paddingRight = originalPaddingRight
+        document.body.style.position = originalPosition
+        document.body.style.top = originalTop
+        document.body.style.width = originalWidth
         document.documentElement.style.overflow = ''
+        window.scrollTo(0, scrollY)
       }
     }
   }, [isOpen])
@@ -108,19 +120,40 @@ export function SignUpToSaveModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Full screen coverage with proper blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/90 backdrop-blur-md z-[99998]"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+            }}
             onClick={handleClose}
           />
 
           {/* Modal Container - Centered with responsive sizing and scrollable */}
           <div 
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 pointer-events-none overflow-y-auto"
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 pointer-events-none"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh',
+              minHeight: '100vh',
+              overflow: 'hidden',
+            }}
             onClick={handleClose}
           >
             <motion.div
@@ -148,8 +181,9 @@ export function SignUpToSaveModal({
                 `,
                 transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
                 transformStyle: 'preserve-3d',
-                maxHeight: '90vh',
+                maxHeight: 'calc(100vh - 2rem)',
                 overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               {/* Close button */}

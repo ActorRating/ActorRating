@@ -1064,11 +1064,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
       <div className={`relative max-w-[900px] mx-auto px-4 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}>
 
-        {/* Header Section - Mobile optimized */}
+        {/* Header Section - Mobile optimized - No animations on mobile to prevent disappearing */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0 }}
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
           {/* Actor Name - Primary Focus, Largest Text, White */}
@@ -1122,12 +1122,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <AnimatePresence>
               {isSticky && submitPhase !== 'success' && (
                 <motion.div
-                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                  transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
-                  style={{ willChange: 'transform, opacity' }}
+                  style={{ 
+                    willChange: 'transform, opacity',
+                    transform: 'translate3d(-50%, 0, 0)',
+                    WebkitTransform: 'translate3d(-50%, 0, 0)',
+                  }}
                 >
                   <div 
                     className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
@@ -1192,7 +1196,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
                     delay: 0.1, 
-                    duration: isSticky ? 0.15 : 0.4,
+                    duration: isSticky ? 0.3 : 0.4,
                     ease: [0.22, 1, 0.36, 1]
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
@@ -1282,17 +1286,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               )}
             </AnimatePresence>
 
-            {/* Rating Card - Extra round corners, mobile optimized */}
+            {/* Rating Card - Extra round corners, mobile optimized - No animations on mobile */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 1, y: 0 }}
                   animate={{ 
                     opacity: 1,
                     y: 0,
                   }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ delay: 0, duration: 0 }}
                   className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
                   style={{
                     boxShadow: `
