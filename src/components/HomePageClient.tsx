@@ -235,10 +235,10 @@ function HowItWorksSection() {
           <motion.div
             {...getMotionProps()}
             variants={getOptimizedVariant('fadeInUp')}
-            className="col-span-12 lg:col-span-12 text-center mb-16 sm:mb-32 lg:mb-40"
+            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16"
           >
             <h2 
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-8 tracking-tight px-4 sm:px-0"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
             <span 
@@ -264,7 +264,7 @@ function HowItWorksSection() {
               transformOrigin: 'center',
               willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
             }}
-            className="h-[2px] mx-auto mb-8 relative"
+            className="h-[2px] mx-auto mb-6 relative"
           >
             <div 
               className="h-full w-full"
@@ -306,14 +306,15 @@ function HowItWorksSection() {
                           </div>
                         </div>
                         <div className="mb-6">
-                          <div className="inline-block px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
+                          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-black/50 border border-[#FFD700]/30 min-w-[60px]">
                             <span 
-                              className="text-2xl font-extrabold"
+                              className="text-lg font-bold leading-none"
                               style={{ 
                                 fontFamily: 'var(--font-cinzel), serif',
                                 background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
+                                letterSpacing: '0.05em',
                               }}
                             >
                               {step.number}
@@ -393,14 +394,15 @@ function HowItWorksSection() {
 
                   {/* Number Badge */}
                   <div className="mb-4 md:mb-6">
-                    <div className="inline-block px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
+                    <div className="inline-flex items-center justify-center px-4 py-1.5 md:px-5 md:py-2 rounded-full bg-black/50 border border-[#FFD700]/30 min-w-[60px] md:min-w-[70px]">
                       <span 
-                        className="text-xl md:text-2xl lg:text-3xl font-extrabold"
+                        className="text-base md:text-lg lg:text-xl font-bold leading-none"
                         style={{ 
                           fontFamily: 'var(--font-cinzel), serif',
                           background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
+                          letterSpacing: '0.05em',
                         }}
                       >
                         {step.number}
@@ -700,7 +702,7 @@ function PerformanceSection() {
           <motion.div
             {...getMotionProps()}
             variants={getOptimizedVariant('fadeInUp')}
-            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-16 md:mb-24 lg:mb-32 xl:mb-40"
+            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16"
           >
             <h2 
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
@@ -729,7 +731,7 @@ function PerformanceSection() {
                 transformOrigin: 'center',
                 willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
               }}
-              className="h-[2px] mx-auto mb-8 relative"
+              className="h-[2px] mx-auto mb-6 relative"
             >
               <div 
                 className="h-full w-full"
@@ -1554,9 +1556,9 @@ export default function HomePageClient() {
                   display: 'inline-block'
                 }}
               >
-                <span className="sr-only">RATE THE CRAFT</span>
-                <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }} aria-hidden="true">RATE THE </span>
-                <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }} aria-hidden="true">RATE THE </span>
+                <span className="sr-only">Rate The CRAFT</span>
+                <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }} aria-hidden="true">Rate The </span>
+                <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }} aria-hidden="true">Rate The </span>
                 <span 
                   className="inline sm:hidden craft-glow-animation"
                   style={{

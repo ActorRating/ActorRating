@@ -334,7 +334,11 @@ export function SearchBar({
                     const currentScroll = window.scrollY || window.pageYOffset
                     const inputTop = inputRect.top + currentScroll
                     const viewportHeight = window.innerHeight
-                    const targetScroll = inputTop - (viewportHeight / 3)
+                    const isDesktop = window.innerWidth >= 1024
+                    
+                    // On desktop, position higher (1/4 from top), on mobile use 1/3
+                    const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                    const targetScroll = inputTop - scrollOffset
                     
                     window.scrollTo({
                       top: Math.max(0, targetScroll),
@@ -346,14 +350,18 @@ export function SearchBar({
               onFocus={(e) => {
                 setIsFocused(true)
                 
-                // Smooth scroll to position search bar in upper third of screen
+                // Smooth scroll to position search bar in upper portion of screen
                 requestAnimationFrame(() => {
                   if (inputRef.current) {
                     const inputRect = inputRef.current.getBoundingClientRect()
                     const currentScroll = window.scrollY || window.pageYOffset
                     const inputTop = inputRect.top + currentScroll
                     const viewportHeight = window.innerHeight
-                    const targetScroll = inputTop - (viewportHeight / 3)
+                    const isDesktop = window.innerWidth >= 1024
+                    
+                    // On desktop, position higher (1/4 from top), on mobile use 1/3
+                    const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                    const targetScroll = inputTop - scrollOffset
                     
                     window.scrollTo({
                       top: Math.max(0, targetScroll),

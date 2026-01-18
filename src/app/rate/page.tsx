@@ -296,10 +296,15 @@ function RatePageContent() {
         comment: characterName,
       }
       
-      setPendingRatingData(ratingDataToStore)
-      setShowSignUpModal(true)
+      // Use setTimeout to ensure modal renders before promise rejection
+      setTimeout(() => {
+        setPendingRatingData(ratingDataToStore)
+        setShowSignUpModal(true)
+      }, 0)
+      
       // Return a rejected promise without error to prevent success animation but avoid console error
-      return Promise.reject()
+      // Use a special rejection that can be identified
+      return Promise.reject(new Error('USER_NOT_SIGNED_IN'))
     }
 
     setSubmitting(true)

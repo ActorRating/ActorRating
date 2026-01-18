@@ -190,27 +190,30 @@ export function SignUpToSaveModal({
                 >
                   <div className="relative text-center z-10 w-full">
                     <div 
-                      className="font-black flex items-center justify-center gap-1 sm:gap-1.5"
+                      className="font-black flex items-baseline justify-center gap-1 sm:gap-1.5"
                       style={{
-                        fontFamily: 'var(--font-cinzel), serif',
+                        fontFamily: 'var(--font-geist-sans), sans-serif',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       <span
-                        className="inline-block text-6xl sm:text-6xl md:text-7xl lg:text-8xl"
+                        className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
                           lineHeight: '1',
-                          verticalAlign: 'middle',
+                          verticalAlign: 'baseline',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {totalScore}
                       </span>
                       <span 
-                        className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl text-[#a1a1aa] leading-none"
+                        className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
                         style={{
-                          verticalAlign: 'middle',
+                          verticalAlign: 'baseline',
                         }}
                       >
                         /10
@@ -223,12 +226,12 @@ export function SignUpToSaveModal({
               {/* Actor and Movie Info */}
               <div className="text-center mb-5 sm:mb-6">
                 <p 
-                  className="text-white font-semibold text-base sm:text-lg"
+                  className="text-white font-semibold text-xl sm:text-2xl md:text-3xl"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   {actorName}
                 </p>
-                <p className="text-gray-400 text-xs sm:text-sm mt-1.5">
+                <p className="text-gray-400 text-base sm:text-lg md:text-xl mt-2">
                   {movieTitle}
                 </p>
               </div>
@@ -237,7 +240,7 @@ export function SignUpToSaveModal({
               <button 
                 onClick={handleGoogleSignUp}
                 disabled={isGoogleLoading}
-                className="w-full py-4 sm:py-3.5 md:py-4 px-4 sm:px-5 md:px-6 rounded-xl sm:rounded-2xl text-sm sm:text-base text-white font-semibold flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group mb-4 sm:mb-5"
+                className="w-full py-4 px-6 rounded-2xl text-white font-semibold flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group mb-4 sm:mb-5"
                 style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -279,11 +282,11 @@ export function SignUpToSaveModal({
 
               {/* Already have account */}
               <div className="text-center pt-4 sm:pt-5 border-t border-white/10">
-                <p className="text-xs sm:text-sm text-gray-400">
+                <p className="text-sm sm:text-base md:text-lg text-gray-400">
                   Already have an account?{' '}
                   <button
                     onClick={handleSignIn}
-                    className="text-[#FFD700] font-semibold hover:underline hover:text-[#FFE55C] transition-colors"
+                    className="text-[#FFD700] font-semibold hover:underline hover:text-[#FFE55C] transition-colors text-base sm:text-lg md:text-xl"
                   >
                     Sign In
                   </button>

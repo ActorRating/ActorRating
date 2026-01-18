@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -61,6 +61,7 @@ export default function ActorPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -413,9 +414,52 @@ export default function ActorPage() {
                         </svg>
                       </div>
                       <input
+                        ref={searchInputRef}
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={(e) => {
+                          // Auto-scroll to position search bar in top half of screen
+                          requestAnimationFrame(() => {
+                            if (searchInputRef.current) {
+                              const inputRect = searchInputRef.current.getBoundingClientRect()
+                              const currentScroll = window.scrollY || window.pageYOffset
+                              const inputTop = inputRect.top + currentScroll
+                              const viewportHeight = window.innerHeight
+                              const isDesktop = window.innerWidth >= 1024
+                              
+                              // On desktop, position higher (1/4 from top), on mobile use 1/3
+                              const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                              const targetScroll = inputTop - scrollOffset
+                              
+                              window.scrollTo({
+                                top: Math.max(0, targetScroll),
+                                behavior: 'smooth'
+                              })
+                            }
+                          })
+                        }}
+                        onClick={(e) => {
+                          // Also trigger scroll on click
+                          requestAnimationFrame(() => {
+                            if (searchInputRef.current) {
+                              const inputRect = searchInputRef.current.getBoundingClientRect()
+                              const currentScroll = window.scrollY || window.pageYOffset
+                              const inputTop = inputRect.top + currentScroll
+                              const viewportHeight = window.innerHeight
+                              const isDesktop = window.innerWidth >= 1024
+                              
+                              // On desktop, position higher (1/4 from top), on mobile use 1/3
+                              const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                              const targetScroll = inputTop - scrollOffset
+                              
+                              window.scrollTo({
+                                top: Math.max(0, targetScroll),
+                                behavior: 'smooth'
+                              })
+                            }
+                          })
+                        }}
                         placeholder="Search performances..."
                         className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
                         style={{ borderRadius: '9999px' }}

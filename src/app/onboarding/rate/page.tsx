@@ -102,12 +102,16 @@ export default function OnboardingRatePage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Check if user already has ratings (shouldn't be here if they do, but safety check)
+  // Check if user already has ratings and fetch performance ratings
   useEffect(() => {
-    const checkRatings = async () => {
-      if (!user) return
+    const checkRatingsAndFetch = async () => {
+      if (!user) {
+        setLoading(false)
+        return
+      }
       
       try {
+        // Check if user has ratings
         const res = await fetch('/api/ratings/me', { cache: 'no-store' })
         if (res.ok) {
           const ratings = await res.json()
@@ -120,18 +124,57 @@ export default function OnboardingRatePage() {
             setIsFirstRating(true)
           }
         }
+
+        // Fetch performance ratings in parallel
+        const lookupData = CURATED_PERFORMANCES.map(p => ({
+          actor: p.actorName,
+          movie: p.movieTitle
+        }))
+
+        const response = await fetch('/api/performances/by-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targets: lookupData })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const performances = data.performances || []
+          
+          // Map the fetched data back to our curated list with ratings
+          const enriched = CURATED_PERFORMANCES.map(curated => {
+            // Find by matching actor name and movie title (API returns by name, not ID)
+            const found = performances.find((p: any) => {
+              const pActorName = (p.actor?.name || '').toLowerCase().trim()
+              const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
+              const curatedActorName = curated.actorName.toLowerCase().trim()
+              const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
+              
+              return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
+            })
+            
+            return {
+              ...curated,
+              averageRating: found?.averageRating ?? null,
+              ratingCount: found?.ratingCount ?? 0
+            }
+          })
+          
+          setPerformancesWithRatings(enriched)
+        } else {
+          // If API fails, use curated list without ratings
+          setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
+        }
       } catch (error) {
-        console.error('Failed to check ratings:', error)
+        console.error('Failed to check ratings or fetch performance data:', error)
+        // On error, use curated list without ratings
+        setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
       } finally {
         setLoading(false)
       }
     }
 
-    if (user) {
-      checkRatings()
-    } else {
-      setLoading(false)
-    }
+    checkRatingsAndFetch()
   }, [user, router])
 
   // Track active card for nav dots and depth effect - same as performances page
@@ -218,68 +261,6 @@ export default function OnboardingRatePage() {
     }
   }, [])
 
-  // Fetch real rating data for curated performances
-  useEffect(() => {
-    const fetchPerformanceRatings = async () => {
-      try {
-        // API expects targets with actor and movie names
-        const lookupData = CURATED_PERFORMANCES.map(p => ({
-          actor: p.actorName,
-          movie: p.movieTitle
-        }))
-
-        const response = await fetch('/api/performances/by-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targets: lookupData })
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          const performances = data.performances || []
-          
-          // Map the fetched data back to our curated list with ratings
-          const enriched = CURATED_PERFORMANCES.map(curated => {
-            // Find by matching actor name and movie title (API returns by name, not ID)
-            const found = performances.find((p: any) => {
-              const pActorName = (p.actor?.name || '').toLowerCase().trim()
-              const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
-              const curatedActorName = curated.actorName.toLowerCase().trim()
-              const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
-              
-              return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
-            })
-            
-            if (found) {
-              console.log(`✅ Found rating for ${curated.actorName} - ${curated.movieTitle}:`, {
-                averageRating: found.averageRating,
-                ratingCount: found.ratingCount
-              })
-            } else {
-              console.log(`❌ No rating found for ${curated.actorName} - ${curated.movieTitle}`)
-            }
-            
-            return {
-              ...curated,
-              averageRating: found?.averageRating ?? null,
-              ratingCount: found?.ratingCount ?? 0
-            }
-          })
-          
-          setPerformancesWithRatings(enriched)
-        } else {
-          // If API fails, use curated list without ratings
-          setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
-        }
-      } catch (error) {
-        console.error('Failed to fetch performance ratings:', error)
-        // On error, use curated list without ratings
-        setPerformancesWithRatings(CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 })))
-      }
-    }
-
-    fetchPerformanceRatings()
-  }, [])
 
   const handlePerformanceSelect = async (performance: typeof CURATED_PERFORMANCES[0]) => {
     // Set performance immediately with minimal data (no delay)
@@ -619,7 +600,7 @@ export default function OnboardingRatePage() {
                   >
                     <button
                       onClick={() => router.push('/onboarding/rate')}
-                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-white bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 transition-all duration-300 hover:bg-[#1a1a1a]/80"
+                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-white bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 hover:from-purple-500 hover:via-violet-500 hover:to-purple-500 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Rate Another
                     </button>

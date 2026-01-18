@@ -163,6 +163,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
 }) {
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const isDraggingRef = useRef(false)
 
   return (
     <motion.div 
@@ -231,20 +232,37 @@ const RatingSliderCard = memo(function RatingSliderCard({
                 onSliderEnd?.()
               }
             }}
-            onTouchStart={() => {
+            onTouchStart={(e) => {
+              // Prevent default to stop scrolling when touching slider
+              e.preventDefault()
+              e.stopPropagation()
+              isDraggingRef.current = true
               setIsActive(true)
               setIsDragging(true)
               onSliderStart?.()
             }}
-            onTouchEnd={() => {
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              isDraggingRef.current = false
               setIsActive(false)
               setIsDragging(false)
               onSliderEnd?.()
             }}
-            onTouchCancel={() => {
+            onTouchCancel={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              isDraggingRef.current = false
               setIsActive(false)
               setIsDragging(false)
               onSliderEnd?.()
+            }}
+            onTouchMove={(e) => {
+              // Only prevent scrolling if we're actively dragging
+              if (isDraggingRef.current) {
+                e.preventDefault()
+                e.stopPropagation()
+              }
             }}
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
@@ -529,6 +547,27 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [isAnimating, totalScoreOutOf10])
 
+  // Cleanup: Restore body scroll if component unmounts while dragging
+  useEffect(() => {
+    return () => {
+      // Re-enable body scroll on unmount if dragging was active
+      if (typeof window !== 'undefined' && isDraggingRef.current) {
+        const originalOverflow = (document.body as any).__originalOverflow
+        const originalPaddingRight = (document.body as any).__originalPaddingRight
+        
+        if (originalOverflow !== undefined) {
+          document.body.style.overflow = originalOverflow
+          document.body.style.paddingRight = originalPaddingRight || ''
+          document.documentElement.style.overflow = ''
+          
+          // Clean up stored values
+          delete (document.body as any).__originalOverflow
+          delete (document.body as any).__originalPaddingRight
+        }
+      }
+    }
+  }, [])
+
   // Sticky score pill - IntersectionObserver to detect when scrolled past
   useEffect(() => {
     if (!sentinelRef.current || submitPhase === 'success') {
@@ -593,6 +632,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   const handleSliderStart = useCallback(() => {
     isDraggingRef.current = true
+    // Prevent body scroll on mobile when dragging slider
+    if (typeof window !== 'undefined') {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+      
+      document.body.style.overflow = 'hidden'
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+      document.documentElement.style.overflow = 'hidden'
+      
+      // Store original values for cleanup
+      ;(document.body as any).__originalOverflow = originalOverflow
+      ;(document.body as any).__originalPaddingRight = originalPaddingRight
+    }
     // Clear any existing timeout when starting to drag
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
@@ -602,6 +655,21 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   const handleSliderEnd = useCallback(() => {
     isDraggingRef.current = false
+    // Re-enable body scroll on mobile when done dragging
+    if (typeof window !== 'undefined') {
+      const originalOverflow = (document.body as any).__originalOverflow
+      const originalPaddingRight = (document.body as any).__originalPaddingRight
+      
+      if (originalOverflow !== undefined) {
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight || ''
+        document.documentElement.style.overflow = ''
+        
+        // Clean up stored values
+        delete (document.body as any).__originalOverflow
+        delete (document.body as any).__originalPaddingRight
+      }
+    }
     const releaseTime = Date.now()
     lastInteractionTime.current = releaseTime
     setSliderReleaseTime(releaseTime) // Trigger useEffect
@@ -739,13 +807,21 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       }, successDelay)
       
     } catch (err) {
-      // Only log actual errors, not intentional rejections (e.g., when user is not signed in)
-      if (err) {
-        console.error(err)
+      // Handle intentional rejections (e.g., when user is not signed in) gracefully
+      // Check if this is the expected rejection for unsigned users
+      const isUserNotSignedIn = err instanceof Error && err.message === 'USER_NOT_SIGNED_IN'
+      
+      if (isUserNotSignedIn) {
+        // For unsigned users, the modal will be shown by the parent component
+        // Reset phase immediately so button is clickable again
+        setSubmitPhase('idle')
+      } else {
+        // For actual errors, log them
+        console.error('Failed to submit rating:', err)
+        setSubmitPhase('idle')
       }
-      setSubmitPhase('idle')
     }
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess])
+  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess, performance.actor.name, performance.movie.title])
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined' 
@@ -880,6 +956,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+              lineHeight: '1.2',
+              paddingBottom: '0.15em',
             }}
           >
             in {performance.movie.title} ({performance.movie.year})
@@ -917,28 +995,31 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   >
                     <div className="relative text-center z-10">
                       <div 
-                        className="font-black mb-1 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[2.5rem] sm:min-h-[3rem]"
+                        className="font-black mb-1 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3rem] sm:min-h-[3.5rem] md:min-h-[4rem]"
                         style={{
-                          fontFamily: 'var(--font-cinzel), serif',
+                          fontFamily: 'var(--font-geist-sans), sans-serif',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        <div className="relative inline-block overflow-visible min-w-[60px] sm:min-w-[70px] h-[2.5rem] sm:h-[3rem] leading-[2.5rem] sm:leading-[3rem]">
+                        <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[80px] md:min-w-[90px] h-[3rem] sm:h-[3.5rem] md:h-[4rem] leading-[3rem] sm:leading-[3.5rem] md:leading-[4rem]">
                           <span
-                            className="inline-block text-3xl sm:text-4xl md:text-5xl transition-all duration-75 ease-linear"
+                            className="inline-block text-4xl sm:text-5xl md:text-6xl transition-all duration-75 ease-linear"
                             style={{
                               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                               WebkitBackgroundClip: 'text',
                               WebkitTextFillColor: 'transparent',
                               backgroundClip: 'text',
-                              lineHeight: '1',
+                              lineHeight: '1.1',
                               verticalAlign: 'baseline',
+                              paddingBottom: '0.1em',
+                              fontVariantNumeric: 'tabular-nums',
                             }}
                           >
                             {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
                           </span>
                         </div>
                         <span 
-                          className="text-base sm:text-lg md:text-xl text-[#a1a1aa] leading-none"
+                          className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
                           style={{
                             verticalAlign: 'baseline',
                           }}
