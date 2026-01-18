@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
+import { haptic } from '@/lib/haptics'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -164,17 +165,56 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [localValue, setLocalValue] = useState(value)
+  const dragIntentRef = useRef(false)
+  const lastHapticValueRef = useRef<number | null>(null)
   
   // Detect touch device
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
+  
+  // Scroll lock helpers - lock page scroll ONLY during slider interaction
+  const lockScroll = useCallback(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
+    }
+  }, [])
+  
+  const unlockScroll = useCallback(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
+  }, [])
   
   // Update local value when prop changes (for demo)
   useEffect(() => {
     setLocalValue(value)
   }, [value])
   
+  // Cleanup: unlock scroll on unmount
+  useEffect(() => {
+    return () => {
+      unlockScroll()
+    }
+  }, [unlockScroll])
+  
   const handleInputChange = useCallback((newValue: number) => {
     setLocalValue(newValue)
+    
+    // Haptic feedback every 5 points (discrete, non-annoying)
+    if (
+      lastHapticValueRef.current === null ||
+      Math.abs(newValue - lastHapticValueRef.current) >= 5
+    ) {
+      haptic.light()
+      lastHapticValueRef.current = newValue
+    }
+    
+    // Strong haptic on milestones
+    if ([50, 75, 90, 100].includes(newValue)) {
+      haptic.medium()
+    }
+    
     // Use RAF for smoother updates
     requestAnimationFrame(() => {
       onValueChange(newValue)
@@ -233,6 +273,38 @@ const RatingSliderCard = memo(function RatingSliderCard({
               handleInputChange(Number(e.target.value))
               setIsActive(false)
               setIsDragging(false)
+              lastHapticValueRef.current = null // Reset haptic tracking
+              unlockScroll()
+              onSliderEnd?.()
+            }}
+            onTouchStart={() => {
+              dragIntentRef.current = false
+              setIsActive(true)
+              setIsDragging(true)
+              haptic.light() // Selection feedback
+              onSliderStart?.()
+            }}
+            onTouchMove={() => {
+              // Only lock scroll if movement happens (drag intent)
+              if (!dragIntentRef.current) {
+                lockScroll()
+                dragIntentRef.current = true
+              }
+            }}
+            onTouchEnd={() => {
+              setIsActive(false)
+              setIsDragging(false)
+              dragIntentRef.current = false
+              unlockScroll()
+              haptic.medium() // Confirmation feedback
+              onSliderEnd?.()
+            }}
+            onTouchCancel={() => {
+              setIsActive(false)
+              setIsDragging(false)
+              dragIntentRef.current = false
+              unlockScroll()
+              lastHapticValueRef.current = null
               onSliderEnd?.()
             }}
             {...(!isTouchDevice && {
@@ -268,17 +340,18 @@ const RatingSliderCard = memo(function RatingSliderCard({
           
           {/* Visible Thumb - No transitions for instant response */}
           {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
+          {/* Increased size from 28px to 36px for better mobile usability */}
           <div
             className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left]"
             style={{
               left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               transform: 'translate(-50%, -50%) translateZ(0)', // Force GPU acceleration
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-              width: '28px',
-              height: '28px',
+              width: '36px',
+              height: '36px',
               boxShadow: isActive
-                ? '0 0 24px rgba(255, 215, 0, 0.7), 0 4px 10px rgba(0, 0, 0, 0.3)'
-                : '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
+                ? '0 0 28px rgba(255, 215, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.4)'
+                : '0 0 24px rgba(255, 215, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.3)',
             }}
           />
         </div>
@@ -716,14 +789,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
     setFinalScore(Number(score.toFixed(1)))
 
-    // 0ms: Haptic feedback
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50)
-    }
+    // Haptic feedback on submit
+    haptic.medium()
 
     try {
       // Start loading animation AFTER attempting submit (so modal can show first if not signed in)
       setSubmitPhase('loading')
+      
+      // Unlock scroll in case it was locked from slider
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.touchAction = ''
+      }
       
       const startTime = Date.now()
       
@@ -742,6 +819,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       const successDelay = Math.max(0, 1300 - elapsed)
       setTimeout(() => {
         setSubmitPhase('success')
+        
+        // Lock body scroll when success card shows (prevent background scroll)
+        if (typeof document !== 'undefined') {
+          const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+          document.body.style.overflow = 'hidden'
+          document.body.style.paddingRight = `${scrollbarWidth}px`
+        }
         
         // Calculate overall score for tracking
         const overallScore = (
@@ -777,10 +861,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         // For unsigned users, the modal will be shown by the parent component
         // Reset phase immediately so button is clickable again
         setSubmitPhase('idle')
+        // Unlock scroll
+        if (typeof document !== 'undefined') {
+          document.body.style.overflow = ''
+          document.body.style.touchAction = ''
+        }
       } else {
         // For actual errors, log them
         console.error('Failed to submit rating:', errorMessage, err)
         setSubmitPhase('idle')
+        // Unlock scroll
+        if (typeof document !== 'undefined') {
+          document.body.style.overflow = ''
+          document.body.style.touchAction = ''
+        }
       }
     }
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess, performance.actor.name, performance.movie.title])
@@ -1310,7 +1404,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="fixed inset-0 z-40 flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+              style={{ 
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -1332,6 +1433,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
+                    // Unlock body scroll when closing
+                    if (typeof document !== 'undefined') {
+                      document.body.style.overflow = ''
+                      document.body.style.paddingRight = ''
+                    }
                     router.push('/dashboard')
                   }}
                   className="absolute top-3 right-3 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"

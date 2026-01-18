@@ -199,7 +199,7 @@ export function SignUpToSaveModal({
                       }}
                     >
                       <span
-                        className="inline-block text-4xl sm:text-5xl md:text-6xl"
+                        className="inline-block text-5xl sm:text-6xl md:text-7xl"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           WebkitBackgroundClip: 'text',
@@ -213,7 +213,7 @@ export function SignUpToSaveModal({
                         {totalScore}
                       </span>
                       <span 
-                        className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
+                        className="text-xl sm:text-2xl md:text-3xl text-[#a1a1aa] leading-none"
                         style={{
                           verticalAlign: 'baseline',
                         }}
