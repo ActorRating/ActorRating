@@ -284,7 +284,7 @@ function RatePageContent() {
       chemistryInteraction: ratingData.chemistry,
     }
 
-    // If user is not signed in, show modal and reject to prevent success animation
+    // If user is not signed in, show modal immediately
     if (!user) {
       const ratingDataToStore = {
         ...ratingData,
@@ -296,11 +296,9 @@ function RatePageContent() {
         comment: characterName,
       }
       
-      // Use setTimeout to ensure modal renders before promise rejection
-      setTimeout(() => {
-        setPendingRatingData(ratingDataToStore)
-        setShowSignUpModal(true)
-      }, 0)
+      // Show modal immediately - no setTimeout
+      setPendingRatingData(ratingDataToStore)
+      setShowSignUpModal(true)
       
       // Return a rejected promise without error to prevent success animation but avoid console error
       // Use a special rejection that can be identified

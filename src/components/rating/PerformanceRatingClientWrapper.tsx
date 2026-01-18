@@ -248,7 +248,6 @@ const RatingSliderCard = memo(function RatingSliderCard({
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             style={{ 
-              touchAction: 'pan-y',
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',
@@ -688,15 +687,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
     setFinalScore(Number(score.toFixed(1)))
 
-    const startTime = Date.now()
-
-    // 0ms: Haptic feedback + start loading
+    // 0ms: Haptic feedback
     if ('vibrate' in navigator) {
       navigator.vibrate(50)
     }
-    setSubmitPhase('loading')
 
     try {
+      // Start loading animation AFTER attempting submit (so modal can show first if not signed in)
+      setSubmitPhase('loading')
+      
+      const startTime = Date.now()
+      
       // Wait for API call
       await onSubmit(ratingData)
       
@@ -1107,10 +1108,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
               <div 
-                className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-2"
-                style={{
-                  touchAction: 'pan-y', // Allow vertical scrolling but capture horizontal touches for sliders
-                }}
+                className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
               >
                 <div className="relative" ref={firstSliderRef}>
                   <RatingSliderCard 
