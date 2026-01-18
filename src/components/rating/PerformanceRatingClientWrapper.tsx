@@ -163,7 +163,6 @@ const RatingSliderCard = memo(function RatingSliderCard({
 }) {
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const isDraggingRef = useRef(false)
 
   return (
     <motion.div 
@@ -188,15 +187,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="relative pt-3 pb-3">
         {/* Track Background - with padding to contain thumb at edges */}
         <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
-          {/* Fill - Gold gradient - Instant updates during drag, smooth transition when idle */}
+          {/* Fill - Gold gradient - No transitions for instant response */}
           <div
-            className={`absolute top-0 left-0 h-full rounded-full will-change-[width] ${isDragging || isDemoing ? '' : 'transition-all duration-75 ease-linear'}`}
+            className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
             style={{ 
               width: value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
-              // Use transform for buttery smooth animation during demo
-              transform: isDemoing ? 'translateZ(0)' : 'none',
+              transform: 'translateZ(0)', // Force GPU acceleration
             }}
           />
           
@@ -232,42 +230,25 @@ const RatingSliderCard = memo(function RatingSliderCard({
                 onSliderEnd?.()
               }
             }}
-            onTouchStart={(e) => {
-              // Prevent default to stop scrolling when touching slider
-              e.preventDefault()
-              e.stopPropagation()
-              isDraggingRef.current = true
+            onTouchStart={() => {
               setIsActive(true)
               setIsDragging(true)
               onSliderStart?.()
             }}
-            onTouchEnd={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              isDraggingRef.current = false
+            onTouchEnd={() => {
               setIsActive(false)
               setIsDragging(false)
               onSliderEnd?.()
             }}
-            onTouchCancel={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              isDraggingRef.current = false
+            onTouchCancel={() => {
               setIsActive(false)
               setIsDragging(false)
               onSliderEnd?.()
-            }}
-            onTouchMove={(e) => {
-              // Only prevent scrolling if we're actively dragging
-              if (isDraggingRef.current) {
-                e.preventDefault()
-                e.stopPropagation()
-              }
             }}
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             style={{ 
-              touchAction: 'none',
+              touchAction: 'pan-y',
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',
@@ -275,12 +256,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
             aria-label={label}
           />
           
-          {/* Visible Thumb - Instant updates during drag, buttery smooth during demo */}
+          {/* Visible Thumb - No transitions for instant response */}
           <div
-            className={`absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height] ${isDragging || isDemoing ? '' : 'transition-all duration-75 ease-linear'}`}
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height]"
             style={{
               left: `calc(16px + ${value}% * (100% - 32px) / 100%)`,
-              transform: `translate(-50%, -50%)${isDemoing ? ' translateZ(0)' : ''}`,
+              transform: 'translate(-50%, -50%) translateZ(0)', // Force GPU acceleration
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
               width: isActive ? '32px' : '28px',
@@ -547,27 +528,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [isAnimating, totalScoreOutOf10])
 
-  // Cleanup: Restore body scroll if component unmounts while dragging
-  useEffect(() => {
-    return () => {
-      // Re-enable body scroll on unmount if dragging was active
-      if (typeof window !== 'undefined' && isDraggingRef.current) {
-        const originalOverflow = (document.body as any).__originalOverflow
-        const originalPaddingRight = (document.body as any).__originalPaddingRight
-        
-        if (originalOverflow !== undefined) {
-          document.body.style.overflow = originalOverflow
-          document.body.style.paddingRight = originalPaddingRight || ''
-          document.documentElement.style.overflow = ''
-          
-          // Clean up stored values
-          delete (document.body as any).__originalOverflow
-          delete (document.body as any).__originalPaddingRight
-        }
-      }
-    }
-  }, [])
-
   // Sticky score pill - IntersectionObserver to detect when scrolled past
   useEffect(() => {
     if (!sentinelRef.current || submitPhase === 'success') {
@@ -632,20 +592,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   const handleSliderStart = useCallback(() => {
     isDraggingRef.current = true
-    // Prevent body scroll on mobile when dragging slider
-    if (typeof window !== 'undefined') {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-      const originalOverflow = document.body.style.overflow
-      const originalPaddingRight = document.body.style.paddingRight
-      
-      document.body.style.overflow = 'hidden'
-      document.body.style.paddingRight = `${scrollbarWidth}px`
-      document.documentElement.style.overflow = 'hidden'
-      
-      // Store original values for cleanup
-      ;(document.body as any).__originalOverflow = originalOverflow
-      ;(document.body as any).__originalPaddingRight = originalPaddingRight
-    }
     // Clear any existing timeout when starting to drag
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
@@ -655,21 +601,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   const handleSliderEnd = useCallback(() => {
     isDraggingRef.current = false
-    // Re-enable body scroll on mobile when done dragging
-    if (typeof window !== 'undefined') {
-      const originalOverflow = (document.body as any).__originalOverflow
-      const originalPaddingRight = (document.body as any).__originalPaddingRight
-      
-      if (originalOverflow !== undefined) {
-        document.body.style.overflow = originalOverflow
-        document.body.style.paddingRight = originalPaddingRight || ''
-        document.documentElement.style.overflow = ''
-        
-        // Clean up stored values
-        delete (document.body as any).__originalOverflow
-        delete (document.body as any).__originalPaddingRight
-      }
-    }
     const releaseTime = Date.now()
     lastInteractionTime.current = releaseTime
     setSliderReleaseTime(releaseTime) // Trigger useEffect
@@ -1175,7 +1106,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               />
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
-              <div className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-2">
+              <div 
+                className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-2"
+                style={{
+                  touchAction: 'pan-y', // Allow vertical scrolling but capture horizontal touches for sliders
+                }}
+              >
                 <div className="relative" ref={firstSliderRef}>
                   <RatingSliderCard 
                     label="Emotional Impact" 

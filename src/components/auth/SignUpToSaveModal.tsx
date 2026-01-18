@@ -176,11 +176,11 @@ export function SignUpToSaveModal({
                 className="text-center mb-5 sm:mb-6 mt-12 sm:mt-0"
               >
                 <div 
-                  className="relative backdrop-blur-xl rounded-3xl px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-7 shadow-2xl mx-auto flex items-center justify-center"
+                  className="relative backdrop-blur-xl rounded-3xl px-6 sm:px-8 py-6 sm:py-8 shadow-2xl mx-auto flex items-center justify-center"
                   style={{
-                    width: 'clamp(180px, 80%, 240px)',
-                    maxWidth: '240px',
-                    minHeight: 'clamp(100px, 16vh, 120px)',
+                    width: 'clamp(200px, 85%, 280px)',
+                    maxWidth: '280px',
+                    minHeight: 'clamp(120px, 18vh, 150px)',
                     background: 'rgba(26, 26, 26, 0.8)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     boxShadow: '0 12px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
@@ -190,14 +190,14 @@ export function SignUpToSaveModal({
                 >
                   <div className="relative text-center z-10 w-full">
                     <div 
-                      className="font-black flex items-baseline justify-center gap-1 sm:gap-1.5"
+                      className="font-black flex items-baseline justify-center gap-2"
                       style={{
                         fontFamily: 'var(--font-geist-sans), sans-serif',
                         fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       <span
-                        className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl"
+                        className="inline-block text-6xl sm:text-7xl md:text-8xl"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           WebkitBackgroundClip: 'text',
@@ -211,7 +211,7 @@ export function SignUpToSaveModal({
                         {totalScore}
                       </span>
                       <span 
-                        className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
+                        className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] leading-none"
                         style={{
                           verticalAlign: 'baseline',
                         }}
@@ -231,7 +231,15 @@ export function SignUpToSaveModal({
                 >
                   {actorName}
                 </p>
-                <p className="text-gray-400 text-base sm:text-lg md:text-xl mt-2">
+                <p 
+                  className="text-base sm:text-lg md:text-xl mt-2 font-medium italic"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
                   {movieTitle}
                 </p>
               </div>
