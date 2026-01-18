@@ -163,33 +163,83 @@ const RatingSliderCard = memo(function RatingSliderCard({
   spotlightActive?: boolean
   isDemoing?: boolean
 }) {
+  const [isActive, setIsActive] = useState(false)
+  const [localValue, setLocalValue] = useState(value)
   const trackRef = useRef<HTMLDivElement>(null)
+  const fillRef = useRef<HTMLDivElement>(null)
+  const thumbRef = useRef<HTMLDivElement>(null)
+  const lastHapticValueRef = useRef<number>(value)
+  
+  // Direction-locked touch handling state
   const touchStateRef = useRef<{
     startX: number
     startY: number
-    isHorizontal: boolean | null
-    initialValue: number
+    isLocked: boolean
+    currentValue: number
   } | null>(null)
   
-  const [isActive, setIsActive] = useState(false)
-  const [displayValue, setDisplayValue] = useState(value)
+  // Detect touch device and iOS
+  const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
+  const isIOS = typeof window !== 'undefined' && 
+    /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+    !(window as any).MSStream
   
-  // Sync display value with prop
+  // Update local value when prop changes (for demo)
   useEffect(() => {
-    setDisplayValue(value)
+    setLocalValue(value)
+    lastHapticValueRef.current = value
+    
+    // Sync refs with current value
+    if (fillRef.current && thumbRef.current) {
+      const padding = 16
+      const fillWidth = value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`
+      const thumbLeft = `calc(16px + ${value}% * (100% - 32px) / 100%)`
+      
+      fillRef.current.style.width = fillWidth
+      thumbRef.current.style.left = thumbLeft
+    }
   }, [value])
   
-  // Calculate value from X position
-  const getValueFromX = useCallback((clientX: number): number => {
-    if (!trackRef.current) return displayValue
+  // Calculate value from touch position (no state updates during drag)
+  const calculateValueFromTouch = useCallback((clientX: number): number => {
+    if (!trackRef.current) return localValue
     
     const rect = trackRef.current.getBoundingClientRect()
-    const x = clientX - rect.left
-    const percentage = Math.max(0, Math.min(1, x / rect.width))
-    return Math.round(percentage * 100)
-  }, [displayValue])
+    const padding = 16
+    const usableWidth = rect.width - padding * 2
+    let x = clientX - rect.left - padding
+    x = Math.max(0, Math.min(usableWidth, x))
+    return Math.round((x / usableWidth) * 100)
+  }, [localValue])
   
-  // Touch start handler
+  // Update thumb and fill directly via refs (no React state during drag)
+  // Using left for thumb (simpler) and width for fill - direct DOM updates avoid React reconciliation
+  const updateSliderVisuals = useCallback((newValue: number) => {
+    if (!fillRef.current || !thumbRef.current) return
+    
+    const padding = 16
+    const fillWidth = newValue === 0 ? '0px' : `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
+    const thumbLeft = `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
+    
+    // Direct DOM updates - no React reconciliation during drag
+    fillRef.current.style.width = fillWidth
+    thumbRef.current.style.left = thumbLeft
+    
+    // Haptic feedback every 5 points (discrete, non-annoying)
+    // Note: iOS doesn't support haptics, silently fails
+    if (Math.abs(newValue - lastHapticValueRef.current) >= 5) {
+      haptic.light()
+      lastHapticValueRef.current = newValue
+    }
+    
+    // Strong haptic on milestones
+    if ([50, 75, 90, 100].includes(newValue)) {
+      haptic.medium()
+    }
+  }, [])
+  
+  // Touch handlers with direction lock
+  // Using native event listeners with { passive: false } for iOS compatibility
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled) return
     
@@ -197,67 +247,76 @@ const RatingSliderCard = memo(function RatingSliderCard({
     touchStateRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
-      isHorizontal: null,
-      initialValue: displayValue
+      isLocked: false,
+      currentValue: localValue
     }
     
     setIsActive(true)
+    haptic.light() // Selection feedback (silently fails on iOS)
     onSliderStart?.()
-  }, [disabled, displayValue, onSliderStart])
+  }, [disabled, localValue, onSliderStart])
   
-  // Touch move handler
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStateRef.current) return
+    if (!touchStateRef.current || disabled) return
     
     const touch = e.touches[0]
     const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
     const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
     
-    // Determine direction on first significant movement
-    if (touchStateRef.current.isHorizontal === null) {
-      // Need at least 15px movement to determine intent (iOS-optimized threshold)
-      if (dx < 15 && dy < 15) return
-      
-      // Lock direction based on dominant axis
-      touchStateRef.current.isHorizontal = dx > dy
-      
-      if (!touchStateRef.current.isHorizontal) {
-        // Vertical scroll detected - release slider
+    // Direction lock: detect horizontal vs vertical intent
+    // Only lock into slider drag if horizontal movement is dominant
+    // iOS needs higher threshold (18px) due to less precise touch events
+    const threshold = isIOS ? 18 : 12
+    
+    if (!touchStateRef.current.isLocked) {
+      // Threshold: 18px for iOS, 12px for Android to determine intent
+      if (dx > threshold && dx > dy) {
+        // Horizontal intent confirmed - lock into slider drag
+        touchStateRef.current.isLocked = true
+        e.preventDefault() // Only prevent default AFTER horizontal intent confirmed
+      } else if (dy > threshold) {
+        // Vertical intent - abort slider interaction, allow page scroll
         touchStateRef.current = null
         setIsActive(false)
+        return
+      } else {
+        // Not enough movement yet - wait
         return
       }
     }
     
-    // Only handle horizontal movement
-    if (touchStateRef.current.isHorizontal) {
-      e.preventDefault() // CRITICAL: Prevent scroll
-      
-      const newValue = getValueFromX(touch.clientX)
-      setDisplayValue(newValue) // React state update (smooth on iOS)
+    // Horizontal drag locked - update slider
+    if (touchStateRef.current.isLocked) {
+      e.preventDefault() // Prevent scroll during horizontal drag
+      const newValue = calculateValueFromTouch(touch.clientX)
+      touchStateRef.current.currentValue = newValue
+      updateSliderVisuals(newValue) // Direct DOM update, no React state
     }
-  }, [getValueFromX])
+  }, [disabled, isIOS, calculateValueFromTouch, updateSliderVisuals])
   
-  // Touch end handler
   const handleTouchEnd = useCallback(() => {
     if (!touchStateRef.current) return
     
-    // Only commit if we were in horizontal drag
-    if (touchStateRef.current.isHorizontal) {
-      onValueChange(displayValue)
+    // Only commit value if we were locked into horizontal drag
+    if (touchStateRef.current.isLocked) {
+      const finalValue = touchStateRef.current.currentValue
+      setLocalValue(finalValue)
+      onValueChange(finalValue) // Commit final value
+      haptic.medium() // Confirmation feedback (silently fails on iOS)
     }
     
     touchStateRef.current = null
     setIsActive(false)
     onSliderEnd?.()
-  }, [displayValue, onValueChange, onSliderEnd])
+  }, [onValueChange, onSliderEnd])
   
-  // Attach touch listeners with passive: false (CRITICAL for iOS)
+  // Attach native event listeners with { passive: false } for iOS
   useEffect(() => {
-    const track = trackRef.current
-    if (!track) return
+    if (!isTouchDevice || !trackRef.current) return
     
-    // Must use addEventListener with passive: false for iOS
+    const track = trackRef.current
+    
+    // Add event listeners with { passive: false } so preventDefault works on iOS
     track.addEventListener('touchstart', handleTouchStart, { passive: false })
     track.addEventListener('touchmove', handleTouchMove, { passive: false })
     track.addEventListener('touchend', handleTouchEnd, { passive: false })
@@ -269,105 +328,118 @@ const RatingSliderCard = memo(function RatingSliderCard({
       track.removeEventListener('touchend', handleTouchEnd)
       track.removeEventListener('touchcancel', handleTouchEnd)
     }
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd])
+  }, [isTouchDevice, handleTouchStart, handleTouchMove, handleTouchEnd])
   
-  // Desktop mouse handler
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = Number(e.target.value)
-    setDisplayValue(newValue)
-    onValueChange(newValue)
+  // Desktop input handler
+  const handleInputChange = useCallback((newValue: number) => {
+    setLocalValue(newValue)
+      onValueChange(newValue)
   }, [onValueChange])
-  
-  // Calculate positions
-  const percentage = displayValue
-  const thumbPosition = `${percentage}%`
-  const fillWidth = `${percentage}%`
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 relative">
       {/* Label */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg sm:text-xl font-semibold text-white">
+      <div className="flex items-center justify-between mb-3">
+        <h3 
+          className="text-lg sm:text-xl font-semibold text-white"
+          style={{ fontFamily: 'Inter, sans-serif' }}
+        >
           {label}
         </h3>
-        <div className="text-2xl sm:text-3xl font-bold text-amber-400">
-          {displayValue}
-        </div>
       </div>
 
-      {/* Slider */}
-      <div className="relative h-10 flex items-center">
-        {/* Track */}
+      {/* Slider Container */}
+      <div className="relative pt-3 pb-3">
+        {/* Track Background - with padding to contain thumb at edges */}
+        {/* Touch handlers attached via native listeners with { passive: false } for iOS */}
         <div
           ref={trackRef}
-          className="relative w-full h-2 bg-muted/30 rounded-full overflow-visible cursor-pointer select-none"
-          style={{
-            touchAction: 'pan-y', // Allow vertical scroll, prevent horizontal
-            WebkitUserSelect: 'none',
-            userSelect: 'none'
-          }}
+          className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5"
+          style={{ paddingLeft: '16px', paddingRight: '16px' }}
         >
-          {/* Fill */}
+          {/* Fill - Gold gradient - Updated directly via ref during drag for smoothness */}
+          {/* Using transform for better iOS compositor performance */}
           <div
-            className="absolute left-0 top-0 h-full rounded-full transition-all duration-75 ease-out"
-            style={{
-              width: fillWidth,
+            ref={fillRef}
+            className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
+            style={{ 
+              width: localValue === 0 ? '0px' : `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
-              transform: 'translate3d(0, 0, 0)', // GPU acceleration
-              WebkitTransform: 'translate3d(0, 0, 0)',
-              willChange: 'width'
+              transform: 'translate3d(0, 0, 0)', // Force GPU layer on iOS
+              WebkitTransform: 'translate3d(0, 0, 0)', // iOS Safari specific
             }}
           />
           
-          {/* Thumb */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-75 ease-out pointer-events-none"
-            style={{
-              left: thumbPosition,
-              transform: `translate(-50%, -50%) scale(${isActive ? 1.2 : 1}) translate3d(0, 0, 0)`,
-              WebkitTransform: `translate(-50%, -50%) scale(${isActive ? 1.2 : 1}) translate3d(0, 0, 0)`,
-              width: '40px',
-              height: '40px',
-              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-              boxShadow: isActive
-                ? '0 0 28px rgba(255, 215, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.4)'
-                : '0 0 24px rgba(255, 215, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.3)',
-              willChange: 'transform, left',
-              transition: 'transform 75ms ease-out, box-shadow 150ms ease-out'
-            }}
-          />
-          
-          {/* Hidden input for desktop */}
+          {/* Input for desktop + accessibility - disabled touch on mobile */}
           <input
             type="range"
             min="0"
             max="100"
             step="1"
-            value={displayValue}
-            onChange={handleInputChange}
+            value={localValue}
+            onChange={(e) => {
+              // Desktop: handle via native input
+              if (!isTouchDevice) {
+              handleInputChange(Number(e.target.value))
+                setIsActive(true)
+              }
+            }}
             onMouseDown={() => {
+              if (!isTouchDevice) {
               setIsActive(true)
               onSliderStart?.()
+              }
             }}
             onMouseUp={() => {
+              if (!isTouchDevice) {
               setIsActive(false)
               onSliderEnd?.()
+              }
+            }}
+            onMouseLeave={() => {
+              if (!isTouchDevice && isActive) {
+                setIsActive(false)
+                onSliderEnd?.()
+              }
             }}
             disabled={disabled}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 hidden sm:block"
+            className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed pointer-events-none sm:pointer-events-auto"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              paddingLeft: '16px',
+              paddingRight: '16px',
+            }}
             aria-label={label}
+          />
+          
+          {/* Visible Thumb - Updated directly via ref during drag for smoothness */}
+          {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
+          {/* Increased size from 28px to 36px for better mobile usability */}
+          {/* Using will-change and translate3d for iOS GPU acceleration */}
+          <div
+            ref={thumbRef}
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left]"
+            style={{
+              left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
+              transform: 'translate3d(-50%, -50%, 0)',
+              WebkitTransform: 'translate3d(-50%, -50%, 0)',
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+              width: '36px',
+              height: '36px',
+              boxShadow: isActive
+                ? '0 0 28px rgba(255, 215, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.4)'
+                : '0 0 24px rgba(255, 215, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.3)',
+            }}
           />
         </div>
       </div>
 
-      {/* Quality labels */}
-      <div className="flex justify-between text-xs text-muted-foreground">
+      {/* Quality Labels */}
+      <div className="flex justify-between mt-2 text-xs text-gray-500">
         <span>Weak</span>
-        <span>Average</span>
-        <span>Good</span>
         <span>Exceptional</span>
-      </div>
+    </div>
     </div>
   )
 })
