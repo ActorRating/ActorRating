@@ -7,6 +7,7 @@ import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X } from 'luci
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
+import { lockScroll, unlockScroll } from '@/lib/lockScroll'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -165,30 +166,16 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [localValue, setLocalValue] = useState(value)
-  const dragIntentRef = useRef(false)
-  const lastHapticValueRef = useRef<number | null>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const lastHapticValueRef = useRef<number>(value)
   
   // Detect touch device
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
   
-  // Scroll lock helpers - lock page scroll ONLY during slider interaction
-  const lockScroll = useCallback(() => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
-    }
-  }, [])
-  
-  const unlockScroll = useCallback(() => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
-    }
-  }, [])
-  
   // Update local value when prop changes (for demo)
   useEffect(() => {
     setLocalValue(value)
+    lastHapticValueRef.current = value
   }, [value])
   
   // Cleanup: unlock scroll on unmount
@@ -196,16 +183,13 @@ const RatingSliderCard = memo(function RatingSliderCard({
     return () => {
       unlockScroll()
     }
-  }, [unlockScroll])
+  }, [])
   
   const handleInputChange = useCallback((newValue: number) => {
     setLocalValue(newValue)
     
     // Haptic feedback every 5 points (discrete, non-annoying)
-    if (
-      lastHapticValueRef.current === null ||
-      Math.abs(newValue - lastHapticValueRef.current) >= 5
-    ) {
+    if (Math.abs(newValue - lastHapticValueRef.current) >= 5) {
       haptic.light()
       lastHapticValueRef.current = newValue
     }
@@ -215,11 +199,48 @@ const RatingSliderCard = memo(function RatingSliderCard({
       haptic.medium()
     }
     
-    // Use RAF for smoother updates
-    requestAnimationFrame(() => {
-      onValueChange(newValue)
-    })
+    // Direct update - no RAF for touch manipulation (removes latency)
+    onValueChange(newValue)
   }, [onValueChange])
+  
+  // Calculate value from touch position
+  const updateValueFromTouch = useCallback((clientX: number) => {
+    if (!trackRef.current) return
+    
+    const rect = trackRef.current.getBoundingClientRect()
+    const padding = 16
+    const usableWidth = rect.width - padding * 2
+    let x = clientX - rect.left - padding
+    x = Math.max(0, Math.min(usableWidth, x))
+    const percent = Math.round((x / usableWidth) * 100)
+    
+    handleInputChange(percent)
+  }, [handleInputChange])
+  
+  // Touch handlers - attached to track container
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault()
+    lockScroll()
+    setIsActive(true)
+    setIsDragging(true)
+    haptic.light() // Selection feedback
+    onSliderStart?.()
+    updateValueFromTouch(e.touches[0].clientX)
+  }, [updateValueFromTouch, onSliderStart])
+  
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return
+    e.preventDefault()
+    updateValueFromTouch(e.touches[0].clientX)
+  }, [isDragging, updateValueFromTouch])
+  
+  const onTouchEnd = useCallback(() => {
+    unlockScroll()
+    setIsActive(false)
+    setIsDragging(false)
+    haptic.medium() // Confirmation feedback
+    onSliderEnd?.()
+  }, [onSliderEnd])
 
   return (
     <motion.div 
@@ -243,7 +264,16 @@ const RatingSliderCard = memo(function RatingSliderCard({
       {/* Slider Container */}
       <div className="relative pt-3 pb-3">
         {/* Track Background - with padding to contain thumb at edges */}
-        <div className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
+        {/* Touch handlers attached to track container for mobile */}
+        <div
+          ref={trackRef}
+          onTouchStart={isTouchDevice ? onTouchStart : undefined}
+          onTouchMove={isTouchDevice ? onTouchMove : undefined}
+          onTouchEnd={isTouchDevice ? onTouchEnd : undefined}
+          onTouchCancel={isTouchDevice ? onTouchEnd : undefined}
+          className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5"
+          style={{ paddingLeft: '16px', paddingRight: '16px' }}
+        >
           {/* Fill - Gold gradient - No transitions for instant response */}
           <div
             className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
@@ -255,82 +285,44 @@ const RatingSliderCard = memo(function RatingSliderCard({
             }}
           />
           
-          {/* Hidden input for interaction - larger touch/click target for mobile */}
+          {/* Input for desktop + accessibility - disabled touch on mobile */}
           <input
             type="range"
             min="0"
             max="100"
             step="1"
             value={localValue}
-            onInput={(e) => {
-              // onInput fires immediately during drag for instant feedback
-              // On mobile, this is the primary event - set active state here
-              setIsActive(true)
-              handleInputChange(Number((e.currentTarget as HTMLInputElement).value))
-            }}
             onChange={(e) => {
-              // onChange fires on drag end - use for cleanup
-              handleInputChange(Number(e.target.value))
-              setIsActive(false)
-              setIsDragging(false)
-              lastHapticValueRef.current = null // Reset haptic tracking
-              unlockScroll()
-              onSliderEnd?.()
-            }}
-            onTouchStart={() => {
-              dragIntentRef.current = false
-              setIsActive(true)
-              setIsDragging(true)
-              haptic.light() // Selection feedback
-              onSliderStart?.()
-            }}
-            onTouchMove={() => {
-              // Only lock scroll if movement happens (drag intent)
-              if (!dragIntentRef.current) {
-                lockScroll()
-                dragIntentRef.current = true
+              // Desktop: handle via native input
+              if (!isTouchDevice) {
+                handleInputChange(Number(e.target.value))
+                setIsActive(true)
               }
             }}
-            onTouchEnd={() => {
-              setIsActive(false)
-              setIsDragging(false)
-              dragIntentRef.current = false
-              unlockScroll()
-              haptic.medium() // Confirmation feedback
-              onSliderEnd?.()
-            }}
-            onTouchCancel={() => {
-              setIsActive(false)
-              setIsDragging(false)
-              dragIntentRef.current = false
-              unlockScroll()
-              lastHapticValueRef.current = null
-              onSliderEnd?.()
-            }}
-            {...(!isTouchDevice && {
-              // Desktop-only: mouse events for visual feedback
-              onMouseDown: () => {
+            onMouseDown={() => {
+              if (!isTouchDevice) {
                 setIsActive(true)
                 setIsDragging(true)
                 onSliderStart?.()
-              },
-              onMouseUp: () => {
+              }
+            }}
+            onMouseUp={() => {
+              if (!isTouchDevice) {
                 setIsActive(false)
                 setIsDragging(false)
                 onSliderEnd?.()
-              },
-              onMouseLeave: () => {
-                if (isActive) {
-                  setIsActive(false)
-                  setIsDragging(false)
-                  onSliderEnd?.()
-                }
-              },
-            })}
+              }
+            }}
+            onMouseLeave={() => {
+              if (!isTouchDevice && isActive) {
+                setIsActive(false)
+                setIsDragging(false)
+                onSliderEnd?.()
+              }
+            }}
             disabled={disabled}
-            className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+            className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed pointer-events-none sm:pointer-events-auto"
             style={{ 
-              // Removed touchAction: 'none' - breaks iOS Safari native drag gesture
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',

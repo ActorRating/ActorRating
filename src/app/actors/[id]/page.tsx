@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Film, Star, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Film, Star, ChevronDown, Award, User } from 'lucide-react'
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -14,6 +14,15 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+
+interface Award {
+  title?: string
+  award?: string
+  year?: number
+  category?: string
+  result?: 'won' | 'nominated'
+  movie?: string
+}
 
 interface Actor {
   id: string
@@ -23,6 +32,7 @@ interface Actor {
   birthDate?: string
   nationality?: string
   knownFor?: string
+  awards?: Award[] | string | null
 }
 
 interface Performance {
@@ -368,6 +378,161 @@ export default function ActorPage() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Bio Section */}
+        {actor.bio && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <User className="w-6 h-6 text-[#FFD700]" />
+              <h2 
+                className="text-3xl sm:text-4xl font-bold"
+                style={{ 
+                  fontFamily: 'var(--font-cinzel), serif',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                <span 
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Biography
+                </span>
+              </h2>
+            </div>
+            <div 
+              className="text-base sm:text-lg text-gray-300 leading-relaxed"
+              style={{
+                lineHeight: '1.8',
+              }}
+            >
+              <p className="whitespace-pre-line">{actor.bio}</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Awards Section */}
+        {actor.awards && (() => {
+          // Parse awards if it's a string (JSON)
+          let awardsList: Award[] = []
+          if (typeof actor.awards === 'string') {
+            try {
+              awardsList = JSON.parse(actor.awards)
+            } catch (e) {
+              // If parsing fails, treat as empty
+              awardsList = []
+            }
+          } else if (Array.isArray(actor.awards)) {
+            awardsList = actor.awards
+          }
+
+          if (awardsList.length === 0) return null
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.2 }}
+              className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <Award className="w-6 h-6 text-[#FFD700]" />
+                <h2 
+                  className="text-3xl sm:text-4xl font-bold"
+                  style={{ 
+                    fontFamily: 'var(--font-cinzel), serif',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  <span 
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    Awards & Recognition
+                  </span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {awardsList.map((award, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1.3 + index * 0.1 }}
+                    className={`p-6 rounded-2xl border backdrop-blur-2xl ${
+                      award.result === 'won' 
+                        ? 'bg-gradient-to-br from-[#FFD700]/10 via-[#FFA500]/5 to-transparent border-[#FFD700]/30' 
+                        : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-white/10'
+                    }`}
+                    style={{
+                      boxShadow: award.result === 'won' 
+                        ? `0 8px 32px rgba(255, 215, 0, 0.1), 0 0 0 1px rgba(255, 215, 0, 0.15)`
+                        : `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        award.result === 'won' 
+                          ? 'bg-[#FFD700]/20' 
+                          : 'bg-blue-500/20'
+                      }`}>
+                        <Award className={`w-5 h-5 ${
+                          award.result === 'won' 
+                            ? 'text-[#FFD700]' 
+                            : 'text-blue-400'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold text-white">
+                            {award.award || award.title || 'Award'}
+                          </h3>
+                          {award.result === 'won' && (
+                            <span className="px-2 py-1 text-xs font-bold text-[#FFD700] bg-[#FFD700]/20 rounded-full">
+                              Winner
+                            </span>
+                          )}
+                          {award.result === 'nominated' && (
+                            <span className="px-2 py-1 text-xs font-bold text-blue-400 bg-blue-500/20 rounded-full">
+                              Nominated
+                            </span>
+                          )}
+                        </div>
+                        {award.category && (
+                          <p className="text-sm text-gray-400 mb-1">
+                            {award.category}
+                          </p>
+                        )}
+                        {award.movie && (
+                          <p className="text-sm text-gray-300 italic mb-1">
+                            for <span className="text-[#FFD700]">{award.movie}</span>
+                          </p>
+                        )}
+                        {award.year && (
+                          <p className="text-xs text-gray-500">
+                            {award.year}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )
+        })()}
 
       {/* Performances Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

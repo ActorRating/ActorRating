@@ -1,3 +1,12 @@
+export interface Award {
+  title?: string
+  award?: string
+  year?: number
+  category?: string
+  result?: 'won' | 'nominated'
+  movie?: string
+}
+
 export interface Actor {
   id: string
   name: string
@@ -8,6 +17,7 @@ export interface Actor {
   nationality?: string
   tmdbId?: number
   knownFor?: string
+  awards?: Award[] | string | null
   performances?: Performance[]
   ratings?: Rating[]
   createdAt: string
