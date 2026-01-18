@@ -638,7 +638,7 @@ function RatePageContent() {
                 // Success animation is handled in the component
               }}
             />
-          </>
+          </div>
         )}
         
         {/* Sign Up Modal */}
