@@ -118,9 +118,9 @@ export function SignUpToSaveModal({
             onClick={handleClose}
           />
 
-          {/* Modal Container - Centered with responsive sizing */}
+          {/* Modal Container - Centered with responsive sizing and scrollable */}
           <div 
-            className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 pointer-events-none"
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 pointer-events-none overflow-y-auto"
             onClick={handleClose}
           >
             <motion.div
@@ -133,7 +133,7 @@ export function SignUpToSaveModal({
                 damping: 30,
                 duration: 0.3
               }}
-              className="relative max-w-md w-full rounded-[2rem] p-6 sm:p-7 md:p-8 pointer-events-auto"
+              className="relative max-w-md w-full rounded-[2rem] p-6 sm:p-7 md:p-8 pointer-events-auto my-auto"
               onClick={(e) => e.stopPropagation()}
               style={{
                 background: 'linear-gradient(to bottom right, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.90), rgba(0, 0, 0, 0.95))',
@@ -148,6 +148,8 @@ export function SignUpToSaveModal({
                 `,
                 transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
                 transformStyle: 'preserve-3d',
+                maxHeight: '90vh',
+                overflowY: 'auto',
               }}
             >
               {/* Close button */}
@@ -176,7 +178,7 @@ export function SignUpToSaveModal({
                 className="text-center mb-5 sm:mb-6 mt-12 sm:mt-0"
               >
                 <div 
-                  className="relative backdrop-blur-xl rounded-3xl px-6 sm:px-8 py-6 sm:py-8 shadow-2xl mx-auto flex items-center justify-center"
+                  className="relative backdrop-blur-xl rounded-3xl px-6 sm:px-8 py-6 sm:py-8 shadow-2xl mx-auto flex items-center justify-center overflow-hidden"
                   style={{
                     width: 'clamp(200px, 85%, 280px)',
                     maxWidth: '280px',
@@ -188,16 +190,16 @@ export function SignUpToSaveModal({
                     transformStyle: 'preserve-3d',
                   }}
                 >
-                  <div className="relative text-center z-10 w-full">
+                  <div className="relative text-center z-10 w-full px-2">
                     <div 
-                      className="font-black flex items-baseline justify-center gap-2"
+                      className="font-black flex items-baseline justify-center gap-1 sm:gap-1.5"
                       style={{
                         fontFamily: 'var(--font-geist-sans), sans-serif',
                         fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       <span
-                        className="inline-block text-6xl sm:text-7xl md:text-8xl"
+                        className="inline-block text-4xl sm:text-5xl md:text-6xl"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           WebkitBackgroundClip: 'text',
@@ -211,7 +213,7 @@ export function SignUpToSaveModal({
                         {totalScore}
                       </span>
                       <span 
-                        className="text-2xl sm:text-3xl md:text-4xl text-[#a1a1aa] leading-none"
+                        className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
                         style={{
                           verticalAlign: 'baseline',
                         }}
@@ -290,11 +292,11 @@ export function SignUpToSaveModal({
 
               {/* Already have account */}
               <div className="text-center pt-4 sm:pt-5 border-t border-white/10">
-                <p className="text-sm sm:text-base md:text-lg text-gray-400">
+                <p className="text-sm sm:text-base text-gray-400">
                   Already have an account?{' '}
                   <button
                     onClick={handleSignIn}
-                    className="text-[#FFD700] font-semibold hover:underline hover:text-[#FFE55C] transition-colors text-base sm:text-lg md:text-xl"
+                    className="text-[#FFD700] font-semibold hover:underline hover:text-[#FFE55C] transition-colors text-sm sm:text-base"
                   >
                     Sign In
                   </button>

@@ -562,36 +562,34 @@ function RatePageContent() {
     return (
       <Suspense fallback={null}>
         {getLayout(
-          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
-            <div className="grid grid-cols-12 gap-6">
-              {/* Header - Back button removed */}
-              {ratingId && (
+          <div className="relative">
+            {/* Edit Rating Header - Only show when editing */}
+            {ratingId && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="col-span-12 lg:col-span-10 lg:col-start-2 mb-4 sm:mb-6"
+                className="absolute top-4 sm:top-6 left-0 right-0 z-50 pointer-events-none"
               >
                 <div className="text-center">
-                  <h1 className="text-lg sm:text-xl font-semibold text-foreground/80 mb-1">
+                  <h1 className="text-lg sm:text-xl font-semibold text-white/80 mb-1">
                     Edit Rating
                   </h1>
                 </div>
-                </motion.div>
-              )}
+              </motion.div>
+            )}
 
-              {/* Error Display */}
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="col-span-12 lg:col-span-10 lg:col-start-2 mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
-                >
-                  <p className="text-red-800">{error}</p>
-                </motion.div>
-              )}
+            {/* Error Display */}
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-12 sm:top-16 left-4 right-4 z-50 p-4 bg-red-50 border border-red-200 rounded-lg pointer-events-auto max-w-md mx-auto"
+              >
+                <p className="text-red-800">{error}</p>
+              </motion.div>
+            )}
 
-          {/* Rating Form (with gutters) */}
-          <div className="col-span-12 lg:col-start-3 lg:col-span-8">
+            {/* Rating Form - Full width like slug-based rate page */}
             <PerformanceRatingClientWrapper
               performance={{
                 id: `${actor.id}-${movie.id}`,
@@ -639,10 +637,8 @@ function RatePageContent() {
               onSuccess={() => {
                 // Success animation is handled in the component
               }}
-                />
-              </div>
-            </div>
-          </div>
+            />
+          </>
         )}
         
         {/* Sign Up Modal */}

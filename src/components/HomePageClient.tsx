@@ -41,19 +41,19 @@ function HowItWorksSection() {
   
   const steps = [
     {
-      number: "01",
+      number: "1",
       icon: FaSearch,
       title: "Find a Performance",
       description: "Search 25,000+ actor performances from cinema history."
     },
     {
-      number: "02",
+      number: "2",
       icon: FaStar,
       title: "Rate in 2 Minutes",
       description: "Five professional criteria. Submit your score."
     },
     {
-      number: "03",
+      number: "3",
       icon: FaChartLine,
       title: "See the Consensus",
       description: "Compare your rating to the community average."
@@ -306,15 +306,14 @@ function HowItWorksSection() {
                           </div>
                         </div>
                         <div className="mb-6">
-                          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-black/50 border border-[#FFD700]/30 min-w-[60px]">
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-black/50 border-2 border-[#FFD700]/40 shadow-[0_0_20px_rgba(255,215,0,0.2)]">
                             <span 
-                              className="text-lg font-bold leading-none"
+                              className="text-xl font-black"
                               style={{ 
-                                fontFamily: 'var(--font-cinzel), serif',
-                                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                letterSpacing: '0.05em',
+                                fontFamily: 'var(--font-geist-sans), sans-serif',
+                                fontVariantNumeric: 'tabular-nums',
+                                color: '#FFD700',
+                                lineHeight: '1',
                               }}
                             >
                               {step.number}
@@ -356,11 +355,11 @@ function HowItWorksSection() {
                   style={{ 
                     willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity',
                   }}
-                  className="group relative w-full max-w-[300px]"
+                  className="group relative w-full max-w-[300px] flex flex-col"
                 >
               {/* Premium Card - Clean & Centered with enhanced 3D shadow */}
               <div 
-                className="relative h-full p-6 md:p-8 lg:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
+                className="relative flex-1 flex flex-col p-6 md:p-8 lg:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -383,45 +382,50 @@ function HowItWorksSection() {
                   </div>
                 )}
 
-                {/* Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center text-center h-full">
-                  {/* Icon */}
-                  <div className="mb-4 md:mb-6">
-                    <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
-                      <StepIcon className="w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 text-[#FFD700]" />
+                {/* Content - Flex column with fixed number position */}
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Top section: Icon and Number - Fixed height to align across cards */}
+                  <div className="flex flex-col items-center mb-4 md:mb-6" style={{ minHeight: '140px' }}>
+                    {/* Icon */}
+                    <div className="mb-4 md:mb-6">
+                      <div className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-[#FFD700]/25 to-[#FFA500]/15 border-2 border-[#FFD700]/40 flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.2)] mx-auto">
+                        <StepIcon className="w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 text-[#FFD700]" />
+                      </div>
+                    </div>
+
+                    {/* Number Badge - Fixed position */}
+                    <div className="flex-shrink-0">
+                      <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-black/50 border-2 border-[#FFD700]/40 shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+                        <span 
+                          className="text-xl md:text-2xl font-black"
+                          style={{ 
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
+                            color: '#FFD700',
+                            lineHeight: '1',
+                          }}
+                        >
+                          {step.number}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Number Badge */}
-                  <div className="mb-4 md:mb-6">
-                    <div className="inline-flex items-center justify-center px-4 py-1.5 md:px-5 md:py-2 rounded-full bg-black/50 border border-[#FFD700]/30 min-w-[60px] md:min-w-[70px]">
-                      <span 
-                        className="text-base md:text-lg lg:text-xl font-bold leading-none"
-                        style={{ 
-                          fontFamily: 'var(--font-cinzel), serif',
-                          background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
-                        {step.number}
-                      </span>
-                    </div>
+                  {/* Bottom section: Title and Description - Flexible */}
+                  <div className="flex flex-col items-center justify-center text-center flex-1">
+                    {/* Title */}
+                    <h3 
+                      className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 leading-tight"
+                      style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                    >
+                      {step.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-sm md:text-base lg:text-lg text-[#d4d4d8] leading-relaxed max-w-sm mx-auto px-2">
+                      {step.description}
+                    </p>
                   </div>
-
-                  {/* Title */}
-                  <h3 
-                    className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 leading-tight"
-                    style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                  >
-                    {step.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm md:text-base lg:text-lg text-[#d4d4d8] leading-relaxed max-w-sm mx-auto px-2">
-                    {step.description}
-                  </p>
                 </div>
 
                 {/* Decorative corner accent */}

@@ -78,7 +78,7 @@ export function FeedbackSection() {
           >
             <button
               onClick={() => setIsOpen(true)}
-              className="relative rounded-full w-14 h-14 sm:w-14 sm:h-14 min-w-[56px] min-h-[56px] p-0 border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] group flex items-center justify-center touch-manipulation"
+              className="relative rounded-full w-[72px] h-[72px] sm:w-20 sm:h-20 min-w-[72px] min-h-[72px] p-0 border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)] group flex items-center justify-center touch-manipulation"
               style={{
                 boxShadow: `
                   0 15px 40px -10px rgba(0, 0, 0, 0.8),
@@ -94,7 +94,7 @@ export function FeedbackSection() {
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#FFD700]/15 rounded-full blur-3xl" />
               </div>
-              <MessageSquare className="w-5 h-5 text-white group-hover:text-white transition-colors duration-200 relative z-10" />
+              <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:text-white transition-colors duration-200 relative z-10" style={{ transform: 'scaleX(-1)' }} />
             </button>
           </motion.div>
         ) : (

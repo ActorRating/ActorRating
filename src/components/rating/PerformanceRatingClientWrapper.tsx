@@ -212,7 +212,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
             }}
           />
           
-          {/* Hidden input for interaction - larger touch/click target */}
+          {/* Hidden input for interaction - larger touch/click target for mobile */}
           <input
             type="range"
             min="0"
@@ -260,7 +260,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
               onSliderEnd?.()
             }}
             disabled={disabled}
-            className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+            className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             style={{ 
               touchAction: 'none', // Prevent scrolling on slider only
               WebkitTapHighlightColor: 'transparent',
@@ -573,17 +573,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [touchedSliders])
 
   const handleSliderChange = useCallback((key: keyof typeof touchedSliders, value: number) => {
+    const wasTouched = touchedSliders[key]
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
     lastInteractionTime.current = Date.now()
     
-    // Clear any existing timeout to reset the timer
-    if (spotlightTimeoutRef.current) {
-      clearTimeout(spotlightTimeoutRef.current)
-      spotlightTimeoutRef.current = null
+    // Only clear timeout if this slider wasn't touched before (first touch)
+    // This prevents resetting the animation timer when adjusting already-touched sliders
+    if (!wasTouched) {
+      if (spotlightTimeoutRef.current) {
+        clearTimeout(spotlightTimeoutRef.current)
+        spotlightTimeoutRef.current = null
+      }
+      // Only reset spotlight phase if not already animating
+      if (spotlightPhase === 'none') {
+        setSpotlightPhase('none')
+      }
     }
-    
-    // Reset spotlight phase only if needed (avoid state update during drag)
-    setSpotlightPhase('none')
     
     switch(key) {
       case 'emotionalRangeDepth':
@@ -602,7 +607,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setChemistryInteraction(value)
         break
     }
-  }, [])
+  }, [touchedSliders, spotlightPhase])
 
   const handleSliderStart = useCallback(() => {
     isDraggingRef.current = true
@@ -627,22 +632,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (isDraggingRef.current) return // Don't trigger if still dragging
     if (hasAnimatedOnce) return // Only animate once
 
-    // Mark as animated
+    // Mark as animated immediately to prevent re-triggering
     setHasAnimatedOnce(true)
 
     // Effect 1: Score pulse
     setSpotlightPhase('score')
     
-    // Effect 2: Scroll to score (after 200ms)
+    // Effect 2: Scroll to score (after short delay)
     setTimeout(() => {
       scoreRef.current?.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'center',
-        inline: 'center'
+        inline: 'nearest'
       })
     }, 200)
     
-    // Effect 3: Button glow (after 1.2s, total ~1.8s)
+    // Effect 3: Button glow (after score animation completes)
     setTimeout(() => {
       setSpotlightPhase('button')
       
@@ -651,31 +656,41 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         buttonRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center',
-          inline: 'center'
+          inline: 'nearest'
         })
       }, 200)
     }, 1200)
   }, [allSlidersTouched, spotlightPhase, hasAnimatedOnce])
 
-  // Trigger spotlight animation after slider release (not just when slider stops moving)
+  // Trigger spotlight animation after slider release (only when all sliders are touched)
   useEffect(() => {
+    // Only proceed if all sliders are touched
     if (!allSlidersTouched) return
-    if (spotlightPhase !== 'none') return // Don't restart if already animating
-    if (isDraggingRef.current) return // Don't trigger if still dragging
-    if (sliderReleaseTime === 0) return // No release yet
-    if (hasAnimatedOnce) return // Only animate once
+    // Don't restart if already animating or already animated
+    if (spotlightPhase !== 'none' || hasAnimatedOnce) return
+    // Don't trigger if still dragging
+    if (isDraggingRef.current) return
+    // Need a slider release to trigger
+    if (sliderReleaseTime === 0) return
 
     // Clear any existing timeout
     if (spotlightTimeoutRef.current) {
       clearTimeout(spotlightTimeoutRef.current)
+      spotlightTimeoutRef.current = null
     }
 
-    // Trigger animation 100ms after slider release
+    // Trigger animation after a short delay to ensure slider release is complete
     spotlightTimeoutRef.current = setTimeout(() => {
-      if (!isDraggingRef.current && spotlightPhase === 'none' && !hasAnimatedOnce) {
+      // Double-check conditions before triggering
+      if (
+        allSlidersTouched &&
+        !isDraggingRef.current && 
+        spotlightPhase === 'none' && 
+        !hasAnimatedOnce
+      ) {
         triggerSpotlightAnimation()
       }
-    }, 100)
+    }, 150)
 
     return () => {
       if (spotlightTimeoutRef.current) {
@@ -756,6 +771,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     } catch (err) {
       // Handle intentional rejections (e.g., when user is not signed in) gracefully
       // Check if this is the expected rejection for unsigned users
+      const errorMessage = err instanceof Error ? err.message : String(err || 'Unknown error')
       const isUserNotSignedIn = err instanceof Error && err.message === 'USER_NOT_SIGNED_IN'
       
       if (isUserNotSignedIn) {
@@ -764,7 +780,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setSubmitPhase('idle')
       } else {
         // For actual errors, log them
-        console.error('Failed to submit rating:', err)
+        console.error('Failed to submit rating:', errorMessage, err)
         setSubmitPhase('idle')
       }
     }
@@ -895,20 +911,30 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {performance.actor.name}
           </h1>
           
-          {/* Movie Title - Secondary, More Prominent, Gold Gradient, Italic */}
-          <h2 
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium italic mb-2 sm:mb-3 tracking-tight px-2"
-            style={{
-              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-              lineHeight: '1.2',
-              paddingBottom: '0.15em',
-            }}
-          >
-            in {performance.movie.title} ({performance.movie.year})
-          </h2>
+          {/* Movie Title - Clean, non-italic styling */}
+          <div className="mb-2 sm:mb-3 px-2">
+            <h2 
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1 sm:mb-1.5 tracking-tight"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'var(--font-geist-sans), sans-serif',
+                lineHeight: '1.3',
+              }}
+            >
+              {performance.movie.title}
+            </h2>
+            <p 
+              className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
+              style={{
+                fontFamily: 'var(--font-geist-sans), sans-serif',
+              }}
+            >
+              {performance.movie.year}
+            </p>
+          </div>
           
           {/* Role/Comment */}
           {performance.comment && (
@@ -928,12 +954,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: -20, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
                   className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
                   style={{ willChange: 'transform, opacity' }}
                 >
                   <div 
-                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-300 overflow-hidden border border-white/10"
+                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
                     style={{
                       width: '100%',
                       background: 'rgba(26, 26, 26, 0.95)',
@@ -990,14 +1016,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   animate={{ 
                     opacity: isSticky ? 0 : 1, 
                     y: 0,
-                    scale: spotlightPhase === 'score' ? [1, 1.05, 1] : 1
+                    scale: 1
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
-                    delay: 0.3, 
-                    duration: isSticky ? 0.3 : 0.8,
-                    times: spotlightPhase === 'score' ? [0, 0.5, 1] : undefined,
-                    ease: spotlightPhase === 'score' ? ['easeOut', 'easeIn'] : [0.22, 1, 0.36, 1]
+                    delay: 0.1, 
+                    duration: isSticky ? 0.15 : 0.4,
+                    ease: [0.22, 1, 0.36, 1]
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
                   style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}

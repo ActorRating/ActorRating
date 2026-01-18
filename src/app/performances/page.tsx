@@ -300,7 +300,7 @@ export default function PerformancesPage() {
                 viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform, opacity' }}
-                className="text-center mb-24 sm:mb-32 lg:mb-40"
+                className="text-center mb-8 sm:mb-12 md:mb-16"
               >
                 <h3 
                   className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
@@ -466,7 +466,7 @@ export default function PerformancesPage() {
                 viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform, opacity' }}
-                className="text-center mb-24 sm:mb-32 lg:mb-40"
+                className="text-center mb-8 sm:mb-12 md:mb-16"
               >
                 <h3 
                   className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
