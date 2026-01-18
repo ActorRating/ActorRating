@@ -163,6 +163,20 @@ const RatingSliderCard = memo(function RatingSliderCard({
 }) {
   const [isActive, setIsActive] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [localValue, setLocalValue] = useState(value)
+  
+  // Update local value when prop changes (for demo)
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+  
+  const handleInputChange = useCallback((newValue: number) => {
+    setLocalValue(newValue)
+    // Use RAF for smoother updates
+    requestAnimationFrame(() => {
+      onValueChange(newValue)
+    })
+  }, [onValueChange])
 
   return (
     <motion.div 
@@ -191,7 +205,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
           <div
             className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
             style={{ 
-              width: value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`,
+              width: localValue === 0 ? '0px' : `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
               transform: 'translateZ(0)', // Force GPU acceleration
@@ -204,14 +218,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
             min="0"
             max="100"
             step="1"
-            value={value}
+            value={localValue}
             onInput={(e) => {
               // onInput fires immediately during drag for instant feedback
-              onValueChange(Number((e.target as HTMLInputElement).value))
+              handleInputChange(Number((e.target as HTMLInputElement).value))
             }}
             onChange={(e) => {
               // onChange as fallback
-              onValueChange(Number(e.target.value))
+              handleInputChange(Number(e.target.value))
             }}
             onMouseDown={() => {
               setIsActive(true)
@@ -248,6 +262,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             style={{ 
+              touchAction: 'none', // Prevent scrolling on slider only
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',
@@ -259,7 +274,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
           <div
             className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height]"
             style={{
-              left: `calc(16px + ${value}% * (100% - 32px) / 100%)`,
+              left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               transform: 'translate(-50%, -50%) translateZ(0)', // Force GPU acceleration
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
