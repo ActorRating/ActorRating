@@ -164,10 +164,19 @@ const RatingSliderCard = memo(function RatingSliderCard({
   isDemoing?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [localValue, setLocalValue] = useState(value)
   const trackRef = useRef<HTMLDivElement>(null)
+  const fillRef = useRef<HTMLDivElement>(null)
+  const thumbRef = useRef<HTMLDivElement>(null)
   const lastHapticValueRef = useRef<number>(value)
+  
+  // Direction-locked touch handling state
+  const touchStateRef = useRef<{
+    startX: number
+    startY: number
+    isLocked: boolean
+    currentValue: number
+  } | null>(null)
   
   // Detect touch device
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
@@ -176,17 +185,39 @@ const RatingSliderCard = memo(function RatingSliderCard({
   useEffect(() => {
     setLocalValue(value)
     lastHapticValueRef.current = value
+    
+    // Sync refs with current value
+    if (fillRef.current && thumbRef.current) {
+      const padding = 16
+      const fillWidth = value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`
+      const thumbLeft = `calc(16px + ${value}% * (100% - 32px) / 100%)`
+      fillRef.current.style.width = fillWidth
+      thumbRef.current.style.left = thumbLeft
+    }
   }, [value])
   
-  // Cleanup: unlock scroll on unmount
-  useEffect(() => {
-    return () => {
-      unlockScroll()
-    }
-  }, [])
+  // Calculate value from touch position (no state updates during drag)
+  const calculateValueFromTouch = useCallback((clientX: number): number => {
+    if (!trackRef.current) return localValue
+    
+    const rect = trackRef.current.getBoundingClientRect()
+    const padding = 16
+    const usableWidth = rect.width - padding * 2
+    let x = clientX - rect.left - padding
+    x = Math.max(0, Math.min(usableWidth, x))
+    return Math.round((x / usableWidth) * 100)
+  }, [localValue])
   
-  const handleInputChange = useCallback((newValue: number) => {
-    setLocalValue(newValue)
+  // Update thumb and fill directly via refs (no React state during drag)
+  const updateSliderVisuals = useCallback((newValue: number) => {
+    if (!fillRef.current || !thumbRef.current) return
+    
+    const padding = 16
+    const fillWidth = newValue === 0 ? '0px' : `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
+    const thumbLeft = `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
+    
+    fillRef.current.style.width = fillWidth
+    thumbRef.current.style.left = thumbLeft
     
     // Haptic feedback every 5 points (discrete, non-annoying)
     if (Math.abs(newValue - lastHapticValueRef.current) >= 5) {
@@ -198,59 +229,84 @@ const RatingSliderCard = memo(function RatingSliderCard({
     if ([50, 75, 90, 100].includes(newValue)) {
       haptic.medium()
     }
-    
-    // Direct update - no RAF for touch manipulation (removes latency)
-    onValueChange(newValue)
-  }, [onValueChange])
+  }, [])
   
-  // Calculate value from touch position
-  const updateValueFromTouch = useCallback((clientX: number) => {
-    if (!trackRef.current) return
-    
-    const rect = trackRef.current.getBoundingClientRect()
-    const padding = 16
-    const usableWidth = rect.width - padding * 2
-    let x = clientX - rect.left - padding
-    x = Math.max(0, Math.min(usableWidth, x))
-    const percent = Math.round((x / usableWidth) * 100)
-    
-    handleInputChange(percent)
-  }, [handleInputChange])
-  
-  // Touch handlers - attached to track container
+  // Touch handlers with direction lock
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
-    lockScroll()
+    if (disabled) return
+    
+    const touch = e.touches[0]
+    touchStateRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      isLocked: false,
+      currentValue: localValue
+    }
+    
     setIsActive(true)
-    setIsDragging(true)
     haptic.light() // Selection feedback
     onSliderStart?.()
-    updateValueFromTouch(e.touches[0].clientX)
-  }, [updateValueFromTouch, onSliderStart])
+  }, [disabled, localValue, onSliderStart])
   
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return
-    e.preventDefault()
-    updateValueFromTouch(e.touches[0].clientX)
-  }, [isDragging, updateValueFromTouch])
+    if (!touchStateRef.current || disabled) return
+    
+    const touch = e.touches[0]
+    const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
+    const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
+    
+    // Direction lock: detect horizontal vs vertical intent
+    // Only lock into slider drag if horizontal movement is dominant
+    if (!touchStateRef.current.isLocked) {
+      // Threshold: 8px movement to determine intent
+      if (dx > 8 && dx > dy) {
+        // Horizontal intent confirmed - lock into slider drag
+        touchStateRef.current.isLocked = true
+        e.preventDefault() // Only prevent default AFTER horizontal intent confirmed
+      } else if (dy > 8) {
+        // Vertical intent - abort slider interaction, allow page scroll
+        touchStateRef.current = null
+        setIsActive(false)
+        return
+      } else {
+        // Not enough movement yet - wait
+        return
+      }
+    }
+    
+    // Horizontal drag locked - update slider
+    if (touchStateRef.current.isLocked) {
+      e.preventDefault() // Prevent scroll during horizontal drag
+      const newValue = calculateValueFromTouch(touch.clientX)
+      touchStateRef.current.currentValue = newValue
+      updateSliderVisuals(newValue) // Direct DOM update, no React state
+    }
+  }, [disabled, calculateValueFromTouch, updateSliderVisuals])
   
   const onTouchEnd = useCallback(() => {
-    unlockScroll()
+    if (!touchStateRef.current) return
+    
+    // Only commit value if we were locked into horizontal drag
+    if (touchStateRef.current.isLocked) {
+      const finalValue = touchStateRef.current.currentValue
+      setLocalValue(finalValue)
+      onValueChange(finalValue) // Commit final value
+      haptic.medium() // Confirmation feedback
+    }
+    
+    touchStateRef.current = null
     setIsActive(false)
-    setIsDragging(false)
-    haptic.medium() // Confirmation feedback
     onSliderEnd?.()
-  }, [onSliderEnd])
+  }, [onValueChange, onSliderEnd])
+  
+  // Desktop input handler
+  const handleInputChange = useCallback((newValue: number) => {
+    setLocalValue(newValue)
+    onValueChange(newValue)
+  }, [onValueChange])
 
   return (
-    <motion.div 
-      className="space-y-3 sm:space-y-4 relative"
-      animate={{
-        opacity: 1,
-        filter: 'blur(0px)'
-      }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <div className="space-y-3 sm:space-y-4 relative">
       {/* Label */}
       <div className="flex items-center justify-between mb-3">
         <h3 
@@ -264,7 +320,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
       {/* Slider Container */}
       <div className="relative pt-3 pb-3">
         {/* Track Background - with padding to contain thumb at edges */}
-        {/* Touch handlers attached to track container for mobile */}
+        {/* Touch handlers attached to track container for mobile with direction lock */}
         <div
           ref={trackRef}
           onTouchStart={isTouchDevice ? onTouchStart : undefined}
@@ -274,8 +330,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
           className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5"
           style={{ paddingLeft: '16px', paddingRight: '16px' }}
         >
-          {/* Fill - Gold gradient - No transitions for instant response */}
+          {/* Fill - Gold gradient - Updated directly via ref during drag for smoothness */}
           <div
+            ref={fillRef}
             className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
             style={{ 
               width: localValue === 0 ? '0px' : `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
@@ -302,21 +359,18 @@ const RatingSliderCard = memo(function RatingSliderCard({
             onMouseDown={() => {
               if (!isTouchDevice) {
                 setIsActive(true)
-                setIsDragging(true)
                 onSliderStart?.()
               }
             }}
             onMouseUp={() => {
               if (!isTouchDevice) {
                 setIsActive(false)
-                setIsDragging(false)
                 onSliderEnd?.()
               }
             }}
             onMouseLeave={() => {
               if (!isTouchDevice && isActive) {
                 setIsActive(false)
-                setIsDragging(false)
                 onSliderEnd?.()
               }
             }}
@@ -330,10 +384,11 @@ const RatingSliderCard = memo(function RatingSliderCard({
             aria-label={label}
           />
           
-          {/* Visible Thumb - No transitions for instant response */}
+          {/* Visible Thumb - Updated directly via ref during drag for smoothness */}
           {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
           {/* Increased size from 28px to 36px for better mobile usability */}
           <div
+            ref={thumbRef}
             className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left]"
             style={{
               left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
@@ -353,8 +408,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="flex justify-between mt-2 text-xs text-gray-500">
         <span>Weak</span>
         <span>Exceptional</span>
+      </div>
     </div>
-    </motion.div>
   )
 })
 
