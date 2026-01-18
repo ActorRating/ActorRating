@@ -165,6 +165,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const [isDragging, setIsDragging] = useState(false)
   const [localValue, setLocalValue] = useState(value)
   
+  // Detect touch device
+  const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
+  
   // Update local value when prop changes (for demo)
   useEffect(() => {
     setLocalValue(value)
@@ -221,48 +224,41 @@ const RatingSliderCard = memo(function RatingSliderCard({
             value={localValue}
             onInput={(e) => {
               // onInput fires immediately during drag for instant feedback
-              handleInputChange(Number((e.target as HTMLInputElement).value))
+              // On mobile, this is the primary event - set active state here
+              setIsActive(true)
+              handleInputChange(Number((e.currentTarget as HTMLInputElement).value))
             }}
             onChange={(e) => {
-              // onChange as fallback
+              // onChange fires on drag end - use for cleanup
               handleInputChange(Number(e.target.value))
-            }}
-            onMouseDown={() => {
-              setIsActive(true)
-              setIsDragging(true)
-              onSliderStart?.()
-            }}
-            onMouseUp={() => {
               setIsActive(false)
               setIsDragging(false)
               onSliderEnd?.()
             }}
-            onMouseLeave={() => {
-              if (isActive) {
+            {...(!isTouchDevice && {
+              // Desktop-only: mouse events for visual feedback
+              onMouseDown: () => {
+                setIsActive(true)
+                setIsDragging(true)
+                onSliderStart?.()
+              },
+              onMouseUp: () => {
                 setIsActive(false)
                 setIsDragging(false)
                 onSliderEnd?.()
-              }
-            }}
-            onTouchStart={() => {
-              setIsActive(true)
-              setIsDragging(true)
-              onSliderStart?.()
-            }}
-            onTouchEnd={() => {
-              setIsActive(false)
-              setIsDragging(false)
-              onSliderEnd?.()
-            }}
-            onTouchCancel={() => {
-              setIsActive(false)
-              setIsDragging(false)
-              onSliderEnd?.()
-            }}
+              },
+              onMouseLeave: () => {
+                if (isActive) {
+                  setIsActive(false)
+                  setIsDragging(false)
+                  onSliderEnd?.()
+                }
+              },
+            })}
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             style={{ 
-              touchAction: 'none', // Prevent scrolling on slider only
+              // Removed touchAction: 'none' - breaks iOS Safari native drag gesture
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',
@@ -271,15 +267,18 @@ const RatingSliderCard = memo(function RatingSliderCard({
           />
           
           {/* Visible Thumb - No transitions for instant response */}
+          {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
           <div
-            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left,width,height]"
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left]"
             style={{
               left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               transform: 'translate(-50%, -50%) translateZ(0)', // Force GPU acceleration
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-              boxShadow: '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
-              width: isActive ? '32px' : '28px',
-              height: isActive ? '32px' : '28px',
+              width: '28px',
+              height: '28px',
+              boxShadow: isActive
+                ? '0 0 24px rgba(255, 215, 0, 0.7), 0 4px 10px rgba(0, 0, 0, 0.3)'
+                : '0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
             }}
           />
         </div>
