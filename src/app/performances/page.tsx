@@ -650,27 +650,28 @@ function LandingPageCard({
   const character = performance.character || "—"
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      style={{ willChange: 'transform, opacity' }}
-      className="group relative"
-    >
-      {/* Premium Card - Clean & Cinematic - EXACT COPY from landing page */}
-      <div 
-        className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-        style={{
-          boxShadow: `
-            0 25px 70px -15px rgba(0, 0, 0, 0.9),
-            0 15px 40px -10px rgba(0, 0, 0, 0.7),
-            0 0 0 1px rgba(255, 255, 255, 0.05),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-            inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-          `,
-        }}
+    <Link href={rateUrl} prefetch={false}>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        style={{ willChange: 'transform, opacity' }}
+        className="group relative cursor-pointer"
       >
+        {/* Premium Card - Fully Tappable */}
+        <div 
+          className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border-2 border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 group-hover:border-[#FFD700] group-active:border-[#FFD700]"
+          style={{
+            boxShadow: `
+              0 25px 70px -15px rgba(0, 0, 0, 0.9),
+              0 15px 40px -10px rgba(0, 0, 0, 0.7),
+              0 0 0 1px rgba(255, 255, 255, 0.05),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+            `,
+          }}
+        >
         {/* Glow effect - CLIPPED to card corners */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -730,27 +731,26 @@ function LandingPageCard({
             </div>
           </div>
 
-          {/* Rate Button - Always at bottom */}
+          {/* Tap to Rate Indicator */}
           <div className="mt-auto pt-4">
-            <Link href={rateUrl} prefetch={false}>
-              <button 
-                className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base sm:text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation"
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                }}
-              >
-                <span className="flex items-center justify-center gap-2">
-                  Rate
-                  <FaStar className="w-5 h-5" />
-                </span>
-              </button>
-            </Link>
+            <div 
+              className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base sm:text-base font-bold tracking-wider uppercase text-center pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+              }}
+            >
+              <span className="flex items-center justify-center gap-2">
+                Tap to Rate
+                <FaStar className="w-5 h-5" />
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Decorative accent */}
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   )
 }

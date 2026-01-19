@@ -43,19 +43,19 @@ function HowItWorksSection() {
     {
       number: "1",
       icon: FaSearch,
-      title: "Find a Performance",
+      title: "Choose a performance",
       description: "Search 25,000+ actor performances from cinema history."
     },
     {
       number: "2",
       icon: FaStar,
-      title: "Rate in 2 Minutes",
-      description: "Five professional criteria. Submit your score."
+      title: "Rate using 5 criteria",
+      description: "(2 minutes)"
     },
     {
       number: "3",
       icon: FaChartLine,
-      title: "See the Consensus",
+      title: "See how your view compares",
       description: "Compare your rating to the community average."
     }
   ];
@@ -288,16 +288,7 @@ function HowItWorksSection() {
                   <div key={index} className="relative flex flex-col items-center">
                     {/* Card */}
                     <div 
-                      className="relative w-full max-w-sm p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden"
-                      style={{
-                        boxShadow: `
-                          0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                          0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                          0 0 0 1px rgba(255, 255, 255, 0.06),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                        `,
-                      }}
+                      className="relative w-full max-w-sm p-8 rounded-xl bg-[#0a0a0a] border-t-2 border-t-[#FFD700] border-l border-r border-b border-[#1a1a1a] overflow-hidden transition-opacity duration-200 hover:opacity-90"
                     >
                       <div className="relative z-10 flex flex-col items-center justify-center text-center">
                         <div className="mb-6">
@@ -357,30 +348,10 @@ function HowItWorksSection() {
                   }}
                   className="group relative w-full max-w-[300px] flex flex-col"
                 >
-              {/* Premium Card - Clean & Centered with enhanced 3D shadow */}
+              {/* Flat Card with Gold Accent */}
               <div 
-                className="relative flex-1 flex flex-col p-6 md:p-8 lg:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
-                style={{
-                  boxShadow: `
-                    0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                    0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                    0 0 0 1px rgba(255, 255, 255, 0.06),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                  `,
-                }}
+                className="relative flex-1 flex flex-col p-6 md:p-8 lg:p-10 rounded-xl bg-[#0a0a0a] border-t-2 border-t-[#FFD700] border-l border-r border-b border-[#1a1a1a] overflow-hidden transition-opacity duration-200 hover:opacity-90"
               >
-                {/* Subtle glow effect on hover - Disabled on mobile for performance */}
-                {!isMobileDevice && !prefersReducedMotionDevice && (
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-[2rem] overflow-hidden">
-                    <div 
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full blur-3xl"
-                      style={{
-                        background: 'radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.08) 50%, transparent 100%)',
-                      }}
-                    />
-                  </div>
-                )}
 
                 {/* Content - Flex column with fixed number position */}
                 <div className="relative z-10 flex flex-col h-full">
@@ -428,9 +399,6 @@ function HowItWorksSection() {
                   </div>
                 </div>
 
-                {/* Decorative corner accent */}
-                <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-[#FFD700]/8 to-transparent rounded-tl-[100px] pointer-events-none" />
-                <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
               </div>
                 </motion.div>
                 );
@@ -444,20 +412,20 @@ function HowItWorksSection() {
             {...getMotionProps()}
             variants={getOptimizedVariant('fadeInUp')}
           >
-          <Link href="/performances">
+          <Link href="/auth/signup">
             <button 
-                className={`group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-transform duration-300 min-h-[60px] sm:min-h-[72px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
+                className={`group px-10 xs:px-12 sm:px-16 py-5 xs:py-6 sm:py-6 rounded-full text-black text-base xs:text-lg sm:text-xl font-bold tracking-wide transition-transform duration-300 min-h-[56px] sm:min-h-[60px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              aria-label="Start rating acting performances"
+              aria-label="Start rating in 2 minutes"
             >
-              <span className="flex items-center gap-3 xs:gap-4 sm:gap-5">
-                Start Rating
-                <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+              <span className="flex items-center gap-3">
+                Start Rating in 2 Minutes
+                <FaArrowRight className="w-4 h-4 xs:w-5 xs:h-5 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
               </span>
             </button>
           </Link>
@@ -706,7 +674,7 @@ function PerformanceSection() {
           <motion.div
             {...getMotionProps()}
             variants={getOptimizedVariant('fadeInUp')}
-            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16"
+            className="col-span-12 lg:col-span-12 text-center mb-6 sm:mb-8 md:mb-10"
           >
             <h2 
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
@@ -725,6 +693,9 @@ function PerformanceSection() {
               </span>{' '}
               With These
             </h2>
+            <p className="text-base sm:text-lg text-[#a3a3a3] font-light px-4">
+              See how your opinion compares with the community
+            </p>
             <motion.div
               initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
               whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
@@ -766,7 +737,7 @@ function PerformanceSection() {
                     whileInView={isDesktop && !prefersReducedMotionDevice ? { opacity: 1, y: 0 } : undefined}
                     viewport={isDesktop && !prefersReducedMotionDevice ? { once: true, amount: 0.1, margin: "0px 0px -30px 0px" } : undefined}
                     transition={isDesktop && !prefersReducedMotionDevice ? { duration: 0.2, ease: [0.22, 1, 0.36, 1] } : undefined}
-                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
+                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center cursor-pointer performance-card-mobile"
                     style={{ 
                       willChange: isDesktop && !prefersReducedMotionDevice ? 'transform, opacity' : 'auto',
                       paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
@@ -777,17 +748,21 @@ function PerformanceSection() {
                       contain: 'layout style paint',
                     }}
                     onClick={() => {
-                      if (window.innerWidth >= 1024) {
-                        const element = cardRefs.current[index];
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
+                      const key = `${highlight.actor}:${highlight.movie}`;
+                      const perfData = performancesData.get(key);
+                      
+                      if (perfData && perfData.actor && perfData.movie) {
+                        const actorSlug = perfData.actor.slug || perfData.actorId;
+                        const movieSlug = perfData.movie.slug || perfData.movieId;
+                        window.location.href = `/rate/${movieSlug}/${actorSlug}`;
+                      } else {
+                        window.location.href = `/performances`;
                       }
                     }}
                   >
-              {/* Premium Card - Clean & Cinematic */}
+              {/* Premium Card - Clean & Cinematic - Fully Tappable */}
               <div 
-                className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 overflow-hidden ${isDesktop ? 'backdrop-blur-2xl transition-transform duration-300' : ''} ${isDesktop && !prefersReducedMotionDevice ? 'hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]' : ''}`}
+                className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border-2 border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 overflow-hidden transition-all duration-300 ${isDesktop ? 'backdrop-blur-2xl' : ''} group-hover:border-[#FFD700] group-active:border-[#FFD700]`}
                 style={{
                   boxShadow: isDesktop ? `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -854,38 +829,20 @@ function PerformanceSection() {
                     </div>
                   </div>
 
-                  {/* Rate Button - Always at bottom */}
+                  {/* Tap to Rate Indicator */}
                   <div className="mt-auto pt-4">
-                    {(() => {
-                      const key = `${highlight.actor}:${highlight.movie}`;
-                      const perfData = performancesData.get(key);
-                      
-                      let href = `/performances`; // default fallback
-                      
-                      if (perfData && perfData.actor && perfData.movie) {
-                        // Build rate URL with actor and movie data
-                        const actorSlug = perfData.actor.slug || perfData.actorId;
-                        const movieSlug = perfData.movie.slug || perfData.movieId;
-                        href = `/rate/${movieSlug}/${actorSlug}`;
-                      }
-                      
-                      return (
-                        <Link href={href}>
-                          <button 
-                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 min-h-[48px] cursor-pointer"
-                            style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                            }}
-                            aria-label="Rate this performance"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              Rate
-                              <FaStar className="w-4 h-4" aria-hidden="true" />
-                            </span>
-                          </button>
-                        </Link>
-                      );
-                    })()}
+                    <div 
+                      className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase text-center pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      }}
+                      aria-label="Tap card to rate this performance"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        Tap to Rate
+                        <FaStar className="w-4 h-4" aria-hidden="true" />
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -955,9 +912,71 @@ function PerformanceSection() {
 
             {/* Additional performances text */}
             <div className="text-center mt-6 w-full">
-              <p className="text-sm sm:text-base text-[#a3a3a3] font-light tracking-wide">
-                +25,000 more performances
-              </p>
+              <Link href="/performances" className="inline-flex items-center gap-2 text-sm sm:text-base text-[#FFD700] hover:text-[#FFE55C] font-medium tracking-wide transition-colors duration-200">
+                Explore 25,000+ performances
+                <FaArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Social Proof Section - Pure Typography
+function SocialProofSection() {
+  return (
+    <div className="relative z-10 bg-black py-20 sm:py-24 md:py-28 lg:py-32">
+      <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+        <div className="text-center">
+          {/* Headline */}
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white mb-12 sm:mb-16 tracking-tight" style={{ fontFamily: 'var(--font-cinzel), serif' }}>
+            Trusted by a growing community of film lovers
+          </h3>
+          
+          {/* Stats Row */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 md:gap-16 lg:gap-20 max-w-4xl mx-auto">
+            <div className="text-center">
+              <div className="text-4xl sm:text-5xl font-bold mb-2" style={{
+                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                25,000+
+              </div>
+              <div className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                performances rated
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-4xl sm:text-5xl font-bold mb-2" style={{
+                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                5-criteria
+              </div>
+              <div className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                professional system
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
+                <div className="text-4xl sm:text-5xl font-bold" style={{
+                  background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}>
+                  Live
+                </div>
+              </div>
+              <div className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                community consensus
+              </div>
             </div>
           </div>
         </div>
@@ -970,7 +989,6 @@ function PerformanceSection() {
 function FeaturesSection() {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
-  const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const checkDevice = () => {
@@ -991,23 +1009,20 @@ function FeaturesSection() {
   const features = [
     {
       icon: FaUsers,
-      title: "Community-driven precision",
-      description: "Every rating shapes collective understanding of acting excellence.",
-      descriptionFull: "Every rating shapes the collective understanding of acting excellence. Be part of building the definitive platform for analyzing cinematic performance.",
+      title: "Your voice shapes the conversation",
+      description: "Join a community that values thoughtful analysis over hot takes. Every rating you submit helps build a definitive view of acting excellence across cinema history.",
       stats: "Growing community"
     },
     {
       icon: FaChartLine,
-      title: "Actor-by-actor insights",
-      description: "Deep analysis across performances and career trajectories.",
-      descriptionFull: "Deep analysis across performances, roles, and career trajectories. Track evolution, compare eras, and discover patterns in acting excellence across the history of cinema.",
+      title: "Discover performances worth watching",
+      description: "Explore 25,000+ rated performances. Compare actors across eras, find hidden gems, and see which roles defined careers — all filtered by the community's detailed ratings.",
       stats: "25K+ performances"
     },
     {
       icon: FaStar,
-      title: "Thoughtful rating experience",
-      description: "Five professional criteria ensure nuanced evaluations.",
-      descriptionFull: "Five professional criteria ensure nuanced, meaningful evaluations. Emotional depth, technical skill, authenticity, impact, and overall performance combine for comprehensive analysis.",
+      title: "Your ratings go beyond stars",
+      description: "Capture nuance, range, and impact with a 5-criteria system. Rate emotional depth, technical skill, authenticity, screen presence, and chemistry — not just overall impressions.",
       stats: "5-criteria system"
     }
   ];
@@ -1109,16 +1124,8 @@ function FeaturesSection() {
                     </div>
                   </div>
                   <p className="text-sm text-[#d4d4d8] leading-relaxed">
-                    {expandedFeatures.has(index) ? feature.descriptionFull : feature.description}
+                    {feature.description}
                   </p>
-                  {!expandedFeatures.has(index) && (
-                    <button
-                      onClick={() => setExpandedFeatures(prev => new Set(prev).add(index))}
-                      className="mt-2 text-xs text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200"
-                    >
-                      Read more
-                    </button>
-                  )}
                 </div>
               </motion.div>
             ))}
@@ -1179,16 +1186,8 @@ function FeaturesSection() {
                       </div>
                     </div>
                     <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#e4e4e7] leading-relaxed">
-                      {expandedFeatures.has(index) ? feature.descriptionFull : feature.description}
+                      {feature.description}
                     </p>
-                    {!expandedFeatures.has(index) && (
-                      <button
-                        onClick={() => setExpandedFeatures(prev => new Set(prev).add(index))}
-                        className="mt-3 text-sm text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200"
-                      >
-                        Read more
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -1203,32 +1202,8 @@ function FeaturesSection() {
   );
 }
 
-// About Section - Visual & Minimal
+// Final CTA Section - Commitment Without Pressure
 function AboutSection() {
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
-
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsMobileDevice(window.innerWidth < 768);
-      setPrefersReducedMotionDevice(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    };
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleChange = () => setPrefersReducedMotionDevice(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handleChange);
-    return () => {
-      window.removeEventListener('resize', checkDevice);
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
-
-  const stats = [
-    { value: "25K+", label: "Performances" },
-    { value: "5", label: "Rating Criteria" },
-    { value: "Live", label: "Growing Daily", isLive: true }
-  ];
 
   return (
     <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60">
@@ -1246,231 +1221,34 @@ function AboutSection() {
             viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
             transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
             style={{ willChange: 'transform, opacity' }}
-            className="col-span-12 lg:col-span-12 mb-12 sm:mb-16"
+            className="col-span-12 lg:col-span-12 mb-10 sm:mb-12"
           >
           <h2 
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-10 tracking-tight px-4 sm:px-0"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0 leading-tight"
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
-            <span 
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-              }}
-            >
-              About
-            </span>{' '}
-            ActorRating
+            Start rating performances that deserve recognition
           </h2>
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            whileInView={{ width: "200px", opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'width, opacity' }}
-            className="h-[2px] mx-auto mb-8 relative"
-          >
-            <div 
-              className="h-full w-full"
-              style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,200,0,0.4) 15%, rgba(255,180,0,0.9) 40%, rgba(255,165,0,1) 50%, rgba(255,180,0,0.9) 60%, rgba(255,200,0,0.4) 85%, transparent 100%)',
-                boxShadow: '0 0 20px rgba(255, 165, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3)',
-              }}
-            />
-          </motion.div>
-          <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto px-6 sm:px-4">
-            Be part of the early community shaping the platform.
+          <p className="text-base sm:text-lg md:text-xl text-[#a3a3a3] leading-relaxed font-light mb-12 sm:mb-14 max-w-2xl mx-auto px-6 sm:px-4">
+            Free to join. No reviews. Just your judgment.
           </p>
           </motion.div>
 
-          {/* Container for centered 3-column stat cards */}
+          {/* Final CTA Button */}
           <div className="col-span-12 lg:col-span-12">
-            {/* Mobile: Individual Cards Stack */}
-            <div className="md:hidden space-y-6">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="relative max-w-sm mx-auto"
-                >
-                  <div
-                    className="relative p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl"
-                    style={{
-                      boxShadow: `
-                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                      `,
-                    }}
-                  >
-                    {stat.isLive ? (
-                      <>
-                        <div className="flex items-center justify-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
-                          <div 
-                            className="text-4xl font-extrabold"
-                            style={{
-                              background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                            }}
-                          >
-                            {stat.value}
-                          </div>
-                        </div>
-                        <div className="text-lg text-[#e4e4e7] font-semibold text-center">
-                          {stat.label}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div 
-                          className="text-5xl font-extrabold mb-3 text-center"
-                          style={{
-                            background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                          }}
-                        >
-                          {stat.value}
-                        </div>
-                        <div className="text-lg text-[#e4e4e7] font-semibold text-center">
-                          {stat.label}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Desktop: Grid */}
-            <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Stat Card 1 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{ 
-                  willChange: 'transform, opacity',
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
-                  transformStyle: 'preserve-3d',
-                }}
-                className="relative p-6 sm:p-8 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl"
-              >
-            <div className="text-5xl font-extrabold mb-3"
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              25K+
-            </div>
-            <div className="text-lg text-[#e4e4e7] font-semibold">
-              Performances
-            </div>
-              </motion.div>
-
-              {/* Stat Card 2 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.12, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{ 
-                  willChange: 'transform, opacity',
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
-                  transformStyle: 'preserve-3d',
-                }}
-                className="relative p-6 sm:p-8 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl"
-              >
-            <div className="text-5xl font-extrabold mb-3"
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              5
-            </div>
-            <div className="text-lg text-[#e4e4e7] font-semibold">
-              Rating Criteria
-            </div>
-              </motion.div>
-
-              {/* Stat Card 3 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.16, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{ 
-                  willChange: 'transform, opacity',
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                  transform: 'translateY(-6px) perspective(1000px) rotateX(1.5deg)',
-                  transformStyle: 'preserve-3d',
-                }}
-                className="relative p-6 sm:p-8 rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl"
-              >
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
-              <div className="text-3xl font-extrabold text-[#FFD700]">
-                Live
-              </div>
-            </div>
-            <div className="text-lg text-[#e4e4e7] font-semibold">
-              Growing Daily
-            </div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Tagline - REMOVE DUPLICATE */}
-          <div className="col-span-12 lg:col-span-12 mt-16 sm:mt-20 lg:mt-24">
-            <Link href="/about" aria-label="Learn more about ActorRating">
+            <Link href="/auth/signup" aria-label="Join free and start rating">
           <button 
-            className="group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[60px] sm:min-h-[72px] touch-manipulation"
+            className="group px-12 xs:px-16 sm:px-24 py-6 xs:py-7 sm:py-8 rounded-full text-black text-lg xs:text-xl sm:text-2xl font-bold tracking-wide transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[60px] sm:min-h-[68px] touch-manipulation"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               transform: 'scale(1)',
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            aria-label="Learn more about ActorRating"
+            aria-label="Join free and start rating"
           >
-            <span className="flex items-center gap-3 xs:gap-4 sm:gap-5">
-              Learn More
-              <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+            <span className="flex items-center justify-center gap-3">
+              Join Free & Start Rating
             </span>
           </button>
         </Link>
@@ -1550,35 +1328,19 @@ export default function HomePageClient() {
               style={{ opacity: 1, transform: 'translateY(0)' }}
             >
               <h1 
-                className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
+                className="hero-tagline hero-text-fade-in text-[2.5rem] xs:text-[3rem] sm:text-[3.5rem] md:text-[4.5rem] lg:text-[5.5rem] xl:text-[6rem] text-white mb-0 font-extrabold text-center px-4 mx-auto"
                 style={{ 
                   fontFamily: 'var(--font-cinzel), serif',
                   textShadow: '0 10px 40px rgba(0,0,0,0.7)',
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.04em',
                   lineHeight: '1.1',
                   maxWidth: '100%',
                   display: 'inline-block'
                 }}
               >
-                <span className="sr-only">Rate The CRAFT</span>
-                <span className="inline sm:hidden" style={{ wordSpacing: '0.08em' }} aria-hidden="true">Rate The </span>
-                <span className="hidden sm:inline" style={{ wordSpacing: '0.02em' }} aria-hidden="true">Rate The </span>
+                <span className="inline" style={{ wordSpacing: '0.02em' }}>Rate </span>
                 <span 
-                  className="inline sm:hidden craft-glow-animation"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-                    wordSpacing: '0.08em',
-                  }}
-                  aria-hidden="true"
-                >
-                  CRAFT
-                </span>
-                <span 
-                  className="hidden sm:inline craft-glow-animation"
+                  className="craft-glow-animation"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
@@ -1587,10 +1349,11 @@ export default function HomePageClient() {
                     filter: isMobileDevice ? 'none' : 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                     wordSpacing: '0.02em',
                   }}
-                  aria-hidden="true"
                 >
-                  CRAFT
+                  Award-Worthy
                 </span>
+                <br className="sm:hidden" />
+                <span className="inline" style={{ wordSpacing: '0.02em' }}> Performances</span>
               </h1>
             </motion.div>
 
@@ -1620,24 +1383,14 @@ export default function HomePageClient() {
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-4 xs:mb-5 sm:mb-6 md:mb-8 lg:mb-10 font-light text-center px-4 sm:px-6"
+              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-2xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-8 xs:mb-10 sm:mb-10 md:mb-12 lg:mb-14 font-normal text-center px-4 sm:px-6"
               style={{ 
                 letterSpacing: '0.005em',
                 opacity: 1,
                 transform: 'translateY(0)'
               }}
             >
-              Judge performances like the Academy.
-            </motion.p>
-
-            {/* Onboarding helper text */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-6 sm:px-8 max-w-2xl"
-            >
-              Browse 25,000+ performances and rate them using 5 professional criteria
+              A community for movie lovers to rate, compare, and discover the greatest acting performances — using 5 professional criteria.
             </motion.p>
 
             {/* CTA Button - Convert with Elegance */}
@@ -1647,8 +1400,8 @@ export default function HomePageClient() {
               transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="w-full flex justify-center mt-8 sm:mt-0"
             >
-              <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
-                <button className="group px-8 xs:px-10 sm:px-20 py-5 xs:py-6 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[72px] relative overflow-hidden touch-manipulation"
+              <Link href="/auth/signup" className="inline-block relative" aria-label="Join free and start rating">
+                <button className="group px-10 xs:px-12 sm:px-24 py-5 xs:py-6 sm:py-8 rounded-full text-black text-lg xs:text-xl sm:text-2xl font-bold tracking-wide transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[68px] relative overflow-hidden touch-manipulation"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     transform: 'scale(1)',
@@ -1660,7 +1413,7 @@ export default function HomePageClient() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'scale(1)'
                   }}
-                  aria-label="Start rating acting performances now"
+                  aria-label="Join free and start rating"
                 >
                   {/* White light sweep effect */}
                   <span 
@@ -1672,9 +1425,8 @@ export default function HomePageClient() {
                     }}
                     aria-hidden="true"
                   />
-                  <span className="flex items-center justify-center gap-3 xs:gap-4 sm:gap-5 whitespace-nowrap relative z-10">
-                    Start Rating Now
-                    <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+                  <span className="flex items-center justify-center gap-3 xs:gap-4 sm:gap-4 whitespace-nowrap relative z-10">
+                    Join Free & Start Rating
                   </span>
                 </button>
               </Link>
@@ -1749,6 +1501,9 @@ export default function HomePageClient() {
 
       {/* Performance Highlights Section */}
       <PerformanceSection />
+
+      {/* Social Proof Section */}
+      <SocialProofSection />
 
       {/* Features Section */}
       <FeaturesSection />

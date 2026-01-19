@@ -175,9 +175,10 @@ export function PerformanceCard({
       animate="show"
       whileHover={{ y: -2, transition: { duration: 0.2, ease: 'easeOut' } }}
       className={`
-        relative rounded-[2rem] border border-transparent
+        relative rounded-[2rem] border-2 border-transparent
         transition-all duration-300 group cursor-pointer overflow-hidden
         h-full flex flex-col ${cardVariants[variant]} ${className}
+        hover:border-[#FFD700] active:border-[#FFD700]
       `}
       style={{
         background: 'linear-gradient(to bottom right, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.90), rgba(0, 0, 0, 0.95))',
@@ -192,10 +193,10 @@ export function PerformanceCard({
       }}
        onMouseEnter={prefetchTargets}
        onFocus={prefetchTargets}
-       onClick={onClick}
+       onClick={onClick || (() => router.push(rateUrl))}
       role="button"
       tabIndex={0}
-      aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
+      aria-label={`Tap to rate ${performance.actor?.name} in ${performance.movie?.title}`}
     >
       {/* Header with badges */}
       <div className="flex flex-col gap-4 mb-4">
@@ -325,19 +326,17 @@ export function PerformanceCard({
         </div>
       )}
 
-      {/* Action Button (Rate only) - Hidden if user has already rated */}
+      {/* Action Indicator - Entire card is tappable */}
       {!showEditButton && (
-        <div className="flex mt-auto">
-          <Button
-            asChild
-            variant="premium"
-            size={variant === 'compact' ? 'sm' : 'md'}
-            className="flex-1"
+        <div className="flex mt-auto pointer-events-none">
+          <div
+            className="flex-1 px-6 py-3 rounded-full text-black text-center font-bold tracking-wide text-sm sm:text-base"
+            style={{
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+            }}
           >
-            <Link href={rateUrl}>
-              Rate This
-            </Link>
-          </Button>
+            Tap to Rate
+          </div>
         </div>
       )}
     </motion.div>
