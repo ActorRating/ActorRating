@@ -293,10 +293,7 @@ export default function PerformancesPage() {
 
         <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
           {/* Title Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <div
             className="text-center mb-8 sm:mb-10 px-4 sm:px-0"
           >
             <h1 
@@ -318,13 +315,10 @@ export default function PerformancesPage() {
             <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#e4e4e7] max-w-3xl mx-auto font-light leading-relaxed">
               Search and rate acting performances from cinema's finest
             </p>
-          </motion.div>
+          </div>
 
           {/* Search Bar Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+          <div
             className="mb-12 sm:mb-16 md:mb-20 max-w-3xl mx-auto px-2 sm:px-0"
           >
             <div className="relative group">
@@ -349,17 +343,12 @@ export default function PerformancesPage() {
                 />
               </div>
             </div>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-12">
             {/* New Performances Section */}
             <div className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-                transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{ willChange: 'transform, opacity' }}
+              <div
                 className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
                 <h3
@@ -382,7 +371,7 @@ export default function PerformancesPage() {
                 <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Latest performances capturing global attention
                 </p>
-              </motion.div>
+              </div>
 
               {loading ? (
                 <div className="relative">
@@ -521,12 +510,7 @@ export default function PerformancesPage() {
 
             {/* Iconic Performances Section */}
             <div className="col-span-12 mb-16 sm:mb-20">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-                transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{ willChange: 'transform, opacity' }}
+              <div
                 className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
                 <h3
@@ -549,7 +533,7 @@ export default function PerformancesPage() {
                 <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Legendary performances that defined cinema
                 </p>
-              </motion.div>
+              </div>
 
               {iconicPerformances.length > 0 ? (
                 <div className="relative">
@@ -678,12 +662,7 @@ function LandingPageCard({
   const character = performance.character || "—"
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      style={{ willChange: 'transform, opacity' }}
+    <div
       className="group relative"
     >
       {/* Premium Card - Clean & Cinematic - EXACT COPY from landing page */}
@@ -779,6 +758,6 @@ function LandingPageCard({
         {/* Decorative accent */}
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
-    </motion.div>
+    </div>
   )
 }

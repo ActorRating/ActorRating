@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Actor, Movie, Rating } from '@/types'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
-import { SignedInLayout, HomeLayout } from '@/components/layout'
+import { RatePageLayout } from '@/components/layout/RatePageLayout'
 import { useUser } from '@/components/providers/SessionProvider'
 import { ratingsApi } from '@/lib/api'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
@@ -104,9 +104,8 @@ export default function SlugBasedRatePage() {
   }, [params?.movieSlug, params?.actorSlug])
 
   if (loading) {
-    const Layout = user ? SignedInLayout : HomeLayout
     return (
-      <Layout>
+      <RatePageLayout>
         <div className="min-h-screen bg-black flex items-center justify-center">
           <BouncingBallsLoader 
             size="lg" 
@@ -115,7 +114,7 @@ export default function SlugBasedRatePage() {
             text="Loading rating page..."
           />
         </div>
-      </Layout>
+      </RatePageLayout>
     )
   }
 
@@ -187,10 +186,8 @@ export default function SlugBasedRatePage() {
     }
   }
 
-  const Layout = user ? SignedInLayout : HomeLayout
-
   return (
-    <Layout>
+    <RatePageLayout>
       {/* SEO Content - Only visible to crawlers when logged out */}
       <PerformanceSEOContent
         actorName={actor.name}
@@ -234,7 +231,7 @@ export default function SlugBasedRatePage() {
           ratingData={pendingRatingData}
         />
       )}
-    </Layout>
+    </RatePageLayout>
   )
 }
 

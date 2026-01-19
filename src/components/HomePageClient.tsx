@@ -232,11 +232,7 @@ function HowItWorksSection() {
       <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <div className="grid grid-cols-12">
           {/* Title - Centered with gutters */}
-          <motion.div
-            {...getMotionProps()}
-            variants={getOptimizedVariant('fadeInUp')}
-            className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16"
-          >
+          <div className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16">
             <h2
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
@@ -273,8 +269,8 @@ function HowItWorksSection() {
                   boxShadow: '0 0 20px rgba(255, 165, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3)',
                 }}
               />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Container for centered 3-column cards */}
           <div className="col-span-12 lg:col-span-12">
@@ -346,17 +342,10 @@ function HowItWorksSection() {
                 const StepIcon = step.icon;
 
                 return (
-                  <motion.div
-                    key={index}
-                    initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                    whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: isMobileDevice ? 0.1 : 0.15, margin: isMobileDevice ? "0px 0px -30px 0px" : "0px 0px -50px 0px" }}
-                    transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.3, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                    style={{
-                      willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity',
-                    }}
-                    className="group relative w-full max-w-[300px] flex flex-col"
-                  >
+                <div
+                  key={index}
+                  className="group relative w-full max-w-[300px] flex flex-col"
+                >
                     {/* Premium Card - Clean & Centered with enhanced 3D shadow */}
                     <div
                       className="relative flex-1 flex flex-col p-6 md:p-8 lg:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 ease-out hover:shadow-[0_0_40px_rgba(255,215,0,0.15)]"
@@ -429,20 +418,18 @@ function HowItWorksSection() {
                       </div>
 
                       {/* Decorative corner accent */}
-                      <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-[#FFD700]/8 to-transparent rounded-tl-[100px] pointer-events-none" />
-                      <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
-                    </div>
-                  </motion.div>
+                <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-[#FFD700]/8 to-transparent rounded-tl-[100px] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-[#FFA500]/5 to-transparent rounded-br-[100px] pointer-events-none" />
+              </div>
+                </div>
                 );
               })}
             </div>
           </div>
 
           {/* Call to action */}
-          <motion.div
+          <div
             className="col-span-12 lg:col-span-12 text-center mt-12 sm:mt-20 lg:mt-24"
-            {...getMotionProps()}
-            variants={getOptimizedVariant('fadeInUp')}
           >
             <Link href="/performances">
               <button
@@ -459,9 +446,9 @@ function HowItWorksSection() {
                   Start Rating
                   <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
                 </span>
-              </button>
-            </Link>
-          </motion.div>
+            </button>
+          </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -703,9 +690,7 @@ function PerformanceSection() {
       <div className="w-full relative overflow-visible" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <div className="grid grid-cols-12">
           {/* Title with gutters */}
-          <motion.div
-            {...getMotionProps()}
-            variants={getOptimizedVariant('fadeInUp')}
+          <div
             className="col-span-12 lg:col-span-12 text-center mb-8 sm:mb-12 md:mb-16"
           >
             <h2
@@ -725,15 +710,10 @@ function PerformanceSection() {
               </span>{' '}
               With These
             </h2>
-            <motion.div
-              initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
-              whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            <div
               style={{
                 width: '220px',
                 transformOrigin: 'center',
-                willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
               }}
               className="h-[2px] mx-auto mb-6 relative"
             >
@@ -744,7 +724,7 @@ function PerformanceSection() {
                   boxShadow: '0 0 20px rgba(255, 165, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3)',
                 }}
               />
-            </motion.div>
+            </div>
           </motion.div>
 
           {/* Quote Cards - Carousel with fade edges */}
@@ -759,23 +739,18 @@ function PerformanceSection() {
               >
                 <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]" style={{ contain: 'layout style paint', willChange: 'scroll-position' }}>
                   {PERFORMANCE_HIGHLIGHTS.map((highlight, index) => (
-                    <motion.div
-                      key={index}
-                      ref={(el) => { cardRefs.current[index] = el }}
-                      initial={isDesktop && !prefersReducedMotionDevice ? { opacity: 0, y: 4 } : { opacity: 1, y: 0 }}
-                      whileInView={isDesktop && !prefersReducedMotionDevice ? { opacity: 1, y: 0 } : undefined}
-                      viewport={isDesktop && !prefersReducedMotionDevice ? { once: true, amount: 0.1, margin: "0px 0px -30px 0px" } : undefined}
-                      transition={isDesktop && !prefersReducedMotionDevice ? { duration: 0.2, ease: [0.22, 1, 0.36, 1] } : undefined}
-                      className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
-                      style={{
-                        willChange: isDesktop && !prefersReducedMotionDevice ? 'transform, opacity' : 'auto',
-                        paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
-                        paddingRight: index === PERFORMANCE_HIGHLIGHTS.length - 1 && !isDesktop ? '1rem' : '0',
-                        /* Hardware acceleration for smooth scrolling */
-                        transform: 'translateZ(0)',
-                        WebkitTransform: 'translateZ(0)',
-                        contain: 'layout style paint',
-                      }}
+                  <div
+                    key={index}
+                    ref={(el) => { cardRefs.current[index] = el }}
+                    className="group relative flex-shrink-0 w-[85vw] sm:w-[75vw] lg:w-[38vw] xl:w-[32vw] max-w-md snap-center lg:cursor-pointer performance-card-mobile"
+                    style={{
+                      paddingLeft: index === 0 && !isDesktop ? '1rem' : '0',
+                      paddingRight: index === PERFORMANCE_HIGHLIGHTS.length - 1 && !isDesktop ? '1rem' : '0',
+                      /* Hardware acceleration for smooth scrolling */
+                      transform: 'translateZ(0)',
+                      WebkitTransform: 'translateZ(0)',
+                      contain: 'layout style paint',
+                    }}
                       onClick={() => {
                         if (window.innerWidth >= 1024) {
                           const element = cardRefs.current[index];
@@ -889,10 +864,10 @@ function PerformanceSection() {
                           </div>
                         </div>
 
-                        {/* Decorative accent */}
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                      </div>
-                    </motion.div>
+                {/* Decorative accent */}
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+              </div>
+                  </div>
                   ))}
                 </div>
               </div>
@@ -1022,12 +997,7 @@ function FeaturesSection() {
       <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <div className="grid grid-cols-12">
           {/* Title */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'transform, opacity' }}
+          <div
             className="col-span-12 lg:col-span-12 text-center mb-16 sm:mb-24 lg:mb-32"
           >
             <h2
@@ -1062,20 +1032,16 @@ function FeaturesSection() {
                   boxShadow: '0 0 20px rgba(255, 165, 0, 0.6), 0 0 40px rgba(255, 165, 0, 0.3)',
                 }}
               />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Features - Mobile: Clean Simplified Cards, Desktop: Vertical Stack */}
 
           {/* Mobile: Simplified Feature Cards */}
           <div className="col-span-12 md:hidden space-y-8">
             {features.map((feature, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
                 className="group relative flex justify-center"
               >
                 <div
@@ -1120,19 +1086,14 @@ function FeaturesSection() {
                     </button>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           {/* Desktop: Individual Cards */}
           {features.map((feature, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-              transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-              style={{ willChange: 'transform, opacity' }}
               className="col-span-12 hidden md:flex group relative mb-6 last:mb-0 justify-center"
             >
               {/* Premium Feature Card - 3D Elevated */}
@@ -1195,7 +1156,7 @@ function FeaturesSection() {
                 {/* Decorative accent */}
                 <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-tl from-[#FFD700]/5 to-transparent rounded-tl-[120px]" />
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -1240,12 +1201,7 @@ function AboutSection() {
       <div className="w-full text-center relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <div className="grid grid-cols-12">
           {/* Title with gutters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ willChange: 'transform, opacity' }}
+          <div
             className="col-span-12 lg:col-span-12 mb-12 sm:mb-16"
           >
             <h2
@@ -1282,21 +1238,17 @@ function AboutSection() {
               />
             </motion.div>
             <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] leading-relaxed font-light mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto px-6 sm:px-4">
-              Be part of the early community shaping the platform.
-            </p>
-          </motion.div>
+            Be part of the early community shaping the platform.
+          </p>
+          </div>
 
           {/* Container for centered 3-column stat cards */}
           <div className="col-span-12 lg:col-span-12">
             {/* Mobile: Individual Cards Stack */}
             <div className="md:hidden space-y-6">
               {stats.map((stat, index) => (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.4, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
                   className="relative max-w-sm mx-auto"
                 >
                   <div
@@ -1348,20 +1300,15 @@ function AboutSection() {
                       </>
                     )}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Desktop: Grid */}
             <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {/* Stat Card 1 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+              <div
                 style={{
-                  willChange: 'transform, opacity',
                   boxShadow: `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
                     0 15px 40px -10px rgba(0, 0, 0, 0.7),
@@ -1383,19 +1330,14 @@ function AboutSection() {
                 >
                   25K+
                 </div>
-                <div className="text-lg text-[#e4e4e7] font-semibold">
-                  Performances
-                </div>
-              </motion.div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Performances
+            </div>
+              </div>
 
               {/* Stat Card 2 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.12, ease: [0.25, 0.1, 0.25, 1] }}
+              <div
                 style={{
-                  willChange: 'transform, opacity',
                   boxShadow: `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
                     0 15px 40px -10px rgba(0, 0, 0, 0.7),
@@ -1417,19 +1359,14 @@ function AboutSection() {
                 >
                   5
                 </div>
-                <div className="text-lg text-[#e4e4e7] font-semibold">
-                  Rating Criteria
-                </div>
-              </motion.div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Rating Criteria
+            </div>
+              </div>
 
               {/* Stat Card 3 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "0px 0px -50px 0px" }}
-                transition={{ duration: 0.4, delay: 0.16, ease: [0.25, 0.1, 0.25, 1] }}
+              <div
                 style={{
-                  willChange: 'transform, opacity',
                   boxShadow: `
                     0 25px 70px -15px rgba(0, 0, 0, 0.9),
                     0 15px 40px -10px rgba(0, 0, 0, 0.7),
@@ -1448,10 +1385,10 @@ function AboutSection() {
                     Live
                   </div>
                 </div>
-                <div className="text-lg text-[#e4e4e7] font-semibold">
-                  Growing Daily
-                </div>
-              </motion.div>
+            <div className="text-lg text-[#e4e4e7] font-semibold">
+              Growing Daily
+            </div>
+              </div>
             </div>
           </div>
 

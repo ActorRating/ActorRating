@@ -11,18 +11,20 @@ import { lockScroll, unlockScroll } from '@/lib/lockScroll'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
-  const [currentValue, setCurrentValue] = useState(endValue)
+  const [currentValue, setCurrentValue] = useState(startValue)
   const [isAnimating, setIsAnimating] = useState(false)
   const animationRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
-  const startValueRef = useRef<number>(endValue)
+  const startValueRef = useRef<number>(startValue)
+  const hasAnimatedRef = useRef(false)
 
   useEffect(() => {
     // If values are the same (within 0.01), just set it immediately
-    if (Math.abs(endValue - startValueRef.current) < 0.01) {
+    if (Math.abs(endValue - currentValue) < 0.01) {
       setCurrentValue(endValue)
       setIsAnimating(false)
       startValueRef.current = endValue
+      hasAnimatedRef.current = true
       return
     }
 
@@ -36,13 +38,14 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
     startValueRef.current = actualStart
 
     setIsAnimating(true)
-    const startTime = performance.now()
+    const startTime = Date.now()
     startTimeRef.current = startTime
+    hasAnimatedRef.current = true
 
-    const animate = (currentTime: number) => {
+    const animate = () => {
       if (!startTimeRef.current) return
 
-      const elapsed = currentTime - startTimeRef.current
+      const elapsed = Date.now() - startTimeRef.current
       const progress = Math.min(elapsed / duration, 1)
 
       // Ease out cubic for smooth deceleration (like lotto machine)
