@@ -28,9 +28,9 @@ interface PerformanceCardProps {
   showEditButton?: boolean // Show edit button for user's own ratings
 }
 
-export function PerformanceCard({ 
-  performance, 
-  showUser = false, 
+export function PerformanceCard({
+  performance,
+  showUser = false,
   className = '',
   variant = 'default',
   ratingCount = 0,
@@ -49,19 +49,19 @@ export function PerformanceCard({
 
   // Generate URLs - will use slugs if available, otherwise IDs
   // Generate URLs using slug helpers
-  const actorUrl = performance.actor && performance.actorId 
+  const actorUrl = performance.actor && performance.actorId
     ? getActorUrl({ id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug })
     : null
-  
+
   const rateUrl = performance.actor && performance.movie
     ? getRateUrl(
-        { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
-        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
-      )
+      { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
+      { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+    )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
-  
+
   // Edit URL with rating ID
-  const editUrl = ratingId 
+  const editUrl = ratingId
     ? `/rate?actor=${performance.actorId}&movie=${performance.movieId}&rating=${ratingId}`
     : rateUrl
 
@@ -75,7 +75,7 @@ export function PerformanceCard({
           r.prefetch(rateUrl)
           if (actorUrl) r.prefetch(actorUrl)
         }
-      } catch {}
+      } catch { }
     }
     // Avoid main-thread contention: idle or timeout
     const ric: any = (typeof (globalThis as any).requestIdleCallback === 'function'
@@ -148,17 +148,17 @@ export function PerformanceCard({
 
   const getOscarBadge = (status: string | null) => {
     if (!status) return null
-    
+
     const badgeConfig = {
       nominated: { color: 'bg-blue-500', text: 'Oscar Nominee', icon: Award },
       won: { color: 'bg-yellow-500', text: 'Oscar Winner', icon: Award }
     }
-    
+
     const config = badgeConfig[status as keyof typeof badgeConfig]
     if (!config) return null
-    
+
     const Icon = config.icon
-    
+
     return (
       <div className={`${config.color} text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1`}>
         <Icon className="w-3 h-3" />
@@ -175,10 +175,9 @@ export function PerformanceCard({
       animate="show"
       whileHover={{ y: -2, transition: { duration: 0.2, ease: 'easeOut' } }}
       className={`
-        relative rounded-[2rem] border-2 border-transparent
+        relative rounded-[2rem] border border-transparent
         transition-all duration-300 group cursor-pointer overflow-hidden
         h-full flex flex-col ${cardVariants[variant]} ${className}
-        hover:border-[#FFD700] active:border-[#FFD700]
       `}
       style={{
         background: 'linear-gradient(to bottom right, rgba(26, 26, 26, 0.95), rgba(15, 15, 15, 0.90), rgba(0, 0, 0, 0.95))',
@@ -191,57 +190,57 @@ export function PerformanceCard({
           inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
         `,
       }}
-       onMouseEnter={prefetchTargets}
-       onFocus={prefetchTargets}
-       onClick={onClick || (() => router.push(rateUrl))}
+      onMouseEnter={prefetchTargets}
+      onFocus={prefetchTargets}
+      onClick={onClick}
       role="button"
       tabIndex={0}
-      aria-label={`Tap to rate ${performance.actor?.name} in ${performance.movie?.title}`}
+      aria-label={`Performance by ${performance.actor?.name} in ${performance.movie?.title}`}
     >
       {/* Header with badges */}
       <div className="flex flex-col gap-4 mb-4">
-         {/* Top Row: Rating Badge and Year */}
-         <div className="flex items-center justify-between pt-3 sm:pt-0">
-           {averageRating !== undefined && averageRating !== null ? (
-             <div className="relative inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-               {/* Edit Button - Outside Top Right of Score Bubble */}
-               {showEditButton && ratingId && (
-                 <Link
-                   href={editUrl}
-                   onClick={(e) => e.stopPropagation()}
-                   className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10"
-                 >
-                   <button
-                     className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
-                     style={{
-                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                       minWidth: '44px',
-                       minHeight: '44px',
-                     }}
-                     aria-label="Edit rating"
-                   >
-                     <Pencil className="w-5 h-5 sm:w-4 sm:h-4 text-[#FFD700]" />
-                   </button>
-                 </Link>
-               )}
-               <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
-               <span 
-                 className="text-2xl font-bold text-[#FFD700]"
-                 style={{
-                   fontFamily: 'var(--font-geist-sans), sans-serif',
-                   fontVariantNumeric: 'tabular-nums',
-                 }}
-               >
-                 {averageRating.toFixed(1)}
-               </span>
-             </div>
-           ) : (
-             <div className="relative inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-               <Star className="w-5 h-5 text-[#666]" />
-               <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
-             </div>
-           )}
-          
+        {/* Top Row: Rating Badge and Year */}
+        <div className="flex items-center justify-between pt-3 sm:pt-0">
+          {averageRating !== undefined && averageRating !== null ? (
+            <div className="relative inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+              {/* Edit Button - Outside Top Right of Score Bubble */}
+              {showEditButton && ratingId && (
+                <Link
+                  href={editUrl}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10"
+                >
+                  <button
+                    className="w-11 h-11 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 bg-[#1a1a1a] border border-white/10 hover:border-[#FFD700]/50 shadow-lg touch-manipulation"
+                    style={{
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                      minWidth: '44px',
+                      minHeight: '44px',
+                    }}
+                    aria-label="Edit rating"
+                  >
+                    <Pencil className="w-5 h-5 sm:w-4 sm:h-4 text-[#FFD700]" />
+                  </button>
+                </Link>
+              )}
+              <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
+              <span
+                className="text-2xl font-bold text-[#FFD700]"
+                style={{
+                  fontFamily: 'var(--font-geist-sans), sans-serif',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {averageRating.toFixed(1)}
+              </span>
+            </div>
+          ) : (
+            <div className="relative inline-flex items-center gap-3 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+              <Star className="w-5 h-5 text-[#666]" />
+              <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+            </div>
+          )}
+
           {/* Movie Year */}
           {performance.movie?.year && (
             <div className="text-base text-[#a1a1aa] font-medium">
@@ -252,26 +251,26 @@ export function PerformanceCard({
 
         {/* Actor Name and Movie Title - Centered */}
         <div className="text-center">
-          <h3 
+          <h3
             className={`font-bold text-white mb-2 ${titleVariants[variant]} break-words`}
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
           >
             {performance.actor?.name}
           </h3>
-          
+
           {/* Movie Title */}
           <div className="mb-2">
             <span className="text-lg text-[#FFD700] font-semibold tracking-wide break-words inline-block">
               {performance.movie?.title}
             </span>
           </div>
-          
+
           {/* Character */}
           {(() => {
-            const character = resolveCharacterDisplay({ 
-              character: (performance as any).character, 
-              roleName: performance.roleName as any, 
-              comment: performance.comment as any 
+            const character = resolveCharacterDisplay({
+              character: (performance as any).character,
+              roleName: performance.roleName as any,
+              comment: performance.comment as any
             })
             // Only show character if it's not "Unknown"
             if (character && character.toLowerCase() !== 'unknown') {
@@ -292,7 +291,7 @@ export function PerformanceCard({
       {genres.length > 0 && variant !== 'compact' && (
         <div className="flex flex-wrap gap-1 mb-4">
           {genres.slice(0, 3).map((genre, index) => (
-            <span 
+            <span
               key={index}
               className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full"
             >
@@ -326,17 +325,19 @@ export function PerformanceCard({
         </div>
       )}
 
-      {/* Action Indicator - Entire card is tappable */}
+      {/* Action Button (Rate only) - Hidden if user has already rated */}
       {!showEditButton && (
-        <div className="flex mt-auto pointer-events-none">
-          <div
-            className="flex-1 px-6 py-3 rounded-full text-black text-center font-bold tracking-wide text-sm sm:text-base"
-            style={{
-              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-            }}
+        <div className="flex mt-auto">
+          <Button
+            asChild
+            variant="premium"
+            size={variant === 'compact' ? 'sm' : 'md'}
+            className="flex-1"
           >
-            Tap to Rate
-          </div>
+            <Link href={rateUrl}>
+              Rate This
+            </Link>
+          </Button>
         </div>
       )}
     </motion.div>
