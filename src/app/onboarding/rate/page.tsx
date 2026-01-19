@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/components/providers/SessionProvider'
 import { motion } from 'framer-motion'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
-import { SignedInLayout } from '@/components/layout'
+import { RatePageLayout } from '@/components/layout'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
@@ -406,7 +406,7 @@ export default function OnboardingRatePage() {
   if (loading && !selectedPerformance) {
     return (
       <AuthGuard>
-        <SignedInLayout>
+        <RatePageLayout>
           <div className="min-h-screen bg-black flex items-center justify-center">
             <BouncingBallsLoader 
               size="lg" 
@@ -415,7 +415,7 @@ export default function OnboardingRatePage() {
               text="Loading..."
             />
           </div>
-        </SignedInLayout>
+        </RatePageLayout>
       </AuthGuard>
     )
   }
@@ -441,7 +441,7 @@ export default function OnboardingRatePage() {
   if (showFirstRatingSuccess) {
     return (
       <AuthGuard>
-        <SignedInLayout>
+        <RatePageLayout>
           <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -615,7 +615,7 @@ export default function OnboardingRatePage() {
               </div>
             </motion.div>
           </div>
-        </SignedInLayout>
+        </RatePageLayout>
       </AuthGuard>
     )
   }
@@ -624,7 +624,7 @@ export default function OnboardingRatePage() {
   if (selectedPerformance && actor && movie) {
     return (
       <AuthGuard>
-        <SignedInLayout>
+        <RatePageLayout>
           <div className="min-h-screen bg-black">
             <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
               <div className="grid grid-cols-12 gap-6">
@@ -674,7 +674,7 @@ export default function OnboardingRatePage() {
             </div>
           </div>
         </div>
-        </SignedInLayout>
+        </RatePageLayout>
       </AuthGuard>
     )
   }
@@ -682,7 +682,7 @@ export default function OnboardingRatePage() {
   // Show performance selection - Desktop: Grid, Mobile: Carousel
   return (
     <AuthGuard>
-      <SignedInLayout>
+      <RatePageLayout>
         <div className="min-h-screen bg-black">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
             {/* Welcome Section */}
@@ -1058,7 +1058,7 @@ export default function OnboardingRatePage() {
           </div>
         </div>
       </div>
-      </SignedInLayout>
+      </RatePageLayout>
     </AuthGuard>
   )
 }

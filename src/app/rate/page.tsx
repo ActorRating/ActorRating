@@ -8,7 +8,7 @@ import { Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { SearchBar } from '@/components/SearchBar'
-import { SignedInLayout, HomeLayout } from '@/components/layout'
+import { RatePageLayout } from '@/components/layout'
 import { actorsApi, ratingsApi, searchApi } from '@/lib/api'
 import { useUser } from '@/components/providers/SessionProvider'
 import { useRouter } from 'next/navigation'
@@ -254,13 +254,9 @@ function RatePageContent() {
     setError(errorMessage)
   }
 
-  // Helper function to get the appropriate layout
+  // Helper function to get the appropriate layout - always use RatePageLayout (no navbar)
   const getLayout = (children: React.ReactNode) => {
-    return user ? (
-      <SignedInLayout>{children}</SignedInLayout>
-    ) : (
-      <HomeLayout>{children}</HomeLayout>
-    )
+    return <RatePageLayout>{children}</RatePageLayout>
   }
 
   // Unified submit handler for the wrapper (handles both create and update)

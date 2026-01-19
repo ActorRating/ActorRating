@@ -58,7 +58,7 @@ export function SignedInNavbar() {
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 
                   bg-[#1a1a1a] 
-                  backdrop-blur-xl overflow-hidden transition-all duration-300
+                  overflow-hidden transition-all duration-300
                   min-h-[48px] min-w-[48px] touch-manipulation
                   ${pathname === "/dashboard" 
                     ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
@@ -91,7 +91,7 @@ export function SignedInNavbar() {
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 
                   bg-[#1a1a1a] 
-                  backdrop-blur-xl overflow-hidden transition-all duration-300
+                  overflow-hidden transition-all duration-300
                   min-h-[48px] min-w-[48px] touch-manipulation
                   ${pathname === "/search" 
                     ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 

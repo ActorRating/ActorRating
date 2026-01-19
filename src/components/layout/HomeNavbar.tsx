@@ -80,7 +80,7 @@ export function HomeNavbar() {
               <div className="flex items-center gap-2">
                 <Link href="/dashboard" className="group">
                   <button
-                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] min-h-[48px]"
+                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] min-h-[48px]"
                     style={{
                       boxShadow: `
                         0 10px 30px -10px rgba(0, 0, 0, 0.7),
@@ -98,7 +98,7 @@ export function HomeNavbar() {
                 </Link>
                 <button
                   onClick={() => handleLogout()}
-                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group min-h-[48px]"
+                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group min-h-[48px]"
                   style={{
                     boxShadow: `
                       0 10px 30px -10px rgba(0, 0, 0, 0.7),
