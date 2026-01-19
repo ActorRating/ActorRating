@@ -1322,8 +1322,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               />
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
+              {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
               <div 
                 className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
+                style={{
+                  touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
+                }}
               >
                 <div className="relative" ref={firstSliderRef}>
                   <RatingSliderCard 
