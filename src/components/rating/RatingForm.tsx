@@ -306,8 +306,9 @@ export function RatingForm({
         <div className="bg-secondary p-4 rounded-lg border border-border max-w-md mx-auto">
           <div className="flex items-center justify-center gap-4">
             {performance.actor.imageUrl && (
-              <img 
-                src={performance.actor.imageUrl} 
+              <img
+                src={performance.actor.imageUrl}
+                loading="lazy" 
                 alt={performance.actor.name}
                 className="w-16 h-16 rounded-full object-cover"
               />

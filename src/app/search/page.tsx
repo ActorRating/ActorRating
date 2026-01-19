@@ -207,6 +207,7 @@ function SearchPageContent() {
                             <img
                               src={actor.imageUrl}
                               alt={actor.name}
+                              loading="lazy"
                               className="w-full h-full object-cover"
                             />
                           ) : (

@@ -446,7 +446,7 @@ function HowItWorksSection() {
           >
           <Link href="/performances">
             <button 
-                className={`group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-transform duration-300 min-h-[72px] ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
+                className={`group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-transform duration-300 min-h-[60px] sm:min-h-[72px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
@@ -455,9 +455,9 @@ function HowItWorksSection() {
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               aria-label="Start rating acting performances"
             >
-              <span className="flex items-center gap-4 xs:gap-5">
+              <span className="flex items-center gap-3 xs:gap-4 sm:gap-5">
                 Start Rating
-                <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+                <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
               </span>
             </button>
           </Link>
@@ -1459,7 +1459,7 @@ function AboutSection() {
           <div className="col-span-12 lg:col-span-12 mt-16 sm:mt-20 lg:mt-24">
             <Link href="/about" aria-label="Learn more about ActorRating">
           <button 
-            className="group px-14 xs:px-16 sm:px-20 py-8 xs:py-9 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[72px]"
+            className="group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[60px] sm:min-h-[72px] touch-manipulation"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               transform: 'scale(1)',
@@ -1468,9 +1468,9 @@ function AboutSection() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             aria-label="Learn more about ActorRating"
           >
-            <span className="flex items-center gap-4 xs:gap-5">
+            <span className="flex items-center gap-3 xs:gap-4 sm:gap-5">
               Learn More
-              <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+              <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
             </span>
           </button>
         </Link>
@@ -1620,7 +1620,7 @@ export default function HomePageClient() {
               initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-4"
+              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-4 xs:mb-5 sm:mb-6 md:mb-8 lg:mb-10 font-light text-center px-4 sm:px-6"
               style={{ 
                 letterSpacing: '0.005em',
                 opacity: 1,
@@ -1628,6 +1628,16 @@ export default function HomePageClient() {
               }}
             >
               Judge performances like the Academy.
+            </motion.p>
+
+            {/* Onboarding helper text */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-6 sm:px-8 max-w-2xl"
+            >
+              Browse 25,000+ performances and rate them using 5 professional criteria
             </motion.p>
 
             {/* CTA Button - Convert with Elegance */}
@@ -1638,7 +1648,7 @@ export default function HomePageClient() {
               className="w-full flex justify-center mt-8 sm:mt-0"
             >
               <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
-                <button className="group px-10 xs:px-12 sm:px-20 py-6 xs:py-7 sm:py-10 rounded-full text-black text-xl xs:text-2xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] min-w-[48px] xs:min-h-[52px] sm:min-h-[72px] relative overflow-hidden"
+                <button className="group px-8 xs:px-10 sm:px-20 py-5 xs:py-6 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[72px] relative overflow-hidden touch-manipulation"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     transform: 'scale(1)',
@@ -1662,9 +1672,9 @@ export default function HomePageClient() {
                     }}
                     aria-hidden="true"
                   />
-                  <span className="flex items-center justify-center gap-4 xs:gap-5 whitespace-nowrap relative z-10">
+                  <span className="flex items-center justify-center gap-3 xs:gap-4 sm:gap-5 whitespace-nowrap relative z-10">
                     Start Rating Now
-                    <FaArrowRight className="w-6 h-6 xs:w-7 xs:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
+                    <FaArrowRight className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
                   </span>
                 </button>
               </Link>

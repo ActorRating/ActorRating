@@ -5,9 +5,10 @@ import { motion } from "framer-motion"
 import { HomeLayout } from "@/components/layout"
 import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
-import { FaStar, FaChevronLeft, FaChevronRight } from "react-icons/fa"
+import { FaStar, FaChevronLeft, FaChevronRight, FaSearch } from "react-icons/fa"
 import Link from "next/link"
 import { getRateUrl } from "@/lib/slugHelper"
+import { SearchBar } from "@/components/SearchBar"
 
 // Predefined performances to display (lookup by actor + movie)
 const RECENT_PERFORMANCE_TARGETS = [
@@ -283,7 +284,7 @@ export default function PerformancesPage() {
 
   return (
     <LayoutWrapper>
-      <div className="relative z-10 bg-black pt-40 pb-32 sm:pt-48 sm:pb-40 md:pt-56 md:pb-48 lg:pt-60 lg:pb-60" style={{ willChange: 'auto' }}>
+      <div className="relative z-10 bg-black pt-24 pb-20 sm:pt-32 sm:pb-32 md:pt-40 md:pb-40 lg:pt-48 lg:pb-48" style={{ willChange: 'auto' }}>
         {/* Background ambient glow */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -291,19 +292,50 @@ export default function PerformancesPage() {
         </div>
 
         <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
+          {/* Search Bar Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-12 sm:mb-16 md:mb-20 max-w-3xl mx-auto px-2 sm:px-0"
+          >
+            <div className="relative group">
+              <div 
+                className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
+                style={{
+                  boxShadow: `
+                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                    0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                  `,
+                  transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <SearchBar
+                  placeholder="Search for actors to rate..."
+                  showClear
+                  className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-5 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[56px]"
+                />
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-12">
             {/* New Performances Section */}
-            <div className="col-span-12 mb-32 sm:mb-40 md:mb-48">
+            <div className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform, opacity' }}
-                className="text-center mb-8 sm:mb-12 md:mb-16"
+                className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
                 <h3 
-                  className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
+                  className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   <span 
@@ -319,7 +351,7 @@ export default function PerformancesPage() {
                   </span>{' '}
                   Now
                 </h3>
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Latest performances capturing global attention
                 </p>
               </motion.div>
@@ -405,10 +437,10 @@ export default function PerformancesPage() {
                           0 0 0 1px rgba(255, 255, 255, 0.03),
                           inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
                         `,
-                        padding: '6px 12px',
+                        padding: '8px 14px',
                       }}
                     >
-                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
+                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '8px' }}>
                         {recentPerformances.map((_, index) => (
                           <button
                             key={index}
@@ -422,12 +454,13 @@ export default function PerformancesPage() {
                                 }
                               }
                             }}
+                            className="touch-manipulation"
                             style={{
-                              width: index === activeRecentCard ? '20px' : '8px',
-                              height: '8px',
-                              minWidth: '8px',
-                              minHeight: '8px',
-                              padding: '8px',
+                              width: index === activeRecentCard ? '24px' : '10px',
+                              height: '10px',
+                              minWidth: '44px',
+                              minHeight: '44px',
+                              padding: '12px',
                               border: 'none',
                               backgroundColor: index === activeRecentCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',
@@ -466,10 +499,10 @@ export default function PerformancesPage() {
                 viewport={{ once: true, amount: 0.3, margin: "0px 0px -100px 0px" }}
                 transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
                 style={{ willChange: 'transform, opacity' }}
-                className="text-center mb-8 sm:mb-12 md:mb-16"
+                className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
                 <h3 
-                  className="text-5xl xs:text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight px-4 sm:px-0"
+                  className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
                   <span 
@@ -485,7 +518,7 @@ export default function PerformancesPage() {
                   </span>{' '}
                   Classics
                 </h3>
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-6 sm:px-4">
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Legendary performances that defined cinema
                 </p>
               </motion.div>
@@ -535,10 +568,10 @@ export default function PerformancesPage() {
                           0 0 0 1px rgba(255, 255, 255, 0.03),
                           inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
                         `,
-                        padding: '6px 12px',
+                        padding: '8px 14px',
                       }}
                     >
-                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
+                      <div className="relative z-10 flex justify-center items-center" style={{ gap: '8px' }}>
                         {iconicPerformances.map((_, index) => (
                           <button
                             key={index}
@@ -552,12 +585,13 @@ export default function PerformancesPage() {
                                 }
                               }
                             }}
+                            className="touch-manipulation"
                             style={{
-                              width: index === activeIconicCard ? '20px' : '8px',
-                              height: '8px',
-                              minWidth: '8px',
-                              minHeight: '8px',
-                              padding: '8px',
+                              width: index === activeIconicCard ? '24px' : '10px',
+                              height: '10px',
+                              minWidth: '44px',
+                              minHeight: '44px',
+                              padding: '12px',
                               border: 'none',
                               backgroundColor: index === activeIconicCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',
@@ -626,7 +660,7 @@ function LandingPageCard({
     >
       {/* Premium Card - Clean & Cinematic - EXACT COPY from landing page */}
       <div 
-        className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+        className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
         style={{
           boxShadow: `
             0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -700,14 +734,14 @@ function LandingPageCard({
           <div className="mt-auto pt-4">
             <Link href={rateUrl} prefetch={false}>
               <button 
-                className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
+                className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base sm:text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation"
                 style={{
                   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 }}
               >
                 <span className="flex items-center justify-center gap-2">
                   Rate
-                  <FaStar className="w-4 h-4" />
+                  <FaStar className="w-5 h-5" />
                 </span>
               </button>
             </Link>

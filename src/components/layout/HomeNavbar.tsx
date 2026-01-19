@@ -50,18 +50,23 @@ export function HomeNavbar() {
     <nav 
       className={`navbar-cinematic ${scrolled ? 'navbar-scrolled' : ''}`}
       style={{
-        position: 'absolute',
+        position: scrolled ? 'fixed' : 'absolute',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 50,
-        background: 'transparent',
-        backgroundColor: 'transparent',
+        background: scrolled ? 'rgba(0, 0, 0, 0.95)' : 'transparent',
+        backgroundColor: scrolled ? 'rgba(0, 0, 0, 0.95)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(255, 215, 0, 0.1)' : 'none',
+        boxShadow: scrolled ? '0 4px 20px rgba(0, 0, 0, 0.5)' : 'none',
+        transition: 'all 0.3s ease-in-out',
       }}
       suppressHydrationWarning
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo - always gold */}
           <div className="flex items-center">
             <Logo href="/" />

@@ -45,20 +45,21 @@ export function SignedInNavbar() {
   return (
     <nav className="sticky top-0 z-50 isolate text-foreground navbar-fade" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex items-center">
             <Logo href="/dashboard" />
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <Link href="/dashboard" className="group">
               <button
                 className={`
-                  relative px-4 py-2 rounded-xl border border-transparent 
+                  relative px-4 py-3 rounded-xl border border-transparent 
                   bg-[#1a1a1a] 
                   backdrop-blur-xl overflow-hidden transition-all duration-300
+                  min-h-[48px] min-w-[48px] touch-manipulation
                   ${pathname === "/dashboard" 
                     ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
                     : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
@@ -88,9 +89,10 @@ export function SignedInNavbar() {
             <Link href="/search" className="group">
               <button
                 className={`
-                  relative px-4 py-2 rounded-xl border border-transparent 
+                  relative px-4 py-3 rounded-xl border border-transparent 
                   bg-[#1a1a1a] 
                   backdrop-blur-xl overflow-hidden transition-all duration-300
+                  min-h-[48px] min-w-[48px] touch-manipulation
                   ${pathname === "/search" 
                     ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
                     : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
@@ -122,9 +124,10 @@ export function SignedInNavbar() {
             <Link href="/profile" className="group">
               <button
                 className={`
-                  relative px-3 py-2 rounded-xl border border-transparent 
+                  relative px-4 py-3 rounded-xl border border-transparent 
                   bg-[#1a1a1a] 
                   backdrop-blur-xl overflow-hidden transition-all duration-300
+                  min-h-[48px] touch-manipulation
                   ${pathname === "/profile" 
                     ? 'border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]' 
                     : 'hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]'
