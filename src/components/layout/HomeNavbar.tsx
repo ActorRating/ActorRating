@@ -47,20 +47,20 @@ export function HomeNavbar() {
   }, [mounted])
 
   return (
-    <nav 
+    <nav
       className={`navbar-cinematic ${scrolled ? 'navbar-scrolled' : ''}`}
       style={{
-        position: scrolled ? 'fixed' : 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 50,
-        background: scrolled ? 'rgba(0, 0, 0, 0.92)' : 'transparent',
-        backgroundColor: scrolled ? 'rgba(0, 0, 0, 0.92)' : 'transparent',
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none',
-        borderBottom: scrolled ? '1px solid rgba(255, 215, 0, 0.12)' : 'none',
-        boxShadow: 'none',
+        background: 'rgba(0, 0, 0, 0.95)',
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 215, 0, 0.1)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
         transition: 'all 0.3s ease-in-out',
       }}
       suppressHydrationWarning
@@ -72,42 +72,72 @@ export function HomeNavbar() {
             <Logo href="/" />
           </div>
 
-          {/* Right side - Editorial style navigation */}
-          <div className={`flex items-center space-x-6 sm:space-x-8 min-w-[120px] justify-end relative z-10 pointer-events-auto mix-blend-normal pr-0 navbar-content ${scrolled ? 'navbar-content-scrolled' : ''}`}>
+          {/* Right side - keep stable width so layout never collapses */}
+          <div className={`flex items-center space-x-3 min-w-[120px] justify-end relative z-10 pointer-events-auto mix-blend-normal pr-0 navbar-content ${scrolled ? 'navbar-content-scrolled' : ''}`}>
             {!mounted ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
               </div>
             ) : user ? (
-              <div className="flex items-center gap-6">
-                <Link href="/dashboard" className="text-sm text-[#d4d4d4] hover:text-[#FFD700] transition-colors duration-200">
-                  Dashboard
+              <div className="flex items-center gap-2">
+                <Link href="/dashboard" className="group">
+                  <button
+                    className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] min-h-[48px]"
+                    style={{
+                      boxShadow: `
+                        0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                      `,
+                    }}
+                    aria-label="Go to dashboard"
+                  >
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                    </div>
+                    <span className="text-sm text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10">Dashboard</span>
+                  </button>
                 </Link>
                 <button
                   onClick={() => handleLogout()}
-                  className="text-sm text-[#d4d4d4] hover:text-[#FFD700] transition-colors duration-200"
+                  className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)] group min-h-[48px]"
+                  style={{
+                    boxShadow: `
+                      0 10px 30px -10px rgba(0, 0, 0, 0.7),
+                      0 0 0 1px rgba(255, 255, 255, 0.05),
+                      inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
+                    `,
+                  }}
                   aria-label="Sign out"
                 >
-                  Sign Out
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFD700]/10 rounded-full blur-2xl" />
+                  </div>
+                  <span className="text-sm text-gray-300 group-hover:text-[#FFD700] transition-colors duration-200 relative z-10">Sign Out</span>
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-4 sm:gap-6">
-                <Link href="/performances" className="text-sm text-[#d4d4d4] hover:text-[#FFD700] transition-colors duration-200 hidden sm:inline">
-                  How it works
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Link href="/auth/signin" className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200 flex items-center min-h-[48px]">
+                  Sign In
                 </Link>
-                <Link href="/performances" className="text-sm text-[#d4d4d4] hover:text-[#FFD700] transition-colors duration-200 hidden sm:inline">
-                  Top Rated
-                </Link>
-                <Link href="/auth/signup">
+                <Link href="/auth/signup" className="group">
                   <button
-                    className="px-5 py-2 rounded-full text-black text-sm font-semibold transition-all duration-200 hover:opacity-90 min-h-[40px] touch-manipulation"
+                    className="relative px-5 sm:px-6 py-2.5 sm:py-2 rounded-full border border-transparent overflow-hidden transition-all duration-300 hover:scale-105 min-h-[48px] touch-manipulation flex items-center"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      boxShadow: `
+                        0 15px 40px -10px rgba(255, 215, 0, 0.3),
+                        0 8px 20px -5px rgba(255, 215, 0, 0.2),
+                        0 0 0 1px rgba(255, 215, 0, 0.1)
+                      `,
                     }}
                     aria-label="Join free"
                   >
-                    Join Free
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl" />
+                    </div>
+                    <span className="text-sm font-bold text-black group-hover:text-black transition-colors duration-200 relative z-10">Join Free</span>
                   </button>
                 </Link>
               </div>

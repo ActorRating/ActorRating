@@ -69,13 +69,13 @@ export default function PerformancesPage() {
 
   useEffect(() => {
     let cancelled = false
-    
+
     const fetchPerformances = async () => {
       try {
         // Try to load from cache first
         const cacheKey = 'performances-page-data'
         const cached = sessionStorage.getItem(cacheKey)
-        
+
         if (cached) {
           try {
             const { data, timestamp } = JSON.parse(cached)
@@ -93,16 +93,16 @@ export default function PerformancesPage() {
             console.log('[PERFORMANCES PAGE] Cache invalid, fetching fresh data')
           }
         }
-        
+
         // Fetch performances by actor/movie lookups
         const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
-        
+
         const response = await fetch('/api/performances/by-lookup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ targets: allTargets })
         })
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
           console.error('[PERFORMANCES PAGE] API error:', response.status, errorData)
@@ -113,32 +113,32 @@ export default function PerformancesPage() {
           }
           return
         }
-        
+
         if (!cancelled) {
           const data = await response.json()
-          
+
           // Separate into recent and iconic based on original arrays
           const recent = RECENT_PERFORMANCE_TARGETS
-            .map(target => data.performances?.find((p: any) => 
+            .map(target => data.performances?.find((p: any) =>
               p.actor?.name === target.actor && p.movie?.title === target.movie
             ))
             .filter((p: any) => p !== undefined)
-          
+
           const iconic = ICONIC_PERFORMANCE_TARGETS
-            .map(target => data.performances?.find((p: any) => 
+            .map(target => data.performances?.find((p: any) =>
               p.actor?.name === target.actor && p.movie?.title === target.movie
             ))
             .filter((p: any) => p !== undefined)
-          
+
           console.log('[PERFORMANCES PAGE] Loaded:', {
             recent: recent.length,
             iconic: iconic.length,
             total: recent.length + iconic.length
           })
-          
+
           setRecentPerformances(recent)
           setIconicPerformances(iconic)
-          
+
           // Cache the data
           sessionStorage.setItem(cacheKey, JSON.stringify({
             data: { recent, iconic },
@@ -159,7 +159,7 @@ export default function PerformancesPage() {
     }
 
     fetchPerformances()
-    
+
     return () => {
       cancelled = true
     }
@@ -173,26 +173,26 @@ export default function PerformancesPage() {
     const updateCardDepth = () => {
       // Only apply depth effect on desktop
       const isDesktop = window.innerWidth >= 1024
-      
+
       const containerRect = container.getBoundingClientRect()
       const containerCenter = containerRect.left + containerRect.width / 2
-      
+
       const cards = container.querySelectorAll('.recent-scroll-container > div')
       let closestIndex = 0
       let closestDistance = Infinity
-      
+
       cards.forEach((card, index) => {
         const cardRect = card.getBoundingClientRect()
         const cardCenter = cardRect.left + cardRect.width / 2
         const distance = Math.abs(containerCenter - cardCenter)
-        
+
         if (distance < closestDistance) {
           closestDistance = distance
           closestIndex = index
         }
-        
+
         const element = card as HTMLElement
-        
+
         if (isDesktop) {
           // Calculate depth effect based on distance from center
           const maxDistance = containerRect.width / 2
@@ -200,7 +200,7 @@ export default function PerformancesPage() {
           const scale = 1 - (normalizedDistance * 0.08) // Scale from 1 to 0.92
           const opacity = 1 - (normalizedDistance * 0.4) // Opacity from 1 to 0.6
           const translateY = normalizedDistance * 10 // Move down by up to 10px
-          
+
           element.style.transform = `scale(${scale}) translateY(${translateY}px)`
           element.style.opacity = `${opacity}`
         } else {
@@ -209,14 +209,14 @@ export default function PerformancesPage() {
           element.style.opacity = '1'
         }
       })
-      
+
       setActiveRecentCard(closestIndex)
     }
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
     updateCardDepth() // Initial call
-    
+
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
       window.removeEventListener('resize', updateCardDepth)
@@ -230,26 +230,26 @@ export default function PerformancesPage() {
     const updateCardDepth = () => {
       // Only apply depth effect on desktop
       const isDesktop = window.innerWidth >= 1024
-      
+
       const containerRect = container.getBoundingClientRect()
       const containerCenter = containerRect.left + containerRect.width / 2
-      
+
       const cards = container.querySelectorAll('.iconic-scroll-container > div')
       let closestIndex = 0
       let closestDistance = Infinity
-      
+
       cards.forEach((card, index) => {
         const cardRect = card.getBoundingClientRect()
         const cardCenter = cardRect.left + cardRect.width / 2
         const distance = Math.abs(containerCenter - cardCenter)
-        
+
         if (distance < closestDistance) {
           closestDistance = distance
           closestIndex = index
         }
-        
+
         const element = card as HTMLElement
-        
+
         if (isDesktop) {
           // Calculate depth effect based on distance from center
           const maxDistance = containerRect.width / 2
@@ -257,7 +257,7 @@ export default function PerformancesPage() {
           const scale = 1 - (normalizedDistance * 0.08) // Scale from 1 to 0.92
           const opacity = 1 - (normalizedDistance * 0.4) // Opacity from 1 to 0.6
           const translateY = normalizedDistance * 10 // Move down by up to 10px
-          
+
           element.style.transform = `scale(${scale}) translateY(${translateY}px)`
           element.style.opacity = `${opacity}`
         } else {
@@ -266,14 +266,14 @@ export default function PerformancesPage() {
           element.style.opacity = '1'
         }
       })
-      
+
       setActiveIconicCard(closestIndex)
     }
 
     container.addEventListener('scroll', updateCardDepth, { passive: true })
     window.addEventListener('resize', updateCardDepth, { passive: true })
     updateCardDepth() // Initial call
-    
+
     return () => {
       container.removeEventListener('scroll', updateCardDepth)
       window.removeEventListener('resize', updateCardDepth)
@@ -292,15 +292,43 @@ export default function PerformancesPage() {
         </div>
 
         <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
-          {/* Search Bar Section */}
+          {/* Title Section */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="text-center mb-8 sm:mb-10 px-4 sm:px-0"
+          >
+            <h1 
+              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
+              style={{ fontFamily: 'var(--font-cinzel), serif' }}
+            >
+              <span 
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
+                }}
+              >
+                Discover
+              </span>
+            </h1>
+            <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#e4e4e7] max-w-3xl mx-auto font-light leading-relaxed">
+              Search and rate acting performances from cinema's finest
+            </p>
+          </motion.div>
+
+          {/* Search Bar Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
             className="mb-12 sm:mb-16 md:mb-20 max-w-3xl mx-auto px-2 sm:px-0"
           >
             <div className="relative group">
-              <div 
+              <div
                 className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
                 style={{
                   boxShadow: `
@@ -334,11 +362,11 @@ export default function PerformancesPage() {
                 style={{ willChange: 'transform, opacity' }}
                 className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
-                <h3 
+                <h3
                   className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
-                  <span 
+                  <span
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                       WebkitBackgroundClip: 'text',
@@ -360,7 +388,7 @@ export default function PerformancesPage() {
                 <div className="relative">
                   {/* Carousel Container with Fade Edges */}
                   <div className="relative -mx-4 sm:-mx-0">
-                    <div 
+                    <div
                       className="overflow-hidden"
                       style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
@@ -391,7 +419,7 @@ export default function PerformancesPage() {
                 <div className="relative">
                   {/* Carousel Container with Fade Edges */}
                   <div className="relative -mx-4 sm:-mx-0">
-                    <div 
+                    <div
                       className="overflow-hidden"
                       style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
@@ -401,8 +429,8 @@ export default function PerformancesPage() {
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
                       <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
                         {recentPerformances.map((performance, index) => (
-                          <div 
-                            key={performance.id} 
+                          <div
+                            key={performance.id}
                             className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] lg:max-w-md xl:max-w-md snap-center lg:cursor-pointer"
                             style={{
                               /* Hardware acceleration for smooth scrolling */
@@ -418,7 +446,7 @@ export default function PerformancesPage() {
                               }
                             }}
                           >
-                            <LandingPageCard 
+                            <LandingPageCard
                               performance={performance}
                               index={index}
                             />
@@ -501,11 +529,11 @@ export default function PerformancesPage() {
                 style={{ willChange: 'transform, opacity' }}
                 className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0"
               >
-                <h3 
+                <h3
                   className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
                   style={{ fontFamily: 'var(--font-cinzel), serif' }}
                 >
-                  <span 
+                  <span
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                       WebkitBackgroundClip: 'text',
@@ -527,7 +555,7 @@ export default function PerformancesPage() {
                 <div className="relative">
                   {/* Carousel Container with Fade Edges */}
                   <div className="relative -mx-4 sm:-mx-0">
-                    <div 
+                    <div
                       className="overflow-hidden"
                       style={isDesktop ? {
                         maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
@@ -537,23 +565,23 @@ export default function PerformancesPage() {
                       {/* Carousel - Add extra padding on desktop for first/last cards */}
                       <div className="iconic-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
                         {iconicPerformances.map((performance, index) => (
-                          <div 
-                            key={performance.id} 
+                          <div
+                            key={performance.id}
                             className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] lg:max-w-md xl:max-w-md snap-center transition-all duration-300 ease-out lg:cursor-pointer"
-                          onClick={() => {
-                            if (window.innerWidth >= 1024) {
-                              const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
-                              if (element) {
-                                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                            onClick={() => {
+                              if (window.innerWidth >= 1024) {
+                                const element = document.querySelectorAll('.iconic-scroll-container > div')[index] as HTMLElement
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                                }
                               }
-                            }
-                          }}
-                        >
-                          <LandingPageCard 
-                            performance={performance}
-                            index={index}
-                          />
-                        </div>
+                            }}
+                          >
+                            <LandingPageCard
+                              performance={performance}
+                              index={index}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -629,49 +657,48 @@ export default function PerformancesPage() {
 }
 
 // EXACT COPY of the landing page card structure
-function LandingPageCard({ 
-  performance, 
-  index 
-}: { 
+function LandingPageCard({
+  performance,
+  index
+}: {
   performance: PerformanceData
-  index: number 
+  index: number
 }) {
   const rateUrl = performance.actor && performance.movie
     ? getRateUrl(
-        { id: performance.actorId, name: performance.actor.name, slug: performance.actor.slug || null },
-        { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
-      )
+      { id: performance.actorId, name: performance.actor.name, slug: performance.actor.slug || null },
+      { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
+    )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
   const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
   // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
-  const rating = hasRating && performance.averageRating != null 
-    ? (performance.averageRating / 10).toFixed(1) 
+  const rating = hasRating && performance.averageRating != null
+    ? (performance.averageRating / 10).toFixed(1)
     : null
   const character = performance.character || "—"
 
   return (
-    <Link href={rateUrl} prefetch={false}>
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        style={{ willChange: 'transform, opacity' }}
-        className="group relative cursor-pointer"
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15, margin: "0px 0px -50px 0px" }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      style={{ willChange: 'transform, opacity' }}
+      className="group relative"
+    >
+      {/* Premium Card - Clean & Cinematic - EXACT COPY from landing page */}
+      <div
+        className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+        style={{
+          boxShadow: `
+            0 25px 70px -15px rgba(0, 0, 0, 0.9),
+            0 15px 40px -10px rgba(0, 0, 0, 0.7),
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+          `,
+        }}
       >
-        {/* Premium Card - Fully Tappable */}
-        <div 
-          className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border-2 border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 group-hover:border-[#FFD700] group-active:border-[#FFD700]"
-          style={{
-            boxShadow: `
-              0 25px 70px -15px rgba(0, 0, 0, 0.9),
-              0 15px 40px -10px rgba(0, 0, 0, 0.7),
-              0 0 0 1px rgba(255, 255, 255, 0.05),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-            `,
-          }}
-        >
         {/* Glow effect - CLIPPED to card corners */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
@@ -685,7 +712,7 @@ function LandingPageCard({
               {rating ? (
                 <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                   <FaStar className="w-6 h-6 text-[#FFD700]" />
-                  <span 
+                  <span
                     className="text-3xl font-bold text-[#FFD700]"
                     style={{
                       fontFamily: 'var(--font-geist-sans), sans-serif',
@@ -701,7 +728,7 @@ function LandingPageCard({
                   <span className="text-3xl font-bold text-[#a3a3a3]">N/A</span>
                 </div>
               )}
-              
+
               {/* Movie Year */}
               <div className="text-[#a3a3a3] text-base font-medium">
                 {performance.movie.year}
@@ -709,7 +736,7 @@ function LandingPageCard({
             </div>
 
             {/* Actor Name */}
-            <h3 
+            <h3
               className="text-2xl sm:text-3xl font-bold text-white mb-2"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
@@ -731,26 +758,27 @@ function LandingPageCard({
             </div>
           </div>
 
-          {/* Tap to Rate Indicator */}
+          {/* Rate Button - Always at bottom */}
           <div className="mt-auto pt-4">
-            <div 
-              className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base sm:text-base font-bold tracking-wider uppercase text-center pointer-events-none"
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-              }}
-            >
-              <span className="flex items-center justify-center gap-2">
-                Tap to Rate
-                <FaStar className="w-5 h-5" />
-              </span>
-            </div>
+            <Link href={rateUrl} prefetch={false}>
+              <button
+                className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base sm:text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation"
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                }}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  Rate
+                  <FaStar className="w-5 h-5" />
+                </span>
+              </button>
+            </Link>
           </div>
         </div>
 
         {/* Decorative accent */}
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
-      </motion.div>
-    </Link>
+    </motion.div>
   )
 }
