@@ -222,7 +222,7 @@ function HowItWorksSection() {
   }, [isDragging, dragOffset, steps.length]);
 
   return (
-    <div className="relative z-10 bg-black mt-4 sm:-mt-24 md:-mt-28 lg:-mt-32 xl:-mt-36 pt-4 sm:pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-8 sm:py-40 md:py-48 lg:py-60" style={{ willChange: 'auto' }}>
+    <div className="relative z-10 bg-black mt-4 sm:-mt-24 md:-mt-28 lg:-mt-32 xl:-mt-36 pt-4 sm:pt-24 md:pt-28 lg:pt-32 xl:pt-36 pb-8 sm:py-28 md:py-32 lg:py-40" style={{ willChange: 'auto' }}>
       {/* Background ambient glow - Reduced blur on mobile */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className={`absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full ${isMobileDevice ? 'blur-[80px]' : 'blur-[150px]'}`} />
@@ -678,7 +678,7 @@ function PerformanceSection() {
   // }, [PERFORMANCE_HIGHLIGHTS.length]);
 
   return (
-    <div className="performance-section-container relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60 overflow-visible">
+    <div className="performance-section-container relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40 overflow-visible">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-[#0a0a0a] to-black" />
 
@@ -732,7 +732,7 @@ function PerformanceSection() {
                   WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
                 } : {}}
               >
-                <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]" style={{ contain: 'layout style paint', willChange: 'scroll-position' }}>
+                <div className="performance-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-0 sm:pr-0 lg:px-[20vw] xl:px-[25vw]" style={{ contain: 'layout style paint', scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
                   {PERFORMANCE_HIGHLIGHTS.map((highlight, index) => (
                   <div
                     key={index}
@@ -983,7 +983,7 @@ function FeaturesSection() {
   ];
 
   return (
-    <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60">
+    <div className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
       {/* Background glow */}
       <div className="absolute inset-0 opacity-15 pointer-events-none">
         <div className="absolute top-1/3 right-1/4 w-[700px] h-[700px] bg-[#FFC800]/20 rounded-full blur-[160px]" />
@@ -1183,7 +1183,7 @@ function AboutSection() {
   ];
 
   return (
-    <div className="relative z-10 bg-black py-32 sm:py-40 md:py-48 lg:py-60">
+    <div className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
       {/* Background glow */}
       <div className="absolute inset-0 opacity-15 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FFC800]/15 rounded-full blur-[180px]" />
@@ -1558,15 +1558,21 @@ export default function HomePageClient() {
                 Judge performances like the Academy.
               </motion.p>
 
-              {/* Onboarding helper text */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-6 sm:px-8 max-w-2xl"
+            {/* Onboarding helper text */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-6 sm:px-8 max-w-2xl"
+            >
+              A community for movie lovers to rate, compare, and discover the greatest acting performances.{' '}
+              <a 
+                href="/performances" 
+                className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
               >
-                Browse 25,000+ performances and rate them using 5 professional criteria
-              </motion.p>
+                Explore 25,000+ performances
+              </a>
+            </motion.p>
 
               {/* CTA Button - Convert with Elegance */}
               <motion.div

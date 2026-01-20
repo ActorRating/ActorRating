@@ -319,7 +319,7 @@ export default function PerformancesPage() {
 
           {/* Search Bar Section */}
           <div
-            className="mb-12 sm:mb-16 md:mb-20 max-w-3xl mx-auto px-2 sm:px-0"
+            className="mb-16 sm:mb-20 md:mb-24 lg:mb-28 max-w-3xl mx-auto px-2 sm:px-0"
           >
             <div className="relative group">
               <div
