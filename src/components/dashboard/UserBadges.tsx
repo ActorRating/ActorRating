@@ -7,6 +7,7 @@ import { getUserBadges } from '@/lib/badges'
 interface BadgeData {
   ratingCount: number
   isFoundingMember?: boolean
+  isFirstRater?: boolean
 }
 
 export function UserBadges() {
@@ -24,7 +25,8 @@ export function UserBadges() {
         const data = await response.json()
         setBadgeData({
           ratingCount: data.ratingCount,
-          isFoundingMember: false // TODO: Add founding member check
+          isFoundingMember: false, // TODO: Add founding member check
+          isFirstRater: data.isFirstRater || false
         })
       }
     } catch (error) {
@@ -38,10 +40,27 @@ export function UserBadges() {
     return null
   }
 
-  const badges = getUserBadges(badgeData.ratingCount, badgeData.isFoundingMember || false)
+  const badges = getUserBadges(
+    badgeData.ratingCount, 
+    badgeData.isFoundingMember || false,
+    badgeData.isFirstRater || false
+  )
 
   if (badges.length === 0) {
     return null
+  }
+
+  // Special display for First Rater badge
+  const firstRaterBadge = badges.find(b => b.id === 'first-rater')
+  if (firstRaterBadge) {
+    return (
+      <div className="space-y-3">
+        <Badge badge={firstRaterBadge} />
+        <p className="text-sm text-gray-400 italic">
+          You were among the very first to rate performances on ActorRating.
+        </p>
+      </div>
+    )
   }
 
   return (

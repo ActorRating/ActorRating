@@ -56,6 +56,16 @@ export async function GET(req: NextRequest) {
       where: { userId: user.id }
     })
 
+    // Check if user is the first rater (earliest rating in database)
+    const firstRating = await prisma.rating.findFirst({
+      orderBy: { createdAt: 'asc' },
+      select: { userId: true }
+    })
+    
+    // First rater is either the earliest rater OR the specific user ID
+    const firstRaterUserId = 'ada21bfa-bbe4-4c92-83a4-02d9d09b9fd4'
+    const isFirstRater = firstRating?.userId === user.id || user.id === firstRaterUserId
+
     // Get level information
     const levelInfo = getLevelInfo(ratingCount)
     const nextLevelName = getNextLevelName(levelInfo.levelName)
@@ -70,7 +80,8 @@ export async function GET(req: NextRequest) {
       currentLevelMin: levelInfo.levelMin,
       nextLevelAt: levelInfo.nextLevelAt,
       progressPercent: Math.round(progressPercent),
-      ratingsNeeded
+      ratingsNeeded,
+      isFirstRater
     })
   } catch (error) {
     console.error('Error fetching user level progress:', error)

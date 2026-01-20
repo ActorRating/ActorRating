@@ -851,7 +851,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // It shows a pulse on the score, scrolls to it, then shows a glow on the submit button.
   // To re-enable: Uncomment the useEffect below and ensure triggerSpotlightAnimation is defined.
   // ============================================================================
-  
+
   // Trigger spotlight animation after slider release (only when all sliders are touched)
   // useEffect(() => {
   //   // Only proceed if all sliders are touched

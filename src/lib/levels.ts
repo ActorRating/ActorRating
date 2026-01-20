@@ -71,6 +71,15 @@ export function calculateProgress(ratingCount: number, levelInfo: LevelInfo): nu
     return 100 // Max level
   }
   
+  // For Viewer level, calculate progress from 0 to nextLevelAt (not from levelMin)
+  // This ensures 1 rating shows progress instead of 0%
+  if (levelInfo.levelName === 'Viewer') {
+    const range = levelInfo.nextLevelAt // 10
+    const progress = ratingCount // 1 rating = 10% progress
+    return Math.min(100, Math.max(0, (progress / range) * 100))
+  }
+  
+  // For other levels, calculate from levelMin to nextLevelAt
   const range = levelInfo.nextLevelAt - levelInfo.levelMin
   const progress = ratingCount - levelInfo.levelMin
   return Math.min(100, Math.max(0, (progress / range) * 100))

@@ -3,7 +3,7 @@
  * Defines Founding Member badge and level-based badges
  */
 
-export type BadgeType = 'founding-member' | 'level'
+export type BadgeType = 'founding-member' | 'level' | 'first-rater'
 
 export interface BadgeConfig {
   id: string
@@ -23,6 +23,16 @@ export interface BadgeConfig {
  * Founding Member badge is special and always appears first
  */
 export const BADGE_CONFIGS: BadgeConfig[] = [
+  // Special Badge: First Rater (for the very first person to submit a rating)
+  {
+    id: 'first-rater',
+    name: 'First Rater',
+    type: 'first-rater',
+    color: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+    textColor: '#000000',
+    iconName: 'Star',
+    animated: true
+  },
   // Special Badge: Founding Member (for early adopters)
   {
     id: 'founding-member',
@@ -98,6 +108,13 @@ export function getLevelBadge(ratingCount: number): BadgeConfig | null {
 }
 
 /**
+ * Get First Rater badge
+ */
+export function getFirstRaterBadge(): BadgeConfig | null {
+  return BADGE_CONFIGS.find(b => b.id === 'first-rater') || null
+}
+
+/**
  * Get Founding Member badge
  */
 export function getFoundingMemberBadge(): BadgeConfig | null {
@@ -106,20 +123,28 @@ export function getFoundingMemberBadge(): BadgeConfig | null {
 
 /**
  * Get all badges for a user
- * Returns Founding Member badge first (if applicable), then level badge
+ * Returns First Rater badge first (if applicable), then Founding Member, then level badge
  */
-export function getUserBadges(ratingCount: number, isFoundingMember: boolean = false): BadgeConfig[] {
+export function getUserBadges(ratingCount: number, isFoundingMember: boolean = false, isFirstRater: boolean = false): BadgeConfig[] {
   const badges: BadgeConfig[] = []
   
-  // Founding Member badge always comes first
+  // First Rater badge always comes first (highest priority)
+  if (isFirstRater) {
+    const firstRaterBadge = getFirstRaterBadge()
+    if (firstRaterBadge) badges.push(firstRaterBadge)
+  }
+  
+  // Founding Member badge comes second
   if (isFoundingMember) {
     const foundingBadge = getFoundingMemberBadge()
     if (foundingBadge) badges.push(foundingBadge)
   }
   
-  // Add level badge
-  const levelBadge = getLevelBadge(ratingCount)
-  if (levelBadge) badges.push(levelBadge)
+  // Level badge comes last (only if not first rater)
+  if (!isFirstRater) {
+    const levelBadge = getLevelBadge(ratingCount)
+    if (levelBadge) badges.push(levelBadge)
+  }
   
   return badges
 }
@@ -199,9 +224,20 @@ export function getLevelProgress(ratingCount: number): {
   
   const currentMin = currentBadge.minRatings || 0
   const nextMin = nextBadge.minRatings
-  const range = nextMin - currentMin
-  const progressCount = ratingCount - currentMin
-  const progress = Math.min(100, Math.max(0, (progressCount / range) * 100))
+  
+  // For Viewer level (first level), calculate progress from 0 to nextMin
+  // This ensures 1 rating shows progress (10%) instead of 0%
+  let progress: number
+  if (currentBadge.id === 'viewer') {
+    const range = nextMin // 10
+    progress = Math.min(100, Math.max(0, (ratingCount / range) * 100))
+  } else {
+    // For other levels, calculate from currentMin to nextMin
+    const range = nextMin - currentMin
+    const progressCount = ratingCount - currentMin
+    progress = Math.min(100, Math.max(0, (progressCount / range) * 100))
+  }
+  
   const ratingsNeeded = Math.max(0, nextMin - ratingCount)
   
   return {

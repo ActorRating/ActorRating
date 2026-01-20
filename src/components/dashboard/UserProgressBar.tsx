@@ -21,11 +21,21 @@ export function UserProgressBar() {
     fetchProgressData()
   }, [])
 
+  const [isFirstRater, setIsFirstRater] = useState(false)
+
   const fetchProgressData = async () => {
     try {
       const response = await fetch('/api/user/level-progress', { cache: 'no-store' })
       if (response.ok) {
         const data = await response.json()
+        setIsFirstRater(data.isFirstRater || false)
+        
+        // Don't show progress bar for first rater
+        if (data.isFirstRater) {
+          setLoading(false)
+          return
+        }
+        
         const levelProgress = getLevelProgress(data.ratingCount)
         
         setProgressData({
@@ -45,6 +55,11 @@ export function UserProgressBar() {
   }
 
   if (loading || !progressData) {
+    return null
+  }
+
+  // Hide progress bar for first rater
+  if (isFirstRater) {
     return null
   }
 
