@@ -720,6 +720,14 @@ function PerformanceSection() {
                 }}
               />
             </div>
+            <p className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] font-light text-center px-6 sm:px-8 max-w-2xl mx-auto mt-4">
+              <a 
+                href="/performances" 
+                className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
+              >
+                Explore 25,000+ performances
+              </a>
+            </p>
           </div>
 
           {/* Quote Cards - Carousel with fade edges */}
@@ -1552,27 +1560,11 @@ export default function HomePageClient() {
                 style={{
                   letterSpacing: '0.005em',
                   opacity: 1,
-                  transform: 'translateY(0)'
-                }}
-              >
-                Judge performances like the Academy.
-              </motion.p>
-
-            {/* Onboarding helper text */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] mb-8 xs:mb-10 sm:mb-8 md:mb-10 lg:mb-12 font-light text-center px-6 sm:px-8 max-w-2xl"
-            >
-              A community for movie lovers to rate, compare, and discover the greatest acting performances.{' '}
-              <a 
-                href="/performances" 
-                className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
-              >
-                Explore 25,000+ performances
-              </a>
-            </motion.p>
+              transform: 'translateY(0)'
+            }}
+          >
+            A community for movie lovers to rate, compare, and discover the greatest acting performances
+          </motion.p>
 
               {/* CTA Button - Convert with Elegance */}
               <motion.div

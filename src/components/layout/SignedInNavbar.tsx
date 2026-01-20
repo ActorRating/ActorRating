@@ -21,7 +21,7 @@ export function SignedInNavbar() {
 
   if (!mounted) {
     return (
-      <nav className="sticky top-0 z-50 isolate navbar-fade" suppressHydrationWarning>
+      <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -43,7 +43,7 @@ export function SignedInNavbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 isolate text-foreground navbar-fade" suppressHydrationWarning>
+    <nav className="sticky top-0 z-50 isolate text-foreground" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
