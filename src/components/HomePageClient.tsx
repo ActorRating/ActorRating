@@ -720,14 +720,6 @@ function PerformanceSection() {
                 }}
               />
             </div>
-            <p className="text-sm xs:text-base sm:text-lg text-[#a3a3a3] font-light text-center px-6 sm:px-8 max-w-2xl mx-auto mt-4">
-              <a 
-                href="/performances" 
-                className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
-              >
-                Explore 25,000+ performances
-              </a>
-            </p>
           </div>
 
           {/* Quote Cards - Carousel with fade edges */}
@@ -934,7 +926,12 @@ function PerformanceSection() {
             {/* Additional performances text */}
             <div className="text-center mt-6 w-full">
               <p className="text-sm sm:text-base text-[#a3a3a3] font-light tracking-wide">
-                +25,000 more performances
+                <a 
+                  href="/performances" 
+                  className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
+                >
+                  Explore 25,000+ performances
+                </a>
               </p>
             </div>
           </div>
