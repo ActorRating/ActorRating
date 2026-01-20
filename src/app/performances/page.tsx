@@ -471,13 +471,12 @@ export default function PerformancesPage() {
                                 }
                               }
                             }}
-                            className="touch-manipulation"
                             style={{
-                              width: index === activeRecentCard ? '24px' : '10px',
-                              height: '10px',
-                              minWidth: '44px',
-                              minHeight: '44px',
-                              padding: '12px',
+                              width: index === activeRecentCard ? '20px' : '8px',
+                              height: '8px',
+                              minWidth: '8px',
+                              minHeight: '8px',
+                              padding: '8px',
                               border: 'none',
                               backgroundColor: index === activeRecentCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',
@@ -597,13 +596,12 @@ export default function PerformancesPage() {
                                 }
                               }
                             }}
-                            className="touch-manipulation"
                             style={{
-                              width: index === activeIconicCard ? '24px' : '10px',
-                              height: '10px',
-                              minWidth: '44px',
-                              minHeight: '44px',
-                              padding: '12px',
+                              width: index === activeIconicCard ? '20px' : '8px',
+                              height: '8px',
+                              minWidth: '8px',
+                              minHeight: '8px',
+                              padding: '8px',
                               border: 'none',
                               backgroundColor: index === activeIconicCard ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
                               borderRadius: '9999px',

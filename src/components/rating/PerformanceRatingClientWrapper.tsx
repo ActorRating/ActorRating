@@ -685,8 +685,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
 
-  // Lotto roll animation - shorter duration for more responsive feel
-  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 300)
+  // Lotto roll animation - instant on mobile for responsiveness
+  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 0)
   
   // Update previous score when animation completes
   useEffect(() => {
@@ -709,7 +709,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       },
       {
         root: null,
-        rootMargin: '0px',
+        rootMargin: '200px 0px 0px 0px',
         threshold: 0,
       }
     )

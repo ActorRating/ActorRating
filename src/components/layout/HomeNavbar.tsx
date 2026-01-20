@@ -132,10 +132,7 @@ export function HomeNavbar() {
                     }}
                     aria-label="Join free"
                   >
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full overflow-hidden pointer-events-none">
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl" />
-                    </div>
-                    <span className="text-sm font-bold text-black group-hover:text-black transition-colors duration-200 relative z-10">Join Free</span>
+                    <span className="text-sm font-bold text-black relative z-10">Join Free</span>
                   </button>
                 </Link>
               </div>
