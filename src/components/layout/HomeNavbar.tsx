@@ -124,11 +124,7 @@ export function HomeNavbar() {
                     className="relative px-5 sm:px-6 py-2.5 sm:py-2 rounded-full border border-transparent overflow-hidden transition-all duration-300 hover:scale-105 min-h-[48px] touch-manipulation flex items-center"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      boxShadow: `
-                        0 15px 40px -10px rgba(255, 215, 0, 0.3),
-                        0 8px 20px -5px rgba(255, 215, 0, 0.2),
-                        0 0 0 1px rgba(255, 215, 0, 0.1)
-                      `,
+                      boxShadow: 'none',
                     }}
                     aria-label="Join free"
                   >

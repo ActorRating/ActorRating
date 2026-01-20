@@ -54,12 +54,37 @@ export function UserProgressBar() {
     }
   }
 
-  if (loading || !progressData) {
-    return null
+  // Show First Rater badge display if user is first rater
+  if (isFirstRater && !loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8"
+      >
+        <div
+          className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-6 sm:p-8"
+          style={{
+            boxShadow: `
+              0 25px 70px -15px rgba(0, 0, 0, 0.9),
+              0 15px 40px -10px rgba(0, 0, 0, 0.7),
+              0 0 0 1px rgba(255, 255, 255, 0.05),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+            `,
+          }}
+        >
+          {/* First Rater Badge Display */}
+          <div className="mb-4">
+            <UserBadges />
+          </div>
+        </div>
+      </motion.div>
+    )
   }
 
-  // Hide progress bar for first rater
-  if (isFirstRater) {
+  if (loading || !progressData) {
     return null
   }
 
