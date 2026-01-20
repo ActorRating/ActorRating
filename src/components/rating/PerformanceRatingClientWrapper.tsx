@@ -1136,7 +1136,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                   className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
                   style={{ 
                     willChange: 'transform, opacity',
@@ -1206,9 +1206,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
-                    delay: 0.1, 
-                    duration: isSticky ? 0.3 : 0.4,
-                    ease: [0.22, 1, 0.36, 1]
+                    delay: 0, 
+                    duration: 0.2,
+                    ease: [0.4, 0, 0.2, 1]
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
                   style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}
