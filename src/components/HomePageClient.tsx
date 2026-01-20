@@ -250,15 +250,10 @@ function HowItWorksSection() {
               </span>{' '}
               It Works
             </h2>
-            <motion.div
-              initial={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
-              whileInView={prefersReducedMotionDevice || isMobileDevice ? { opacity: 1, scaleX: 1 } : { opacity: 1, scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={prefersReducedMotionDevice || isMobileDevice ? { duration: 0 } : { duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            <div
               style={{
                 width: '220px',
                 transformOrigin: 'center',
-                willChange: prefersReducedMotionDevice || isMobileDevice ? 'auto' : 'transform, opacity'
               }}
               className="h-[2px] mx-auto mb-6 relative"
             >
