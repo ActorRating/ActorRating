@@ -294,8 +294,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
       const newValue = calculateValueFromTouch(touch.clientX)
       touchStateRef.current.currentValue = newValue
       updateSliderVisuals(newValue) // Direct DOM update, no React state
+      
+      // Real-time update for score
+      setLocalValue(newValue)
+      onValueChange(newValue)
     }
-  }, [disabled, isIOS, calculateValueFromTouch, updateSliderVisuals])
+  }, [disabled, isIOS, calculateValueFromTouch, updateSliderVisuals, onValueChange])
   
   const handleTouchEnd = useCallback(() => {
     if (!touchStateRef.current) return
@@ -341,7 +345,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
 
   return (
     <div className="space-y-3 sm:space-y-4 relative">
-      {/* Label */}
+      {/* Label with Value */}
       <div className="flex items-center justify-between mb-3">
         <h3 
           className="text-lg sm:text-xl font-semibold text-white"
@@ -349,6 +353,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
         >
           {label}
         </h3>
+        <span className="text-lg sm:text-xl font-bold text-[#FFD700]">
+          {localValue} / 10
+        </span>
       </div>
 
       {/* Slider Container */}
@@ -710,7 +717,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       },
       {
         root: null,
-        rootMargin: '200px 0px 0px 0px',
+        rootMargin: '300px 0px 0px 0px',
         threshold: 0,
       }
     )
@@ -1324,6 +1331,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   clipPath: 'polygon(0 0, 100% 0, 0 100%)',
                 }}
               />
+              
+              {/* Instructions */}
+              <div className="text-center mb-6 sm:mb-8 max-w-[600px] mx-auto">
+                <p className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                  Each criterion is scored individually. Final score is the average of all five.
+                </p>
+              </div>
               
               {/* Sliders - Mobile optimized spacing, consistent width */}
               {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}

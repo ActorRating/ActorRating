@@ -34,7 +34,7 @@ export function Logo({
 
   if (href) {
     return (
-      <Link href={href} prefetch={false} className="flex items-center" aria-label="ActorRating - Go to homepage">
+      <Link href={href} prefetch={false} className="flex items-center cursor-pointer relative z-10" aria-label="ActorRating - Go to homepage" style={{ pointerEvents: 'auto' }}>
         <LogoContent />
       </Link>
     )
