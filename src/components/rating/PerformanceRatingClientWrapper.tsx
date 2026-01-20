@@ -1331,6 +1331,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
                 style={{
                   touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
+                  opacity: 1,
+                  visibility: 'visible',
                 }}
               >
                 <div className="relative" ref={firstSliderRef}>
@@ -1397,17 +1399,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
 
               {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
-              <motion.div 
+              <div 
                 className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto"
                 style={{
                   filter: 'blur(0px)',
                   opacity: 1,
+                  visibility: 'visible',
                   zIndex: 60,
                 }}
-                animate={{
-                  scale: spotlightPhase === 'button' ? 1.02 : 1,
-                }}
-                transition={{ duration: 0.6 }}
               >
                 <motion.button
                   ref={buttonRef}
