@@ -1478,7 +1478,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     )}
                   </span>
                 </motion.button>
-              </motion.div>
+              </div>
             </motion.div>
               )}
             </AnimatePresence>
