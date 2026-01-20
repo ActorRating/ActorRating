@@ -62,9 +62,12 @@ export async function GET(req: NextRequest) {
       select: { userId: true }
     })
     
-    // First rater is either the earliest rater OR the specific user ID
-    const firstRaterUserId = 'ada21bfa-bbe4-4c92-83a4-02d9d09b9fd4'
-    const isFirstRater = firstRating?.userId === user.id || user.id === firstRaterUserId
+    // First rater is either the earliest rater OR specific user IDs
+    const firstRaterUserIds = [
+      'ada21bfa-bbe4-4c92-83a4-02d9d09b9fd4',
+      'f34e355a-1332-4c0b-8de8-79faa4e239a1'
+    ]
+    const isFirstRater = firstRating?.userId === user.id || firstRaterUserIds.includes(user.id)
 
     // Get level information
     const levelInfo = getLevelInfo(ratingCount)

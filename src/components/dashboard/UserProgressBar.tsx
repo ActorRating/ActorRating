@@ -64,7 +64,7 @@ export function UserProgressBar() {
         className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-8"
       >
         <div
-          className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-6 sm:p-8"
+          className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-8 sm:p-10 md:p-12 max-w-2xl mx-auto"
           style={{
             boxShadow: `
               0 25px 70px -15px rgba(0, 0, 0, 0.9),
@@ -76,9 +76,7 @@ export function UserProgressBar() {
           }}
         >
           {/* First Rater Badge Display */}
-          <div className="mb-4">
-            <UserBadges />
-          </div>
+          <UserBadges />
         </div>
       </motion.div>
     )

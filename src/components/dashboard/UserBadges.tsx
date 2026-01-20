@@ -54,9 +54,9 @@ export function UserBadges() {
   const firstRaterBadge = badges.find(b => b.id === 'first-rater')
   if (firstRaterBadge) {
     return (
-      <div className="space-y-3">
+      <div className="flex flex-col items-center text-center space-y-4 py-2">
         <Badge badge={firstRaterBadge} />
-        <p className="text-sm text-gray-400 italic">
+        <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-md">
           You were among the very first to rate performances on ActorRating.
         </p>
       </div>
