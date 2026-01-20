@@ -354,7 +354,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
           {label}
         </h3>
         <span className="text-lg sm:text-xl font-bold text-[#FFD700]">
-          {localValue} / 10
+          {Math.round(localValue / 10)} / 10
         </span>
       </div>
 
@@ -569,7 +569,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           const eased = easeInOutCubic(progress)
           const currentValue = startValue + (endValue - startValue) * eased
           
-          setDemoValue(currentValue)
+          // Round to 1 decimal place to avoid long decimals in display
+          setDemoValue(Number(currentValue.toFixed(1)))
           
           if (progress < 1) {
             animationFrameRef.current = requestAnimationFrame(animate)
@@ -589,7 +590,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 const returnEased = easeInOutCubic(returnProgress)
                 const returnValue = endValue - (endValue - startValue) * returnEased
                 
-                setDemoValue(returnValue)
+                // Round to 1 decimal place to avoid long decimals in display
+                setDemoValue(Number(returnValue.toFixed(1)))
                 
                 if (returnProgress < 1) {
                   animationFrameRef.current = requestAnimationFrame(returnAnimate)
@@ -667,7 +669,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Calculate average of 5 sliders, convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
@@ -703,29 +704,49 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [isAnimating, totalScoreOutOf10])
 
-  // Sticky score pill - IntersectionObserver to detect when scrolled past
+  // Sticky score pill - IntersectionObserver to detect when top of score pill touches top of screen
   useEffect(() => {
-    if (!sentinelRef.current || submitPhase === 'success') {
+    if (!scoreRef.current || submitPhase === 'success') {
       setIsSticky(false)
       return
     }
 
+    const checkPosition = () => {
+      if (!scoreRef.current) return
+      const rect = scoreRef.current.getBoundingClientRect()
+      // Show sticky when top edge of main pill reaches or passes top of viewport
+      setIsSticky(rect.top <= 0)
+    }
+
+    // Check on scroll
+    const handleScroll = () => {
+      checkPosition()
+    }
+
+    // Initial check
+    checkPosition()
+
+    // Use IntersectionObserver for efficient updates
     const observer = new IntersectionObserver(
       (entries) => {
-        // When sentinel is not visible (scrolled past), make score pill sticky
-        setIsSticky(!entries[0].isIntersecting)
+        // Check the actual position to see if top edge has reached top
+        checkPosition()
       },
       {
         root: null,
-        rootMargin: '300px 0px 0px 0px',
-        threshold: 0,
+        rootMargin: '0px',
+        threshold: [0, 1],
       }
     )
 
-    observer.observe(sentinelRef.current)
+    observer.observe(scoreRef.current)
+    
+    // Also listen to scroll for more precise updates
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
       observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [submitPhase])
 
@@ -823,43 +844,51 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }, 1200)
   }, [allSlidersTouched, spotlightPhase, hasAnimatedOnce])
 
+  // ============================================================================
+  // SPOTLIGHT ANIMATION AFTER LAST SLIDER - COMMENTED OUT (EASILY RETRIEVABLE)
+  // ============================================================================
+  // This animation triggers after all sliders are touched and the last one is released.
+  // It shows a pulse on the score, scrolls to it, then shows a glow on the submit button.
+  // To re-enable: Uncomment the useEffect below and ensure triggerSpotlightAnimation is defined.
+  // ============================================================================
+  
   // Trigger spotlight animation after slider release (only when all sliders are touched)
-  useEffect(() => {
-    // Only proceed if all sliders are touched
-    if (!allSlidersTouched) return
-    // Don't restart if already animating or already animated
-    if (spotlightPhase !== 'none' || hasAnimatedOnce) return
-    // Don't trigger if still dragging
-    if (isDraggingRef.current) return
-    // Need a slider release to trigger
-    if (sliderReleaseTime === 0) return
+  // useEffect(() => {
+  //   // Only proceed if all sliders are touched
+  //   if (!allSlidersTouched) return
+  //   // Don't restart if already animating or already animated
+  //   if (spotlightPhase !== 'none' || hasAnimatedOnce) return
+  //   // Don't trigger if still dragging
+  //   if (isDraggingRef.current) return
+  //   // Need a slider release to trigger
+  //   if (sliderReleaseTime === 0) return
 
-    // Clear any existing timeout
-    if (spotlightTimeoutRef.current) {
-      clearTimeout(spotlightTimeoutRef.current)
-      spotlightTimeoutRef.current = null
-    }
+  //   // Clear any existing timeout
+  //   if (spotlightTimeoutRef.current) {
+  //     clearTimeout(spotlightTimeoutRef.current)
+  //     spotlightTimeoutRef.current = null
+  //   }
 
-    // Trigger animation after a short delay to ensure slider release is complete
-    spotlightTimeoutRef.current = setTimeout(() => {
-      // Double-check conditions before triggering
-      if (
-        allSlidersTouched &&
-        !isDraggingRef.current && 
-        spotlightPhase === 'none' && 
-        !hasAnimatedOnce
-      ) {
-        triggerSpotlightAnimation()
-      }
-    }, 150)
+  //   // Trigger animation after a short delay to ensure slider release is complete
+  //   spotlightTimeoutRef.current = setTimeout(() => {
+  //     // Double-check conditions before triggering
+  //     if (
+  //       allSlidersTouched &&
+  //       !isDraggingRef.current && 
+  //       spotlightPhase === 'none' && 
+  //       !hasAnimatedOnce
+  //     ) {
+  //       triggerSpotlightAnimation()
+  //     }
+  //   }, 150)
 
-    return () => {
-      if (spotlightTimeoutRef.current) {
-        clearTimeout(spotlightTimeoutRef.current)
-        spotlightTimeoutRef.current = null
-      }
-    }
-  }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation, hasAnimatedOnce])
+  //   return () => {
+  //     if (spotlightTimeoutRef.current) {
+  //       clearTimeout(spotlightTimeoutRef.current)
+  //       spotlightTimeoutRef.current = null
+  //     }
+  //   }
+  // }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation, hasAnimatedOnce])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1126,10 +1155,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
         <form onSubmit={handleSubmit}>
           <div className="relative">
-            {/* Sentinel element to detect when scrolled past */}
-            <div ref={sentinelRef} className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
-            
-            {/* Sticky Score Display - Appears at top when scrolled past */}
+            {/* Sticky Score Display - Appears at top when main score pill reaches top of screen */}
             <AnimatePresence>
               {isSticky && submitPhase !== 'success' && (
                 <motion.div
