@@ -720,7 +720,7 @@ function PerformanceSection() {
                 }}
               />
             </div>
-          </motion.div>
+          </div>
 
           {/* Quote Cards - Carousel with fade edges */}
           <div className="col-span-12 overflow-visible">
