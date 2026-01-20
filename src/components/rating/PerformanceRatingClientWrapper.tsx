@@ -685,8 +685,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
 
-  // Lotto roll animation - instant on mobile for responsiveness
-  const { value: animatedScore, isAnimating } = useNumberRoll(previousScoreRef.current, totalScoreOutOf10, 0)
+  // Direct score update - no animation for instant mobile response
+  const animatedScore = totalScoreOutOf10
+  const isAnimating = false
   
   // Update previous score when animation completes
   useEffect(() => {
