@@ -4,9 +4,9 @@ export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Film, Star, ChevronDown, Award, User } from 'lucide-react'
+import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight } from 'lucide-react'
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -24,6 +24,18 @@ interface Award {
   movie?: string
 }
 
+interface Rating {
+  userId: string
+  movieId: string
+  roleName?: string
+  weightedScore?: number
+  emotionalRangeDepth?: number
+  characterBelievability?: number
+  technicalSkill?: number
+  screenPresence?: number
+  chemistryInteraction?: number
+}
+
 interface Actor {
   id: string
   name: string
@@ -33,6 +45,7 @@ interface Actor {
   nationality?: string
   knownFor?: string
   awards?: Award[] | string | null
+  ratings?: Rating[]
 }
 
 interface Performance {
@@ -69,8 +82,12 @@ export default function ActorPage() {
   const [performances, setPerformances] = useState<Performance[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating'>('rating')
+  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating' | 'most-rated' | 'controversial'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
+  const [userHasRatedActor, setUserHasRatedActor] = useState(false)
+  const [seoExpanded, setSeoExpanded] = useState(false)
+  const [showRatingFeedback, setShowRatingFeedback] = useState(false)
+  const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -82,6 +99,35 @@ export default function ActorPage() {
         const data = await response.json()
         setActor(data)
         setPerformances(data.performances || [])
+        
+        // Check if user has rated this actor
+        if (user) {
+          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`)
+          if (userRatingsResponse.ok) {
+            const userRatings = await userRatingsResponse.json()
+            setUserHasRatedActor(Array.isArray(userRatings) && userRatings.length > 0)
+          }
+        }
+
+        // Check for rating feedback from session storage
+        const ratingFeedback = sessionStorage.getItem('ratingFeedback')
+        if (ratingFeedback) {
+          try {
+            const feedback = JSON.parse(ratingFeedback)
+            if (feedback.actorId === actorId) {
+              setRatingFeedbackData({
+                userScore: feedback.userScore,
+                communityScore: feedback.communityScore
+              })
+              setShowRatingFeedback(true)
+              sessionStorage.removeItem('ratingFeedback')
+              // Auto-hide after 8 seconds
+              setTimeout(() => setShowRatingFeedback(false), 8000)
+            }
+          } catch (e) {
+            // Invalid feedback data, ignore
+          }
+        }
       } catch (error) {
         console.error('Error fetching actor:', error)
       } finally {
@@ -92,7 +138,7 @@ export default function ActorPage() {
     if (actorId) {
       fetchData()
     }
-  }, [actorId])
+  }, [actorId, user])
 
   // Close dropdown and update sort when search query changes
   useEffect(() => {
@@ -140,6 +186,30 @@ export default function ActorPage() {
       : null
   }, [scoredPerformances])
 
+  // Calculate community stats
+  const communityStats = useMemo(() => {
+    const totalRatings = actor?.ratings?.length || 0
+    const ratedPerformancesCount = scoredPerformances.length
+    const totalPerformances = performances.length
+    const unratedPerformances = totalPerformances - ratedPerformancesCount
+    
+    // Find highest rated performance
+    const highestRated = scoredPerformances.length > 0
+      ? scoredPerformances.reduce((max, perf) => 
+          (perf.averageScore || 0) > (max.averageScore || 0) ? perf : max
+        )
+      : null
+    
+    return {
+      totalRatings,
+      ratedPerformancesCount,
+      totalPerformances,
+      unratedPerformances,
+      highestRated,
+      criticsCount: totalRatings // Each rating is from a different user session
+    }
+  }, [actor, performances, scoredPerformances])
+
   // Filter and rank performances based on search query
   const filteredPerformances = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -179,9 +249,41 @@ export default function ActorPage() {
     return scored.filter(p => p.searchScore > 0)
   }, [performancesWithScores, searchQuery])
 
+  // Calculate rating count and variance for each performance (for sorting)
+  const performancesWithStats = useMemo(() => {
+    return filteredPerformances.map(perf => {
+      // Count how many ratings this performance has
+      const movieRatings = actor?.ratings?.filter((r: any) => r.movieId === perf.movieId) || []
+      const ratingCount = movieRatings.length
+      
+      // Calculate variance for controversial sorting
+      let variance = 0
+      if (movieRatings.length > 1) {
+        const scores = movieRatings.map((r: Rating) => {
+          const score = [
+            r.emotionalRangeDepth,
+            r.characterBelievability,
+            r.technicalSkill,
+            r.screenPresence,
+            r.chemistryInteraction
+          ].filter((s): s is number => typeof s === 'number' && s > 0)
+          return score.length > 0 ? score.reduce((sum: number, s: number) => sum + s, 0) / score.length : 0
+        })
+        const mean = scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length
+        variance = scores.reduce((sum: number, s: number) => sum + Math.pow(s - mean, 2), 0) / scores.length
+      }
+      
+      return {
+        ...perf,
+        ratingCount,
+        variance
+      }
+    })
+  }, [filteredPerformances, actor])
+
   // Apply sorting to filtered performances
   const filteredAndRankedPerformances = useMemo(() => {
-    let sorted = [...filteredPerformances]
+    let sorted = [...performancesWithStats]
 
     switch (sortBy) {
       case 'alphabetical':
@@ -198,6 +300,32 @@ export default function ActorPage() {
             return bScore - aScore
           }
           return b.movie.year - a.movie.year
+        })
+        break
+      case 'most-rated':
+        sorted.sort((a, b) => {
+          const aCount = (a as any).ratingCount || 0
+          const bCount = (b as any).ratingCount || 0
+          if (bCount !== aCount) {
+            return bCount - aCount
+          }
+          // Secondary sort by rating
+          const aScore = a.averageScore || 0
+          const bScore = b.averageScore || 0
+          return bScore - aScore
+        })
+        break
+      case 'controversial':
+        sorted.sort((a, b) => {
+          const aVariance = (a as any).variance || 0
+          const bVariance = (b as any).variance || 0
+          if (bVariance !== aVariance) {
+            return bVariance - aVariance
+          }
+          // Secondary sort by rating count
+          const aCount = (a as any).ratingCount || 0
+          const bCount = (b as any).ratingCount || 0
+          return bCount - aCount
         })
         break
       case 'relevance':
@@ -237,7 +365,7 @@ export default function ActorPage() {
     }
 
     return sorted
-  }, [filteredPerformances, sortBy, searchQuery])
+  }, [performancesWithStats, sortBy, searchQuery])
 
   const Layout = user ? SignedInLayout : HomeLayout
 
@@ -267,6 +395,86 @@ export default function ActorPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-black">
+        {/* Post-Rating Feedback */}
+        <AnimatePresence>
+          {showRatingFeedback && ratingFeedbackData && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4"
+            >
+              <div className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 rounded-[1.5rem] p-6 shadow-2xl backdrop-blur-2xl">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-white mb-2">Rating saved</h3>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-300">
+                        Your score: <span className="text-[#FFD700] font-semibold">{ratingFeedbackData.userScore.toFixed(1)}/10</span>
+                      </p>
+                      {ratingFeedbackData.communityScore !== null && (
+                        <p className="text-sm text-gray-400">
+                          Community average: <span className="text-white font-semibold">{ratingFeedbackData.communityScore.toFixed(1)}/10</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowRatingFeedback(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                {performances.length > 0 && (
+                  <Link 
+                    href={
+                      communityStats.highestRated 
+                        ? getRateUrl(
+                            { 
+                              id: communityStats.highestRated.actor.id, 
+                              name: communityStats.highestRated.actor.name, 
+                              slug: communityStats.highestRated.actor.slug || null 
+                            },
+                            { 
+                              id: communityStats.highestRated.movie.id, 
+                              title: communityStats.highestRated.movie.title, 
+                              year: communityStats.highestRated.movie.year, 
+                              slug: communityStats.highestRated.movie.slug || null 
+                            }
+                          )
+                        : getRateUrl(
+                            { 
+                              id: performances[0].actor.id, 
+                              name: performances[0].actor.name, 
+                              slug: performances[0].actor.slug || null 
+                            },
+                            { 
+                              id: performances[0].movie.id, 
+                              title: performances[0].movie.title, 
+                              year: performances[0].movie.year, 
+                              slug: performances[0].movie.slug || null 
+                            }
+                          )
+                    }
+                  >
+                    <button
+                      className="w-full px-4 py-2 rounded-full text-black text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      }}
+                    >
+                      Rate another performance
+                    </button>
+                  </Link>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
           {/* Back Button */}
@@ -292,7 +500,7 @@ export default function ActorPage() {
             className="text-center mb-12"
           >
             <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 md:mb-10 lg:mb-12 text-white"
+              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 text-white"
               style={{ 
                 fontFamily: 'var(--font-cinzel), serif',
                 textShadow: '0 10px 40px rgba(0,0,0,0.7)',
@@ -302,124 +510,399 @@ export default function ActorPage() {
             >
               {actor.name}
             </h1>
+
+            {/* Primary CTA - Rate a Performance */}
+            {performances.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="mb-8 sm:mb-10"
+              >
+                <Link 
+                  href={
+                    communityStats.highestRated 
+                      ? getRateUrl(
+                          { 
+                            id: communityStats.highestRated.actor.id, 
+                            name: communityStats.highestRated.actor.name, 
+                            slug: communityStats.highestRated.actor.slug || null 
+                          },
+                          { 
+                            id: communityStats.highestRated.movie.id, 
+                            title: communityStats.highestRated.movie.title, 
+                            year: communityStats.highestRated.movie.year, 
+                            slug: communityStats.highestRated.movie.slug || null 
+                          }
+                        )
+                      : getRateUrl(
+                          { 
+                            id: performances[0].actor.id, 
+                            name: performances[0].actor.name, 
+                            slug: performances[0].actor.slug || null 
+                          },
+                          { 
+                            id: performances[0].movie.id, 
+                            title: performances[0].movie.title, 
+                            year: performances[0].movie.year, 
+                            slug: performances[0].movie.slug || null 
+                          }
+                        )
+                  }
+                >
+                  <button
+                    className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      boxShadow: '0 8px 30px rgba(255, 215, 0, 0.4)',
+                    }}
+                  >
+                    <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
+                    Rate a Performance
+                  </button>
+                </Link>
+              </motion.div>
+            )}
+
+            {/* Subtitle with awards info if available - Only show if verified Oscar data exists */}
+            {actor.awards && (() => {
+              let awardsList: Award[] = []
+              if (typeof actor.awards === 'string') {
+                try {
+                  awardsList = JSON.parse(actor.awards)
+                } catch (e) {
+                  awardsList = []
+                }
+              } else if (Array.isArray(actor.awards)) {
+                awardsList = actor.awards
+              }
               
-            {/* Gold Divider - Cinematic */}
+              // Only show Oscar badge if we have verified Oscar data (result === 'won' and award name contains oscar)
+              const hasVerifiedOscar = awardsList.some(a => {
+                const awardName = (a.award || a.title || '').toLowerCase()
+                const isOscar = awardName.includes('oscar') || awardName.includes('academy award')
+                return isOscar && a.result === 'won'
+              })
+              
+              return hasVerifiedOscar ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                  className="text-lg sm:text-xl text-gray-400 mb-6"
+                >
+                  Oscar Winner • Known for intense transformations
+                </motion.p>
+              ) : null
+            })()}
+              
+            {/* Divider - Minimal */}
             <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: "180px", opacity: 1 }}
               transition={{ duration: 2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="h-[2px] mx-auto mb-6 sm:mb-8 md:mb-10 lg:mb-12 relative"
+              className="h-[1px] mx-auto mb-8 sm:mb-10 relative"
             >
               <div 
-                className="h-full w-full"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,229,92,0.4) 15%, rgba(255,215,0,0.9) 40%, rgba(255,215,0,1) 50%, rgba(255,215,0,0.9) 60%, rgba(255,229,92,0.4) 85%, transparent 100%)',
-                  boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)',
-                }}
+                className="h-full w-full bg-white/20"
               />
             </motion.div>
 
-            {/* Career Score - Enhanced Text Layout */}
+            {/* Community Stats - Adapted for low/high data */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
-              className="mb-8 text-center"
+              className="mb-8"
             >
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700]" />
-                <div 
-                  className="text-xs sm:text-sm uppercase tracking-wider font-semibold"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  Career Score
-                </div>
-              </div>
-              <div className="flex items-baseline justify-center gap-2 mb-3">
-                <div 
-                  className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                    fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
-                </div>
-                {careerScore !== null && (
-                  <div 
-                    className="text-xl sm:text-2xl lg:text-3xl font-bold opacity-60"
+              {communityStats.ratedPerformancesCount >= 5 ? (
+                // Show community score when we have decent data
+                <>
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700]" />
+                    <div 
+                      className="text-xs sm:text-sm uppercase tracking-wider font-semibold"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      Community Score
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-center gap-2 mb-4">
+                    <div 
+                      className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        fontFamily: 'var(--font-geist-sans), sans-serif',
+                        fontVariantNumeric: 'tabular-nums',
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
+                    </div>
+                    {careerScore !== null && (
+                      <div 
+                        className="text-xl sm:text-2xl lg:text-3xl font-bold opacity-60"
+                        style={{
+                          background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                        }}
+                      >
+                        /10
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Stats Grid */}
+                  <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap text-sm sm:text-base">
+                    <div className="flex items-center gap-2">
+                      <Film className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-300">
+                        <span className="font-bold text-white">{communityStats.ratedPerformancesCount}</span> of <span className="font-bold text-white">{communityStats.totalPerformances}</span> performances rated
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-300">
+                        <span className="font-bold text-white">{communityStats.totalRatings}</span> {communityStats.totalRatings === 1 ? 'Rating' : 'Ratings'}
+                      </span>
+                    </div>
+                    {communityStats.highestRated && (
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-300">
+                          Top: <span className="font-bold text-white">{communityStats.highestRated.movie.title}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                // Show "Building Profile" when we have limited data
+                <div className="max-w-2xl mx-auto">
+                  <div className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 backdrop-blur-2xl"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
+                      boxShadow: `
+                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                      `,
                     }}
                   >
-                    /10
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                      <TrendingUp className="w-5 h-5 text-gray-400" />
+                      <h3 
+                        className="text-xl sm:text-2xl font-bold text-white"
+                        style={{ 
+                          fontFamily: 'var(--font-geist-sans), sans-serif',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        Profile Building
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 sm:gap-6 mb-6">
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
+                          style={{
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {communityStats.ratedPerformancesCount}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-400">
+                          of {communityStats.totalPerformances} rated
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
+                          style={{
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {communityStats.unratedPerformances}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-400">
+                          Waiting for Ratings
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
+                          style={{
+                            fontFamily: 'var(--font-geist-sans), sans-serif',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {communityStats.criticsCount}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-400">
+                          Critics Contributing
+                        </div>
+                      </div>
+                    </div>
+                    {communityStats.highestRated && (
+                      <div className="text-center pt-6 border-t border-white/10">
+                        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400 mb-2">
+                          <Trophy className="w-4 h-4 text-gray-400" />
+                          Highest Rated So Far
+                        </div>
+                        <div className="text-base sm:text-lg font-bold text-white mb-2">
+                          {communityStats.highestRated.movie.title}
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                          <FaStar className="w-4 h-4 text-[#FFD700]" />
+                          <span 
+                            className="text-lg font-bold text-[#FFD700]"
+                            style={{
+                              fontFamily: 'var(--font-geist-sans), sans-serif',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {((communityStats.highestRated.averageScore || 0) / 10).toFixed(1)}/10
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="text-xs sm:text-sm text-[#a3a3a3] font-medium tracking-wide">
-                {careerScore !== null 
-                  ? `${scoredPerformances.length} ${scoredPerformances.length === 1 ? 'rated performance' : 'rated performances'}`
-                  : `No ratings yet`
-                }
-              </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         </div>
 
-        {/* Bio Section */}
-        {actor.bio && (
+        {/* Onboarding Card - Rate Your First Performance - Mini Performance Card Style */}
+        {user && !userHasRatedActor && communityStats.highestRated && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.1 }}
-            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
+            transition={{ duration: 0.8, delay: 1.0 }}
+            className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <User className="w-6 h-6 text-[#FFD700]" />
-              <h2 
-                className="text-3xl sm:text-4xl font-bold"
+            <div className="mb-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-white text-center"
                 style={{ 
-                  fontFamily: 'var(--font-cinzel), serif',
+                  fontFamily: 'var(--font-geist-sans), sans-serif',
                   letterSpacing: '0.02em',
                 }}
               >
-                <span 
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  Biography
-                </span>
-              </h2>
+                Start Here
+              </h3>
+              <p className="text-sm text-gray-400 text-center mt-1">
+                Rate {actor.name}'s most iconic performance
+              </p>
             </div>
+            
             <div 
-              className="text-base sm:text-lg text-gray-300 leading-relaxed"
+              className="relative p-6 sm:p-8 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300"
               style={{
-                lineHeight: '1.8',
+                background: 'linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(15, 15, 15, 0.90) 50%, rgba(0, 0, 0, 0.95) 100%)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                boxShadow: `
+                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                  0 0 0 1px rgba(255, 255, 255, 0.05),
+                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                `,
               }}
             >
-              <p className="whitespace-pre-line">{actor.bio}</p>
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="flex-1">
+                  {/* Top Row: Rating Badge and Year */}
+                  <div className="flex items-center justify-between mb-4">
+                    {/* Score Pill - Top Left */}
+                    <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                      <FaStar className="w-5 h-5 text-[#FFD700]" />
+                      <span 
+                        className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
+                        style={{
+                          fontFamily: 'var(--font-geist-sans), sans-serif',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {((communityStats.highestRated.averageScore || 0) / 10).toFixed(1)}
+                      </span>
+                    </div>
+                    
+                    {/* Movie Year - Top Right */}
+                    <div className="text-[#a3a3a3] text-base font-medium">
+                      {communityStats.highestRated.movie.year}
+                    </div>
+                  </div>
+                  
+                  {/* Social Proof - Rating Count in Bubble */}
+                  {(() => {
+                    const highestRatedMovieRatings = actor?.ratings?.filter((r: any) => r.movieId === communityStats.highestRated?.movieId) || []
+                    const ratingCount = highestRatedMovieRatings.length
+                    return ratingCount > 0 ? (
+                      <div className="mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                          <Users className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="text-xs text-gray-300">
+                            <span className="font-semibold text-white">{ratingCount}</span> {ratingCount === 1 ? 'critic' : 'critics'} rated
+                          </span>
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
+
+                  {/* Movie Title */}
+                  <div className="mb-4">
+                    <span className="text-lg text-white font-semibold tracking-wide">
+                      {communityStats.highestRated.movie.title}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rate Button */}
+                <div className="mt-auto pt-4">
+                  <Link 
+                    href={getRateUrl(
+                      { 
+                        id: communityStats.highestRated.actor.id, 
+                        name: communityStats.highestRated.actor.name, 
+                        slug: communityStats.highestRated.actor.slug || null 
+                      },
+                      { 
+                        id: communityStats.highestRated.movie.id, 
+                        title: communityStats.highestRated.movie.title, 
+                        year: communityStats.highestRated.movie.year, 
+                        slug: communityStats.highestRated.movie.slug || null 
+                      }
+                    )}
+                  >
+                    <button 
+                      className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      }}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        Rate
+                        <FaStar className="w-4 h-4" />
+                      </span>
+                    </button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
 
-        {/* Awards Section */}
+        {/* Awards Section - Only show if verified award data exists */}
         {actor.awards && (() => {
           // Parse awards if it's a string (JSON)
           let awardsList: Award[] = []
@@ -434,7 +917,15 @@ export default function ActorPage() {
             awardsList = actor.awards
           }
 
+          // Only show section if we have verified award data (not empty and has valid award info)
           if (awardsList.length === 0) return null
+          
+          // Filter to only show awards with verified data
+          const verifiedAwards = awardsList.filter(a => 
+            (a.award || a.title) && (a.result === 'won' || a.result === 'nominated')
+          )
+          
+          if (verifiedAwards.length === 0) return null
 
           return (
             <motion.div
@@ -444,28 +935,19 @@ export default function ActorPage() {
               className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
             >
               <div className="flex items-center gap-3 mb-6">
-                <Award className="w-6 h-6 text-[#FFD700]" />
+                <Award className="w-6 h-6 text-gray-400" />
                 <h2 
-                  className="text-3xl sm:text-4xl font-bold"
+                  className="text-3xl sm:text-4xl font-bold text-white"
                   style={{ 
-                    fontFamily: 'var(--font-cinzel), serif',
+                    fontFamily: 'var(--font-geist-sans), sans-serif',
                     letterSpacing: '0.02em',
                   }}
                 >
-                  <span 
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Awards & Recognition
-                  </span>
+                  Awards & Recognition
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {awardsList.map((award, index) => (
+                {verifiedAwards.map((award, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
@@ -548,24 +1030,15 @@ export default function ActorPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 lg:gap-6 mb-8 sm:mb-6">
                 {/* Left side: Filmography heading and bubble */}
                 <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start flex-shrink-0 min-w-0">
-                  <Film className="w-7 h-7 sm:w-6 sm:h-6 text-[#FFD700] flex-shrink-0" />
+                  <Film className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
                   <h2 
-                    className="text-4xl sm:text-5xl md:text-6xl font-bold text-center sm:text-left flex-shrink-0 min-w-0"
+                    className="text-4xl sm:text-5xl md:text-6xl font-bold text-white text-center sm:text-left flex-shrink-0 min-w-0"
                     style={{ 
-                      fontFamily: 'var(--font-cinzel), serif',
+                      fontFamily: 'var(--font-geist-sans), sans-serif',
                       letterSpacing: '0.02em',
                     }}
                   >
-                    <span 
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      Filmography
-                    </span>
+                    Filmography
                   </h2>
                 </div>
                 
@@ -583,48 +1056,6 @@ export default function ActorPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={(e) => {
-                          // Auto-scroll to position search bar in top half of screen
-                          requestAnimationFrame(() => {
-                            if (searchInputRef.current) {
-                              const inputRect = searchInputRef.current.getBoundingClientRect()
-                              const currentScroll = window.scrollY || window.pageYOffset
-                              const inputTop = inputRect.top + currentScroll
-                              const viewportHeight = window.innerHeight
-                              const isDesktop = window.innerWidth >= 1024
-                              
-                              // On desktop, position higher (1/4 from top), on mobile use 1/3
-                              const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
-                              const targetScroll = inputTop - scrollOffset
-                              
-                              window.scrollTo({
-                                top: Math.max(0, targetScroll),
-                                behavior: 'smooth'
-                              })
-                            }
-                          })
-                        }}
-                        onClick={(e) => {
-                          // Also trigger scroll on click
-                          requestAnimationFrame(() => {
-                            if (searchInputRef.current) {
-                              const inputRect = searchInputRef.current.getBoundingClientRect()
-                              const currentScroll = window.scrollY || window.pageYOffset
-                              const inputTop = inputRect.top + currentScroll
-                              const viewportHeight = window.innerHeight
-                              const isDesktop = window.innerWidth >= 1024
-                              
-                              // On desktop, position higher (1/4 from top), on mobile use 1/3
-                              const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
-                              const targetScroll = inputTop - scrollOffset
-                              
-                              window.scrollTo({
-                                top: Math.max(0, targetScroll),
-                                behavior: 'smooth'
-                              })
-                            }
-                          })
-                        }}
                         placeholder="Search performances..."
                         className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
                         style={{ borderRadius: '9999px' }}
@@ -651,7 +1082,9 @@ export default function ActorPage() {
                       <span>
                         {sortBy === 'relevance' ? (searchQuery.trim() ? 'Relevance' : 'Year') : 
                          sortBy === 'alphabetical' ? 'A-Z' :
-                         sortBy === 'year' ? 'Year' : 'Rating'}
+                         sortBy === 'year' ? 'Year' : 
+                         sortBy === 'most-rated' ? 'Most Rated' :
+                         sortBy === 'controversial' ? 'Controversial' : 'Highest Rated'}
                       </span>
                       <ChevronDown className={`w-4 h-4 transition-transform ${sortDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
@@ -663,19 +1096,45 @@ export default function ActorPage() {
                           className="fixed inset-0 z-40" 
                           onClick={() => setSortDropdownOpen(false)}
                         />
-                        <div className="absolute right-0 mt-2 z-50 w-56 sm:w-48 rounded-[1.5rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05),inset_0_1px_0_0_rgba(255,255,255,0.1),inset_0_-1px_0_0_rgba(0,0,0,0.3)] overflow-hidden">
+                        <div className="absolute right-0 mt-2 z-50 w-64 sm:w-56 rounded-[1.5rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05),inset_0_1px_0_0_rgba(255,255,255,0.1),inset_0_-1px_0_0_rgba(0,0,0,0.3)] overflow-hidden">
                           <button
                             onClick={() => {
-                              setSortBy('alphabetical')
+                              setSortBy('rating')
                               setSortDropdownOpen(false)
                             }}
                             className={`w-full px-5 py-4 sm:px-4 sm:py-3 text-left text-base sm:text-sm transition-colors ${
-                              sortBy === 'alphabetical' 
+                              sortBy === 'rating' 
                                 ? 'text-[#FFD700] bg-[#FFD700]/10' 
                                 : 'text-gray-300 hover:text-white hover:bg-white/5'
                             }`}
                           >
-                            Alphabetical (A-Z)
+                            Highest Rated
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSortBy('most-rated')
+                              setSortDropdownOpen(false)
+                            }}
+                            className={`w-full px-5 py-4 sm:px-4 sm:py-3 text-left text-base sm:text-sm transition-colors ${
+                              sortBy === 'most-rated' 
+                                ? 'text-[#FFD700] bg-[#FFD700]/10' 
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            Most Rated
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSortBy('controversial')
+                              setSortDropdownOpen(false)
+                            }}
+                            className={`w-full px-5 py-4 sm:px-4 sm:py-3 text-left text-base sm:text-sm transition-colors ${
+                              sortBy === 'controversial' 
+                                ? 'text-[#FFD700] bg-[#FFD700]/10' 
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            Controversial 🔥
                           </button>
                           <button
                             onClick={() => {
@@ -692,16 +1151,16 @@ export default function ActorPage() {
                           </button>
                           <button
                             onClick={() => {
-                              setSortBy('rating')
+                              setSortBy('alphabetical')
                               setSortDropdownOpen(false)
                             }}
                             className={`w-full px-5 py-4 sm:px-4 sm:py-3 text-left text-base sm:text-sm transition-colors ${
-                              sortBy === 'rating' 
+                              sortBy === 'alphabetical' 
                                 ? 'text-[#FFD700] bg-[#FFD700]/10' 
                                 : 'text-gray-300 hover:text-white hover:bg-white/5'
                             }`}
                           >
-                            Rating (Highest)
+                            Alphabetical (A-Z)
                           </button>
                         </div>
                       </>
@@ -767,16 +1226,16 @@ export default function ActorPage() {
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
                       </div>
 
-                      {/* Content */}
+                        {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
                           {/* Top Row: Rating Badge and Year */}
-                          <div className="flex items-center justify-between mb-6">
-                            {/* Score Pill - Top Left - Bigger */}
+                          <div className="flex items-center justify-between mb-4">
+                            {/* Score Pill - Top Left - Slightly Smaller */}
                             <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                               <FaStar className="w-5 h-5 text-[#FFD700]" />
                               <span 
-                                className="text-2xl font-bold text-[#FFD700]"
+                                className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
                                 style={{
                                   fontFamily: 'var(--font-geist-sans), sans-serif',
                                   fontVariantNumeric: 'tabular-nums',
@@ -791,10 +1250,22 @@ export default function ActorPage() {
                               {performance.movie.year}
                             </div>
                           </div>
+                          
+                          {/* Social Proof - Rating Count in Bubble */}
+                          {(performance as any).ratingCount > 0 && (
+                            <div className="mb-4">
+                              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                <Users className="w-3.5 h-3.5 text-gray-400" />
+                                <span className="text-xs text-gray-300">
+                                  <span className="font-semibold text-white">{(performance as any).ratingCount}</span> {(performance as any).ratingCount === 1 ? 'critic' : 'critics'} rated
+                                </span>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Movie Title */}
                           <div className="mb-4">
-                            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+                            <span className="text-lg text-white font-semibold tracking-wide">
                               {performance.movie.title}
                             </span>
                           </div>
@@ -825,8 +1296,6 @@ export default function ActorPage() {
                         </div>
                       </div>
 
-                      {/* Decorative accent */}
-                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                     </div>
                   </motion.div>
                 )
@@ -877,6 +1346,119 @@ export default function ActorPage() {
           </motion.div>
         )}
       </div>
+
+      {/* SEO Section - Collapsed by default */}
+      {actor.knownFor && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-white/10"
+        >
+          <button
+            onClick={() => setSeoExpanded(!seoExpanded)}
+            className="w-full flex items-center justify-between p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a]/50 via-[#0f0f0f]/40 to-black/50 border border-white/5 hover:border-white/10 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-300">
+                About {actor.name} performances
+              </h3>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${seoExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <AnimatePresence>
+            {seoExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-6 text-gray-400 leading-relaxed">
+                  {actor.knownFor && (
+                    <p className="text-sm mb-4">
+                      <span className="font-semibold text-gray-300">Known for:</span> {actor.knownFor}
+                    </p>
+                  )}
+                  {communityStats.ratedPerformancesCount > 0 && (
+                    <p className="text-sm">
+                      The ActorRating community has rated {communityStats.ratedPerformancesCount} of {actor.name}'s performances, 
+                      with {communityStats.totalRatings} total ratings from critics worldwide.
+                      {communityStats.highestRated && ` Their highest-rated performance is ${communityStats.highestRated.movie.title}.`}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Sticky Mobile CTA */}
+      {performances.length > 0 && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1.0 }}
+          className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+        >
+          <div 
+            className="px-4 py-3 backdrop-blur-2xl border-t"
+            style={{
+              background: 'rgba(0, 0, 0, 0.95)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div className="flex justify-center">
+              <Link 
+                href={
+                  communityStats.highestRated 
+                    ? getRateUrl(
+                        { 
+                          id: communityStats.highestRated.actor.id, 
+                          name: communityStats.highestRated.actor.name, 
+                          slug: communityStats.highestRated.actor.slug || null 
+                        },
+                        { 
+                          id: communityStats.highestRated.movie.id, 
+                          title: communityStats.highestRated.movie.title, 
+                          year: communityStats.highestRated.movie.year, 
+                          slug: communityStats.highestRated.movie.slug || null 
+                        }
+                      )
+                    : getRateUrl(
+                        { 
+                          id: performances[0].actor.id, 
+                          name: performances[0].actor.name, 
+                          slug: performances[0].actor.slug || null 
+                        },
+                        { 
+                          id: performances[0].movie.id, 
+                          title: performances[0].movie.title, 
+                          year: performances[0].movie.year, 
+                          slug: performances[0].movie.slug || null 
+                        }
+                      )
+                }
+              >
+                <button
+                  className="px-8 py-3.5 rounded-full text-black text-sm font-bold tracking-wider uppercase transition-all duration-200 active:scale-95 flex items-center justify-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                    boxShadow: '0 4px 20px rgba(255, 215, 0, 0.3)',
+                  }}
+                >
+                  <FaStar className="w-4 h-4" />
+                  Rate Performance
+                </button>
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       </div>
     </Layout>

@@ -1212,7 +1212,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your Score</p>
+                      <p className="text-[10px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
                     </div>
                   </div>
                 </motion.div>
@@ -1316,7 +1316,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       /10
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
+                  <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
                 </div>
               </div>
             </motion.div>
@@ -1650,7 +1650,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Your Score</p>
+                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
                     </div>
                   </div>
                 </motion.div>
