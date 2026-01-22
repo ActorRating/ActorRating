@@ -461,12 +461,12 @@ export default function ActorPage() {
                     }
                   >
                     <button
-                      className="w-full px-4 py-2 rounded-full text-black text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105"
+                      className="w-full px-4 py-2 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 hover:scale-105"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}
                     >
-                      Rate another performance
+                      Rate Another Performance
                     </button>
                   </Link>
                 )}
@@ -551,14 +551,13 @@ export default function ActorPage() {
                   }
                 >
                   <button
-                    className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                    className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      boxShadow: '0 8px 30px rgba(255, 215, 0, 0.4)',
                     }}
                   >
                     <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Rate a Performance
+                    Rate A Performance
                   </button>
                 </Link>
               </motion.div>
@@ -885,7 +884,7 @@ export default function ActorPage() {
                     )}
                   >
                     <button 
-                      className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
+                      className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}
@@ -1282,7 +1281,7 @@ export default function ActorPage() {
                         <div className="mt-auto pt-4">
                           <Link href={rateUrl}>
                             <button 
-                              className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
+                              className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                               style={{
                                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                               }}
@@ -1445,10 +1444,9 @@ export default function ActorPage() {
                 }
               >
                 <button
-                  className="px-8 py-3.5 rounded-full text-black text-sm font-bold tracking-wider uppercase transition-all duration-200 active:scale-95 flex items-center justify-center gap-2"
+                  className="px-8 py-3.5 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-2"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                    boxShadow: '0 4px 20px rgba(255, 215, 0, 0.3)',
                   }}
                 >
                   <FaStar className="w-4 h-4" />
