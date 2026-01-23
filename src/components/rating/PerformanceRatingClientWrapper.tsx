@@ -8,6 +8,7 @@ import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
 import { lockScroll, unlockScroll } from '@/lib/lockScroll'
+import { getLevelProgress } from '@/lib/badges'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -53,7 +54,7 @@ function useNumberRoll(startValue: number, endValue: number, duration: number = 
 
       // Calculate current value - smooth decimal increments (1.0, 1.1, 1.2, etc.)
       const current = actualStart + (endValue - actualStart) * easeOut
-      
+
       setCurrentValue(current)
 
       if (progress < 1) {
@@ -172,7 +173,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const fillRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
   const lastHapticValueRef = useRef<number>(value)
-  
+
   // Direction-locked touch handling state
   const touchStateRef = useRef<{
     startX: number
@@ -180,33 +181,33 @@ const RatingSliderCard = memo(function RatingSliderCard({
     isLocked: boolean
     currentValue: number
   } | null>(null)
-  
+
   // Detect touch device and iOS
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
-  const isIOS = typeof window !== 'undefined' && 
-    /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+  const isIOS = typeof window !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
     !(window as any).MSStream
-  
+
   // Update local value when prop changes (for demo)
   useEffect(() => {
     setLocalValue(value)
     lastHapticValueRef.current = value
-    
+
     // Sync refs with current value
     if (fillRef.current && thumbRef.current) {
       const padding = 16
       const fillWidth = value === 0 ? '0px' : `calc(16px + ${value}% * (100% - 32px) / 100%)`
       const thumbLeft = `calc(16px + ${value}% * (100% - 32px) / 100%)`
-      
+
       fillRef.current.style.width = fillWidth
       thumbRef.current.style.left = thumbLeft
     }
   }, [value])
-  
+
   // Calculate value from touch position (no state updates during drag)
   const calculateValueFromTouch = useCallback((clientX: number): number => {
     if (!trackRef.current) return localValue
-    
+
     const rect = trackRef.current.getBoundingClientRect()
     const padding = 16
     const usableWidth = rect.width - padding * 2
@@ -214,38 +215,38 @@ const RatingSliderCard = memo(function RatingSliderCard({
     x = Math.max(0, Math.min(usableWidth, x))
     return Math.round((x / usableWidth) * 100)
   }, [localValue])
-  
+
   // Update thumb and fill directly via refs (no React state during drag)
   // Using left for thumb (simpler) and width for fill - direct DOM updates avoid React reconciliation
   const updateSliderVisuals = useCallback((newValue: number) => {
     if (!fillRef.current || !thumbRef.current) return
-    
+
     const padding = 16
     const fillWidth = newValue === 0 ? '0px' : `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
     const thumbLeft = `calc(16px + ${newValue}% * (100% - 32px) / 100%)`
-    
+
     // Direct DOM updates - no React reconciliation during drag
     fillRef.current.style.width = fillWidth
     thumbRef.current.style.left = thumbLeft
-    
+
     // Haptic feedback every 5 points (discrete, non-annoying)
     // Note: iOS doesn't support haptics, silently fails
     if (Math.abs(newValue - lastHapticValueRef.current) >= 5) {
       haptic.light()
       lastHapticValueRef.current = newValue
     }
-    
+
     // Strong haptic on milestones
     if ([50, 75, 90, 100].includes(newValue)) {
       haptic.medium()
     }
   }, [])
-  
+
   // Touch handlers with direction lock
   // Using native event listeners with { passive: false } for iOS compatibility
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled) return
-    
+
     const touch = e.touches[0]
     touchStateRef.current = {
       startX: touch.clientX,
@@ -253,24 +254,24 @@ const RatingSliderCard = memo(function RatingSliderCard({
       isLocked: false,
       currentValue: localValue
     }
-    
+
     setIsActive(true)
     haptic.light() // Selection feedback (silently fails on iOS)
     onSliderStart?.()
   }, [disabled, localValue, onSliderStart])
-  
+
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchStateRef.current || disabled) return
-    
+
     const touch = e.touches[0]
     const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
     const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
-    
+
     // Direction lock: detect horizontal vs vertical intent
     // Only lock into slider drag if horizontal movement is dominant
     // iOS needs higher threshold (18px) due to less precise touch events
     const threshold = isIOS ? 18 : 12
-    
+
     if (!touchStateRef.current.isLocked) {
       // Threshold: 18px for iOS, 12px for Android to determine intent
       if (dx > threshold && dx > dy) {
@@ -287,23 +288,23 @@ const RatingSliderCard = memo(function RatingSliderCard({
         return
       }
     }
-    
+
     // Horizontal drag locked - update slider
     if (touchStateRef.current.isLocked) {
       e.preventDefault() // Prevent scroll during horizontal drag
       const newValue = calculateValueFromTouch(touch.clientX)
       touchStateRef.current.currentValue = newValue
       updateSliderVisuals(newValue) // Direct DOM update, no React state
-      
+
       // Real-time update for score
       setLocalValue(newValue)
       onValueChange(newValue)
     }
   }, [disabled, isIOS, calculateValueFromTouch, updateSliderVisuals, onValueChange])
-  
+
   const handleTouchEnd = useCallback(() => {
     if (!touchStateRef.current) return
-    
+
     // Only commit value if we were locked into horizontal drag
     if (touchStateRef.current.isLocked) {
       const finalValue = touchStateRef.current.currentValue
@@ -311,24 +312,24 @@ const RatingSliderCard = memo(function RatingSliderCard({
       onValueChange(finalValue) // Commit final value
       haptic.medium() // Confirmation feedback (silently fails on iOS)
     }
-    
+
     touchStateRef.current = null
     setIsActive(false)
     onSliderEnd?.()
   }, [onValueChange, onSliderEnd])
-  
+
   // Attach native event listeners with { passive: false } for iOS
   useEffect(() => {
     if (!isTouchDevice || !trackRef.current) return
-    
+
     const track = trackRef.current
-    
+
     // Add event listeners with { passive: false } so preventDefault works on iOS
     track.addEventListener('touchstart', handleTouchStart, { passive: false })
     track.addEventListener('touchmove', handleTouchMove, { passive: false })
     track.addEventListener('touchend', handleTouchEnd, { passive: false })
     track.addEventListener('touchcancel', handleTouchEnd, { passive: false })
-    
+
     return () => {
       track.removeEventListener('touchstart', handleTouchStart)
       track.removeEventListener('touchmove', handleTouchMove)
@@ -336,18 +337,18 @@ const RatingSliderCard = memo(function RatingSliderCard({
       track.removeEventListener('touchcancel', handleTouchEnd)
     }
   }, [isTouchDevice, handleTouchStart, handleTouchMove, handleTouchEnd])
-  
+
   // Desktop input handler
   const handleInputChange = useCallback((newValue: number) => {
     setLocalValue(newValue)
-      onValueChange(newValue)
+    onValueChange(newValue)
   }, [onValueChange])
 
   return (
     <div className="space-y-3 sm:space-y-4 relative">
       {/* Label with Value */}
       <div className="flex items-center justify-between mb-3">
-        <h3 
+        <h3
           className="text-lg sm:text-xl font-semibold text-white"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
@@ -359,20 +360,30 @@ const RatingSliderCard = memo(function RatingSliderCard({
       </div>
 
       {/* Slider Container */}
-      <div className="relative pt-3 pb-3">
+      {/* Increased vertical padding for easier mobile touch (invisible padding) */}
+      <div className="relative" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
         {/* Track Background - with padding to contain thumb at edges */}
         {/* Touch handlers attached via native listeners with { passive: false } for iOS */}
+        {/* touch-action: pan-x prevents scroll capture, allows horizontal drag only */}
         <div
           ref={trackRef}
           className="relative h-3 bg-[#0a0a0a] rounded-full border border-white/5"
-          style={{ paddingLeft: '16px', paddingRight: '16px' }}
+          style={{ 
+            paddingLeft: '16px', 
+            paddingRight: '16px',
+            touchAction: 'pan-x', // Prevent scroll capture - only allow horizontal panning
+            WebkitTouchCallout: 'none', // Prevent iOS callout menu
+            WebkitUserSelect: 'none', // Prevent text selection
+            userSelect: 'none',
+          }}
         >
           {/* Fill - Gold gradient - Updated directly via ref during drag for smoothness */}
           {/* Using transform for better iOS compositor performance */}
+          {/* pointer-events-none prevents this decorative element from stealing touches */}
           <div
             ref={fillRef}
-            className="absolute top-0 left-0 h-full rounded-full will-change-[width]"
-            style={{ 
+            className="absolute top-0 left-0 h-full rounded-full will-change-[width] pointer-events-none"
+            style={{
               width: localValue === 0 ? '0px' : `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
@@ -380,7 +391,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
               WebkitTransform: 'translate3d(0, 0, 0)', // iOS Safari specific
             }}
           />
-          
+
           {/* Input for desktop + accessibility - disabled touch on mobile */}
           <input
             type="range"
@@ -391,20 +402,20 @@ const RatingSliderCard = memo(function RatingSliderCard({
             onChange={(e) => {
               // Desktop: handle via native input
               if (!isTouchDevice) {
-              handleInputChange(Number(e.target.value))
+                handleInputChange(Number(e.target.value))
                 setIsActive(true)
               }
             }}
             onMouseDown={() => {
               if (!isTouchDevice) {
-              setIsActive(true)
-              onSliderStart?.()
+                setIsActive(true)
+                onSliderStart?.()
               }
             }}
             onMouseUp={() => {
               if (!isTouchDevice) {
-              setIsActive(false)
-              onSliderEnd?.()
+                setIsActive(false)
+                onSliderEnd?.()
               }
             }}
             onMouseLeave={() => {
@@ -415,17 +426,17 @@ const RatingSliderCard = memo(function RatingSliderCard({
             }}
             disabled={disabled}
             className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed pointer-events-none sm:pointer-events-auto"
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               paddingLeft: '16px',
               paddingRight: '16px',
             }}
             aria-label={label}
           />
-          
+
           {/* Visible Thumb - Updated directly via ref during drag for smoothness */}
           {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
-          {/* Increased size from 28px to 36px for better mobile usability */}
+          {/* Visual thumb: 36px, but track container has 20px padding above/below for 44px+ touch area */}
           {/* Using will-change and translate3d for iOS GPU acceleration */}
           <div
             ref={thumbRef}
@@ -449,7 +460,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
       <div className="flex justify-between mt-2 text-xs text-gray-500">
         <span>Weak</span>
         <span>Exceptional</span>
-    </div>
+      </div>
     </div>
   )
 })
@@ -464,24 +475,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
-  
+
   // Check if user has rated before
   const [hasRatedBefore, setHasRatedBefore] = useState<boolean | null>(null)
-  
+
   // Auto-demo first slider on first load
   const [isDemoing, setIsDemoing] = useState(false)
   const [demoValue, setDemoValue] = useState(0)
   const hasDemoedRef = useRef(false)
   const firstSliderRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
-  
+
   // Check if user has rated before
   useEffect(() => {
     if (!user) {
       setHasRatedBefore(false)
       return
     }
-    
+
     const checkUserRatings = async () => {
       try {
         const res = await fetch('/api/ratings/me', { cache: 'no-store' })
@@ -496,10 +507,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setHasRatedBefore(false)
       }
     }
-    
+
     checkUserRatings()
   }, [user])
-  
+
   // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
     // Only run once on mount
@@ -511,105 +522,105 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
     // Wait until we know if user has rated before
     if (hasRatedBefore === null) return
-    
+
     hasDemoedRef.current = true
-    
+
     let scrollTimer: NodeJS.Timeout | null = null
     let animationStartTimer: NodeJS.Timeout | null = null
     let holdTimer: NodeJS.Timeout | null = null
-    
+
     // Wait for next frame to ensure DOM is ready
     requestAnimationFrame(() => {
       // Wait a tiny bit after first load, then scroll to first slider
       scrollTimer = setTimeout(() => {
-      // Smooth scroll to first slider
-      const scrollToSlider = () => {
-        if (firstSliderRef.current) {
-          firstSliderRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center',
-            inline: 'nearest'
-          })
-          return true
-        }
-        return false
-      }
-      
-      // Try to scroll, retry if ref not ready
-      if (!scrollToSlider()) {
-        // Retry after a short delay if ref not ready
-        setTimeout(scrollToSlider, 100)
-      }
-      
-      // Start demo animation after scroll starts
-      animationStartTimer = setTimeout(() => {
-        setIsDemoing(true)
-        
-        // Buttery smooth animation using requestAnimationFrame timestamp
-        const duration = 2000 // 2 seconds for smooth movement
-        const startValue = 0
-        const endValue = 75
-        
-        // Easing function for buttery smooth motion (ease-in-out cubic)
-        const easeInOutCubic = (t: number): number => {
-          return t < 0.5 
-            ? 4 * t * t * t 
-            : 1 - Math.pow(-2 * t + 2, 3) / 2
-        }
-        
-        let startTime: number | null = null
-        
-        const animate = (timestamp: number) => {
-          if (startTime === null) {
-            startTime = timestamp
+        // Smooth scroll to first slider
+        const scrollToSlider = () => {
+          if (firstSliderRef.current) {
+            firstSliderRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'nearest'
+            })
+            return true
           }
-          
-          const elapsed = timestamp - startTime
-          const progress = Math.min(elapsed / duration, 1)
-          const eased = easeInOutCubic(progress)
-          const currentValue = startValue + (endValue - startValue) * eased
-          
-          // Round to 1 decimal place to avoid long decimals in display
-          setDemoValue(Number(currentValue.toFixed(1)))
-          
-          if (progress < 1) {
-            animationFrameRef.current = requestAnimationFrame(animate)
-          } else {
-            // Hold at 75 for 150ms, then smoothly return to 0
-            holdTimer = setTimeout(() => {
-              let returnStartTime: number | null = null
-              const returnDuration = 1500
-              
-              const returnAnimate = (timestamp: number) => {
-                if (returnStartTime === null) {
-                  returnStartTime = timestamp
-                }
-                
-                const returnElapsed = timestamp - returnStartTime
-                const returnProgress = Math.min(returnElapsed / returnDuration, 1)
-                const returnEased = easeInOutCubic(returnProgress)
-                const returnValue = endValue - (endValue - startValue) * returnEased
-                
-                // Round to 1 decimal place to avoid long decimals in display
-                setDemoValue(Number(returnValue.toFixed(1)))
-                
-                if (returnProgress < 1) {
-                  animationFrameRef.current = requestAnimationFrame(returnAnimate)
-                } else {
-                  setIsDemoing(false)
-                  setDemoValue(0)
-                }
-              }
-              animationFrameRef.current = requestAnimationFrame(returnAnimate)
-            }, 150) // Hold at 75 for 150ms
-          }
+          return false
         }
-        
-        animationFrameRef.current = requestAnimationFrame(animate)
-      }, 600) // Wait 600ms after scroll starts
+
+        // Try to scroll, retry if ref not ready
+        if (!scrollToSlider()) {
+          // Retry after a short delay if ref not ready
+          setTimeout(scrollToSlider, 100)
+        }
+
+        // Start demo animation after scroll starts
+        animationStartTimer = setTimeout(() => {
+          setIsDemoing(true)
+
+          // Buttery smooth animation using requestAnimationFrame timestamp
+          const duration = 2000 // 2 seconds for smooth movement
+          const startValue = 0
+          const endValue = 75
+
+          // Easing function for buttery smooth motion (ease-in-out cubic)
+          const easeInOutCubic = (t: number): number => {
+            return t < 0.5
+              ? 4 * t * t * t
+              : 1 - Math.pow(-2 * t + 2, 3) / 2
+          }
+
+          let startTime: number | null = null
+
+          const animate = (timestamp: number) => {
+            if (startTime === null) {
+              startTime = timestamp
+            }
+
+            const elapsed = timestamp - startTime
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = easeInOutCubic(progress)
+            const currentValue = startValue + (endValue - startValue) * eased
+
+            // Round to 1 decimal place to avoid long decimals in display
+            setDemoValue(Number(currentValue.toFixed(1)))
+
+            if (progress < 1) {
+              animationFrameRef.current = requestAnimationFrame(animate)
+            } else {
+              // Hold at 75 for 150ms, then smoothly return to 0
+              holdTimer = setTimeout(() => {
+                let returnStartTime: number | null = null
+                const returnDuration = 1500
+
+                const returnAnimate = (timestamp: number) => {
+                  if (returnStartTime === null) {
+                    returnStartTime = timestamp
+                  }
+
+                  const returnElapsed = timestamp - returnStartTime
+                  const returnProgress = Math.min(returnElapsed / returnDuration, 1)
+                  const returnEased = easeInOutCubic(returnProgress)
+                  const returnValue = endValue - (endValue - startValue) * returnEased
+
+                  // Round to 1 decimal place to avoid long decimals in display
+                  setDemoValue(Number(returnValue.toFixed(1)))
+
+                  if (returnProgress < 1) {
+                    animationFrameRef.current = requestAnimationFrame(returnAnimate)
+                  } else {
+                    setIsDemoing(false)
+                    setDemoValue(0)
+                  }
+                }
+                animationFrameRef.current = requestAnimationFrame(returnAnimate)
+              }, 150) // Hold at 75 for 150ms
+            }
+          }
+
+          animationFrameRef.current = requestAnimationFrame(animate)
+        }, 600) // Wait 600ms after scroll starts
       }, 550) // Wait 550ms after first load
     })
-    
+
     return () => {
       if (scrollTimer) clearTimeout(scrollTimer)
       if (animationStartTimer) clearTimeout(animationStartTimer)
@@ -620,14 +631,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       }
     }
   }, [hasRatedBefore]) // Run when hasRatedBefore changes
-  
+
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
     externalSubmittedRating ? 'success' : 'idle'
   )
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [hasAnimatedOnce, setHasAnimatedOnce] = useState(false)
-  
+  const [progressData, setProgressData] = useState<{
+    ratingCount: number
+    progress: number
+    ratingsNeeded: number
+    currentBadge: string
+    nextBadge: string
+  } | null>(null)
+  const gradientIdRef = useRef(`progressGradient-${Math.random().toString(36).substr(2, 9)}`)
+
   // Set final score if external submitted rating is provided
   useEffect(() => {
     if (externalSubmittedRating) {
@@ -666,7 +685,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const previousScoreRef = useRef(0)
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
-  
+
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
 
@@ -679,15 +698,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       Number(screenPresence) || 0,
       Number(chemistryInteraction) || 0
     ]
-    
+
     // Ensure all values are valid numbers between 0-100
     const validSliders = sliders.filter(v => !isNaN(v) && v >= 0 && v <= 100)
     if (validSliders.length === 0) return 0
-    
+
     const sum = validSliders.reduce((a, b) => a + b, 0)
     const average = sum / validSliders.length
     const totalScore = average / 10
-    
+
     // Clamp between 0 and 10
     const clamped = Math.max(0, Math.min(10, totalScore))
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
@@ -696,7 +715,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Direct score update - no animation for instant mobile response
   const animatedScore = totalScoreOutOf10
   const isAnimating = false
-  
+
   // Update previous score when animation completes
   useEffect(() => {
     if (!isAnimating) {
@@ -740,7 +759,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     )
 
     observer.observe(scoreRef.current)
-    
+
     // Also listen to scroll for more precise updates
     window.addEventListener('scroll', handleScroll, { passive: true })
 
@@ -758,7 +777,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const wasTouched = touchedSliders[key]
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
     lastInteractionTime.current = Date.now()
-    
+
     // Only clear timeout if this slider wasn't touched before (first touch)
     // This prevents resetting the animation timer when adjusting already-touched sliders
     if (!wasTouched) {
@@ -771,8 +790,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setSpotlightPhase('none')
       }
     }
-    
-    switch(key) {
+
+    switch (key) {
       case 'emotionalRangeDepth':
         setEmotionalRangeDepth(value)
         break
@@ -819,24 +838,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
     // Effect 1: Score pulse
     setSpotlightPhase('score')
-    
+
     // Effect 2: Scroll to score (after short delay)
     setTimeout(() => {
-      scoreRef.current?.scrollIntoView({ 
-        behavior: 'smooth', 
+      scoreRef.current?.scrollIntoView({
+        behavior: 'smooth',
         block: 'center',
         inline: 'nearest'
       })
     }, 200)
-    
+
     // Effect 3: Button glow (after score animation completes)
     setTimeout(() => {
       setSpotlightPhase('button')
-      
+
       // Scroll to button
       setTimeout(() => {
-        buttonRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
+        buttonRef.current?.scrollIntoView({
+          behavior: 'smooth',
           block: 'center',
           inline: 'nearest'
         })
@@ -913,38 +932,41 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     try {
       // Start loading animation AFTER attempting submit (so modal can show first if not signed in)
       setSubmitPhase('loading')
-      
+
       // Unlock scroll in case it was locked from slider
       if (typeof document !== 'undefined') {
         document.body.style.overflow = ''
         document.body.style.touchAction = ''
       }
-      
+
       const startTime = Date.now()
-      
+
       // Wait for API call
       await onSubmit(ratingData)
-      
+
       const elapsed = Date.now() - startTime
-      
+
       // 800ms: Morph to checkmark (ensure minimum 800ms total)
       const checkmarkDelay = Math.max(0, 800 - elapsed)
       setTimeout(() => {
         setSubmitPhase('checkmark')
       }, checkmarkDelay)
-      
+
       // 1300ms: Fade transitions (ensure minimum 1300ms total)
       const successDelay = Math.max(0, 1300 - elapsed)
       setTimeout(() => {
         setSubmitPhase('success')
-        
+
+        // Fetch user progress data
+        fetchUserProgress()
+
         // Lock body scroll when success card shows (prevent background scroll)
         if (typeof document !== 'undefined') {
           const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
           document.body.style.overflow = 'hidden'
           document.body.style.paddingRight = `${scrollbarWidth}px`
         }
-        
+
         // Calculate overall score for tracking
         const overallScore = (
           ratingData.emotionalDepth +
@@ -953,28 +975,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           ratingData.screenPresence +
           ratingData.chemistry
         ) / 5 / 10
-        
+
         // Track rating submission (MOST IMPORTANT)
         trackRateSubmit(
           performance.actor.name,
           performance.movie.title,
           Number(overallScore.toFixed(1))
         )
-        
+
         // Track first rating completion (only once per user)
         trackFirstRatingComplete()
-        
+
         if (onSuccess) {
           onSuccess(ratingData)
         }
       }, successDelay)
-      
+
     } catch (err) {
       // Handle intentional rejections (e.g., when user is not signed in) gracefully
       // Check if this is the expected rejection for unsigned users
       const errorMessage = err instanceof Error ? err.message : String(err || 'Unknown error')
       const isUserNotSignedIn = err instanceof Error && err.message === 'USER_NOT_SIGNED_IN'
-      
+
       if (isUserNotSignedIn) {
         // For unsigned users, the modal will be shown by the parent component
         // Reset phase immediately so button is clickable again
@@ -998,21 +1020,21 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess, performance.actor.name, performance.movie.title])
 
   // Share functionality - use rating slug if available
-  const shareUrl = typeof window !== 'undefined' 
-    ? (externalSubmittedRating?.slug 
-        ? `${window.location.origin}/r/${externalSubmittedRating.slug}`
-        : externalSubmittedRating?.id
+  const shareUrl = typeof window !== 'undefined'
+    ? (externalSubmittedRating?.slug
+      ? `${window.location.origin}/r/${externalSubmittedRating.slug}`
+      : externalSubmittedRating?.id
         ? `${window.location.origin}/r/${externalSubmittedRating.id}`
         : (performance.actor.slug && performance.movie.slug
-            ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
-            : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`))
+          ? `${window.location.origin}/rate/${performance.movie.slug}/${performance.actor.slug}`
+          : `${window.location.origin}/rate?actor=${performance.actor.id}&movie=${performance.movie.id}`))
     : ''
-  
+
   // Check if URL is in slug format (/rate/[movie-slug]/[actor-slug])
   const isSlugFormat = shareUrl.includes('/rate/') && !shareUrl.includes('?')
-  
+
   // Build share text - include URL only if it's in slug format, always add ActorRating
-  const shareText = finalScore !== null 
+  const shareText = finalScore !== null
     ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating?${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
     : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}"${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
 
@@ -1044,10 +1066,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     try {
       // Use the OG image endpoint to generate a shareable image
       const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=og&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
-      
+
       const encodedText = encodeURIComponent(shareText)
       const encodedUrl = encodeURIComponent(shareUrl)
-      
+
       if (platform === 'twitter') {
         // Twitter doesn't support custom images in share dialog, but we can include the image URL in the text
         window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`, '_blank')
@@ -1092,6 +1114,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     router.push(`/actors/${performance.actor.id}`)
   }
 
+  // Fetch user progress data
+  const fetchUserProgress = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      const response = await fetch('/api/user/level-progress', { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        const levelProgress = getLevelProgress(data.ratingCount)
+        setProgressData({
+          ratingCount: data.ratingCount,
+          progress: levelProgress.progress,
+          ratingsNeeded: levelProgress.ratingsNeeded,
+          currentBadge: levelProgress.currentBadge?.name || 'Viewer',
+          nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress data:', error)
+    }
+  }, [user])
+
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
       {/* Ambient background glow */}
@@ -1112,8 +1156,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           className="text-center mb-8 sm:mb-12 md:mb-16"
         >
           {/* Actor Name - Primary Focus, Largest Text, White */}
-          <h1 
-            id="actor-name-header" 
+          <h1
+            id="actor-name-header"
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 tracking-tight px-2 text-white"
             style={{
               fontFamily: 'var(--font-cinzel), serif',
@@ -1121,10 +1165,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           >
             {performance.actor.name}
           </h1>
-          
+
           {/* Movie Title - Clean, non-italic styling */}
           <div className="mb-2 sm:mb-3 px-2">
-            <h2 
+            <h2
               className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1 sm:mb-1.5 tracking-tight"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -1137,7 +1181,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             >
               {performance.movie.title}
             </h2>
-            <p 
+            <p
               className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
@@ -1146,7 +1190,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.year}
             </p>
           </div>
-          
+
           {/* Role/Comment */}
           {performance.comment && (
             <p className="text-sm sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
@@ -1164,13 +1208,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                   className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
-                  style={{ 
+                  style={{
                     willChange: 'transform, opacity',
                     transform: 'translate3d(-50%, 0, 0)',
                     WebkitTransform: 'translate3d(-50%, 0, 0)',
                   }}
                 >
-                  <div 
+                  <div
                     className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
                     style={{
                       width: '100%',
@@ -1179,7 +1223,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     <div className="relative text-center z-10">
-                      <div 
+                      <div
                         className="font-black mb-1 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3rem] sm:min-h-[3.5rem] md:min-h-[4rem]"
                         style={{
                           fontFamily: 'var(--font-geist-sans), sans-serif',
@@ -1203,7 +1247,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
                           </span>
                         </div>
-                        <span 
+                        <span
                           className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
                           style={{
                             verticalAlign: 'baseline',
@@ -1218,117 +1262,117 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Score Display - Responsive size, prevent cutoff, optimized for mobile */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
-            <motion.div
+                <motion.div
                   ref={scoreRef}
-              initial={{ opacity: 0, y: -30, scale: 0.95 }}
-                  animate={{ 
-                    opacity: isSticky ? 0 : 1, 
+                  initial={{ opacity: 0, y: -30, scale: 0.95 }}
+                  animate={{
+                    opacity: isSticky ? 0 : 1,
                     y: 0,
                     scale: 1
                   }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ 
-                    delay: 0, 
+                  transition={{
+                    delay: 0,
                     duration: 0.2,
                     ease: [0.4, 0, 0.2, 1]
                   }}
                   className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
                   style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}
-            >
-              <div 
-                className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
-                style={{
-                  width: '100%',
-                  minHeight: '130px',
-                  background: 'rgba(26, 26, 26, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
-                  transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
-                  transformStyle: 'preserve-3d',
-                }}
-              >
-                {/* Score pulse effect - quick pulse animation */}
-                <AnimatePresence>
-                  {spotlightPhase === 'score' && (
-                    <motion.div
-                      initial={{ 
-                        scale: 0.9,
-                        opacity: 0,
-                      }}
-                      animate={{ 
-                        scale: [0.9, 1.15, 1.0],
-                        opacity: [0, 0.5, 0],
-                      }}
-                      exit={{
-                        opacity: 0,
-                      }}
-                      transition={{ 
-                        duration: 1.0,
-                        times: [0, 0.5, 1],
-                        ease: ['easeOut', 'easeIn'],
-                      }}
-                      className="absolute inset-0 pointer-events-none rounded-[2.5rem] sm:rounded-[3rem]"
-                      style={{
-                        background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 200, 0, 0.2) 40%, transparent 70%)',
-                        filter: 'blur(40px)',
-                        zIndex: 0,
-                      }}
-                    />
-                  )}
-                </AnimatePresence>
-                <div className="relative text-center z-10">
-                  <div 
-                    className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
+                >
+                  <div
+                    className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                     style={{
-                      fontFamily: 'var(--font-geist-sans), sans-serif',
-                      fontVariantNumeric: 'tabular-nums',
-                      position: 'relative',
+                      width: '100%',
+                      minHeight: '130px',
+                      background: 'rgba(26, 26, 26, 0.8)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+                      transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
+                      transformStyle: 'preserve-3d',
                     }}
                   >
-                    {/* Optimized score display - smooth updates on mobile */}
-                    <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
-                        <span
-                          className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
+                    {/* Score pulse effect - quick pulse animation */}
+                    <AnimatePresence>
+                      {spotlightPhase === 'score' && (
+                        <motion.div
+                          initial={{
+                            scale: 0.9,
+                            opacity: 0,
+                          }}
+                          animate={{
+                            scale: [0.9, 1.15, 1.0],
+                            opacity: [0, 0.5, 0],
+                          }}
+                          exit={{
+                            opacity: 0,
+                          }}
+                          transition={{
+                            duration: 1.0,
+                            times: [0, 0.5, 1],
+                            ease: ['easeOut', 'easeIn'],
+                          }}
+                          className="absolute inset-0 pointer-events-none rounded-[2.5rem] sm:rounded-[3rem]"
                           style={{
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                            lineHeight: '1',
+                            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 200, 0, 0.2) 40%, transparent 70%)',
+                            filter: 'blur(40px)',
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+                    </AnimatePresence>
+                    <div className="relative text-center z-10">
+                      <div
+                        className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
+                        style={{
+                          fontFamily: 'var(--font-geist-sans), sans-serif',
+                          fontVariantNumeric: 'tabular-nums',
+                          position: 'relative',
+                        }}
+                      >
+                        {/* Optimized score display - smooth updates on mobile */}
+                        <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
+                          <span
+                            className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
+                            style={{
+                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              lineHeight: '1',
+                              verticalAlign: 'baseline',
+                              willChange: 'transform',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
+                          </span>
+                        </div>
+                        <span
+                          className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
+                          style={{
                             verticalAlign: 'baseline',
-                            willChange: 'transform',
-                            fontVariantNumeric: 'tabular-nums',
                           }}
                         >
-                          {isAnimating ? animatedScore.toFixed(1) : totalScoreOutOf10.toFixed(1)}
+                          /10
                         </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
                     </div>
-                    <span 
-                      className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
-                      style={{
-                        verticalAlign: 'baseline',
-                      }}
-                    >
-                      /10
-                    </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
-                </div>
-              </div>
-            </motion.div>
+                </motion.div>
               )}
             </AnimatePresence>
 
             {/* Rating Card - Extra round corners, mobile optimized - No animations on mobile */}
             <AnimatePresence>
               {submitPhase !== 'success' && (
-            <motion.div
-              initial={{ opacity: 1, y: 0 }}
-                  animate={{ 
+                <motion.div
+                  initial={{ opacity: 1, y: 0 }}
+                  animate={{
                     opacity: 1,
                     y: 0,
                   }}
@@ -1345,181 +1389,225 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     `,
                   }}
                 >
-              {/* Decorative corner accent - top left only */}
-              <div 
-                className="absolute pointer-events-none"
-                style={{
-                  top: '-1px',
-                  left: '-1px',
-                  width: '120px',
-                  height: '120px',
-                  background: 'radial-gradient(ellipse at top left, rgba(255, 165, 0, 0.05) 0%, transparent 60%)',
-                  clipPath: 'polygon(0 0, 100% 0, 0 100%)',
-                }}
-              />
-              
-              {/* Instructions */}
-              <div className="text-center mb-6 sm:mb-8 max-w-[600px] mx-auto">
-                <p className="text-sm sm:text-base text-[#a3a3a3] font-light">
-                  Each criterion is scored individually. Final score is the average of all five.
-                </p>
-              </div>
-              
-              {/* Sliders - Mobile optimized spacing, consistent width */}
-              {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
-              <div 
-                className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
-                style={{
-                  touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
-                  opacity: 1,
-                  visibility: 'visible',
-                }}
-              >
-                <div className="relative" ref={firstSliderRef}>
-                  <RatingSliderCard 
-                    label="Emotional Impact" 
-                    value={isDemoing ? demoValue : emotionalRangeDepth} 
-                    onValueChange={(v) => {
-                      if (!isDemoing) {
-                        handleSliderChange('emotionalRangeDepth', v)
-                      }
+                  {/* Decorative corner accent - top left only */}
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{
+                      top: '-1px',
+                      left: '-1px',
+                      width: '120px',
+                      height: '120px',
+                      background: 'radial-gradient(ellipse at top left, rgba(255, 165, 0, 0.05) 0%, transparent 60%)',
+                      clipPath: 'polygon(0 0, 100% 0, 0 100%)',
                     }}
-                    onSliderStart={handleSliderStart}
-                    onSliderEnd={handleSliderEnd}
-                    disabled={submitting || isDemoing}
-                    touched={touchedSliders.emotionalRangeDepth}
-                    spotlightActive={spotlightPhase !== 'none'}
-                    isDemoing={isDemoing}
                   />
-                </div>
-                
-                <RatingSliderCard 
-                  label="Character Depth" 
-                  value={characterBelievability} 
-                  onValueChange={(v) => handleSliderChange('characterBelievability', v)}
-                  onSliderStart={handleSliderStart}
-                  onSliderEnd={handleSliderEnd}
-                  disabled={submitting}
-                  touched={touchedSliders.characterBelievability}
-                  spotlightActive={spotlightPhase !== 'none'}
-                />
-                
-                <RatingSliderCard 
-                  label="Technical Skill" 
-                  value={technicalSkill} 
-                  onValueChange={(v) => handleSliderChange('technicalSkill', v)}
-                  onSliderStart={handleSliderStart}
-                  onSliderEnd={handleSliderEnd}
-                  disabled={submitting}
-                  touched={touchedSliders.technicalSkill}
-                  spotlightActive={spotlightPhase !== 'none'}
-                />
-                
-                <RatingSliderCard 
-                  label="Screen Presence" 
-                  value={screenPresence} 
-                  onValueChange={(v) => handleSliderChange('screenPresence', v)}
-                  onSliderStart={handleSliderStart}
-                  onSliderEnd={handleSliderEnd}
-                  disabled={submitting}
-                  touched={touchedSliders.screenPresence}
-                  spotlightActive={spotlightPhase !== 'none'}
-                />
-                
-                <RatingSliderCard 
-                  label="Originality" 
-                  value={chemistryInteraction} 
-                  onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
-                  onSliderStart={handleSliderStart}
-                  onSliderEnd={handleSliderEnd}
-                  disabled={submitting}
-                  touched={touchedSliders.chemistryInteraction}
-                  spotlightActive={spotlightPhase !== 'none'}
-                />
-              </div>
 
-              {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
-              <div 
-                className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto"
-                style={{
-                  filter: 'blur(0px)',
-                  opacity: 1,
-                  visibility: 'visible',
-                  zIndex: 60,
-                }}
-              >
-                <motion.button
-                  ref={buttonRef}
-                  type="submit"
-                  disabled={!allSlidersTouched || submitting}
-                  className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background: allSlidersTouched && !submitting
-                      ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
-                      : '#1a1a1a',
-                    color: allSlidersTouched && !submitting ? '#000000' : '#525252',
-                    boxShadow: allSlidersTouched && !submitting
-                      ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
-                      : 'none',
-                    border: allSlidersTouched && !submitting ? 'none' : '1px solid #333',
-                  }}
-                  whileHover={allSlidersTouched && !submitting ? {
-                    scale: 1.02,
-                  } : {}}
-                  whileTap={allSlidersTouched && !submitting ? {
-                    scale: 0.98,
-                  } : {}}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                  {/* Button glow animation when spotlight phase is 'button' */}
-                  {spotlightPhase === 'button' && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: [0, 0.6, 0.3], scale: [0.95, 1.05, 1.0] }}
-                      transition={{ duration: 0.6, times: [0, 0.5, 1], ease: 'easeInOut' }}
-                      className="absolute inset-0 pointer-events-none rounded-full"
-                      style={{
-                        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                        filter: 'blur(20px)',
-                      }}
-                    />
-                  )}
-                  {/* White light sweep effect on hover */}
-                  {allSlidersTouched && !submitting && spotlightPhase !== 'button' && (
-                    <span 
-                      className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
-                      style={{
-                        background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
-                      }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {submitPhase === 'loading' && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
-                        style={{
-                          animation: 'spin 0.8s linear infinite',
+                  {/* Instructions */}
+                  <div className="text-center mb-6 sm:mb-8 max-w-[600px] mx-auto">
+                    <p className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                      Each criterion is scored individually. Final score is the average of all five.
+                    </p>
+                  </div>
+
+                  {/* Sliders - Mobile optimized spacing, consistent width */}
+                  {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
+                  <div
+                    className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
+                    style={{
+                      touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
+                      opacity: 1,
+                      visibility: 'visible',
+                    }}
+                  >
+                    <div className="relative" ref={firstSliderRef}>
+                      <RatingSliderCard
+                        label="Emotional Impact"
+                        value={isDemoing ? demoValue : emotionalRangeDepth}
+                        onValueChange={(v) => {
+                          if (!isDemoing) {
+                            handleSliderChange('emotionalRangeDepth', v)
+                          }
                         }}
+                        onSliderStart={handleSliderStart}
+                        onSliderEnd={handleSliderEnd}
+                        disabled={submitting || isDemoing}
+                        touched={touchedSliders.emotionalRangeDepth}
+                        spotlightActive={spotlightPhase !== 'none'}
+                        isDemoing={isDemoing}
                       />
-                    )}
-                    {submitPhase === 'checkmark' && (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                >
-                        <CheckCircle className="w-5 h-5 text-black" />
-                      </motion.div>
-                    )}
-                    {submitPhase === 'idle' && (
-                      submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'
-                    )}
-                  </span>
-                </motion.button>
-              </div>
-            </motion.div>
+                    </div>
+
+                    <RatingSliderCard
+                      label="Character Depth"
+                      value={characterBelievability}
+                      onValueChange={(v) => handleSliderChange('characterBelievability', v)}
+                      onSliderStart={handleSliderStart}
+                      onSliderEnd={handleSliderEnd}
+                      disabled={submitting}
+                      touched={touchedSliders.characterBelievability}
+                      spotlightActive={spotlightPhase !== 'none'}
+                    />
+
+                    <RatingSliderCard
+                      label="Technical Skill"
+                      value={technicalSkill}
+                      onValueChange={(v) => handleSliderChange('technicalSkill', v)}
+                      onSliderStart={handleSliderStart}
+                      onSliderEnd={handleSliderEnd}
+                      disabled={submitting}
+                      touched={touchedSliders.technicalSkill}
+                      spotlightActive={spotlightPhase !== 'none'}
+                    />
+
+                    <RatingSliderCard
+                      label="Screen Presence"
+                      value={screenPresence}
+                      onValueChange={(v) => handleSliderChange('screenPresence', v)}
+                      onSliderStart={handleSliderStart}
+                      onSliderEnd={handleSliderEnd}
+                      disabled={submitting}
+                      touched={touchedSliders.screenPresence}
+                      spotlightActive={spotlightPhase !== 'none'}
+                    />
+
+                    <RatingSliderCard
+                      label="Originality"
+                      value={chemistryInteraction}
+                      onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
+                      onSliderStart={handleSliderStart}
+                      onSliderEnd={handleSliderEnd}
+                      disabled={submitting}
+                      touched={touchedSliders.chemistryInteraction}
+                      spotlightActive={spotlightPhase !== 'none'}
+                    />
+                  </div>
+
+                  {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
+                  <div
+                    className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto"
+                    style={{
+                      filter: 'blur(0px)',
+                      opacity: 1,
+                      visibility: 'visible',
+                      zIndex: 60,
+                    }}
+                  >
+                    <motion.button
+                      ref={buttonRef}
+                      type="submit"
+                      disabled={!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark'}
+                      className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider relative overflow-hidden"
+                      style={{
+                        cursor: (!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
+                        background: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                          ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
+                          : '#1a1a1a',
+                        color: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? '#000000' : '#525252',
+                        boxShadow: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                          ? submitPhase === 'loading' || submitPhase === 'checkmark'
+                            ? '0 0 30px rgba(255, 215, 0, 0.5), 0 10px 40px rgba(255, 165, 0, 0.3), 0 0 60px rgba(255, 215, 0, 0.2)'
+                            : '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
+                          : 'none',
+                        border: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
+                      }}
+                      animate={
+                        submitPhase === 'loading' || submitPhase === 'checkmark'
+                          ? {
+                              scale: [1, 1.02, 1],
+                            }
+                          : {}
+                      }
+                      transition={
+                        submitPhase === 'loading' || submitPhase === 'checkmark'
+                          ? {
+                              scale: {
+                                duration: 1.5,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                              },
+                            }
+                          : { duration: 0.2, ease: 'easeOut' }
+                      }
+                      whileHover={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
+                        scale: 1.02,
+                      } : {}}
+                      whileTap={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
+                        scale: 0.98,
+                      } : {}}
+                    >
+                      {/* Button glow animation when spotlight phase is 'button' */}
+                      {spotlightPhase === 'button' && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: [0, 0.6, 0.3], scale: [0.95, 1.05, 1.0] }}
+                          transition={{ duration: 0.6, times: [0, 0.5, 1], ease: 'easeInOut' }}
+                          className="absolute inset-0 pointer-events-none rounded-full"
+                          style={{
+                            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
+                            filter: 'blur(20px)',
+                          }}
+                        />
+                      )}
+                      {/* Pulsing glow effect during loading */}
+                      {(submitPhase === 'loading' || submitPhase === 'checkmark') && (
+                        <motion.span
+                          className="absolute inset-0 pointer-events-none rounded-full"
+                          animate={{
+                            opacity: [0.3, 0.7, 0.3],
+                            scale: [1, 1.05, 1],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                          style={{
+                            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%)',
+                            filter: 'blur(20px)',
+                          }}
+                        />
+                      )}
+                      {/* White light sweep effect on hover (only when idle) */}
+                      {allSlidersTouched && !submitting && submitPhase === 'idle' && spotlightPhase !== 'button' && (
+                        <span
+                          className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
+                          style={{
+                            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                          }}
+                        />
+                      )}
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        {submitPhase === 'loading' && (
+                          <>
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
+                              style={{
+                                animation: 'spin 0.8s linear infinite',
+                              }}
+                            />
+                            <span className="text-black font-bold">Submitting...</span>
+                          </>
+                        )}
+                        {submitPhase === 'checkmark' && (
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                            className="flex items-center gap-2"
+                          >
+                            <CheckCircle className="w-5 h-5 text-black" />
+                            <span className="text-black font-bold">Success!</span>
+                          </motion.div>
+                        )}
+                        {submitPhase === 'idle' && (
+                          submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'
+                        )}
+                      </span>
+                    </motion.button>
+                  </div>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
@@ -1534,7 +1622,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
               className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
-              style={{ 
+              style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
@@ -1577,135 +1665,143 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     <X className="w-4 h-4 pointer-events-none" />
                   </div>
                 </button>
-                {/* Checkmark */}
+                {/* Success Header */}
                 <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
-                  className="flex justify-center mb-3 sm:mb-4 md:mb-5 pt-1"
-                >
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-10 h-10 md:w-12 md:h-12 text-black" />
-                  </div>
-                </motion.div>
-
-                {/* Success Message */}
-                <motion.h2
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-2xl sm:text-3xl md:text-3xl font-bold text-white text-center mb-3 sm:mb-4 md:mb-5"
-                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center mb-6"
                 >
-                  Rating Submitted!
-                </motion.h2>
-
-                {/* Final Score - Matching rate page style */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-center mb-4 sm:mb-5 md:mb-6"
-                >
-                  <div 
-                    className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 py-6 sm:py-7 shadow-2xl mx-auto"
-                    style={{
-                      width: '240px',
-                      minHeight: '130px',
-                      background: 'rgba(26, 26, 26, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
-                      transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    <div className="relative text-center z-10">
-                      <div 
-                        className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
-                        style={{
-                          fontFamily: 'var(--font-geist-sans), sans-serif',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        <span
-                          className="inline-block text-5xl sm:text-6xl md:text-7xl"
-                          style={{
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                            lineHeight: '1',
-                            verticalAlign: 'baseline',
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {finalScore}
-                        </span>
-                        <span 
-                          className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
-                          style={{
-                            verticalAlign: 'baseline',
-                          }}
-                        >
-                          /10
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
-                    </div>
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <CheckCircle className="w-6 h-6 text-[#FFD700]" />
+                    <h2
+                      className="text-xl sm:text-2xl font-bold text-white"
+                      style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                    >
+                      Rating saved
+                    </h2>
                   </div>
+                  <p className="text-base sm:text-lg text-gray-300">
+                    You rated: <span className="font-semibold text-white">{performance.movie.title}</span> — <span className="font-bold text-[#FFD700]">{finalScore}/10</span>
+                  </p>
                 </motion.div>
 
-                {/* Share Button */}
+                {/* Progress Ring */}
+                {progressData && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex flex-col items-center mb-6"
+                  >
+                    {/* Circular Progress Ring */}
+                    <div className="relative w-32 h-32 mb-4">
+                      <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                        {/* Background circle */}
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          fill="none"
+                          stroke="rgba(255, 255, 255, 0.1)"
+                          strokeWidth="8"
+                        />
+                        {/* Progress circle */}
+                        <motion.circle
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          fill="none"
+                          stroke={`url(#${gradientIdRef.current})`}
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: progressData.progress / 100 }}
+                          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.5 }}
+                        />
+                        <defs>
+                          <linearGradient id={gradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#FFE55C" />
+                            <stop offset="50%" stopColor="#FFD700" />
+                            <stop offset="100%" stopColor="#FFA500" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      {/* Percentage in center */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-white">
+                          {Math.round(progressData.progress)}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Text */}
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Critic Progress</p>
+                      <p className="text-sm text-gray-300">
+                        Current: <span className="font-semibold text-white">{progressData.currentBadge}</span>
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        Next: <span className="font-semibold text-white">{progressData.nextBadge}</span>
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Rate Another Button */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="space-y-3 sm:space-y-3 md:space-y-4"
+                  className="mb-6"
                 >
                   <button
-                    onClick={handleShare}
-                    className="w-full py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden"
+                    onClick={handleContinueRating}
+                    className="w-full py-3 sm:py-4 text-base sm:text-lg font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       color: '#000000',
                       boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)',
                     }}
                   >
-                    <Share2 className="w-5 h-5 inline-block mr-2" />
-                    Share Your Rating
+                    Rate another
                   </button>
+                </motion.div>
 
-                  {/* Social Media Buttons - Round on all screens */}
-                  <div className="flex gap-3 sm:gap-4 justify-center">
-                    <button
-                      onClick={() => handleSocialShare('twitter')}
-                      className="w-12 h-12 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center"
-                      title="Share on Twitter"
-                    >
-                      <Twitter className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare('facebook')}
-                      className="w-12 h-12 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center"
-                      title="Share on Facebook"
-                    >
-                      <Facebook className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleSocialShare('instagram')}
-                      className="w-12 h-12 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
-                      title="Share on Instagram"
-                    >
-                      <Instagram className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Rate Another Button */}
+                {/* Social and Share Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="flex gap-3 sm:gap-4 justify-center"
+                >
                   <button
-                    onClick={handleContinueRating}
-                    className="w-full py-3 sm:py-4 rounded-full bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors border border-white/20"
+                    onClick={handleShare}
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FFE55C] to-[#FFD700] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center shadow-lg"
+                    title="Share"
                   >
-                    Rate Another
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleSocialShare('twitter')}
+                    className="w-12 h-12 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center"
+                    title="Share on Twitter"
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleSocialShare('facebook')}
+                    className="w-12 h-12 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center"
+                    title="Share on Facebook"
+                  >
+                    <Facebook className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleSocialShare('instagram')}
+                    className="w-12 h-12 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
+                    title="Share on Instagram"
+                  >
+                    <Instagram className="w-5 h-5" />
                   </button>
                 </motion.div>
               </motion.div>

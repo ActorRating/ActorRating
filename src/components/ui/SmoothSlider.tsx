@@ -141,45 +141,63 @@ export const SmoothSlider = React.forwardRef<
       )}
 
       {/* Slider */}
-      <SliderPrimitive.Root
-        ref={ref}
-        value={[currentValue]}
-        onValueChange={handleValueChange}
-        onValueCommit={handleValueCommit}
-        min={min}
-        max={max}
-        step={step}
-        disabled={disabled}
-        className={cn(
-          "relative flex w-full touch-none select-none items-center",
-          disabled && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        <SliderPrimitive.Track 
+      {/* Increased vertical padding for easier mobile touch (invisible padding) */}
+      <div style={{ paddingTop: '16px', paddingBottom: '16px' }}>
+        <SliderPrimitive.Root
+          ref={ref}
+          value={[currentValue]}
+          onValueChange={handleValueChange}
+          onValueCommit={handleValueCommit}
+          min={min}
+          max={max}
+          step={step}
+          disabled={disabled}
           className={cn(
-            "relative w-full grow overflow-hidden rounded-full cursor-pointer",
-            config.track,
-            colors.track
+            "relative flex w-full touch-none select-none items-center",
+            disabled && "opacity-50 cursor-not-allowed"
           )}
+          style={{
+            touchAction: 'pan-x', // Prevent scroll capture - only allow horizontal panning
+            WebkitTouchCallout: 'none', // Prevent iOS callout menu
+            WebkitUserSelect: 'none', // Prevent text selection
+            userSelect: 'none',
+          }}
         >
-          <SliderPrimitive.Range 
+          <SliderPrimitive.Track 
             className={cn(
-              "absolute h-full rounded-full transition-colors",
-              colors.range
-            )} 
+              "relative w-full grow overflow-hidden rounded-full cursor-pointer",
+              config.track,
+              colors.track
+            )}
+            style={{
+              touchAction: 'pan-x', // Ensure track also has touch-action
+            }}
+          >
+            <SliderPrimitive.Range 
+              className={cn(
+                "absolute h-full rounded-full transition-colors pointer-events-none",
+                colors.range
+              )}
+              style={{
+                pointerEvents: 'none', // Prevent decorative element from stealing touches
+              }}
+            />
+          </SliderPrimitive.Track>
+          <SliderPrimitive.Thumb 
+            className={cn(
+              "block rounded-full border-2 ring-offset-background transition-all duration-200 touch-action-none cursor-grab active:cursor-grabbing",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "disabled:pointer-events-none disabled:opacity-50",
+              "active:opacity-90",
+              config.thumb,
+              colors.thumb
+            )}
+            style={{
+              touchAction: 'pan-x', // Thumb should also allow horizontal panning
+            }}
           />
-        </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb 
-          className={cn(
-            "block rounded-full border-2 ring-offset-background transition-all duration-200 touch-action-none cursor-grab active:cursor-grabbing",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "disabled:pointer-events-none disabled:opacity-50",
-            "active:opacity-90",
-            config.thumb,
-            colors.thumb
-          )} 
-        />
-      </SliderPrimitive.Root>
+        </SliderPrimitive.Root>
+      </div>
     </div>
   )
 })
