@@ -849,7 +849,7 @@ export default function OnboardingRatePage() {
                       <div className="mt-auto pt-3">
                         <button
                           onClick={() => handlePerformanceSelect(performance)}
-                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 cursor-pointer"
+                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                           }}
@@ -979,7 +979,7 @@ export default function OnboardingRatePage() {
                         <div className="mt-auto pt-4">
                           <button
                             onClick={() => handlePerformanceSelect(performance)}
-                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-500 hover:scale-105"
+                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-500 hover:scale-105"
                             style={{
                               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                             }}

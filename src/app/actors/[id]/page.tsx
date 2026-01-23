@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight, ArrowRight } from 'lucide-react'
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -1396,65 +1396,57 @@ export default function ActorPage() {
         </motion.div>
       )}
 
-      {/* Sticky Mobile CTA */}
+      {/* Floating Mobile CTA */}
       {performances.length > 0 && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 1.0 }}
-          className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden"
         >
-          <div 
-            className="px-4 py-3 backdrop-blur-2xl border-t"
-            style={{
-              background: 'rgba(0, 0, 0, 0.95)',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-            }}
+          <Link 
+            href={
+              communityStats.highestRated 
+                ? getRateUrl(
+                    { 
+                      id: communityStats.highestRated.actor.id, 
+                      name: communityStats.highestRated.actor.name, 
+                      slug: communityStats.highestRated.actor.slug || null 
+                    },
+                    { 
+                      id: communityStats.highestRated.movie.id, 
+                      title: communityStats.highestRated.movie.title, 
+                      year: communityStats.highestRated.movie.year, 
+                      slug: communityStats.highestRated.movie.slug || null 
+                    }
+                  )
+                : getRateUrl(
+                    { 
+                      id: performances[0].actor.id, 
+                      name: performances[0].actor.name, 
+                      slug: performances[0].actor.slug || null 
+                    },
+                    { 
+                      id: performances[0].movie.id, 
+                      title: performances[0].movie.title, 
+                      year: performances[0].movie.year, 
+                      slug: performances[0].movie.slug || null 
+                    }
+                  )
+            }
           >
-            <div className="flex justify-center">
-              <Link 
-                href={
-                  communityStats.highestRated 
-                    ? getRateUrl(
-                        { 
-                          id: communityStats.highestRated.actor.id, 
-                          name: communityStats.highestRated.actor.name, 
-                          slug: communityStats.highestRated.actor.slug || null 
-                        },
-                        { 
-                          id: communityStats.highestRated.movie.id, 
-                          title: communityStats.highestRated.movie.title, 
-                          year: communityStats.highestRated.movie.year, 
-                          slug: communityStats.highestRated.movie.slug || null 
-                        }
-                      )
-                    : getRateUrl(
-                        { 
-                          id: performances[0].actor.id, 
-                          name: performances[0].actor.name, 
-                          slug: performances[0].actor.slug || null 
-                        },
-                        { 
-                          id: performances[0].movie.id, 
-                          title: performances[0].movie.title, 
-                          year: performances[0].movie.year, 
-                          slug: performances[0].movie.slug || null 
-                        }
-                      )
-                }
-              >
-                <button
-                  className="px-8 py-3.5 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-2"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                  }}
-                >
-                  <FaStar className="w-4 h-4" />
-                  Rate Performance
-                </button>
-              </Link>
-            </div>
-          </div>
+            <button
+              className="px-8 py-4 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-2xl whitespace-nowrap min-h-[48px] touch-manipulation"
+              style={{
+                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(255, 215, 0, 0.3)',
+              }}
+            >
+              <FaStar className="w-4 h-4 text-black" />
+              <span>Rate Performance</span>
+              <ChevronRight className="w-4 h-4 text-black" />
+            </button>
+          </Link>
         </motion.div>
       )}
 

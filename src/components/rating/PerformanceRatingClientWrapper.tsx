@@ -1452,7 +1452,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   ref={buttonRef}
                   type="submit"
                   disabled={!allSlidersTouched || submitting}
-                  className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider uppercase relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: allSlidersTouched && !submitting
                       ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
@@ -1664,7 +1664,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 >
                   <button
                     onClick={handleShare}
-                    className="w-full py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider uppercase relative overflow-hidden"
+                    className="w-full py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       color: '#000000',

@@ -428,7 +428,7 @@ function HowItWorksSection() {
           >
             <Link href="/performances">
               <button
-                className={`group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-transform duration-300 min-h-[60px] sm:min-h-[72px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
+                className={`group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider transition-transform duration-300 min-h-[60px] sm:min-h-[72px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
                 style={{
                   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                   transform: 'scale(1)',
@@ -842,7 +842,7 @@ function PerformanceSection() {
                               return (
                                 <Link href={href}>
                                   <button
-                                    className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider uppercase transition-all duration-200 hover:scale-105 min-h-[48px] cursor-pointer"
+                                    className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 min-h-[48px] cursor-pointer"
                                     style={{
                                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                                     }}
@@ -1392,7 +1392,7 @@ function AboutSection() {
           <div className="col-span-12 lg:col-span-12 mt-16 sm:mt-20 lg:mt-24">
             <Link href="/about" aria-label="Learn more about ActorRating">
               <button
-                className="group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[60px] sm:min-h-[72px] touch-manipulation"
+                className="group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[60px] sm:min-h-[72px] touch-manipulation"
                 style={{
                   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                   transform: 'scale(1)',
@@ -1571,7 +1571,7 @@ export default function HomePageClient() {
                 className="w-full flex justify-center mt-8 sm:mt-0"
               >
                 <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now">
-                  <button className="group px-8 xs:px-10 sm:px-20 py-5 xs:py-6 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[72px] relative overflow-hidden touch-manipulation"
+                  <button className="group px-8 xs:px-10 sm:px-20 py-5 xs:py-6 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[72px] relative overflow-hidden touch-manipulation"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       transform: 'scale(1)',

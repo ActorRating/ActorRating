@@ -543,7 +543,7 @@ export default function AboutPage() {
                   </p>
                   <Link href="/performances">
                     <button 
-                      className="group/btn inline-flex items-center justify-center gap-4 px-10 sm:px-14 py-5 sm:py-6 rounded-full text-black text-lg sm:text-xl font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] hover:scale-105 group-hover:scale-105"
+                      className="group/btn inline-flex items-center justify-center gap-4 px-10 sm:px-14 py-5 sm:py-6 rounded-full text-black text-lg sm:text-xl font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] hover:scale-105 group-hover:scale-105"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}

@@ -58,7 +58,7 @@ export default function NotFound() {
         >
           <Link href="/" className="inline-block">
             <button 
-              className="group px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] relative overflow-hidden"
+              className="group px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] relative overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
@@ -80,7 +80,7 @@ export default function NotFound() {
           
           <Link href="/performances" className="inline-block">
             <button 
-              className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider uppercase transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px]"
+              className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px]"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 transform: 'scale(1)',
