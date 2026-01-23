@@ -10,15 +10,13 @@ function sleep(ms: number) {
 }
 
 const ACTORS_TO_ADD = [
-  // Remaining actors to add
-  "Marlene Dietrich",
-  "Greta Garbo",
-  "Buster Keaton",
-  "Orson Welles",
-  "Jacob Elordi",
-  "Ansel Elgort",
-  "Ayo Edebiri",
-  "Brian Tyree Henry"  // Fixed spelling
+  "Wagner Moura",
+  "Renate Reinsve",
+  "Delroy Lindo",
+  "Inga Ibsdotter Lilleaas",
+  "Amy Madigan",
+  "Wunmi Mosaku",
+  "Teyana Taylor"
 ];
 
 interface TMDBActor {
@@ -278,8 +276,131 @@ async function addActorWithFilmography(actorName: string): Promise<void> {
   console.log(`  ✅ ${moviesAdded} new movies, ${moviesExisting} existing, ${performancesCreated} performances`);
 }
 
+async function fixJacobElordiFrankenstein(): Promise<void> {
+  console.log(`\n🔧 Fixing: Jacob Elordi in "Frankenstein" (2007)`);
+  
+  const actor = await prisma.actor.findFirst({
+    where: { name: 'Jacob Elordi' }
+  });
+  
+  if (!actor) {
+    console.log(`  ❌ Jacob Elordi not found in database`);
+    return;
+  }
+  
+  // Search for Frankenstein 2007
+  const movie = await prisma.movie.findFirst({
+    where: {
+      title: {
+        contains: 'Frankenstein',
+        mode: 'insensitive'
+      },
+      year: 2007
+    }
+  });
+  
+  if (!movie) {
+    console.log(`  ⚠️  Frankenstein (2007) not found. Searching TMDB...`);
+    
+    try {
+      const searchUrl = `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=Frankenstein&year=2007`;
+      const searchRes = await axios.get(searchUrl);
+      
+      if (searchRes.data.results && searchRes.data.results.length > 0) {
+        const tmdbMovie = searchRes.data.results[0];
+        console.log(`  ✅ Found on TMDB: ${tmdbMovie.title} (ID: ${tmdbMovie.id})`);
+        
+        // Get movie details
+        const detailsUrl = `${TMDB_BASE_URL}/movie/${tmdbMovie.id}?api_key=${TMDB_API_KEY}`;
+        const detailsRes = await axios.get(detailsUrl);
+        const movieData = detailsRes.data;
+        
+        // Get credits to find Jacob Elordi's character
+        const creditsUrl = `${TMDB_BASE_URL}/movie/${tmdbMovie.id}/credits?api_key=${TMDB_API_KEY}`;
+        const creditsRes = await axios.get(creditsUrl);
+        const cast = creditsRes.data.cast || [];
+        const jacobRole = cast.find((c: any) => 
+          c.name.toLowerCase().includes('jacob') || 
+          c.name.toLowerCase().includes('elordi')
+        );
+        
+        const director = creditsRes.data.crew?.find((c: any) => c.job === 'Director')?.name || 'Unknown';
+        const genre = movieData.genres?.map((g: any) => g.name).join(', ') || null;
+        
+        const movieSlug = movieData.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+        
+        const createdMovie = await prisma.movie.create({
+          data: {
+            title: movieData.title,
+            slug: movieSlug,
+            year: 2007,
+            director,
+            genre,
+            overview: movieData.overview || null,
+            tmdbId: movieData.id
+          }
+        });
+        
+        const characterName = jacobRole?.character || 'Character';
+        
+        await prisma.performance.create({
+          data: {
+            userId: 'system',
+            actorId: actor.id,
+            movieId: createdMovie.id,
+            character: characterName,
+            emotionalRangeDepth: 0,
+            characterBelievability: 0,
+            technicalSkill: 0,
+            screenPresence: 0,
+            chemistryInteraction: 0,
+            comment: null
+          }
+        });
+        
+        console.log(`  ✅ Created movie and performance link`);
+      } else {
+        console.log(`  ❌ Frankenstein (2007) not found on TMDB`);
+      }
+    } catch (error) {
+      console.log(`  ❌ Error: ${error}`);
+    }
+  } else {
+    // Movie exists, just create the performance link
+    const existingPerformance = await prisma.performance.findUnique({
+      where: {
+        userId_actorId_movieId: {
+          userId: 'system',
+          actorId: actor.id,
+          movieId: movie.id
+        }
+      }
+    });
+    
+    if (existingPerformance) {
+      console.log(`  ⏭️  Performance already exists`);
+    } else {
+      await prisma.performance.create({
+        data: {
+          userId: 'system',
+          actorId: actor.id,
+          movieId: movie.id,
+          character: 'Character',
+          emotionalRangeDepth: 0,
+          characterBelievability: 0,
+          technicalSkill: 0,
+          screenPresence: 0,
+          chemistryInteraction: 0,
+          comment: null
+        }
+      });
+      console.log(`  ✅ Performance link created`);
+    }
+  }
+}
+
 async function main() {
-  console.log('🚀 Adding Missing Major Actors');
+  console.log('🚀 Adding Missing Award Actors');
   console.log(`📋 Total actors to add: ${ACTORS_TO_ADD.length}\n`);
   
   if (!TMDB_API_KEY) {
@@ -288,8 +409,6 @@ async function main() {
   }
   
   let successCount = 0;
-  let skipCount = 0;
-  let errorCount = 0;
   
   for (let i = 0; i < ACTORS_TO_ADD.length; i++) {
     const actorName = ACTORS_TO_ADD[i];
@@ -298,17 +417,15 @@ async function main() {
       console.log(`\n[${i + 1}/${ACTORS_TO_ADD.length}]`);
       await addActorWithFilmography(actorName);
       successCount++;
-      
-      if ((i + 1) % 5 === 0) {
-        console.log(`\n📊 Progress: ${i + 1}/${ACTORS_TO_ADD.length} | ✅ ${successCount} | ⏭️  ${skipCount} | ❌ ${errorCount}\n`);
-      }
     } catch (error) {
       console.error(`\n❌ Error: ${actorName}`, error);
-      errorCount++;
     }
     
     await sleep(500);
   }
+  
+  // Fix Jacob Elordi performance
+  await fixJacobElordiFrankenstein();
   
   const totalActors = await prisma.actor.count();
   const totalMovies = await prisma.movie.count();
@@ -316,9 +433,7 @@ async function main() {
   
   console.log(`\n\n🎉 Addition Complete!`);
   console.log(`📊 Final Stats:`);
-  console.log(`   ✅ Successfully added: ${successCount}`);
-  console.log(`   ⏭️  Skipped (already exist): ${skipCount}`);
-  console.log(`   ❌ Errors: ${errorCount}`);
+  console.log(`   ✅ Successfully added: ${successCount}/${ACTORS_TO_ADD.length}`);
   console.log(`\n📈 Updated Database Stats:`);
   console.log(`   🎭 Total Actors: ${totalActors}`);
   console.log(`   🎬 Total Movies: ${totalMovies}`);

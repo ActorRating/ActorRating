@@ -17,9 +17,9 @@ export function LandingLayout({ children }: LandingLayoutProps) {
       </div>
 
       {/* Main content */}
-      <main 
+      <main
         className="flex-1 w-full"
-        style={{ 
+        style={{
           position: 'relative',
           zIndex: 1,
         }}

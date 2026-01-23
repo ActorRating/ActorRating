@@ -3,12 +3,13 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X, ArrowRight } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
 import { lockScroll, unlockScroll } from '@/lib/lockScroll'
-import { getLevelProgress } from '@/lib/badges'
+import { getLevelProgress, getUserBadges } from '@/lib/badges'
+import { Badge } from '@/components/badges/Badge'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -268,29 +269,49 @@ const RatingSliderCard = memo(function RatingSliderCard({
     const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
 
     // Direction lock: detect horizontal vs vertical intent
-    // Only lock into slider drag if horizontal movement is dominant
-    // iOS needs higher threshold (18px) due to less precise touch events
-    const threshold = isIOS ? 18 : 12
+    // Use lower threshold for initial movement to prevent buggy feeling
+    // iOS needs higher threshold for final lock, but lower for initial response
+    const initialThreshold = isIOS ? 8 : 6  // Lower threshold for immediate response
+    const lockThreshold = isIOS ? 15 : 10    // Higher threshold for final direction lock
 
     if (!touchStateRef.current.isLocked) {
-      // Threshold: 18px for iOS, 12px for Android to determine intent
-      if (dx > threshold && dx > dy) {
-        // Horizontal intent confirmed - lock into slider drag
-        touchStateRef.current.isLocked = true
-        e.preventDefault() // Only prevent default AFTER horizontal intent confirmed
-      } else if (dy > threshold) {
-        // Vertical intent - abort slider interaction, allow page scroll
+      // First check: If there's ANY horizontal movement, start updating immediately
+      // This prevents the buggy feeling when starting from 0
+      if (dx > initialThreshold && dx >= dy) {
+        // Horizontal movement detected - start updating immediately for smooth feel
+        const newValue = calculateValueFromTouch(touch.clientX)
+        touchStateRef.current.currentValue = newValue
+        updateSliderVisuals(newValue)
+        setLocalValue(newValue)
+        onValueChange(newValue)
+        
+        // Lock into slider drag if movement is significant enough
+        if (dx > lockThreshold && dx > dy * 1.5) {
+          touchStateRef.current.isLocked = true
+          e.preventDefault() // Prevent scroll after lock is confirmed
+        } else {
+          // Still updating, but not locked yet - allow small vertical movement
+          e.preventDefault() // Prevent scroll to avoid conflicts
+        }
+      } else if (dy > lockThreshold && dy > dx * 1.5) {
+        // Clear vertical intent - abort slider interaction, allow page scroll
         touchStateRef.current = null
         setIsActive(false)
         return
+      } else if (dx > initialThreshold) {
+        // Small horizontal movement - update but don't lock yet
+        const newValue = calculateValueFromTouch(touch.clientX)
+        touchStateRef.current.currentValue = newValue
+        updateSliderVisuals(newValue)
+        setLocalValue(newValue)
+        onValueChange(newValue)
+        e.preventDefault() // Prevent scroll during initial movement
       } else {
         // Not enough movement yet - wait
         return
       }
-    }
-
-    // Horizontal drag locked - update slider
-    if (touchStateRef.current.isLocked) {
+    } else {
+      // Horizontal drag locked - update slider smoothly
       e.preventDefault() // Prevent scroll during horizontal drag
       const newValue = calculateValueFromTouch(touch.clientX)
       touchStateRef.current.currentValue = newValue
@@ -644,7 +665,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     ratingsNeeded: number
     currentBadge: string
     nextBadge: string
+    nextBadgeName: string
+    level: string
+    levelEmoji: string
+    nextLevel: string | null
+    currentLevelMin: number
+    nextLevelAt: number
+    progressPercent: number
   } | null>(null)
+  const [userBadges, setUserBadges] = useState<any[]>([])
   const gradientIdRef = useRef(`progressGradient-${Math.random().toString(36).substr(2, 9)}`)
 
   // Set final score if external submitted rating is provided
@@ -1123,12 +1152,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       if (response.ok) {
         const data = await response.json()
         const levelProgress = getLevelProgress(data.ratingCount)
+        
+        // Get user badges
+        const badges = getUserBadges(
+          data.ratingCount,
+          false, // isFoundingMember
+          data.isFirstRater || false
+        )
+        setUserBadges(badges)
+        
         setProgressData({
           ratingCount: data.ratingCount,
           progress: levelProgress.progress,
-          ratingsNeeded: levelProgress.ratingsNeeded,
+          ratingsNeeded: data.ratingsNeeded,
           currentBadge: levelProgress.currentBadge?.name || 'Viewer',
-          nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level'
+          nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level',
+          nextBadgeName: levelProgress.nextBadge?.name || '',
+          level: data.level,
+          levelEmoji: data.levelEmoji,
+          nextLevel: data.nextLevel,
+          currentLevelMin: data.currentLevelMin,
+          nextLevelAt: data.nextLevelAt,
+          progressPercent: data.progressPercent
         })
       }
     } catch (error) {
@@ -1411,12 +1456,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                   {/* Sliders - Mobile optimized spacing, consistent width */}
                   {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
+                  {/* Extra bottom padding prevents last slider from being affected by Safari's bottom UI */}
                   <div
-                    className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto pb-4"
+                    className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto"
                     style={{
                       touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
                       opacity: 1,
                       visibility: 'visible',
+                      paddingBottom: '40px', // Extra padding for last slider to prevent bottom edge interference
                     }}
                   >
                     <div className="relative" ref={firstSliderRef}>
@@ -1504,30 +1551,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           : '#1a1a1a',
                         color: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? '#000000' : '#525252',
                         boxShadow: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
-                          ? submitPhase === 'loading' || submitPhase === 'checkmark'
-                            ? '0 0 30px rgba(255, 215, 0, 0.5), 0 10px 40px rgba(255, 165, 0, 0.3), 0 0 60px rgba(255, 215, 0, 0.2)'
-                            : '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
+                          ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
                           : 'none',
                         border: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
                       }}
-                      animate={
-                        submitPhase === 'loading' || submitPhase === 'checkmark'
-                          ? {
-                              scale: [1, 1.02, 1],
-                            }
-                          : {}
-                      }
-                      transition={
-                        submitPhase === 'loading' || submitPhase === 'checkmark'
-                          ? {
-                              scale: {
-                                duration: 1.5,
-                                repeat: Infinity,
-                                ease: 'easeInOut',
-                              },
-                            }
-                          : { duration: 0.2, ease: 'easeOut' }
-                      }
+                      animate={{}}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
                       whileHover={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
                         scale: 1.02,
                       } : {}}
@@ -1544,25 +1573,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           className="absolute inset-0 pointer-events-none rounded-full"
                           style={{
                             background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                            filter: 'blur(20px)',
-                          }}
-                        />
-                      )}
-                      {/* Pulsing glow effect during loading */}
-                      {(submitPhase === 'loading' || submitPhase === 'checkmark') && (
-                        <motion.span
-                          className="absolute inset-0 pointer-events-none rounded-full"
-                          animate={{
-                            opacity: [0.3, 0.7, 0.3],
-                            scale: [1, 1.05, 1],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          }}
-                          style={{
-                            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%)',
                             filter: 'blur(20px)',
                           }}
                         />
@@ -1634,7 +1644,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-10 max-w-md md:max-w-md lg:max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
+                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-10 max-w-md md:max-w-md lg:max-w-lg w-[calc(100%-1.5rem)] sm:w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -1655,14 +1665,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       document.body.style.overflow = ''
                       document.body.style.paddingRight = ''
                     }
-                    router.push('/dashboard')
+                    // Just close the modal, don't navigate
+                    setSubmitPhase('idle')
                   }}
-                  className="absolute top-3 right-3 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  className="absolute top-4 right-4 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
                   style={{ pointerEvents: 'auto' }}
-                  aria-label="Close and go to dashboard"
+                  aria-label="Close"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
-                    <X className="w-4 h-4 pointer-events-none" />
+                  <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
+                    <X className="w-7 h-7 sm:w-5 sm:h-5 pointer-events-none" />
                   </div>
                 </button>
                 {/* Success Header */}
@@ -1681,10 +1692,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       Rating saved
                     </h2>
                   </div>
-                  <p className="text-base sm:text-lg text-gray-300">
+                  <p className="text-lg sm:text-xl md:text-2xl text-gray-300">
                     You rated: <span className="font-semibold text-white">{performance.movie.title}</span> — <span className="font-bold text-[#FFD700]">{finalScore}/10</span>
                   </p>
                 </motion.div>
+
+                {/* User Badges */}
+                {userBadges.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="flex flex-wrap items-center justify-center gap-2 mb-6"
+                  >
+                    {userBadges.map((badge) => (
+                      <Badge key={badge.id} badge={badge} />
+                    ))}
+                  </motion.div>
+                )}
 
                 {/* Progress Ring */}
                 {progressData && (
@@ -1738,12 +1763,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     {/* Progress Text */}
                     <div className="text-center">
                       <p className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Critic Progress</p>
-                      <p className="text-sm text-gray-300">
+                      <p className="text-sm text-gray-300 mb-1">
                         Current: <span className="font-semibold text-white">{progressData.currentBadge}</span>
                       </p>
-                      <p className="text-sm text-gray-300">
-                        Next: <span className="font-semibold text-white">{progressData.nextBadge}</span>
-                      </p>
+                      {progressData.ratingsNeeded > 0 && progressData.nextBadgeName && (
+                        <p className="text-sm text-gray-300">
+                          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to {progressData.nextBadgeName}
+                        </p>
+                      )}
+                      {progressData.ratingsNeeded === 0 && (
+                        <p className="text-sm text-[#FFD700] font-medium">Max level reached</p>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -1757,7 +1787,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 >
                   <button
                     onClick={handleContinueRating}
-                    className="w-full py-3 sm:py-4 text-base sm:text-lg font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden"
+                    className="w-full py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden flex items-center justify-center gap-2"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       color: '#000000',
@@ -1765,6 +1795,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     Rate another
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </motion.div>
 
