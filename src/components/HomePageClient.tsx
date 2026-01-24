@@ -1608,11 +1608,11 @@ export default function HomePageClient() {
       </div>
 
       {/* Oscar 2026 Banner */}
-      <div className="relative z-10 bg-black py-8 sm:py-12 md:py-16 pb-16 sm:pb-20 md:pb-24 lg:pb-28 xl:pb-32">
+      <div className="relative z-10 bg-black py-8 sm:py-12 md:py-16 pb-20 sm:pb-24 md:pb-28 lg:pb-32 xl:pb-36">
         <div className="w-full relative mx-auto" style={{ maxWidth: '1280px', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
           <Link href="/oscars-2026" className="block">
             <div
-              className="group relative p-8 sm:p-10 md:p-12 lg:p-14 rounded-2xl sm:rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.2)] cursor-pointer w-full"
+              className="group relative p-8 sm:p-10 md:p-12 lg:p-14 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.2)] cursor-pointer w-full"
               style={{
                 boxShadow: `
                   0 20px 60px -15px rgba(0, 0, 0, 0.9),
@@ -1622,7 +1622,7 @@ export default function HomePageClient() {
               }}
             >
               {/* Subtle glow effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl sm:rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem] overflow-hidden">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full bg-[#FFD700]/10 blur-3xl" />
               </div>
 

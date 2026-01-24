@@ -15,6 +15,7 @@ import { SearchBar } from '@/components/SearchBar'
 import { FaStar } from 'react-icons/fa'
 import { CheckCircle, Star, Users, TrendingUp, X } from 'lucide-react'
 import { getLevelProgress } from '@/lib/badges'
+import { OscarBanner } from '@/components/OscarBanner'
 
 // Curated performances for first rating
 const CURATED_PERFORMANCES = [
@@ -753,6 +754,16 @@ export default function OnboardingRatePage() {
               <p className="text-base sm:text-lg text-[#a3a3a3] font-light mb-8">
                 Or start with these classics:
               </p>
+            </motion.div>
+
+            {/* Oscar 2026 Banner */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-12"
+            >
+              <OscarBanner buttonMarginLeft={true} />
             </motion.div>
 
           {/* Desktop: Grid layout */}

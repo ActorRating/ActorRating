@@ -1692,9 +1692,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       Rating saved
                     </h2>
                   </div>
-                  <p className="text-lg sm:text-xl md:text-2xl text-gray-300">
-                    You rated: <span className="font-semibold text-white">{performance.movie.title}</span> — <span className="font-bold text-[#FFD700]">{finalScore}/10</span>
-                  </p>
+                  <div className="mt-4">
+                    <p className="text-base sm:text-lg text-gray-400 mb-1">Your score</p>
+                    <p className="text-4xl sm:text-5xl font-bold text-[#FFD700]">{finalScore}/10</p>
+                  </div>
                 </motion.div>
 
                 {/* User Badges */}
@@ -1714,9 +1715,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 {/* Progress Ring */}
                 {progressData && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ 
+                      delay: 0.5,
+                      duration: 0.5,
+                      ease: [0.4, 0, 0.2, 1]
+                    }}
                     className="flex flex-col items-center mb-6"
                   >
                     {/* Circular Progress Ring */}
@@ -1742,7 +1747,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           strokeLinecap="round"
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: progressData.progress / 100 }}
-                          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.5 }}
+                          transition={{ 
+                            duration: 1.5, 
+                            ease: [0.4, 0, 0.2, 1],
+                            delay: 0.7
+                          }}
                         />
                         <defs>
                           <linearGradient id={gradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1762,16 +1771,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     
                     {/* Progress Text */}
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Critic Progress</p>
-                      <p className="text-sm text-gray-300 mb-1">
-                        Current: <span className="font-semibold text-white">{progressData.currentBadge}</span>
-                      </p>
-                      {progressData.ratingsNeeded > 0 && progressData.nextBadgeName && (
-                        <p className="text-sm text-gray-300">
-                          {progressData.ratingsNeeded} {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to {progressData.nextBadgeName}
-                        </p>
-                      )}
-                      {progressData.ratingsNeeded === 0 && (
+                      <p className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Critic Progress</p>
+                      {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <Lock className="w-4 h-4 text-gray-400" />
+                          <p className="text-base sm:text-lg font-semibold text-white">
+                            <span className="text-[#FFD700]">{progressData.ratingsNeeded}</span> {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to {progressData.nextBadgeName}
+                          </p>
+                        </div>
+                      ) : (
                         <p className="text-sm text-[#FFD700] font-medium">Max level reached</p>
                       )}
                     </div>
