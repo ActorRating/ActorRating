@@ -85,6 +85,7 @@ export default function ActorPage() {
   const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating' | 'most-rated' | 'controversial'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [userHasRatedActor, setUserHasRatedActor] = useState(false)
+  const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
   const [seoExpanded, setSeoExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
@@ -105,7 +106,10 @@ export default function ActorPage() {
           const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`)
           if (userRatingsResponse.ok) {
             const userRatings = await userRatingsResponse.json()
-            setUserHasRatedActor(Array.isArray(userRatings) && userRatings.length > 0)
+            if (Array.isArray(userRatings)) {
+              setUserRatedMovies(new Set(userRatings.map((r: any) => r.movieId)))
+              setUserHasRatedActor(userRatings.length > 0)
+            }
           }
         }
 
@@ -369,6 +373,14 @@ export default function ActorPage() {
 
   const Layout = user ? SignedInLayout : HomeLayout
 
+  const targetPerformance = useMemo(() => {
+    return communityStats.highestRated || performances[0] || null
+  }, [communityStats.highestRated, performances])
+
+  const isTargetRated = useMemo(() => {
+    return targetPerformance ? userRatedMovies.has(targetPerformance.movieId) : false
+  }, [targetPerformance, userRatedMovies])
+
   if (loading) {
     return (
       <Layout>
@@ -553,11 +565,15 @@ export default function ActorPage() {
                   <button
                     className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      background: isTargetRated
+                        ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
+                        : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      color: isTargetRated ? '#FFD700' : 'black',
+                      border: isTargetRated ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
                     }}
                   >
                     <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Rate A Performance
+                    {isTargetRated ? 'Edit Performance' : 'Rate A Performance'}
                   </button>
                 </Link>
               </motion.div>
@@ -1283,11 +1299,15 @@ export default function ActorPage() {
                             <button 
                               className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                               style={{
-                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                                background: userRatedMovies.has(performance.movie.id)
+                                  ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
+                                  : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                                color: userRatedMovies.has(performance.movie.id) ? '#FFD700' : 'black',
+                                border: userRatedMovies.has(performance.movie.id) ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
                               }}
                             >
                               <span className="flex items-center justify-center gap-2">
-                                Rate
+                                {userRatedMovies.has(performance.movie.id) ? 'Edit' : 'Rate'}
                                 <FaStar className="w-4 h-4" />
                               </span>
                             </button>
@@ -1438,13 +1458,17 @@ export default function ActorPage() {
             <button
               className="px-8 py-4 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-2xl whitespace-nowrap min-h-[48px] touch-manipulation"
               style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                background: isTargetRated
+                  ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
+                  : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                color: isTargetRated ? '#FFD700' : 'black',
+                border: isTargetRated ? '1px solid rgba(255, 215, 0, 0.3)' : 'none',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(255, 215, 0, 0.3)',
               }}
             >
-              <FaStar className="w-4 h-4 text-black" />
-              <span>Rate Performance</span>
-              <ChevronRight className="w-4 h-4 text-black" />
+              <FaStar className="w-4 h-4" />
+              <span>{isTargetRated ? 'Edit Performance' : 'Rate Performance'}</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </Link>
         </motion.div>

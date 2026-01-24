@@ -441,9 +441,12 @@ export default function ActorDetailPage() {
 
                       <Button
                         asChild
-                        variant={hasUserRating ? "secondary" : "premium"}
+                        variant={hasUserRating ? "outline" : "premium"}
                         size="sm"
-                        className="text-sm px-4 py-2 font-medium min-w-[80px] h-9"
+                        className={hasUserRating 
+                          ? "text-sm px-4 py-2 font-medium min-w-[80px] h-9 border-[#FFD700]/30 text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50" 
+                          : "text-sm px-4 py-2 font-medium min-w-[80px] h-9"
+                        }
                       >
                         <Link href={\`/rate?actor=\${actorId}&movie=\${performance.movie.id}\`} className="flex items-center justify-center gap-1.5">
                           <Star className="w-4 h-4" />

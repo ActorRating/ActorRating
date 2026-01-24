@@ -398,3 +398,4 @@ const RatingSliderCard = memo(function RatingSliderCard({
 - ✅ Desktop behavior unchanged
 - ✅ Native-feeling interactions on iOS and Android
 
+
