@@ -690,6 +690,30 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [externalSubmittedRating])
 
+  // Restore scroll when submitPhase changes away from 'success' (critical fix for scroll lock issue)
+  useEffect(() => {
+    if (submitPhase !== 'success') {
+      // Restore scroll when not in success phase
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.paddingRight = ''
+        document.body.style.touchAction = 'pan-y pinch-zoom' // Restore trackpad scrolling
+      }
+    }
+  }, [submitPhase])
+
+  // Cleanup: Restore scroll on unmount (critical fix for scroll lock issue)
+  useEffect(() => {
+    return () => {
+      // Restore scroll when component unmounts
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.paddingRight = ''
+        document.body.style.touchAction = 'pan-y pinch-zoom' // Restore trackpad scrolling
+      }
+    }
+  }, [])
+
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
   const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)
   const [technicalSkill, setTechnicalSkill] = useState(initialRating?.technicalSkill ?? 0)
@@ -994,6 +1018,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
           document.body.style.overflow = 'hidden'
           document.body.style.paddingRight = `${scrollbarWidth}px`
+          document.body.style.touchAction = 'pan-y pinch-zoom' // Keep trackpad scrolling enabled even when overflow is hidden
         }
 
         // Calculate overall score for tracking

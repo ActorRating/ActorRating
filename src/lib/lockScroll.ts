@@ -13,7 +13,7 @@ export function lockScroll() {
 export function unlockScroll() {
   if (typeof document !== 'undefined') {
     document.body.style.overflow = ''
-    document.body.style.touchAction = ''
+    document.body.style.touchAction = 'pan-y pinch-zoom' // Restore trackpad scrolling
   }
 }
 

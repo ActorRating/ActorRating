@@ -183,12 +183,13 @@ html, body {
   max-width: 100vw;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-x: none !important;
-  overscroll-behavior-y: none !important; /* Prevent bounce effect on iOS - no scrolling past top/bottom */
-  overscroll-behavior: none !important; /* Prevent all overscroll */
+  overscroll-behavior-y: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior: auto !important; /* Allow normal scroll behavior */
   overflow-y: auto; /* Allow vertical scrolling */
   position: relative;
   margin: 0;
   padding: 0;
+  touch-action: pan-y pinch-zoom; /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
 }
 
 html {
@@ -202,11 +203,12 @@ body {
   padding-bottom: env(safe-area-inset-bottom); /* Respect iOS safe area */
   overflow-y: auto; /* Changed from scroll to auto - only show scrollbar when needed */
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none !important; /* Prevent scrolling past top/bottom */
-  overscroll-behavior-y: none !important;
+  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior-y: auto !important;
   overscroll-behavior-x: none !important;
   position: relative;
   margin: 0;
+  touch-action: pan-y pinch-zoom; /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
 }
 
 /* Ensure body can scroll to top */
@@ -233,8 +235,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none !important; /* Prevent scrolling past top/bottom */
-  overscroll-behavior-y: none !important;
+  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior-y: auto !important;
   overscroll-behavior-x: none !important;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -378,7 +380,7 @@ html {
   margin-left: 0;
   margin-right: 0;
   position: relative;
-  overscroll-behavior: none !important; /* Prevent scrolling past top/bottom */
+  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
 }
 
 /* Fix mobile viewport height issues - prevent black bar at bottom */
