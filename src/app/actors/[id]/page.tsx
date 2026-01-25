@@ -109,8 +109,13 @@ export default function ActorPage() {
   // Check for refresh flag when pathname changes (navigation back to this page)
   useEffect(() => {
     const refreshActorRatings = sessionStorage.getItem('refreshActorRatings')
-    if (refreshActorRatings === actorId) {
+    const refreshActorRatingsSlug = sessionStorage.getItem('refreshActorRatingsSlug')
+    
+    // Check if refresh is needed (match by either ID or slug)
+    if (refreshActorRatings === actorId || refreshActorRatingsSlug === actorId) {
       sessionStorage.removeItem('refreshActorRatings')
+      sessionStorage.removeItem('refreshActorRatingsSlug')
+      console.log('Refresh flag detected, triggering refresh')
       setRefreshKey(prev => prev + 1)
     }
   }, [actorId, pathname])

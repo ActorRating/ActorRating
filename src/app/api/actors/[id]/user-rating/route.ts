@@ -51,9 +51,33 @@ export async function GET(
       )
     }
 
-    const { id: actorId } = await params
+    const { id: actorIdOrSlug } = await params
 
-    console.log("Fetching ratings for actor:", actorId, "user:", userId)
+    console.log("Fetching ratings for actor (slug or ID):", actorIdOrSlug, "user:", userId)
+
+    // First, resolve the slug to an actual actor ID
+    let actorId = actorIdOrSlug
+    
+    // Check if it's a slug (not a UUID)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorIdOrSlug)
+    
+    if (!isUUID) {
+      // It's a slug, need to resolve to UUID
+      const actor = await prisma.actor.findUnique({
+        where: { slug: actorIdOrSlug },
+        select: { id: true }
+      })
+      
+      if (!actor) {
+        console.log("Actor not found for slug:", actorIdOrSlug)
+        return NextResponse.json([], { status: 200 }) // Return empty array if actor not found
+      }
+      
+      actorId = actor.id
+      console.log("Resolved slug to actor ID:", actorId)
+    }
+
+    console.log("Fetching ratings for actor ID:", actorId, "user:", userId)
 
     const userRatings = await prisma.rating.findMany({
       where: {

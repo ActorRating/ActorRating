@@ -1171,7 +1171,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       document.body.style.paddingRight = ''
     }
     // Store flag to indicate we need to refresh ratings on actor page
+    // Store both ID and slug to handle both cases
     sessionStorage.setItem('refreshActorRatings', performance.actor.id)
+    if (performance.actor.slug) {
+      sessionStorage.setItem('refreshActorRatingsSlug', performance.actor.slug)
+    }
     // Navigate to actor's page filmography section using slug
     const actorUrl = getActorUrl(performance.actor)
     router.push(`${actorUrl}#filmography`)
