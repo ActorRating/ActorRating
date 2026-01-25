@@ -36,20 +36,20 @@ export function getMovieSlugOrGenerate(movie: Movie): string {
 
 /**
  * Generate an actor page URL
- * Uses slug if available, falls back to ID for backwards compatibility
+ * Always uses slug, generates one if not available
  */
 export function getActorUrl(actor: Actor): string {
-  const slugOrId = actor.slug || actor.id
-  return `/actors/${slugOrId}`
+  const slug = getActorSlugOrGenerate(actor)
+  return `/actors/${slug}`
 }
 
 /**
  * Generate a movie page URL
- * Uses slug if available, falls back to ID for backwards compatibility
+ * Always uses slug, generates one if not available
  */
 export function getMovieUrl(movie: Movie): string {
-  const slugOrId = movie.slug || movie.id
-  return `/movies/${slugOrId}`
+  const slug = getMovieSlugOrGenerate(movie)
+  return `/movies/${slug}`
 }
 
 /**

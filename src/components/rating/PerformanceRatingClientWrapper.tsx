@@ -10,6 +10,7 @@ import { haptic } from '@/lib/haptics'
 import { lockScroll, unlockScroll } from '@/lib/lockScroll'
 import { getLevelProgress, getUserBadges } from '@/lib/badges'
 import { Badge } from '@/components/badges/Badge'
+import { getActorUrl } from '@/lib/slugHelper'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -1171,8 +1172,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
     // Store flag to indicate we need to refresh ratings on actor page
     sessionStorage.setItem('refreshActorRatings', performance.actor.id)
-    // Navigate to actor's page filmography section
-    router.push(`/actors/${performance.actor.id}#filmography`)
+    // Navigate to actor's page filmography section using slug
+    const actorUrl = getActorUrl(performance.actor)
+    router.push(`${actorUrl}#filmography`)
   }
 
   // Fetch user progress data

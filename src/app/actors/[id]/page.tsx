@@ -82,6 +82,7 @@ export default function ActorPage() {
   const [actor, setActor] = useState<Actor | null>(null)
   const [performances, setPerformances] = useState<Performance[]>([])
   const [loading, setLoading] = useState(true)
+  const [is410, setIs410] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating' | 'most-rated' | 'controversial'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
@@ -94,6 +95,16 @@ export default function ActorPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Check if actorId is a UUID (if so, return 410 Gone)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId)
+  
+  useEffect(() => {
+    if (isUUID) {
+      setIs410(true)
+      setLoading(false)
+    }
+  }, [isUUID])
 
   // Check for refresh flag when pathname changes (navigation back to this page)
   useEffect(() => {
@@ -121,6 +132,11 @@ export default function ActorPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Skip fetching if UUID detected (410 Gone)
+      if (isUUID) {
+        return
+      }
+      
       try {
         const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
         if (!response.ok) throw new Error('Failed to fetch actor')
@@ -449,6 +465,24 @@ export default function ActorPage() {
   const isTargetRated = useMemo(() => {
     return targetPerformance ? userRatedMovies.has(targetPerformance.movieId) : false
   }, [targetPerformance, userRatedMovies])
+
+  // Handle 410 Gone for UUID routes
+  if (is410) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md px-4">
+            <h1 className="text-6xl font-bold text-white mb-4">410</h1>
+            <h2 className="text-2xl font-bold text-white mb-4">Page Gone</h2>
+            <p className="text-gray-400 mb-6">
+              This URL format is no longer supported. Actor pages now use slug-based URLs.
+            </p>
+            <Button onClick={() => router.push('/search')}>Go to Search</Button>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   if (loading) {
     return (
