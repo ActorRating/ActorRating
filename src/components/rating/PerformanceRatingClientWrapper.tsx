@@ -1164,6 +1164,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }
 
   const handleContinueRating = () => {
+    // Store flag to indicate we need to refresh ratings on actor page
+    sessionStorage.setItem('refreshActorRatings', performance.actor.id)
     // Navigate to actor's page
     router.push(`/actors/${performance.actor.id}`)
   }

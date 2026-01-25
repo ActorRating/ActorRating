@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight, ArrowRight } from 'lucide-react'
@@ -75,6 +75,7 @@ interface Performance {
 export default function ActorPage() {
   const params = useParams()
   const router = useRouter()
+  const pathname = usePathname()
   const user = useUser()
   const actorId = params?.id as string
 
@@ -86,10 +87,22 @@ export default function ActorPage() {
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [userHasRatedActor, setUserHasRatedActor] = useState(false)
   const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
+  const [userRatingsMap, setUserRatingsMap] = useState<Map<string, number>>(new Map())
   const [seoExpanded, setSeoExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Check for refresh flag when pathname changes (navigation back to this page)
+  useEffect(() => {
+    const refreshActorRatings = sessionStorage.getItem('refreshActorRatings')
+    if (refreshActorRatings === actorId) {
+      sessionStorage.removeItem('refreshActorRatings')
+      setRefreshKey(prev => prev + 1)
+    }
+  }, [actorId, pathname])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,12 +116,31 @@ export default function ActorPage() {
         
         // Check if user has rated this actor
         if (user) {
-          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`)
+          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`, { cache: 'no-store' })
           if (userRatingsResponse.ok) {
             const userRatings = await userRatingsResponse.json()
             if (Array.isArray(userRatings)) {
               setUserRatedMovies(new Set(userRatings.map((r: any) => r.movieId)))
               setUserHasRatedActor(userRatings.length > 0)
+              
+              // Store user scores for each movie
+              const scoresMap = new Map<string, number>()
+              userRatings.forEach((r: any) => {
+                // Calculate user's average score for this performance
+                const scores = [
+                  r.emotionalRangeDepth,
+                  r.characterBelievability,
+                  r.technicalSkill,
+                  r.screenPresence,
+                  r.chemistryInteraction
+                ].filter((s): s is number => typeof s === 'number' && s > 0)
+                
+                if (scores.length > 0) {
+                  const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
+                  scoresMap.set(r.movieId, avgScore)
+                }
+              })
+              setUserRatingsMap(scoresMap)
             }
           }
         }
@@ -142,7 +174,7 @@ export default function ActorPage() {
     if (actorId) {
       fetchData()
     }
-  }, [actorId, user])
+  }, [actorId, user, refreshKey])
 
   // Close dropdown and update sort when search query changes
   useEffect(() => {
@@ -1200,6 +1232,8 @@ export default function ActorPage() {
                 const character = performance.character || "—"
                 const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}` : null
                 const isHighestRated = sortBy === 'rating' && index === 0 && rating && parseFloat(rating) > 0
+                const userScore = userRatingsMap.get(performance.movie.id)
+                const hasUserRated = userRatedMovies.has(performance.movie.id)
 
                 return (
                   <motion.div
@@ -1247,17 +1281,34 @@ export default function ActorPage() {
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-4">
                             {/* Score Pill - Top Left - Slightly Smaller */}
-                            <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                              <FaStar className="w-5 h-5 text-[#FFD700]" />
-                              <span 
-                                className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
-                                style={{
-                                  fontFamily: 'var(--font-geist-sans), sans-serif',
-                                  fontVariantNumeric: 'tabular-nums',
-                                }}
-                              >
-                                {rating || 'N/A'}
-                              </span>
+                            <div className="flex flex-col items-start gap-2">
+                              <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                <span 
+                                  className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
+                                  style={{
+                                    fontFamily: 'var(--font-geist-sans), sans-serif',
+                                    fontVariantNumeric: 'tabular-nums',
+                                  }}
+                                >
+                                  {rating || 'N/A'}
+                                </span>
+                              </div>
+                              {/* User Score - Show if user has rated this performance */}
+                              {hasUserRated && userScore && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                  <span className="text-xs text-gray-400">Your score:</span>
+                                  <span 
+                                    className="text-sm font-bold text-white"
+                                    style={{
+                                      fontFamily: 'var(--font-geist-sans), sans-serif',
+                                      fontVariantNumeric: 'tabular-nums',
+                                    }}
+                                  >
+                                    {(userScore / 10).toFixed(1)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             
                             {/* Movie Year - Top Right */}
