@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, X, ArrowRight } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -1164,10 +1164,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }
 
   const handleContinueRating = () => {
+    // Unlock body scroll when closing
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }
     // Store flag to indicate we need to refresh ratings on actor page
     sessionStorage.setItem('refreshActorRatings', performance.actor.id)
-    // Navigate to actor's page
-    router.push(`/actors/${performance.actor.id}`)
+    // Navigate to actor's page filmography section
+    router.push(`/actors/${performance.actor.id}#filmography`)
   }
 
   // Fetch user progress data
@@ -1682,27 +1687,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   `,
                 }}
               >
-                {/* Close Button */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    // Unlock body scroll when closing
-                    if (typeof document !== 'undefined') {
-                      document.body.style.overflow = ''
-                      document.body.style.paddingRight = ''
-                    }
-                    // Just close the modal, don't navigate
-                    setSubmitPhase('idle')
-                  }}
-                  className="absolute top-4 right-4 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  style={{ pointerEvents: 'auto' }}
-                  aria-label="Close"
-                >
-                  <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
-                    <X className="w-7 h-7 sm:w-5 sm:h-5 pointer-events-none" />
-                  </div>
-                </button>
                 {/* Success Header */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}

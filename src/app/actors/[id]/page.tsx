@@ -104,24 +104,52 @@ export default function ActorPage() {
     }
   }, [actorId, pathname])
 
+  // Also refresh when page becomes visible (user returns from another tab/app)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        console.log('Page visible, refreshing user ratings')
+        setRefreshKey(prev => prev + 1)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [user])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/actors/${actorId}`)
+        const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
         if (!response.ok) throw new Error('Failed to fetch actor')
         
         const data = await response.json()
         setActor(data)
         setPerformances(data.performances || [])
         
-        // Check if user has rated this actor
+        // ALWAYS fetch user ratings if user exists - with fresh data
         if (user) {
-          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`, { cache: 'no-store' })
+          console.log('Fetching user ratings for actor:', actorId, 'user:', user.id)
+          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`, { 
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          })
+          
           if (userRatingsResponse.ok) {
             const userRatings = await userRatingsResponse.json()
+            console.log('User ratings received:', userRatings)
+            
             if (Array.isArray(userRatings)) {
-              setUserRatedMovies(new Set(userRatings.map((r: any) => r.movieId)))
+              const movieIds = userRatings.map((r: any) => r.movieId)
+              setUserRatedMovies(new Set(movieIds))
               setUserHasRatedActor(userRatings.length > 0)
+              
+              console.log('User has rated these movies:', movieIds)
               
               // Store user scores for each movie
               const scoresMap = new Map<string, number>()
@@ -138,11 +166,20 @@ export default function ActorPage() {
                 if (scores.length > 0) {
                   const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
                   scoresMap.set(r.movieId, avgScore)
+                  console.log('Movie:', r.movieId, 'User score:', avgScore)
                 }
               })
               setUserRatingsMap(scoresMap)
             }
+          } else {
+            console.error('Failed to fetch user ratings:', userRatingsResponse.status)
           }
+        } else {
+          console.log('No user logged in, skipping user ratings fetch')
+          // Clear user data when no user
+          setUserRatedMovies(new Set())
+          setUserRatingsMap(new Map())
+          setUserHasRatedActor(false)
         }
 
         // Check for rating feedback from session storage
@@ -1068,6 +1105,7 @@ export default function ActorPage() {
         {performances.length > 0 ? (
           <>
             <motion.div
+              id="filmography"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
