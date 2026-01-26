@@ -173,6 +173,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   const [isActive, setIsActive] = useState(false)
   const [localValue, setLocalValue] = useState(value)
   const trackRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null) // Container with padding for touch area
   const fillRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
   const lastHapticValueRef = useRef<number>(value)
@@ -245,119 +246,121 @@ const RatingSliderCard = memo(function RatingSliderCard({
     }
   }, [])
 
-  // Touch handlers with direction lock
-  // Using native event listeners with { passive: false } for iOS compatibility
+  // Native iOS-style touch handlers - instant response, no delays
+  // Works like Spotify, Apple Music, YouTube sliders
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (disabled) return
+    if (disabled || !containerRef.current || !trackRef.current) return
 
     const touch = e.touches[0]
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const trackRect = trackRef.current.getBoundingClientRect()
+    
+    // Check if touch is within container bounds (includes padding area)
+    const isWithinContainer = 
+      touch.clientX >= containerRect.left &&
+      touch.clientX <= containerRect.right &&
+      touch.clientY >= containerRect.top &&
+      touch.clientY <= containerRect.bottom
+
+    if (!isWithinContainer) return
+
+    // Immediately jump thumb to touch position (native iOS behavior)
+    // Use track rect for accurate value calculation
+    const newValue = calculateValueFromTouch(touch.clientX)
+    
     touchStateRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
-      isLocked: false,
-      currentValue: localValue
+      isLocked: true, // Immediately lock - we're in the slider area
+      currentValue: newValue
     }
 
+    // Update immediately - no waiting, no thresholds, instant response
+    updateSliderVisuals(newValue)
+    setLocalValue(newValue)
+    onValueChange(newValue)
+    
     setIsActive(true)
     haptic.light() // Selection feedback (silently fails on iOS)
     onSliderStart?.()
-  }, [disabled, localValue, onSliderStart])
+    
+    // Prevent default to stop any scroll attempts
+    e.preventDefault()
+  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange, onSliderStart])
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchStateRef.current || disabled) return
 
     const touch = e.touches[0]
-    const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
-    const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
-
-    // Direction lock: detect horizontal vs vertical intent
-    // Use lower threshold for initial movement to prevent buggy feeling
-    // iOS needs higher threshold for final lock, but lower for initial response
-    const initialThreshold = isIOS ? 8 : 6  // Lower threshold for immediate response
-    const lockThreshold = isIOS ? 15 : 10    // Higher threshold for final direction lock
-
-    if (!touchStateRef.current.isLocked) {
-      // First check: If there's ANY horizontal movement, start updating immediately
-      // This prevents the buggy feeling when starting from 0
-      if (dx > initialThreshold && dx >= dy) {
-        // Horizontal movement detected - start updating immediately for smooth feel
+    
+    // If we're locked (touch started on track), immediately follow finger
+    if (touchStateRef.current.isLocked) {
+      e.preventDefault() // Always prevent scroll when dragging slider
+      
+      const newValue = calculateValueFromTouch(touch.clientX)
+      touchStateRef.current.currentValue = newValue
+      
+      // Direct DOM updates for smoothness
+      updateSliderVisuals(newValue)
+      
+      // Update state for score calculation
+      setLocalValue(newValue)
+      onValueChange(newValue)
+    } else {
+      // This shouldn't happen with new logic, but handle gracefully
+      const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
+      const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
+      
+      // If significant horizontal movement, lock and update
+      if (dx > 5 && dx > dy) {
+        touchStateRef.current.isLocked = true
+        e.preventDefault()
         const newValue = calculateValueFromTouch(touch.clientX)
         touchStateRef.current.currentValue = newValue
         updateSliderVisuals(newValue)
         setLocalValue(newValue)
         onValueChange(newValue)
-        
-        // Lock into slider drag if movement is significant enough
-        if (dx > lockThreshold && dx > dy * 1.5) {
-          touchStateRef.current.isLocked = true
-          e.preventDefault() // Prevent scroll after lock is confirmed
-        } else {
-          // Still updating, but not locked yet - allow small vertical movement
-          e.preventDefault() // Prevent scroll to avoid conflicts
-        }
-      } else if (dy > lockThreshold && dy > dx * 1.5) {
-        // Clear vertical intent - abort slider interaction, allow page scroll
+      } else if (dy > 10 && dy > dx) {
+        // Clear vertical scroll intent
         touchStateRef.current = null
         setIsActive(false)
         return
-      } else if (dx > initialThreshold) {
-        // Small horizontal movement - update but don't lock yet
-        const newValue = calculateValueFromTouch(touch.clientX)
-        touchStateRef.current.currentValue = newValue
-        updateSliderVisuals(newValue)
-        setLocalValue(newValue)
-        onValueChange(newValue)
-        e.preventDefault() // Prevent scroll during initial movement
-      } else {
-        // Not enough movement yet - wait
-        return
       }
-    } else {
-      // Horizontal drag locked - update slider smoothly
-      e.preventDefault() // Prevent scroll during horizontal drag
-      const newValue = calculateValueFromTouch(touch.clientX)
-      touchStateRef.current.currentValue = newValue
-      updateSliderVisuals(newValue) // Direct DOM update, no React state
-
-      // Real-time update for score
-      setLocalValue(newValue)
-      onValueChange(newValue)
     }
-  }, [disabled, isIOS, calculateValueFromTouch, updateSliderVisuals, onValueChange])
+  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange])
 
   const handleTouchEnd = useCallback(() => {
     if (!touchStateRef.current) return
 
-    // Only commit value if we were locked into horizontal drag
-    if (touchStateRef.current.isLocked) {
-      const finalValue = touchStateRef.current.currentValue
-      setLocalValue(finalValue)
-      onValueChange(finalValue) // Commit final value
-      haptic.medium() // Confirmation feedback (silently fails on iOS)
-    }
+    // Commit final value
+    const finalValue = touchStateRef.current.currentValue
+    setLocalValue(finalValue)
+    onValueChange(finalValue)
+    haptic.medium() // Confirmation feedback (silently fails on iOS)
 
     touchStateRef.current = null
     setIsActive(false)
     onSliderEnd?.()
   }, [onValueChange, onSliderEnd])
 
-  // Attach native event listeners with { passive: false } for iOS
+  // Attach native event listeners to container (includes padding area) with { passive: false } for iOS
   useEffect(() => {
-    if (!isTouchDevice || !trackRef.current) return
+    if (!isTouchDevice || !containerRef.current) return
 
-    const track = trackRef.current
+    const container = containerRef.current
 
     // Add event listeners with { passive: false } so preventDefault works on iOS
-    track.addEventListener('touchstart', handleTouchStart, { passive: false })
-    track.addEventListener('touchmove', handleTouchMove, { passive: false })
-    track.addEventListener('touchend', handleTouchEnd, { passive: false })
-    track.addEventListener('touchcancel', handleTouchEnd, { passive: false })
+    // Attach to container so entire touchable area (including padding) works
+    container.addEventListener('touchstart', handleTouchStart, { passive: false })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchend', handleTouchEnd, { passive: false })
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: false })
 
     return () => {
-      track.removeEventListener('touchstart', handleTouchStart)
-      track.removeEventListener('touchmove', handleTouchMove)
-      track.removeEventListener('touchend', handleTouchEnd)
-      track.removeEventListener('touchcancel', handleTouchEnd)
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', handleTouchEnd)
+      container.removeEventListener('touchcancel', handleTouchEnd)
     }
   }, [isTouchDevice, handleTouchStart, handleTouchMove, handleTouchEnd])
 
@@ -384,7 +387,19 @@ const RatingSliderCard = memo(function RatingSliderCard({
 
       {/* Slider Container */}
       {/* Increased vertical padding for easier mobile touch (invisible padding) */}
-      <div className="relative" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+      {/* Entire container is touchable - works like native iOS sliders */}
+      <div 
+        ref={containerRef}
+        className="relative" 
+        style={{ 
+          paddingTop: '20px', 
+          paddingBottom: '20px',
+          touchAction: 'pan-x', // Prevent vertical scroll, allow horizontal
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+        }}
+      >
         {/* Track Background - with padding to contain thumb at edges */}
         {/* Touch handlers attached via native listeners with { passive: false } for iOS */}
         {/* touch-action: pan-x prevents scroll capture, allows horizontal drag only */}

@@ -32,7 +32,7 @@ function RatePageContent() {
   const movieId = searchParams?.get('movie')
   const ratingId = searchParams?.get('rating') // For editing existing ratings
   const submittedParam = searchParams?.get('submitted') === 'true'
-  
+
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)
   const [characterName, setCharacterName] = useState<string>('')
@@ -49,7 +49,7 @@ function RatePageContent() {
   const { executeRecaptcha } = useRecaptchaV3()
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [pendingRatingData, setPendingRatingData] = useState<any>(null)
-  
+
   // Track rate_start ref - must be declared before any conditional returns
   const hasTrackedRateStart = useRef(false)
 
@@ -87,9 +87,9 @@ function RatePageContent() {
         if (actorNameElement) {
           const elementTop = actorNameElement.offsetTop
           const offset = 80 // Add 80px of space above the actor name
-          window.scrollTo({ 
-            top: elementTop - offset, 
-            behavior: 'smooth' 
+          window.scrollTo({
+            top: elementTop - offset,
+            behavior: 'smooth'
           })
         }
       }, 100)
@@ -125,7 +125,7 @@ function RatePageContent() {
         } else {
           // Regular flow for new ratings - fetch in parallel for speed
           const fetchPromises: Promise<any>[] = []
-          
+
           if (actorId) {
             // Use minimal mode for faster loading
             fetchPromises.push(
@@ -142,7 +142,7 @@ function RatePageContent() {
                 .catch(err => console.error('Failed to fetch actor:', err))
             )
           }
-          
+
           if (movieId) {
             fetchPromises.push(
               fetch(`/api/movies/${movieId}`)
@@ -158,11 +158,11 @@ function RatePageContent() {
                 }))
                 .catch(err => {
                   console.error('Failed to fetch movie:', err)
-              setError('Failed to fetch movie data. Please try again.')
+                  setError('Failed to fetch movie data. Please try again.')
                 })
             )
           }
-          
+
           // Wait for all fetches to complete
           await Promise.all(fetchPromises)
         }
@@ -291,11 +291,11 @@ function RatePageContent() {
         movieYear: movie.year,
         comment: characterName,
       }
-      
+
       // Show modal immediately - no setTimeout
       setPendingRatingData(ratingDataToStore)
       setShowSignUpModal(true)
-      
+
       // Return a rejected promise without error to prevent success animation but avoid console error
       // Use a special rejection that can be identified
       return Promise.reject(new Error('USER_NOT_SIGNED_IN'))
@@ -321,7 +321,7 @@ function RatePageContent() {
       if (isNaN(apiRatingData.chemistryInteraction) || apiRatingData.chemistryInteraction < 0 || apiRatingData.chemistryInteraction > 100) {
         validationErrors.push('Chemistry Interaction must be between 0 and 100')
       }
-      
+
       if (validationErrors.length > 0) {
         throw new Error(validationErrors.join(', '))
       }
@@ -336,7 +336,7 @@ function RatePageContent() {
       const recaptchaToken = await executeRecaptcha('submit_rating')
 
       let result: Rating
-      
+
       if (ratingId && existingRating) {
         // Update existing rating
         const response = await fetch(`/api/ratings/${ratingId}`, {
@@ -354,13 +354,13 @@ function RatePageContent() {
             recaptchaToken,
           }),
         })
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           console.error('Update rating error:', { status: response.status, error: errorData })
           throw new Error(errorData.error || errorData.debug || 'Failed to update rating')
         }
-        
+
         result = await response.json()
       } else {
         // Create new rating
@@ -376,7 +376,7 @@ function RatePageContent() {
           recaptchaToken,
         })
       }
-      
+
       setLastRatingId(result.id)
       setSubmittedRating(result)
       // Don't set submitted=true here - let the component handle the success animation
@@ -430,7 +430,7 @@ function RatePageContent() {
           <div className="relative">
             {/* Edit Rating Header - Only show when editing */}
             {ratingId && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="absolute top-4 sm:top-6 left-0 right-0 z-50 pointer-events-none"
@@ -445,7 +445,7 @@ function RatePageContent() {
 
             {/* Error Display */}
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="absolute top-12 sm:top-16 left-4 right-4 z-50 p-4 bg-red-50 border border-red-200 rounded-lg pointer-events-auto max-w-md mx-auto"
@@ -505,7 +505,7 @@ function RatePageContent() {
             />
           </div>
         )}
-        
+
         {/* Sign Up Modal */}
         {showSignUpModal && pendingRatingData && actor && movie && (
           <SignUpToSaveModal
@@ -532,133 +532,133 @@ function RatePageContent() {
           <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
             <div className="grid grid-cols-12 gap-6">
               {/* Header */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="col-span-12 lg:col-span-8 lg:col-start-3 text-center mb-12"
               >
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Rate a Performance
-            </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Search for an actor and movie to rate their performance using our Oscar-inspired criteria
-              </p>
+                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                  Rate a Performance
+                </h1>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                  Search for an actor and movie to rate their performance using our Oscar-inspired criteria
+                </p>
               </motion.div>
 
               {/* Search Section */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="col-span-12 mb-8"
               >
-            <div className="max-w-2xl mx-auto mb-8">
-              <SearchBar 
-                placeholder="Search for actors and movies..."
-                onSearch={handleSearch}
-                initialValue={searchQuery}
-                autoFocus
-              />
-            </div>
+                <div className="max-w-2xl mx-auto mb-8">
+                  <SearchBar
+                    placeholder="Search for actors and movies..."
+                    onSearch={handleSearch}
+                    initialValue={searchQuery}
+                    autoFocus
+                  />
+                </div>
 
-            {/* Search Results */}
-            {searching && (
-              <div className="text-center py-8">
-                <BouncingBallsLoader 
-                  size="md" 
-                  color="#FFD700"
-                  showText={true}
-                  text="Searching..."
-                />
-              </div>
-            )}
-
-            {searchResults && !searching && (
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-xl font-semibold text-foreground mb-6 text-center">
-                  Search Results
-                </h2>
-                
-                {/* Performances */}
-                {searchResults.performances && searchResults.performances.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                      <Star className="w-5 h-5 text-primary" />
-                      Performances ({searchResults.performances.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {searchResults.performances.slice(0, 6).map((performance) => (
-                        <button
-                          key={`performance-${performance.id}`}
-                          onClick={() => handlePerformanceSelect(performance)}
-                          className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
-                        >
-                          <div className="font-semibold text-foreground mb-1">
-                            {performance.actor?.name} in "{performance.movie?.title}"
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {performance.movie?.year} • {performance.movie?.director}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actors */}
-                {searchResults.actors && searchResults.actors.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-                      <User className="w-5 h-5 text-accent" />
-                      Actors ({searchResults.actors.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {searchResults.actors.slice(0, 6).map((actor) => (
-                        <button
-                          key={`rate-actor-${actor.id}`}
-                          onClick={() => setActor(actor)}
-                          className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
-                        >
-                          <div className="font-semibold text-foreground mb-1">
-                            {actor.name}
-                          </div>
-                          {actor.nationality && (
-                            <div className="text-sm text-muted-foreground">
-                              {actor.nationality}
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-
-                {searchResults.performances?.length === 0 && 
-                 searchResults.actors?.length === 0 && (
+                {/* Search Results */}
+                {searching && (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No results found. Try different keywords.</p>
+                    <BouncingBallsLoader
+                      size="md"
+                      color="#FFD700"
+                      showText={true}
+                      text="Searching..."
+                    />
                   </div>
                 )}
-              </div>
-            )}
+
+                {searchResults && !searching && (
+                  <div className="max-w-4xl mx-auto">
+                    <h2 className="text-xl font-semibold text-foreground mb-6 text-center">
+                      Search Results
+                    </h2>
+
+                    {/* Performances */}
+                    {searchResults.performances && searchResults.performances.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                          <Star className="w-5 h-5 text-primary" />
+                          Performances ({searchResults.performances.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {searchResults.performances.slice(0, 6).map((performance) => (
+                            <button
+                              key={`performance-${performance.id}`}
+                              onClick={() => handlePerformanceSelect(performance)}
+                              className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
+                            >
+                              <div className="font-semibold text-foreground mb-1">
+                                {performance.actor?.name} in "{performance.movie?.title}"
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {performance.movie?.year} • {performance.movie?.director}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actors */}
+                    {searchResults.actors && searchResults.actors.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                          <User className="w-5 h-5 text-accent" />
+                          Actors ({searchResults.actors.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {searchResults.actors.slice(0, 6).map((actor) => (
+                            <button
+                              key={`rate-actor-${actor.id}`}
+                              onClick={() => setActor(actor)}
+                              className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
+                            >
+                              <div className="font-semibold text-foreground mb-1">
+                                {actor.name}
+                              </div>
+                              {actor.nationality && (
+                                <div className="text-sm text-muted-foreground">
+                                  {actor.nationality}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+
+                    {searchResults.performances?.length === 0 &&
+                      searchResults.actors?.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No results found. Try different keywords.</p>
+                        </div>
+                      )}
+                  </div>
+                )}
               </motion.div>
 
               {/* Browse Options */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="col-span-12 text-center"
               >
-            <p className="text-muted-foreground mb-4">Or browse our categories</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild variant="outline">
-                <Link href="/">
-                  Back to Home
-                </Link>
-              </Button>
-            </div>
+                <p className="text-muted-foreground mb-4">Or browse our categories</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button asChild variant="outline">
+                    <Link href="/">
+                      Back to Home
+                    </Link>
+                  </Button>
+                </div>
               </motion.div>
             </div>
           </div>
