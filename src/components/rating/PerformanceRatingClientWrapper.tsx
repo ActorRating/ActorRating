@@ -555,29 +555,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     checkUserRatings()
   }, [user])
 
-  // Force Safari to render all sliders and button immediately (prevent lazy loading)
-  useEffect(() => {
-    // Force layout calculation for all sliders and button to prevent Safari lazy loading
-    if (typeof window !== 'undefined' && submitPhase !== 'success') {
-      // Use requestAnimationFrame to ensure DOM is ready
-      requestAnimationFrame(() => {
-        // Force layout recalculation by accessing offsetHeight
-        const sliders = document.querySelectorAll('[data-slider-card]')
-        const button = document.querySelector('[data-submit-button]')
-        
-        sliders.forEach((slider) => {
-          // Force layout calculation
-          ;(slider as HTMLElement).offsetHeight
-        })
-        
-        if (button) {
-          // Force layout calculation for button
-          ;(button as HTMLElement).offsetHeight
-        }
-      })
-    }
-  }, [submitPhase])
-
   // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
     // Only run once on mount
@@ -737,6 +714,33 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setFinalScore(Number(score.toFixed(1)))
     }
   }, [externalSubmittedRating])
+
+  // Force Safari to render all sliders and button immediately (prevent lazy loading)
+  useEffect(() => {
+    // Force layout calculation for all sliders and button to prevent Safari lazy loading
+    if (typeof window !== 'undefined' && submitPhase !== 'success') {
+      // Use requestAnimationFrame to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(() => {
+          // Force layout recalculation by accessing offsetHeight
+          const sliders = document.querySelectorAll('[data-slider-card]')
+          const button = document.querySelector('[data-submit-button]')
+          
+          sliders.forEach((slider) => {
+            // Force layout calculation
+            ;(slider as HTMLElement).offsetHeight
+          })
+          
+          if (button) {
+            // Force layout calculation for button
+            ;(button as HTMLElement).offsetHeight
+          }
+        })
+      }, 100) // Small delay to ensure DOM is fully rendered
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [submitPhase])
 
   // Restore scroll when submitPhase changes away from 'success' (critical fix for scroll lock issue)
   useEffect(() => {
