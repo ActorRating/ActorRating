@@ -30,6 +30,19 @@ export async function POST(request: NextRequest) {
     
     // Extract year from release date
     const year = new Date(movieData.release_date).getFullYear();
+    const currentYear = new Date().getFullYear();
+
+    // Validate year - reject invalid or future years
+    if (isNaN(year) || year < 1900 || year > currentYear) {
+      return NextResponse.json(
+        { 
+          error: `Invalid movie year: ${year}. Movies must have a valid release year between 1900 and ${currentYear}.`,
+          title: movieData.title,
+          year: year
+        },
+        { status: 400 }
+      );
+    }
 
     // Check if this is a joke performance that should be excluded
     if (isJokePerformance(movieData.title, movieData.overview, year, credits.director)) {

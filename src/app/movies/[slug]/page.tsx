@@ -12,20 +12,13 @@ import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
-import { getRateUrl } from '@/lib/slugHelper'
+import { getRateUrl, getActorUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-
-interface Award {
-  title?: string
-  award?: string
-  year?: number
-  category?: string
-  result?: 'won' | 'nominated'
-  movie?: string
-}
+import { resolveCharacterDisplay } from '@/lib/character'
 
 interface Rating {
   userId: string
+  actorId: string
   movieId: string
   roleName?: string
   weightedScore?: number
@@ -36,16 +29,23 @@ interface Rating {
   chemistryInteraction?: number
 }
 
+interface Movie {
+  id: string
+  title: string
+  slug?: string | null
+  year: number
+  director?: string
+  genre?: string
+  overview?: string
+  tmdbId?: number
+  ratings?: Rating[]
+}
+
 interface Actor {
   id: string
   name: string
-  bio?: string
-  imageUrl?: string
-  birthDate?: string
-  nationality?: string
-  knownFor?: string
-  awards?: Award[] | string | null
-  ratings?: Rating[]
+  slug?: string | null
+  imageUrl?: string | null
 }
 
 interface Performance {
@@ -53,41 +53,38 @@ interface Performance {
   actorId: string
   movieId: string
   character?: string | null
+  roleName?: string | null
+  comment?: string | null
   emotionalRangeDepth?: number
   characterBelievability?: number
   technicalSkill?: number
   screenPresence?: number
   chemistryInteraction?: number
-  actor: {
-    id: string
-    name: string
-    slug?: string | null
-  }
+  actor: Actor
   movie: {
     id: string
     title: string
     year: number
-    director?: string
     slug?: string | null
   }
 }
 
-export default function ActorPage() {
+export default function MoviePage() {
   const params = useParams()
   const router = useRouter()
   const pathname = usePathname()
   const user = useUser()
-  const actorId = params?.id as string
+  const movieSlug = params?.slug as string
 
-  const [actor, setActor] = useState<Actor | null>(null)
+  const [movie, setMovie] = useState<Movie | null>(null)
   const [performances, setPerformances] = useState<Performance[]>([])
   const [loading, setLoading] = useState(true)
   const [is410, setIs410] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'year' | 'rating' | 'most-rated' | 'controversial'>('rating')
+  const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'rating' | 'most-rated' | 'controversial'>('rating')
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
-  const [userHasRatedActor, setUserHasRatedActor] = useState(false)
-  const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
+  const [userHasRatedMovie, setUserHasRatedMovie] = useState(false)
+  const [userRatedActors, setUserRatedActors] = useState<Set<string>>(new Set())
   const [userRatingsMap, setUserRatingsMap] = useState<Map<string, number>>(new Map())
   const [seoExpanded, setSeoExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
@@ -96,8 +93,8 @@ export default function ActorPage() {
 
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Check if actorId is a UUID (if so, return 410 Gone)
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId)
+  // Check if movieSlug is a UUID (if so, return 410 Gone)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(movieSlug)
   
   useEffect(() => {
     if (isUUID) {
@@ -106,21 +103,20 @@ export default function ActorPage() {
     }
   }, [isUUID])
 
-  // Check for refresh flag when pathname changes (navigation back to this page)
+  // Check for refresh flag when pathname changes
   useEffect(() => {
-    const refreshActorRatings = sessionStorage.getItem('refreshActorRatings')
-    const refreshActorRatingsSlug = sessionStorage.getItem('refreshActorRatingsSlug')
+    const refreshMovieRatings = sessionStorage.getItem('refreshMovieRatings')
+    const refreshMovieRatingsSlug = sessionStorage.getItem('refreshMovieRatingsSlug')
     
-    // Check if refresh is needed (match by either ID or slug)
-    if (refreshActorRatings === actorId || refreshActorRatingsSlug === actorId) {
-      sessionStorage.removeItem('refreshActorRatings')
-      sessionStorage.removeItem('refreshActorRatingsSlug')
+    if (refreshMovieRatings === movieSlug || refreshMovieRatingsSlug === movieSlug) {
+      sessionStorage.removeItem('refreshMovieRatings')
+      sessionStorage.removeItem('refreshMovieRatingsSlug')
       console.log('Refresh flag detected, triggering refresh')
       setRefreshKey(prev => prev + 1)
     }
-  }, [actorId, pathname])
+  }, [movieSlug, pathname])
 
-  // Also refresh when page becomes visible (user returns from another tab/app)
+  // Also refresh when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
@@ -143,36 +139,40 @@ export default function ActorPage() {
       }
       
       try {
-        const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
-        if (!response.ok) throw new Error('Failed to fetch actor')
-        
-        const data = await response.json()
-        setActor(data)
-        setPerformances(data.performances || [])
-        
-        // ALWAYS fetch user ratings if user exists - with fresh data
-        if (user) {
-          console.log('Fetching user ratings for actor:', actorId, 'user:', user.id)
-          const userRatingsResponse = await fetch(`/api/actors/${actorId}/user-rating`, { 
+        // Fetch movie data and user ratings in parallel for better performance
+        const [movieResponse, userRatingsResponse] = await Promise.all([
+          fetch(`/api/movies/${movieSlug}`, { cache: 'no-store' }),
+          user ? fetch(`/api/movies/${movieSlug}/user-rating`, { 
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache'
             }
-          })
+          }) : Promise.resolve(null)
+        ])
+        
+        if (!movieResponse.ok) throw new Error('Failed to fetch movie')
+        
+        const data = await movieResponse.json()
+        setMovie(data)
+        setPerformances(data.performances || [])
+        
+        // Process user ratings if available
+        if (user && userRatingsResponse) {
+          console.log('Processing user ratings for movie:', movieSlug, 'user:', user.id)
           
           if (userRatingsResponse.ok) {
             const userRatings = await userRatingsResponse.json()
             console.log('User ratings received:', userRatings)
             
             if (Array.isArray(userRatings)) {
-              const movieIds = userRatings.map((r: any) => r.movieId)
-              setUserRatedMovies(new Set(movieIds))
-              setUserHasRatedActor(userRatings.length > 0)
+              const actorIds = userRatings.map((r: any) => r.actorId)
+              setUserRatedActors(new Set(actorIds))
+              setUserHasRatedMovie(userRatings.length > 0)
               
-              console.log('User has rated these movies:', movieIds)
+              console.log('User has rated these actors:', actorIds)
               
-              // Store user scores for each movie
+              // Store user scores for each actor
               const scoresMap = new Map<string, number>()
               userRatings.forEach((r: any) => {
                 // Calculate user's average score for this performance
@@ -186,8 +186,8 @@ export default function ActorPage() {
                 
                 if (scores.length > 0) {
                   const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length
-                  scoresMap.set(r.movieId, avgScore)
-                  console.log('Movie:', r.movieId, 'User score:', avgScore)
+                  scoresMap.set(r.actorId, avgScore)
+                  console.log('Actor:', r.actorId, 'User score:', avgScore)
                 }
               })
               setUserRatingsMap(scoresMap)
@@ -198,9 +198,9 @@ export default function ActorPage() {
         } else {
           console.log('No user logged in, skipping user ratings fetch')
           // Clear user data when no user
-          setUserRatedMovies(new Set())
+          setUserRatedActors(new Set())
           setUserRatingsMap(new Map())
-          setUserHasRatedActor(false)
+          setUserHasRatedMovie(false)
         }
 
         // Check for rating feedback from session storage
@@ -208,7 +208,7 @@ export default function ActorPage() {
         if (ratingFeedback) {
           try {
             const feedback = JSON.parse(ratingFeedback)
-            if (feedback.actorId === actorId) {
+            if (feedback.movieId === data.id) {
               setRatingFeedbackData({
                 userScore: feedback.userScore,
                 communityScore: feedback.communityScore
@@ -223,16 +223,16 @@ export default function ActorPage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching actor:', error)
+        console.error('Error fetching movie:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    if (actorId) {
+    if (movieSlug) {
       fetchData()
     }
-  }, [actorId, user, refreshKey])
+  }, [movieSlug, user, refreshKey, isUUID])
 
   // Close dropdown and update sort when search query changes
   useEffect(() => {
@@ -246,7 +246,7 @@ export default function ActorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
-  // Calculate career score from performances with ratings
+  // Calculate performance score from performances with ratings
   const calculatePerformanceScore = (perf: Performance) => {
     if (!perf.emotionalRangeDepth && !perf.characterBelievability && !perf.technicalSkill && !perf.screenPresence && !perf.chemistryInteraction) {
       return null
@@ -274,7 +274,7 @@ export default function ActorPage() {
     return performancesWithScores.filter(p => p.averageScore !== null)
   }, [performancesWithScores])
 
-  const careerScore = useMemo(() => {
+  const movieScore = useMemo(() => {
     return scoredPerformances.length > 0
       ? scoredPerformances.reduce((sum, perf) => sum + (perf.averageScore || 0), 0) / scoredPerformances.length
       : null
@@ -282,7 +282,7 @@ export default function ActorPage() {
 
   // Calculate community stats
   const communityStats = useMemo(() => {
-    const totalRatings = actor?.ratings?.length || 0
+    const totalRatings = movie?.ratings?.length || 0
     const ratedPerformancesCount = scoredPerformances.length
     const totalPerformances = performances.length
     const unratedPerformances = totalPerformances - ratedPerformancesCount
@@ -302,7 +302,7 @@ export default function ActorPage() {
       highestRated,
       criticsCount: totalRatings // Each rating is from a different user session
     }
-  }, [actor, performances, scoredPerformances])
+  }, [movie, performances, scoredPerformances])
 
   // Filter and rank performances based on search query
   const filteredPerformances = useMemo(() => {
@@ -312,28 +312,23 @@ export default function ActorPage() {
 
     const query = searchQuery.toLowerCase().trim()
     const scored = performancesWithScores.map(perf => {
-      const movieTitle = perf.movie.title.toLowerCase()
-      const character = (perf.character || '').toLowerCase()
+      const actorName = perf.actor.name.toLowerCase()
+      const character = resolveCharacterDisplay(perf).toLowerCase()
       
       let score = 0
       
-      // Exact title match gets highest score
-      if (movieTitle === query) {
+      // Exact actor name match gets highest score
+      if (actorName === query) {
         score += 100
-      } else if (movieTitle.startsWith(query)) {
+      } else if (actorName.startsWith(query)) {
         score += 80
-      } else if (movieTitle.includes(query)) {
+      } else if (actorName.includes(query)) {
         score += 60
       }
       
       // Character match
       if (character.includes(query)) {
         score += 40
-      }
-      
-      // Year match
-      if (perf.movie.year.toString().includes(query)) {
-        score += 20
       }
       
       return { ...perf, searchScore: score }
@@ -347,13 +342,13 @@ export default function ActorPage() {
   const performancesWithStats = useMemo(() => {
     return filteredPerformances.map(perf => {
       // Count how many ratings this performance has
-      const movieRatings = actor?.ratings?.filter((r: any) => r.movieId === perf.movieId) || []
-      const ratingCount = movieRatings.length
+      const actorRatings = movie?.ratings?.filter((r: any) => r.actorId === perf.actorId && r.movieId === perf.movieId) || []
+      const ratingCount = actorRatings.length
       
       // Calculate variance for controversial sorting
       let variance = 0
-      if (movieRatings.length > 1) {
-        const scores = movieRatings.map((r: Rating) => {
+      if (actorRatings.length > 1) {
+        const scores = actorRatings.map((r: Rating) => {
           const score = [
             r.emotionalRangeDepth,
             r.characterBelievability,
@@ -373,7 +368,7 @@ export default function ActorPage() {
         variance
       }
     })
-  }, [filteredPerformances, actor])
+  }, [filteredPerformances, movie])
 
   // Apply sorting to filtered performances
   const filteredAndRankedPerformances = useMemo(() => {
@@ -381,10 +376,7 @@ export default function ActorPage() {
 
     switch (sortBy) {
       case 'alphabetical':
-        sorted.sort((a, b) => a.movie.title.localeCompare(b.movie.title))
-        break
-      case 'year':
-        sorted.sort((a, b) => b.movie.year - a.movie.year) // Newest first
+        sorted.sort((a, b) => a.actor.name.localeCompare(b.actor.name))
         break
       case 'rating':
         sorted.sort((a, b) => {
@@ -393,7 +385,7 @@ export default function ActorPage() {
           if (bScore !== aScore) {
             return bScore - aScore
           }
-          return b.movie.year - a.movie.year
+          return a.actor.name.localeCompare(b.actor.name)
         })
         break
       case 'most-rated':
@@ -431,7 +423,7 @@ export default function ActorPage() {
             if (bScore !== aScore) {
               return bScore - aScore
             }
-            return b.movie.year - a.movie.year
+            return a.actor.name.localeCompare(b.actor.name)
           })
         } else {
           // Default to rating when not searching
@@ -441,7 +433,7 @@ export default function ActorPage() {
             if (bScore !== aScore) {
               return bScore - aScore
             }
-            return b.movie.year - a.movie.year
+            return a.actor.name.localeCompare(b.actor.name)
           })
         }
         break
@@ -453,7 +445,7 @@ export default function ActorPage() {
           if (bScore !== aScore) {
             return bScore - aScore
           }
-          return b.movie.year - a.movie.year
+          return a.actor.name.localeCompare(b.actor.name)
         })
         break
     }
@@ -468,8 +460,8 @@ export default function ActorPage() {
   }, [communityStats.highestRated, performances])
 
   const isTargetRated = useMemo(() => {
-    return targetPerformance ? userRatedMovies.has(targetPerformance.movieId) : false
-  }, [targetPerformance, userRatedMovies])
+    return targetPerformance ? userRatedActors.has(targetPerformance.actorId) : false
+  }, [targetPerformance, userRatedActors])
 
   // Handle 410 Gone for UUID routes
   if (is410) {
@@ -480,7 +472,7 @@ export default function ActorPage() {
             <h1 className="text-6xl font-bold text-white mb-4">410</h1>
             <h2 className="text-2xl font-bold text-white mb-4">Page Gone</h2>
             <p className="text-gray-400 mb-6">
-              This URL format is no longer supported. Actor pages now use slug-based URLs.
+              This URL format is no longer supported. Movie pages now use slug-based URLs.
             </p>
             <Button onClick={() => router.push('/search')}>Go to Search</Button>
           </div>
@@ -499,12 +491,12 @@ export default function ActorPage() {
     )
   }
 
-  if (!actor) {
+  if (!movie) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Actor not found</h1>
+            <h1 className="text-2xl font-bold text-white mb-4">Movie not found</h1>
             <Button onClick={() => router.push('/search')}>Back to Search</Button>
           </div>
         </div>
@@ -612,7 +604,7 @@ export default function ActorPage() {
             </Link>
           </motion.div>
 
-          {/* Actor Info */}
+          {/* Movie Info */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -628,8 +620,27 @@ export default function ActorPage() {
                 lineHeight: '1.1',
               }}
             >
-              {actor.name}
+              {movie.title}
             </h1>
+
+            {/* Movie Year and Director */}
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
+              {movie.year && (
+                <span className="text-lg text-gray-400">
+                  {movie.year}
+                </span>
+              )}
+              {movie.director && (
+                <span className="text-lg text-gray-400">
+                  Directed by {movie.director}
+                </span>
+              )}
+              {movie.genre && (
+                <span className="text-lg text-gray-400">
+                  {movie.genre}
+                </span>
+              )}
+            </div>
 
             {/* Primary CTA - Rate a Performance */}
             {performances.length > 0 && (
@@ -684,38 +695,6 @@ export default function ActorPage() {
               </motion.div>
             )}
 
-            {/* Subtitle with awards info if available - Only show if verified Oscar data exists */}
-            {actor.awards && (() => {
-              let awardsList: Award[] = []
-              if (typeof actor.awards === 'string') {
-                try {
-                  awardsList = JSON.parse(actor.awards)
-                } catch (e) {
-                  awardsList = []
-                }
-              } else if (Array.isArray(actor.awards)) {
-                awardsList = actor.awards
-              }
-              
-              // Only show Oscar badge if we have verified Oscar data (result === 'won' and award name contains oscar)
-              const hasVerifiedOscar = awardsList.some(a => {
-                const awardName = (a.award || a.title || '').toLowerCase()
-                const isOscar = awardName.includes('oscar') || awardName.includes('academy award')
-                return isOscar && a.result === 'won'
-              })
-              
-              return hasVerifiedOscar ? (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                  className="text-lg sm:text-xl text-gray-400 mb-6"
-                >
-                  Oscar Winner • Known for intense transformations
-                </motion.p>
-              ) : null
-            })()}
-              
             {/* Divider - Minimal */}
             <motion.div
               initial={{ width: 0, opacity: 0 }}
@@ -765,9 +744,9 @@ export default function ActorPage() {
                         letterSpacing: '-0.02em',
                       }}
                     >
-                      {careerScore !== null ? `${(careerScore / 10).toFixed(1)}` : 'N/A'}
+                      {movieScore !== null ? `${(movieScore / 10).toFixed(1)}` : 'N/A'}
                     </div>
-                    {careerScore !== null && (
+                    {movieScore !== null && (
                       <div 
                         className="text-xl sm:text-2xl lg:text-3xl font-bold opacity-60"
                         style={{
@@ -785,7 +764,7 @@ export default function ActorPage() {
                   {/* Stats Grid */}
                   <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap text-sm sm:text-base">
                     <div className="flex items-center gap-2">
-                      <Film className="w-4 h-4 text-gray-400" />
+                      <User className="w-4 h-4 text-gray-400" />
                       <span className="text-gray-300">
                         <span className="font-bold text-white">{communityStats.ratedPerformancesCount}</span> of <span className="font-bold text-white">{communityStats.totalPerformances}</span> performances rated
                       </span>
@@ -800,7 +779,7 @@ export default function ActorPage() {
                       <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-300">
-                          Top: <span className="font-bold text-white">{communityStats.highestRated.movie.title}</span>
+                          Top: <span className="font-bold text-white">{communityStats.highestRated.actor.name}</span>
                         </span>
                       </div>
                     )}
@@ -880,7 +859,7 @@ export default function ActorPage() {
                           Highest Rated So Far
                         </div>
                         <div className="text-base sm:text-lg font-bold text-white mb-2">
-                          {communityStats.highestRated.movie.title}
+                          {communityStats.highestRated.actor.name}
                         </div>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                           <FaStar className="w-4 h-4 text-[#FFD700]" />
@@ -903,8 +882,8 @@ export default function ActorPage() {
           </motion.div>
         </div>
 
-        {/* Onboarding Card - Rate Your First Performance - Mini Performance Card Style */}
-        {user && !userHasRatedActor && communityStats.highestRated && (
+        {/* Onboarding Card - Rate Your First Performance */}
+        {user && !userHasRatedMovie && communityStats.highestRated && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -921,7 +900,7 @@ export default function ActorPage() {
                 Start Here
               </h3>
               <p className="text-sm text-gray-400 text-center mt-1">
-                Rate {actor.name}'s most iconic performance
+                Rate the highest-rated performance in {movie.title}
               </p>
             </div>
             
@@ -941,9 +920,8 @@ export default function ActorPage() {
             >
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex-1">
-                  {/* Top Row: Rating Badge and Year */}
+                  {/* Top Row: Rating Badge */}
                   <div className="flex items-center justify-between mb-4">
-                    {/* Score Pill - Top Left */}
                     <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                       <FaStar className="w-5 h-5 text-[#FFD700]" />
                       <span 
@@ -956,17 +934,12 @@ export default function ActorPage() {
                         {((communityStats.highestRated.averageScore || 0) / 10).toFixed(1)}
                       </span>
                     </div>
-                    
-                    {/* Movie Year - Top Right */}
-                    <div className="text-[#a3a3a3] text-base font-medium">
-                      {communityStats.highestRated.movie.year}
-                    </div>
                   </div>
                   
-                  {/* Social Proof - Rating Count in Bubble */}
+                  {/* Social Proof - Rating Count */}
                   {(() => {
-                    const highestRatedMovieRatings = actor?.ratings?.filter((r: any) => r.movieId === communityStats.highestRated?.movieId) || []
-                    const ratingCount = highestRatedMovieRatings.length
+                    const highestRatedActorRatings = movie?.ratings?.filter((r: any) => r.actorId === communityStats.highestRated?.actorId && r.movieId === communityStats.highestRated?.movieId) || []
+                    const ratingCount = highestRatedActorRatings.length
                     return ratingCount > 0 ? (
                       <div className="mb-4">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
@@ -979,10 +952,10 @@ export default function ActorPage() {
                     ) : null
                   })()}
 
-                  {/* Movie Title */}
+                  {/* Actor Name */}
                   <div className="mb-4">
                     <span className="text-lg text-white font-semibold tracking-wide">
-                      {communityStats.highestRated.movie.title}
+                      {communityStats.highestRated.actor.name}
                     </span>
                   </div>
                 </div>
@@ -1022,126 +995,12 @@ export default function ActorPage() {
           </motion.div>
         )}
 
-        {/* Awards Section - Only show if verified award data exists */}
-        {actor.awards && (() => {
-          // Parse awards if it's a string (JSON)
-          let awardsList: Award[] = []
-          if (typeof actor.awards === 'string') {
-            try {
-              awardsList = JSON.parse(actor.awards)
-            } catch (e) {
-              // If parsing fails, treat as empty
-              awardsList = []
-            }
-          } else if (Array.isArray(actor.awards)) {
-            awardsList = actor.awards
-          }
-
-          // Only show section if we have verified award data (not empty and has valid award info)
-          if (awardsList.length === 0) return null
-          
-          // Filter to only show awards with verified data
-          const verifiedAwards = awardsList.filter(a => 
-            (a.award || a.title) && (a.result === 'won' || a.result === 'nominated')
-          )
-          
-          if (verifiedAwards.length === 0) return null
-
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-              className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <Award className="w-6 h-6 text-gray-400" />
-                <h2 
-                  className="text-3xl sm:text-4xl font-bold text-white"
-                  style={{ 
-                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  Awards & Recognition
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {verifiedAwards.map((award, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 1.3 + index * 0.1 }}
-                    className={`p-6 rounded-2xl border backdrop-blur-2xl ${
-                      award.result === 'won' 
-                        ? 'bg-gradient-to-br from-[#FFD700]/10 via-[#FFA500]/5 to-transparent border-[#FFD700]/30' 
-                        : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-white/10'
-                    }`}
-                    style={{
-                      boxShadow: award.result === 'won' 
-                        ? `0 8px 32px rgba(255, 215, 0, 0.1), 0 0 0 1px rgba(255, 215, 0, 0.15)`
-                        : `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        award.result === 'won' 
-                          ? 'bg-[#FFD700]/20' 
-                          : 'bg-blue-500/20'
-                      }`}>
-                        <Award className={`w-5 h-5 ${
-                          award.result === 'won' 
-                            ? 'text-[#FFD700]' 
-                            : 'text-blue-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold text-white">
-                            {award.award || award.title || 'Award'}
-                          </h3>
-                          {award.result === 'won' && (
-                            <span className="px-2 py-1 text-xs font-bold text-[#FFD700] bg-[#FFD700]/20 rounded-full">
-                              Winner
-                            </span>
-                          )}
-                          {award.result === 'nominated' && (
-                            <span className="px-2 py-1 text-xs font-bold text-blue-400 bg-blue-500/20 rounded-full">
-                              Nominated
-                            </span>
-                          )}
-                        </div>
-                        {award.category && (
-                          <p className="text-sm text-gray-400 mb-1">
-                            {award.category}
-                          </p>
-                        )}
-                        {award.movie && (
-                          <p className="text-sm text-gray-300 italic mb-1">
-                            for <span className="text-[#FFD700]">{award.movie}</span>
-                          </p>
-                        )}
-                        {award.year && (
-                          <p className="text-xs text-gray-500">
-                            {award.year}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )
-        })()}
-
       {/* Performances Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {performances.length > 0 ? (
           <>
             <motion.div
-              id="filmography"
+              id="cast"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
@@ -1149,9 +1008,9 @@ export default function ActorPage() {
             >
               {/* Mobile: Stacked layout, Desktop: Same line */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-4 lg:gap-6 mb-8 sm:mb-6">
-                {/* Left side: Filmography heading and bubble */}
+                {/* Left side: Cast heading */}
                 <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start flex-shrink-0 min-w-0">
-                  <Film className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
+                  <User className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
                   <h2 
                     className="text-4xl sm:text-5xl md:text-6xl font-bold text-white text-center sm:text-left flex-shrink-0 min-w-0"
                     style={{ 
@@ -1159,7 +1018,7 @@ export default function ActorPage() {
                       letterSpacing: '0.02em',
                     }}
                   >
-                    Filmography
+                    Cast & Performances
                   </h2>
                 </div>
                 
@@ -1177,7 +1036,7 @@ export default function ActorPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search performances..."
+                        placeholder="Search actors..."
                         className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
                         style={{ borderRadius: '9999px' }}
                       />
@@ -1201,9 +1060,8 @@ export default function ActorPage() {
                       className="flex items-center gap-2 px-4 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white hover:border-[#FFD700]/50 transition-all text-sm font-medium whitespace-nowrap"
                     >
                       <span>
-                        {sortBy === 'relevance' ? (searchQuery.trim() ? 'Relevance' : 'Year') : 
+                        {sortBy === 'relevance' ? (searchQuery.trim() ? 'Relevance' : 'Rating') : 
                          sortBy === 'alphabetical' ? 'A-Z' :
-                         sortBy === 'year' ? 'Year' : 
                          sortBy === 'most-rated' ? 'Most Rated' :
                          sortBy === 'controversial' ? 'Controversial' : 'Highest Rated'}
                       </span>
@@ -1259,19 +1117,6 @@ export default function ActorPage() {
                           </button>
                           <button
                             onClick={() => {
-                              setSortBy('year')
-                              setSortDropdownOpen(false)
-                            }}
-                            className={`w-full px-5 py-4 sm:px-4 sm:py-3 text-left text-base sm:text-sm transition-colors ${
-                              sortBy === 'year' 
-                                ? 'text-[#FFD700] bg-[#FFD700]/10' 
-                                : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            Year (Newest)
-                          </button>
-                          <button
-                            onClick={() => {
                               setSortBy('alphabetical')
                               setSortDropdownOpen(false)
                             }}
@@ -1303,11 +1148,11 @@ export default function ActorPage() {
                   { id: performance.actor.id, name: performance.actor.name, slug: performance.actor.slug || null },
                   { id: performance.movie.id, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
                 )
-                const character = performance.character || "—"
+                const character = resolveCharacterDisplay(performance) || "—"
                 const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}` : null
                 const isHighestRated = sortBy === 'rating' && index === 0 && rating && parseFloat(rating) > 0
-                const userScore = userRatingsMap.get(performance.movie.id)
-                const hasUserRated = userRatedMovies.has(performance.movie.id)
+                const userScore = userRatingsMap.get(performance.actorId)
+                const hasUserRated = userRatedActors.has(performance.actorId)
 
                 return (
                   <motion.div
@@ -1318,8 +1163,7 @@ export default function ActorPage() {
                     style={{ willChange: 'transform, opacity' }}
                     className="group relative"
                   >
-                    {/* Premium Card - Clean & Cinematic - Matching performances page */}
-                    {/* Highest Rated Card - Subtle distinction */}
+                    {/* Premium Card - Clean & Cinematic */}
                     <div 
                       className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
                         isHighestRated 
@@ -1352,9 +1196,9 @@ export default function ActorPage() {
                         {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
-                          {/* Top Row: Rating Badge and Year */}
+                          {/* Top Row: Rating Badge */}
                           <div className="flex items-center justify-between mb-4">
-                            {/* Score Pill - Top Left - Slightly Smaller */}
+                            {/* Score Pill */}
                             <div className="flex flex-col items-start gap-2">
                               <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                 <FaStar className="w-5 h-5 text-[#FFD700]" />
@@ -1368,7 +1212,7 @@ export default function ActorPage() {
                                   {rating || 'N/A'}
                                 </span>
                               </div>
-                              {/* User Score - Show if user has rated this performance */}
+                              {/* User Score */}
                               {hasUserRated && userScore && (
                                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
                                   <span className="text-xs text-gray-400">Your score:</span>
@@ -1384,14 +1228,9 @@ export default function ActorPage() {
                                 </div>
                               )}
                             </div>
-                            
-                            {/* Movie Year - Top Right */}
-                            <div className="text-[#a3a3a3] text-base font-medium">
-                              {performance.movie.year}
-                            </div>
                           </div>
                           
-                          {/* Social Proof - Rating Count in Bubble */}
+                          {/* Social Proof - Rating Count */}
                           {(performance as any).ratingCount > 0 && (
                             <div className="mb-4">
                               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
@@ -1403,10 +1242,10 @@ export default function ActorPage() {
                             </div>
                           )}
 
-                          {/* Movie Title */}
+                          {/* Actor Name */}
                           <div className="mb-4">
                             <span className="text-lg text-white font-semibold tracking-wide">
-                              {performance.movie.title}
+                              {performance.actor.name}
                             </span>
                           </div>
 
@@ -1424,15 +1263,15 @@ export default function ActorPage() {
                             <button 
                               className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                               style={{
-                                background: userRatedMovies.has(performance.movie.id)
+                                background: userRatedActors.has(performance.actorId)
                                   ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
                                   : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                                color: userRatedMovies.has(performance.movie.id) ? '#FFD700' : 'black',
-                                border: userRatedMovies.has(performance.movie.id) ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
+                                color: userRatedActors.has(performance.actorId) ? '#FFD700' : 'black',
+                                border: userRatedActors.has(performance.actorId) ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
                               }}
                             >
                               <span className="flex items-center justify-center gap-2">
-                                {userRatedMovies.has(performance.movie.id) ? 'Edit' : 'Rate'}
+                                {userRatedActors.has(performance.actorId) ? 'Edit' : 'Rate'}
                                 <FaStar className="w-4 h-4" />
                               </span>
                             </button>
@@ -1453,12 +1292,12 @@ export default function ActorPage() {
                 className="text-center py-16"
               >
                 <div className="inline-block p-8 rounded-[2rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05),inset_0_1px_0_0_rgba(255,255,255,0.1),inset_0_-1px_0_0_rgba(0,0,0,0.3)]">
-                  <Film className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-300 mb-2">No performances found</h3>
                   <p className="text-gray-500">
                     {searchQuery 
                       ? `No performances match "${searchQuery}"`
-                      : "This actor doesn't have any performances yet."
+                      : "This movie doesn't have any performances yet."
                     }
                   </p>
                 </div>
@@ -1485,61 +1324,11 @@ export default function ActorPage() {
               }}
             >
               <Film className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <p className="text-xl text-gray-400">No performances found for this actor yet.</p>
+              <p className="text-xl text-gray-400">No performances found for this movie yet.</p>
             </div>
           </motion.div>
         )}
       </div>
-
-      {/* SEO Section - Collapsed by default */}
-      {actor.knownFor && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-white/10"
-        >
-          <button
-            onClick={() => setSeoExpanded(!seoExpanded)}
-            className="w-full flex items-center justify-between p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a]/50 via-[#0f0f0f]/40 to-black/50 border border-white/5 hover:border-white/10 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-300">
-                About {actor.name} performances
-              </h3>
-            </div>
-            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${seoExpanded ? 'rotate-180' : ''}`} />
-          </button>
-          
-          <AnimatePresence>
-            {seoExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="pt-6 text-gray-400 leading-relaxed">
-                  {actor.knownFor && (
-                    <p className="text-sm mb-4">
-                      <span className="font-semibold text-gray-300">Known for:</span> {actor.knownFor}
-                    </p>
-                  )}
-                  {communityStats.ratedPerformancesCount > 0 && (
-                    <p className="text-sm">
-                      The ActorRating community has rated {communityStats.ratedPerformancesCount} of {actor.name}'s performances, 
-                      with {communityStats.totalRatings} total ratings from critics worldwide.
-                      {communityStats.highestRated && ` Their highest-rated performance is ${communityStats.highestRated.movie.title}.`}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
 
       {/* Floating Mobile CTA */}
       {performances.length > 0 && (

@@ -10,7 +10,7 @@ import { SearchBar } from "@/components/SearchBar"
 import { motion } from "framer-motion"
 import { Film } from "lucide-react"
 import Link from "next/link"
-import { getActorUrl } from "@/lib/slugHelper"
+import { getActorUrl, getMovieUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
@@ -26,10 +26,13 @@ interface Actor {
 
 interface SearchResult {
   id: string
-  name: string
+  name?: string
+  title?: string
   imageUrl?: string | null
   slug?: string | null
+  year?: number
   performanceCount?: number
+  type: 'actor' | 'movie'
 }
 
 
@@ -61,7 +64,17 @@ function SearchPageContent() {
       const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
       if (response.ok) {
         const data = await response.json()
-        setSearchResults(data.actors || [])
+        const actors = (data.actors || []).map((actor: any) => ({
+          ...actor,
+          name: actor.name,
+          type: 'actor' as const
+        }))
+        const movies = (data.movies || []).map((movie: any) => ({
+          ...movie,
+          title: movie.title,
+          type: 'movie' as const
+        }))
+        setSearchResults([...actors, ...movies])
       }
     } catch (error) {
       console.error('Search failed:', error)
@@ -84,7 +97,7 @@ function SearchPageContent() {
             className="text-center mb-12"
           >
             <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 md:mb-10 lg:mb-12"
+              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 md:mb-10 lg:mb-12 text-white"
               style={{ 
                 fontFamily: 'var(--font-cinzel), serif',
                 textShadow: '0 10px 40px rgba(0,0,0,0.7)',
@@ -92,18 +105,7 @@ function SearchPageContent() {
                 lineHeight: '1.1',
               }}
             >
-              <span className="text-white">Search </span>
-              <span 
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-                }}
-              >
-                Actors
-              </span>
+              Search
             </h1>
               
             {/* Gold Divider - Cinematic */}
@@ -157,7 +159,7 @@ function SearchPageContent() {
                 }}
               >
                 <SearchBar
-                  placeholder="Search for actors..."
+                  placeholder="Search for actors and movies..."
                   showClear
                   autoFocus 
                   initialValue={query}
@@ -191,47 +193,66 @@ function SearchPageContent() {
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {searchResults.map((actor, index) => (
+                  {searchResults.map((result, index) => (
                     <motion.div
-                      key={actor.id}
+                      key={`${result.type}-${result.id}`}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
-                      <Link
-                        href={getActorUrl({ id: actor.id, name: actor.name, slug: actor.slug || null })}
-                        className="group block"
-                      >
-                        <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
-                          {actor.imageUrl ? (
-                            <img
-                              src={actor.imageUrl}
-                              alt={actor.name}
-                              loading="lazy"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-4xl font-bold text-gray-600">
-                              {actor.name.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
-                          {actor.name}
-                        </p>
-                        {actor.performanceCount && actor.performanceCount > 0 && (
-                          <p className="text-xs text-center text-gray-500 mt-1">
-                            {actor.performanceCount} {actor.performanceCount === 1 ? 'performance' : 'performances'}
+                      {result.type === 'actor' ? (
+                        <Link
+                          href={getActorUrl({ id: result.id, name: result.name || '', slug: result.slug || null })}
+                          className="group block"
+                        >
+                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
+                            {result.imageUrl ? (
+                              <img
+                                src={result.imageUrl}
+                                alt={result.name}
+                                loading="lazy"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-4xl font-bold text-gray-600">
+                                {result.name?.charAt(0) || 'A'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
+                            {result.name}
                           </p>
-                        )}
-                      </Link>
+                          {result.performanceCount && result.performanceCount > 0 && (
+                            <p className="text-xs text-center text-gray-500 mt-1">
+                              {result.performanceCount} {result.performanceCount === 1 ? 'performance' : 'performances'}
+                            </p>
+                          )}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={getMovieUrl({ id: result.id, title: result.title || '', year: result.year || 0, slug: result.slug || null })}
+                          className="group block"
+                        >
+                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
+                            <Film className="w-12 h-12 text-gray-600" />
+                          </div>
+                          <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
+                            {result.title}
+                          </p>
+                          {result.year && (
+                            <p className="text-xs text-center text-gray-500 mt-1">
+                              {result.year}
+                            </p>
+                          )}
+                        </Link>
+                      )}
                     </motion.div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-16">
                   <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-xl text-gray-400">No actors found matching "{query}"</p>
+                  <p className="text-xl text-gray-400">No results found matching "{query}"</p>
                 </div>
               )}
             </motion.div>

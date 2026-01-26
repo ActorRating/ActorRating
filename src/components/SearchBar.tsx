@@ -8,7 +8,7 @@ import { NewSearchResult } from '@/types'
 import Link from 'next/link'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
-import { getActorUrl } from '@/lib/slugHelper'
+import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
@@ -68,7 +68,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({
-  placeholder = "Search actors...",
+  placeholder = "Search actors and movies...",
   className = "",
   onSearch,
   initialValue = "",
@@ -108,7 +108,7 @@ export function SearchBar({
         if (controllerRef.current) controllerRef.current.abort()
         const controller = new AbortController()
         controllerRef.current = controller
-        const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        const response = await fetch(`/api/search?q=${encodeURIComponent(q)}&suggestions=true`, { signal: controller.signal })
         if (!response.ok) {
           setSuggestions(null)
           setHasSearched(true)
@@ -151,7 +151,8 @@ export function SearchBar({
 
   // Update highlighted index when suggestions change - always highlight first suggestion
   useEffect(() => {
-    if (suggestions?.actors && suggestions.actors.length > 0) {
+    const totalItems = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
+    if (totalItems > 0) {
       // Always highlight the first suggestion
       setHighlightedIndex(0)
     } else {
@@ -209,19 +210,28 @@ export function SearchBar({
     e.stopPropagation()
     
     const actors = suggestions?.actors?.slice(0, 10) || []
+    const movies = suggestions?.movies?.slice(0, 10) || []
+    const allItems = [...actors.map(a => ({ type: 'actor' as const, item: a })), ...movies.map(m => ({ type: 'movie' as const, item: m }))]
     
-    // If we have suggestions and a highlighted one, navigate to that actor
-    if (actors.length > 0 && highlightedIndex >= 0 && highlightedIndex < actors.length && actors[highlightedIndex]) {
-      const selectedActor = actors[highlightedIndex]
-      setQuery(selectedActor.name)
-      setShowSuggestionsDropdown(false)
-      setHighlightedIndex(-1)
-      router.push(getActorUrl(selectedActor))
+    // If we have suggestions and a highlighted one, navigate to that item
+    if (allItems.length > 0 && highlightedIndex >= 0 && highlightedIndex < allItems.length) {
+      const selected = allItems[highlightedIndex]
+      if (selected.type === 'actor') {
+        setQuery(selected.item.name)
+        setShowSuggestionsDropdown(false)
+        setHighlightedIndex(-1)
+        router.push(getActorUrl(selected.item))
+      } else {
+        setQuery(selected.item.title)
+        setShowSuggestionsDropdown(false)
+        setHighlightedIndex(-1)
+        router.push(getMovieUrl(selected.item))
+      }
       return
     }
     
     // If no suggestions but query exists, navigate to search page
-    if (query.trim() && actors.length === 0) {
+    if (query.trim() && allItems.length === 0) {
       setShowSuggestionsDropdown(false)
       setHighlightedIndex(-1)
       if (onSearch) {
@@ -237,13 +247,14 @@ export function SearchBar({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const actors = suggestions?.actors?.slice(0, 10) || []
-    const maxIndex = actors.length - 1
+    const movies = suggestions?.movies?.slice(0, 10) || []
+    const maxIndex = actors.length + movies.length - 1
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
         e.stopPropagation()
-        if (showSuggestionsDropdown && actors.length > 0) {
+        if (showSuggestionsDropdown && maxIndex >= 0) {
           setHighlightedIndex((prev) => {
             if (prev < maxIndex) {
               return prev + 1
@@ -255,7 +266,7 @@ export function SearchBar({
       case 'ArrowUp':
         e.preventDefault()
         e.stopPropagation()
-        if (showSuggestionsDropdown && actors.length > 0) {
+        if (showSuggestionsDropdown && maxIndex >= 0) {
           setHighlightedIndex((prev) => {
             if (prev <= 0) {
               return -1
@@ -286,7 +297,7 @@ export function SearchBar({
     setQuery('')
   }
 
-  const totalSuggestions = (suggestions?.actors?.length || 0)
+  const totalSuggestions = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
 
   const hasResults = totalSuggestions > 0
 
@@ -466,6 +477,61 @@ export function SearchBar({
                                     )}>
                                       {actor.name}
                                     </div>
+                                  </div>
+                                </PrefetchLink>
+                              </motion.div>
+                            )
+                          })}
+                        </motion.div>
+                      </div>
+                    )}
+
+                    {/* Movies */}
+                    {suggestions?.movies && suggestions.movies.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
+                          Movies
+                        </div>
+                        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+                          {suggestions.movies.slice(0, 10).map((movie, index) => {
+                            const actorOffset = (suggestions?.actors?.length || 0)
+                            const movieIndex = actorOffset + index
+                            const isHighlighted = highlightedIndex === movieIndex
+                            return (
+                              <motion.div variants={fadeInUp} key={`search-movie-${movie.id}`}>
+                                <PrefetchLink
+                                  href={getMovieUrl(movie)}
+                                  onClick={handleSuggestionClick}
+                                  onMouseEnter={() => setHighlightedIndex(movieIndex)}
+                                  data-highlight-index={movieIndex}
+                                  className={cn(
+                                    "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center gap-3 cursor-pointer group relative",
+                                    isHighlighted ? "bg-[#1a1a1a]/50" : "hover:bg-[#1a1a1a]/30"
+                                  )}
+                                >
+                                  {/* Vertical bar indicator for highlighted item */}
+                                  {isHighlighted && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
+                                  )}
+                                  <IconFilm className={cn(
+                                    "w-4 h-4 flex-shrink-0 transition-colors",
+                                    isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
+                                  )} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className={cn(
+                                      "truncate transition-all",
+                                      isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
+                                    )}>
+                                      {movie.title}
+                                    </div>
+                                    {movie.year && (
+                                      <div className={cn(
+                                        "text-xs mt-0.5",
+                                        isHighlighted ? "text-gray-400" : "text-gray-500"
+                                      )}>
+                                        {movie.year}
+                                      </div>
+                                    )}
                                   </div>
                                 </PrefetchLink>
                               </motion.div>

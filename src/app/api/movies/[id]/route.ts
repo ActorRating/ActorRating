@@ -7,7 +7,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log("🎬 Fetching movie with ID or slug:", id)
+    const { searchParams } = new URL(request.url)
+    const minimal = searchParams.get('minimal') === 'true'
+    
+    console.log("🎬 Fetching movie with ID or slug:", id, minimal ? "(minimal)" : "")
     
     // Try to fetch by slug first, then fallback to ID
     let { data: movie, error: movieError } = await supabaseServer
@@ -26,15 +29,198 @@ export async function GET(
       
       if (idError || !movieById) {
         console.error("❌ Movie fetch error:", idError || movieError)
-      return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+        return NextResponse.json({ error: "Movie not found" }, { status: 404 })
       }
       movie = movieById
       movieError = null
     }
 
-    console.log("🎬 Movie found:", movie.title)
+    if (movieError) {
+      console.error("❌ Movie fetch error:", movieError)
+      return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+    }
 
-    const res = NextResponse.json(movie)
+    console.log("🎬 Movie found:", movie.title)
+    
+    // If minimal mode, return early with just basic info (much faster)
+    if (minimal) {
+      const res = NextResponse.json({
+        id: movie.id,
+        title: movie.title,
+        year: movie.year,
+        slug: movie.slug,
+        createdAt: movie.createdAt,
+        updatedAt: movie.updatedAt,
+      })
+      res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800')
+      return res
+    }
+
+    // Fetch performances and ratings in parallel for better performance
+    const [performancesResult, ratingsResult] = await Promise.all([
+      supabaseServer
+        .from('Performance')
+        .select(`
+          id,
+          userId,
+          actorId,
+          movieId,
+          comment,
+          character,
+          createdAt,
+          updatedAt,
+          movie:Movie(id, title, year, director, tmdbId, slug),
+          actor:Actor(id, name, slug, imageUrl)
+        `)
+        .eq('movieId', movie.id)
+        .order('updatedAt', { ascending: false })
+        .limit(200),
+      supabaseServer
+        .from('Rating')
+        .select(`
+          userId,
+          actorId,
+          movieId,
+          roleName,
+          weightedScore,
+          emotionalRangeDepth,
+          characterBelievability,
+          technicalSkill,
+          screenPresence,
+          chemistryInteraction
+        `)
+        .eq('movieId', movie.id)
+        .order('createdAt', { ascending: false })
+        .limit(1000)
+    ])
+
+    const { data: performances, error: performancesError } = performancesResult
+    const { data: ratings, error: ratingsError } = ratingsResult
+
+    if (performancesError) {
+      console.error("❌ Performances fetch error:", performancesError)
+    }
+
+    if (ratingsError) {
+      console.error("❌ Ratings fetch error:", ratingsError)
+    }
+
+    // Create a map of rating data by (actorId, movieId) for quick lookup
+    const ratingMap = new Map<string, any>()
+    const ratingsByActor = new Map<string, any[]>()
+    
+    if (ratings) {
+      ratings.forEach(rating => {
+        // Match by actorId:movieId
+        const key = `${rating.actorId}:${rating.movieId}`
+        if (!ratingsByActor.has(rating.actorId)) {
+          ratingsByActor.set(rating.actorId, [])
+        }
+        ratingsByActor.get(rating.actorId)!.push(rating)
+        
+        // For matching to specific performances
+        if (!ratingMap.has(key)) {
+          ratingMap.set(key, rating)
+        }
+      })
+    }
+
+    // Get all unique actors that have ratings but no performance entry
+    const ratedActorIds = new Set(ratings?.map(r => r.actorId) || [])
+    const performanceActorIds = new Set(performances?.map(p => p.actorId) || [])
+    const actorsNeedingFetch = Array.from(ratedActorIds).filter(id => !performanceActorIds.has(id))
+    
+    // Only fetch actor details if there are actors with ratings but no performances
+    let ratedActors: any[] = []
+    if (actorsNeedingFetch.length > 0) {
+      const { data } = await supabaseServer
+        .from('Actor')
+        .select('id, name, slug, imageUrl')
+        .in('id', actorsNeedingFetch)
+      ratedActors = data || []
+    }
+    
+    // Create a map of existing performances by actorId
+    const performanceMap = new Map<string, any>()
+    if (performances) {
+      performances.forEach(perf => {
+        performanceMap.set(perf.actorId, perf)
+      })
+    }
+    
+    // Combine existing performances with their rating data
+    const enrichedPerformances = (performances || []).map(performance => {
+      const key = `${performance.actorId}:${performance.movieId}`
+      const rating = ratingMap.get(key)
+      
+      return {
+        ...performance,
+        roleName: rating?.roleName || null,
+        // Add the rating scores to the performance for the frontend
+        emotionalRangeDepth: rating?.emotionalRangeDepth || 0,
+        characterBelievability: rating?.characterBelievability || 0,
+        technicalSkill: rating?.technicalSkill || 0,
+        screenPresence: rating?.screenPresence || 0,
+        chemistryInteraction: rating?.chemistryInteraction || 0,
+      }
+    })
+    
+    // Add performances for actors that have ratings but no performance entry
+    if (ratedActors && Array.isArray(ratedActors)) {
+      ratedActors.forEach((actorItem: any) => {
+        if (!performanceMap.has(actorItem.id)) {
+          // Get the first rating for this actor to use as default
+          const actorRatings = ratingsByActor.get(actorItem.id) || []
+          if (actorRatings.length > 0) {
+            const firstRating = actorRatings[0]
+            // Calculate average rating for this actor across all users
+            const avgRating = {
+              emotionalRangeDepth: Math.round(actorRatings.reduce((sum: number, r: any) => sum + (r.emotionalRangeDepth || 0), 0) / actorRatings.length),
+              characterBelievability: Math.round(actorRatings.reduce((sum: number, r: any) => sum + (r.characterBelievability || 0), 0) / actorRatings.length),
+              technicalSkill: Math.round(actorRatings.reduce((sum: number, r: any) => sum + (r.technicalSkill || 0), 0) / actorRatings.length),
+              screenPresence: Math.round(actorRatings.reduce((sum: number, r: any) => sum + (r.screenPresence || 0), 0) / actorRatings.length),
+              chemistryInteraction: Math.round(actorRatings.reduce((sum: number, r: any) => sum + (r.chemistryInteraction || 0), 0) / actorRatings.length),
+            }
+            
+            const newPerformance: any = {
+              id: `rating-${actorItem.id}`,
+              userId: firstRating.userId,
+              actorId: actorItem.id,
+              movieId: movie.id,
+              comment: null,
+              character: firstRating.roleName || null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              movie: movie,
+              actor: {
+                id: actorItem.id,
+                name: actorItem.name,
+                slug: actorItem.slug,
+                imageUrl: actorItem.imageUrl,
+              },
+              roleName: firstRating.roleName || null,
+              emotionalRangeDepth: avgRating.emotionalRangeDepth,
+              characterBelievability: avgRating.characterBelievability,
+              technicalSkill: avgRating.technicalSkill,
+              screenPresence: avgRating.screenPresence,
+              chemistryInteraction: avgRating.chemistryInteraction,
+            }
+            enrichedPerformances.push(newPerformance)
+          }
+        }
+      })
+    }
+
+    // Combine the data
+    const movieData = {
+      ...movie,
+      performances: enrichedPerformances,
+      ratings: ratings || []
+    }
+
+    console.log("🎬 Returning movie data:", movieData.title, "with", enrichedPerformances.length, "performances")
+    
+    const res = NextResponse.json(movieData)
     res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800')
     return res
   } catch (error) {
