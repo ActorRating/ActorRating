@@ -126,12 +126,14 @@ body {
 
 /* Responsive letter spacing for h2 subtitle */
 .hero-subtitle {
-  letter-spacing: -0.5px; /* Mobile default */
+  letter-spacing: -0.5px;
+  /* Mobile default */
 }
 
 @media (min-width: 640px) {
   .hero-subtitle {
-    letter-spacing: -0.25px !important; /* Desktop */
+    letter-spacing: -0.25px !important;
+    /* Desktop */
   }
 }
 
@@ -175,21 +177,27 @@ main {
 }
 
 /* Prevent horizontal scrolling site-wide and improve mobile behavior */
-html, body {
-  height: auto; /* CRITICAL: Changed from 100% to auto to allow proper scrolling on iOS Safari */
+html,
+body {
+  height: auto;
+  /* CRITICAL: Changed from 100% to auto to allow proper scrolling on iOS Safari */
   background: #000000;
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-x: none !important;
-  overscroll-behavior-y: auto !important; /* Allow normal scroll behavior for trackpad */
-  overscroll-behavior: auto !important; /* Allow normal scroll behavior */
-  overflow-y: auto; /* Allow vertical scrolling */
+  overscroll-behavior-y: auto !important;
+  /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior: auto !important;
+  /* Allow normal scroll behavior */
+  overflow-y: auto;
+  /* Allow vertical scrolling */
   position: relative;
   margin: 0;
   padding: 0;
-  touch-action: pan-y pinch-zoom; /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
+  touch-action: pan-y pinch-zoom;
+  /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
 }
 
 html {
@@ -199,16 +207,21 @@ html {
 }
 
 body {
-  min-height: 100dvh; /* Dynamic viewport height for mobile browsers - CRITICAL for iOS */
-  padding-bottom: env(safe-area-inset-bottom); /* Respect iOS safe area */
-  overflow-y: auto; /* Changed from scroll to auto - only show scrollbar when needed */
+  min-height: 100dvh;
+  /* Dynamic viewport height for mobile browsers - CRITICAL for iOS */
+  padding-bottom: env(safe-area-inset-bottom);
+  /* Respect iOS safe area */
+  overflow-y: auto;
+  /* Changed from scroll to auto - only show scrollbar when needed */
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior: auto !important;
+  /* Allow normal scroll behavior for trackpad */
   overscroll-behavior-y: auto !important;
   overscroll-behavior-x: none !important;
   position: relative;
   margin: 0;
-  touch-action: pan-y pinch-zoom; /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
+  touch-action: pan-y pinch-zoom;
+  /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
 }
 
 /* Ensure body can scroll to top */
@@ -235,7 +248,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior: auto !important;
+  /* Allow normal scroll behavior for trackpad */
   overscroll-behavior-y: auto !important;
   overscroll-behavior-x: none !important;
   -moz-osx-font-smoothing: grayscale;
@@ -341,6 +355,7 @@ html {
 
 /* Responsive scroll padding to center cards properly on all screen sizes */
 @media (max-width: 1023px) {
+
   .performance-scroll-container,
   .recent-scroll-container,
   .iconic-scroll-container {
@@ -355,7 +370,7 @@ html {
     transition: none !important;
     animation: none !important;
   }
-  
+
   .performance-scroll-container,
   .recent-scroll-container {
     /* Optimize for mobile scrolling */
@@ -366,6 +381,7 @@ html {
 }
 
 @media (min-width: 1024px) {
+
   .performance-scroll-container,
   .recent-scroll-container,
   .iconic-scroll-container {
@@ -374,21 +390,27 @@ html {
 }
 
 /* Contain children from causing overflow on small screens */
-#__next, body > div, main, section {
+#__next,
+body>div,
+main,
+section {
   max-width: 100vw;
   width: 100%;
   margin-left: 0;
   margin-right: 0;
   position: relative;
-  overscroll-behavior: auto !important; /* Allow normal scroll behavior for trackpad */
+  overscroll-behavior: auto !important;
+  /* Allow normal scroll behavior for trackpad */
 }
 
 /* Fix mobile viewport height issues - prevent black bar at bottom */
 @supports (height: 100dvh) {
-  html, body {
+
+  html,
+  body {
     min-height: 100dvh;
   }
-  
+
   .min-h-screen {
     min-height: 100dvh !important;
   }
@@ -396,33 +418,36 @@ html {
 
 /* Fix mobile Safari bottom navigation bar black area - CRITICAL iOS FIX */
 @supports (padding: max(0px)) {
+
   /* Apply safe-area-inset to body globally */
   body {
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    background-color: #000; /* Match app background */
+    background-color: #000;
+    /* Match app background */
   }
-  
+
   /* Ensure main content respects safe area */
   main {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background-color: #000;
   }
-  
+
   /* Ensure root container respects safe area */
   #__next {
     min-height: 100dvh;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background-color: #000;
   }
-  
+
   /* Ensure fixed bottom elements account for safe area */
   [class*="fixed"][class*="bottom-0"],
   .fixed.bottom-0 {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  
+
   /* Fix search bars and input fields at bottom on mobile Safari */
   @media (max-width: 768px) {
+
     /* Fix any search inputs or forms at the bottom */
     form[class*="bottom"],
     div[class*="bottom"][class*="search"],
@@ -439,7 +464,9 @@ footer {
 }
 
 /* Fix all containers to prevent horizontal shift */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -476,7 +503,12 @@ footer {
 }
 
 /* Smooth transitions for interactive elements only */
-button, a, input, select, textarea, [role="button"] {
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
   transition: all 0.2s ease-in-out;
 }
 
@@ -518,7 +550,9 @@ a:focus-visible {
 }
 
 /* Reduce layout shift */
-img, canvas, svg {
+img,
+canvas,
+svg {
   max-width: 100%;
   height: auto;
 }
@@ -545,12 +579,13 @@ video {
 
 /* Safari-specific fixes for blur and animation issues */
 @supports (-webkit-backdrop-filter: blur(1px)) {
+
   /* Safari-specific blur optimizations */
   .backdrop-blur-xl {
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
   }
-  
+
   .backdrop-blur-sm {
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
@@ -578,34 +613,35 @@ video {
 
 /* Safari-specific animation fixes */
 @supports (-webkit-appearance: none) {
+
   /* Disable problematic blur animations on Safari */
   .group:hover .blur {
     opacity: 0 !important;
   }
-  
+
   /* Use simpler transitions for Safari */
   .safari-safe-transition {
     transition: opacity 0.3s ease, transform 0.3s ease !important;
   }
-  
+
   /* Fix Safari rendering issues with complex gradients */
   .bg-gradient-to-r {
     -webkit-background-clip: padding-box;
     background-clip: padding-box;
   }
-  
+
   /* Optimize backdrop-filter for Safari */
   .backdrop-blur-xl {
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
   }
-  
+
   /* Reduce blur intensity on Safari for better performance */
   .blur {
     filter: blur(8px);
     -webkit-filter: blur(8px);
   }
-  
+
   /* Fix Safari transform issues */
   .group:hover .group-hover\:scale-110 {
     -webkit-transform: scale(1.05);
@@ -615,11 +651,14 @@ video {
 
 /* Improve touch targets on mobile */
 @media (max-width: 768px) {
-  button, a, [role="button"] {
+
+  button,
+  a,
+  [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Ensure rating cards maintain consistent heights on mobile */
   .rating-card-mobile {
     min-height: 160px !important;
@@ -631,16 +670,16 @@ video {
   .rating-card-mobile {
     min-height: 140px !important;
   }
-  
+
   /* Profile page mobile optimizations */
   .profile-mobile {
     padding: 1rem !important;
   }
-  
+
   .profile-mobile .text-3xl {
     font-size: 1.875rem !important;
   }
-  
+
   .profile-mobile .text-4xl {
     font-size: 2rem !important;
   }
@@ -648,7 +687,7 @@ video {
 
 /* Enhanced feedback button shadow */
 .feedback-button-shadow {
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(139, 92, 246, 0.4),
     0 0 0 1px rgba(139, 92, 246, 0.1),
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
@@ -669,7 +708,7 @@ video {
 }
 
 .feedback-button-shadow:hover {
-  box-shadow: 
+  box-shadow:
     0 35px 70px -12px rgba(139, 92, 246, 0.6),
     0 0 0 1px rgba(139, 92, 246, 0.2),
     0 20px 40px -5px rgba(0, 0, 0, 0.15),
@@ -794,37 +833,31 @@ nav {
 }
 
 /* Ensure all navbar inner containers are transparent */
-.navbar-cinematic > div,
-.navbar-cinematic > div > div {
+.navbar-cinematic>div,
+.navbar-cinematic>div>div {
   background: transparent !important;
   background-color: transparent !important;
 }
 
 /* Elegant spotlight separator - simulates spotlight coming from above */
 .navbar-spotlight-separator {
-  background: radial-gradient(
-    ellipse 120% 100% at 50% 0%,
-    rgba(212, 175, 55, 0.12) 0%,
-    rgba(212, 175, 55, 0.06) 30%,
-    rgba(212, 175, 55, 0.02) 60%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 20%,
-    rgba(0, 0, 0, 0.6) 50%,
-    rgba(0, 0, 0, 0.9) 80%,
-    rgba(0, 0, 0, 1) 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 20%,
-    rgba(0, 0, 0, 0.6) 50%,
-    rgba(0, 0, 0, 0.9) 80%,
-    rgba(0, 0, 0, 1) 100%
-  );
+  background: radial-gradient(ellipse 120% 100% at 50% 0%,
+      rgba(212, 175, 55, 0.12) 0%,
+      rgba(212, 175, 55, 0.06) 30%,
+      rgba(212, 175, 55, 0.02) 60%,
+      transparent 100%);
+  mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.3) 20%,
+      rgba(0, 0, 0, 0.6) 50%,
+      rgba(0, 0, 0, 0.9) 80%,
+      rgba(0, 0, 0, 1) 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.3) 20%,
+      rgba(0, 0, 0, 0.6) 50%,
+      rgba(0, 0, 0, 0.9) 80%,
+      rgba(0, 0, 0, 1) 100%);
 }
 
 /* Parallax peek effect for next section */
@@ -842,7 +875,7 @@ nav {
 
 /* Premium shadows for buttons and interactive elements */
 .premium-shadow {
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.3),
     0 2px 4px -1px rgba(0, 0, 0, 0.2),
     0 0 0 1px rgba(212, 175, 55, 0.1);
@@ -850,7 +883,7 @@ nav {
 }
 
 .premium-shadow:hover {
-  box-shadow: 
+  box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.4),
     0 4px 6px -2px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(212, 175, 55, 0.2),
@@ -860,14 +893,17 @@ nav {
 
 /* Premium animation - subtle and performant */
 @keyframes premium-glow {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 4px 6px -1px rgba(0, 0, 0, 0.3),
       0 2px 4px -1px rgba(0, 0, 0, 0.2),
       0 0 0 1px rgba(212, 175, 55, 0.1);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 10px 15px -3px rgba(0, 0, 0, 0.4),
       0 4px 6px -2px rgba(0, 0, 0, 0.3),
       0 0 0 1px rgba(212, 175, 55, 0.15),
@@ -886,6 +922,7 @@ nav {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -895,18 +932,17 @@ nav {
   0% {
     background-position: -100% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 .text-shimmer {
-  background: linear-gradient(
-    90deg,
-    currentColor 0%,
-    rgba(212, 175, 55, 0.8) 50%,
-    currentColor 100%
-  );
+  background: linear-gradient(90deg,
+      currentColor 0%,
+      rgba(212, 175, 55, 0.8) 50%,
+      currentColor 100%);
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -915,9 +951,12 @@ nav {
 
 /* Premium glow pulse for CRAFT text - Static on mobile, reduced on desktop */
 @keyframes craft-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.3));
   }
+
   50% {
     filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.4));
   }
@@ -943,6 +982,7 @@ nav {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -989,6 +1029,7 @@ nav {
 
 /* Prefers-reduced-motion support - CRITICAL for accessibility and performance */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -1004,14 +1045,15 @@ nav {
   [style*="willChange"] {
     will-change: transform, opacity;
   }
-  
+
   /* Disable animations on mobile for better scroll performance */
   @media (max-width: 768px) {
+
     .animate-on-scroll,
     [data-animate] {
       animation: none !important;
     }
-    
+
     /* Only allow opacity transitions on mobile */
     * {
       transition-property: opacity !important;
@@ -1044,8 +1086,8 @@ nav {
   }
 }
 
-.floating-input:focus + .floating-label,
-.floating-input.has-value + .floating-label,
+.floating-input:focus+.floating-label,
+.floating-input.has-value+.floating-label,
 .floating-label-active {
   top: 0;
   left: 1.25rem;
@@ -1058,8 +1100,9 @@ nav {
 }
 
 @media (min-width: 640px) {
-  .floating-input:focus + .floating-label,
-  .floating-input.has-value + .floating-label,
+
+  .floating-input:focus+.floating-label,
+  .floating-input.has-value+.floating-label,
   .floating-label-active {
     left: 1.5rem;
   }
@@ -1083,7 +1126,7 @@ nav {
     padding-bottom: 0.75rem;
     line-height: 1.2;
   }
-  
+
   .floating-input.has-value {
     padding-top: 1.5rem;
     padding-bottom: 0.75rem;
@@ -1092,19 +1135,17 @@ nav {
 }
 
 /* Adjust label color for error states */
-.floating-input.border-red-500:focus + .floating-label-active,
-.floating-input.border-red-500.has-value + .floating-label-active,
-.floating-input.border-red-500:focus + .floating-label,
-.floating-input.border-red-500.has-value + .floating-label {
+.floating-input.border-red-500:focus+.floating-label-active,
+.floating-input.border-red-500.has-value+.floating-label-active,
+.floating-input.border-red-500:focus+.floating-label,
+.floating-input.border-red-500.has-value+.floating-label {
   color: #ef4444;
 }
 
 /* Adjust label color for success states */
-.floating-input.border-green-500:focus + .floating-label-active,
-.floating-input.border-green-500.has-value + .floating-label-active,
-.floating-input.border-green-500:focus + .floating-label,
-.floating-input.border-green-500.has-value + .floating-label {
+.floating-input.border-green-500:focus+.floating-label-active,
+.floating-input.border-green-500.has-value+.floating-label-active,
+.floating-input.border-green-500:focus+.floating-label,
+.floating-input.border-green-500.has-value+.floating-label {
   color: #22c55e;
 }
-
-

@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -371,7 +371,13 @@ const RatingSliderCard = memo(function RatingSliderCard({
   }, [onValueChange])
 
   return (
-    <div className="space-y-3 sm:space-y-4 relative">
+    <div 
+      className="space-y-3 sm:space-y-4 relative"
+      style={{
+        contentVisibility: 'visible',
+        contain: 'none',
+      }}
+    >
       {/* Label with Value */}
       <div className="flex items-center justify-between mb-3">
         <h3
@@ -548,6 +554,29 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
     checkUserRatings()
   }, [user])
+
+  // Force Safari to render all sliders and button immediately (prevent lazy loading)
+  useEffect(() => {
+    // Force layout calculation for all sliders and button to prevent Safari lazy loading
+    if (typeof window !== 'undefined' && submitPhase !== 'success') {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        // Force layout recalculation by accessing offsetHeight
+        const sliders = document.querySelectorAll('[data-slider-card]')
+        const button = document.querySelector('[data-submit-button]')
+        
+        sliders.forEach((slider) => {
+          // Force layout calculation
+          ;(slider as HTMLElement).offsetHeight
+        })
+        
+        if (button) {
+          // Force layout calculation for button
+          ;(button as HTMLElement).offsetHeight
+        }
+      })
+    }
+  }, [submitPhase])
 
   // Auto-demo first slider after first load - buttery smooth animation
   useEffect(() => {
@@ -1238,7 +1267,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [user])
 
   return (
-    <div className="min-h-screen bg-black relative overflow-x-hidden">
+    <div 
+      className="min-h-screen bg-black relative overflow-x-hidden"
+      style={{
+        contentVisibility: 'visible',
+        contain: 'none',
+      }}
+    >
       {/* Ambient background glow */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -1247,7 +1282,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
 
-      <div className={`relative max-w-[900px] mx-auto px-4 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}>
+      <div 
+        className={`relative max-w-[900px] mx-auto px-4 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}
+        style={{
+          contentVisibility: 'visible',
+          contain: 'none',
+        }}
+      >
 
         {/* Header Section - Mobile optimized - No animations on mobile to prevent disappearing */}
         <motion.div
@@ -1488,6 +1529,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
                       inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
                     `,
+                    contentVisibility: 'visible',
+                    contain: 'none',
                   }}
                 >
                   {/* Decorative corner accent - top left only */}
@@ -1520,9 +1563,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       opacity: 1,
                       visibility: 'visible',
                       paddingBottom: '40px', // Extra padding for last slider to prevent bottom edge interference
+                      contentVisibility: 'visible', // Force Safari to render all sliders immediately
+                      contain: 'none', // Prevent containment that might defer rendering
                     }}
                   >
-                    <div className="relative" ref={firstSliderRef}>
+                    <div className="relative" ref={firstSliderRef} data-slider-card>
                       <RatingSliderCard
                         label="Emotional Impact"
                         value={isDemoing ? demoValue : emotionalRangeDepth}
@@ -1540,68 +1585,84 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       />
                     </div>
 
-                    <RatingSliderCard
-                      label="Character Depth"
-                      value={characterBelievability}
-                      onValueChange={(v) => handleSliderChange('characterBelievability', v)}
-                      onSliderStart={handleSliderStart}
-                      onSliderEnd={handleSliderEnd}
-                      disabled={submitting}
-                      touched={touchedSliders.characterBelievability}
-                      spotlightActive={spotlightPhase !== 'none'}
-                    />
+                    <div data-slider-card>
+                      <RatingSliderCard
+                        label="Character Depth"
+                        value={characterBelievability}
+                        onValueChange={(v) => handleSliderChange('characterBelievability', v)}
+                        onSliderStart={handleSliderStart}
+                        onSliderEnd={handleSliderEnd}
+                        disabled={submitting}
+                        touched={touchedSliders.characterBelievability}
+                        spotlightActive={spotlightPhase !== 'none'}
+                      />
+                    </div>
 
-                    <RatingSliderCard
-                      label="Technical Skill"
-                      value={technicalSkill}
-                      onValueChange={(v) => handleSliderChange('technicalSkill', v)}
-                      onSliderStart={handleSliderStart}
-                      onSliderEnd={handleSliderEnd}
-                      disabled={submitting}
-                      touched={touchedSliders.technicalSkill}
-                      spotlightActive={spotlightPhase !== 'none'}
-                    />
+                    <div data-slider-card>
+                      <RatingSliderCard
+                        label="Technical Skill"
+                        value={technicalSkill}
+                        onValueChange={(v) => handleSliderChange('technicalSkill', v)}
+                        onSliderStart={handleSliderStart}
+                        onSliderEnd={handleSliderEnd}
+                        disabled={submitting}
+                        touched={touchedSliders.technicalSkill}
+                        spotlightActive={spotlightPhase !== 'none'}
+                      />
+                    </div>
 
-                    <RatingSliderCard
-                      label="Screen Presence"
-                      value={screenPresence}
-                      onValueChange={(v) => handleSliderChange('screenPresence', v)}
-                      onSliderStart={handleSliderStart}
-                      onSliderEnd={handleSliderEnd}
-                      disabled={submitting}
-                      touched={touchedSliders.screenPresence}
-                      spotlightActive={spotlightPhase !== 'none'}
-                    />
+                    <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
+                      <RatingSliderCard
+                        label="Screen Presence"
+                        value={screenPresence}
+                        onValueChange={(v) => handleSliderChange('screenPresence', v)}
+                        onSliderStart={handleSliderStart}
+                        onSliderEnd={handleSliderEnd}
+                        disabled={submitting}
+                        touched={touchedSliders.screenPresence}
+                        spotlightActive={spotlightPhase !== 'none'}
+                      />
+                    </div>
 
-                    <RatingSliderCard
-                      label="Originality"
-                      value={chemistryInteraction}
-                      onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
-                      onSliderStart={handleSliderStart}
-                      onSliderEnd={handleSliderEnd}
-                      disabled={submitting}
-                      touched={touchedSliders.chemistryInteraction}
-                      spotlightActive={spotlightPhase !== 'none'}
-                    />
+                    <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
+                      <RatingSliderCard
+                        label="Originality"
+                        value={chemistryInteraction}
+                        onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
+                        onSliderStart={handleSliderStart}
+                        onSliderEnd={handleSliderEnd}
+                        disabled={submitting}
+                        touched={touchedSliders.chemistryInteraction}
+                        spotlightActive={spotlightPhase !== 'none'}
+                      />
+                    </div>
                   </div>
 
                   {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
                   <div
-                    className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto"
+                    className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto flex justify-center"
                     style={{
                       filter: 'blur(0px)',
                       opacity: 1,
                       visibility: 'visible',
                       zIndex: 60,
+                      contentVisibility: 'visible', // Force Safari to render button immediately
+                      contain: 'none', // Prevent containment that might defer rendering
+                      minHeight: '80px', // Reserve space to prevent layout shift
                     }}
                   >
                     <motion.button
                       ref={buttonRef}
                       type="submit"
+                      data-submit-button
                       disabled={!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark'}
-                      className="group w-full py-5 sm:py-6 md:py-7 text-base sm:text-lg md:text-xl font-bold rounded-full tracking-wider relative overflow-hidden"
+                      className="group text-base sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
                       style={{
                         cursor: (!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
+                        width: submitPhase === 'loading' ? '56px' : '100%',
+                        height: submitPhase === 'loading' ? '56px' : 'auto',
+                        padding: submitPhase === 'loading' ? '0' : '1.25rem 0',
+                        borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
                         background: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
                           ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
                           : '#1a1a1a',
@@ -1610,9 +1671,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
                           : 'none',
                         border: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
-                      animate={{}}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      animate={{
+                        width: submitPhase === 'loading' ? '56px' : '100%',
+                        height: submitPhase === 'loading' ? '56px' : 'auto',
+                        padding: submitPhase === 'loading' ? '0' : '1.25rem 0',
+                        borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
+                      }}
+                      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                       whileHover={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
                         scale: 1.02,
                       } : {}}
@@ -1642,35 +1711,55 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           }}
                         />
                       )}
-                      <span className="relative z-10 flex items-center justify-center gap-2">
+                      <AnimatePresence mode="wait">
                         {submitPhase === 'loading' && (
-                          <>
-                            <motion.div
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
-                              style={{
-                                animation: 'spin 0.8s linear infinite',
-                              }}
-                            />
-                            <span className="text-black font-bold">Submitting...</span>
-                          </>
+                          <motion.div
+                            key="loading"
+                            initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ duration: 0.3, ease: 'easeOut' }}
+                            className="relative z-10 w-8 h-8 rounded-full"
+                            style={{
+                              border: '4px solid #000000',
+                              borderTopColor: 'transparent',
+                              animation: 'spin 0.8s linear infinite',
+                            }}
+                          />
                         )}
                         {submitPhase === 'checkmark' && (
-                          <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                            className="flex items-center gap-2"
+                          <motion.span
+                            key="checkmark"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative z-10 flex items-center gap-2"
                           >
-                            <CheckCircle className="w-5 h-5 text-black" />
-                            <span className="text-black font-bold">Success!</span>
-                          </motion.div>
+                            <motion.div
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                              className="flex items-center gap-2"
+                            >
+                              <CheckCircle className="w-5 h-5 text-black" />
+                              <span className="text-black font-bold">Success!</span>
+                            </motion.div>
+                          </motion.span>
                         )}
                         {submitPhase === 'idle' && (
-                          submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'
+                          <motion.span
+                            key="idle"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative z-10 block"
+                          >
+                            {submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'}
+                          </motion.span>
                         )}
-                      </span>
+                      </AnimatePresence>
                     </motion.button>
                   </div>
                 </motion.div>
@@ -1716,7 +1805,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-center mb-8"
+                  className="text-center mb-6"
                 >
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <CheckCircle className="w-6 h-6 text-[#FFD700]" />
@@ -1727,6 +1816,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       Rating saved
                     </h2>
                   </div>
+                  {/* Score Display */}
+                  {finalScore !== null && (
+                    <div className="mt-4">
+                      <p className="text-base sm:text-lg text-gray-400 mb-1">Your score</p>
+                      <p className="text-4xl sm:text-5xl font-bold text-[#FFD700]">{finalScore}/10</p>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Half Circle Progress with Percentage */}
@@ -1739,10 +1835,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       duration: 0.5,
                       ease: [0.4, 0, 0.2, 1]
                     }}
-                    className="flex flex-col items-center mb-6"
+                    className="flex flex-col items-center mb-3"
                   >
                     {/* Half Circle Progress Ring - Bigger and Rainbow Style */}
-                    <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-4">
+                    <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-2">
                       <svg className="w-56 h-28 sm:w-64 sm:h-32" viewBox="0 0 200 100" style={{ overflow: 'visible' }}>
                         {/* Background half circle */}
                         <path
@@ -1785,22 +1881,25 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </motion.div>
                 )}
 
-                {/* User Badge - Clickable */}
+                {/* User Badge with Arrow - Clickable */}
                 {userBadges.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="flex flex-wrap items-center justify-center gap-2 mb-4"
+                    className="flex items-center justify-center gap-2 mb-2"
                   >
                     {userBadges.map((badge) => (
-                      <button
-                        key={badge.id}
-                        onClick={() => setIsProgressModalOpen(true)}
-                        className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                      >
+                      <div key={badge.id} className="flex items-center gap-2">
                         <Badge badge={badge} />
-                      </button>
+                        <button
+                          onClick={() => setIsProgressModalOpen(true)}
+                          className="cursor-pointer transition-transform hover:scale-110 active:scale-95 p-1 rounded-full hover:bg-white/10"
+                          aria-label="View progress details"
+                        >
+                          <ChevronRight className="w-5 h-5 text-[#FFD700]" />
+                        </button>
+                      </div>
                     ))}
                   </motion.div>
                 )}

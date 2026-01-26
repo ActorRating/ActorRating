@@ -127,11 +127,16 @@ export function UserProgressBar() {
           </div>
           <button
             onClick={() => setIsProgressModalOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-2 py-2 sm:px-3 sm:py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/15 transition-colors text-gray-300 hover:text-white w-9 h-9 sm:w-auto sm:h-auto"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-sm"
+            style={{
+              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+              color: '#000000',
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)',
+            }}
             aria-label="View progress details"
           >
-            <Eye className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline text-xs">Details</span>
+            <Eye className="w-4 h-4" />
+            <span>View Progress</span>
           </button>
         </div>
 

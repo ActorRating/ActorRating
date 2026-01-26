@@ -13,20 +13,37 @@ interface ProgressModalProps {
 }
 
 export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalProps) {
-  // Lock body scroll when modal is open
+  // Lock body scroll and hide navbar when modal is open
   useEffect(() => {
     if (isOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
+      // Hide all navbars
+      document.body.setAttribute('data-modal-open', 'true')
+      const navbars = document.querySelectorAll('nav')
+      navbars.forEach(nav => {
+        ;(nav as HTMLElement).style.display = 'none'
+      })
     } else {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
+      // Show navbars again
+      document.body.removeAttribute('data-modal-open')
+      const navbars = document.querySelectorAll('nav')
+      navbars.forEach(nav => {
+        ;(nav as HTMLElement).style.display = ''
+      })
     }
     
     return () => {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
+      document.body.removeAttribute('data-modal-open')
+      const navbars = document.querySelectorAll('nav')
+      navbars.forEach(nav => {
+        ;(nav as HTMLElement).style.display = ''
+      })
     }
   }, [isOpen])
   // Get all level badges sorted by minRatings
@@ -48,8 +65,11 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm"
-            style={{ touchAction: 'none' }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            style={{ 
+              touchAction: 'none',
+              zIndex: 10000,
+            }}
           />
 
           {/* Modal */}
@@ -58,7 +78,10 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-0 z-[10001] flex items-center justify-center p-4"
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{
+              zIndex: 10001,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 onClose()
@@ -66,7 +89,7 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
             }}
           >
             <div
-              className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-white/10 shadow-2xl relative flex flex-col"
+              className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-3xl max-w-lg w-full border border-white/10 shadow-2xl relative flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
               style={{
                 boxShadow: `
@@ -79,20 +102,35 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
                 maxHeight: '85vh',
               }}
             >
-              <div
-                className="flex-1 overflow-y-auto pr-1"
-                style={{
-                  touchAction: 'pan-y',
-                  WebkitOverflowScrolling: 'touch',
-                }}
-              >
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center"
+                className="absolute top-4 right-4 w-10 h-10 rounded-full transition-colors flex items-center justify-center backdrop-blur-sm"
+                style={{
+                  zIndex: 10002,
+                  background: 'rgba(26, 26, 26, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(26, 26, 26, 1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(26, 26, 26, 0.95)'
+                }}
               >
                 <X className="w-5 h-5 text-white" />
               </button>
+
+              <div
+                className="flex-1 overflow-y-auto"
+                style={{
+                  touchAction: 'pan-y',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarGutter: 'stable',
+                  scrollbarWidth: 'thin',
+                }}
+              >
+                <div style={{ padding: '1.5rem', paddingTop: '3.5rem' }}>
 
               {/* Header */}
               <div className="mb-6">
@@ -201,6 +239,7 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
                   </p>
                 </div>
               )}
+                </div>
               </div>
             </div>
           </motion.div>
