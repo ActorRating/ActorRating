@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
     <loc>${escapeXml(`${BASE_URL}/sitemaps/actors.xml`)}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
   </sitemap>`,
+      `  <sitemap>
+    <loc>${escapeXml(`${BASE_URL}/sitemaps/movies.xml`)}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+  </sitemap>`,
     ]
 
     // Add paginated performance sitemaps
@@ -62,8 +66,12 @@ ${sitemapEntries.join('\n')}
     <loc>${escapeXml(`${BASE_URL}/sitemaps/static.xml`)}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
   </sitemap>
-  <sitemap>
+      <sitemap>
     <loc>${escapeXml(`${BASE_URL}/sitemaps/actors.xml`)}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${escapeXml(`${BASE_URL}/sitemaps/movies.xml`)}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
   </sitemap>
 </sitemapindex>`

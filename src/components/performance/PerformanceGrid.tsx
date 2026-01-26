@@ -6,7 +6,7 @@ import { Search, Filter, SortAsc, Inbox } from 'lucide-react'
 import { Performance } from '@/types'
 import { PerformanceCard } from './PerformanceCard'
 import { Button } from '../ui/Button'
-import { fadeInUp, getMotionProps, fadeIn } from '@/lib/animations'
+import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
 import { BouncingBallsLoader } from '../ui/BouncingBallsLoader'
 
 interface PerformanceGridProps {
@@ -147,7 +147,7 @@ export function PerformanceGrid({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search performances..."
+            placeholder="Search for actors and movies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"

@@ -421,137 +421,6 @@ function RatePageContent() {
   }
 
   // Success is now handled in-place by PerformanceRatingClientWrapper
-  // Remove old success page rendering
-  if (false && submitted && submittedRating) {
-    // This code is kept for reference but disabled
-    // Calculate total score
-    const totalScore = Math.round(
-      submittedRating.emotionalRangeDepth * 0.25 +
-      submittedRating.characterBelievability * 0.25 +
-      submittedRating.technicalSkill * 0.20 +
-      submittedRating.screenPresence * 0.15 +
-      submittedRating.chemistryInteraction * 0.15
-    )
-
-    return (
-      <Suspense fallback={null}>
-        {getLayout(
-          <div className="min-h-screen bg-black">
-            {/* Subtle spotlight gradient */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px]" />
-            </div>
-
-            <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16">
-              <div className="grid grid-cols-12 gap-6">
-              
-              {/* Header Section (kept from original) */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="col-span-12 lg:col-span-8 lg:col-start-3 text-center mb-16"
-              >
-                {/* Actor Image */}
-                {actor?.imageUrl && (
-                  <div className="mb-6 flex justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-purple-600/30 blur-2xl rounded-lg" />
-                      <Image
-                        src={actor.imageUrl}
-                        alt={actor.name}
-                        width={120}
-                        height={120}
-                        className="relative rounded-lg object-cover shadow-2xl"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Actor Name */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
-                  {actor?.name}
-                </h1>
-                
-                {/* Movie Title */}
-                <h2 className="text-lg sm:text-xl text-gray-300 mb-2 font-medium">
-                  {movie?.title}
-                </h2>
-              </motion.div>
-
-              {/* Success Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 300, 
-                  damping: 30,
-                  delay: 0.2
-                }}
-                className="col-span-12 lg:col-span-8 lg:col-start-3 bg-[#0d0d0d] rounded-2xl p-8 sm:p-12 shadow-2xl"
-              >
-                {/* Green Checkmark Animation */}
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 400, 
-                    damping: 15,
-                    delay: 0.4
-                  }}
-                  className="flex justify-center mb-6"
-                >
-                  <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-12 h-12 text-emerald-400" />
-                  </div>
-                </motion.div>
-
-                {/* Large "Rating Submitted" Text */}
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-3xl sm:text-4xl font-bold text-white text-center mb-8"
-                >
-                  Rating Submitted
-                </motion.h2>
-
-                {/* Two CTA Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="space-y-4"
-                >
-                  {/* Rate Another Performance - Purple Gradient */}
-                  <button
-                    onClick={() => {
-                      window.location.href = '/search'
-                    }}
-                    className="w-full py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 hover:from-purple-500 hover:via-violet-500 hover:to-purple-500 text-white shadow-lg shadow-purple-600/50 hover:shadow-xl hover:shadow-purple-600/60 transition-all duration-300"
-                  >
-                    Rate Another Performance
-                  </button>
-
-                  {/* Return Home - Minimal White Outline */}
-                  <button
-                    onClick={() => {
-                      window.location.href = '/'
-                    }}
-                    className="w-full py-4 text-lg font-bold rounded-2xl border-2 border-white/30 text-white hover:border-white/50 hover:bg-white/5 transition-all duration-300"
-                  >
-                    Return Home
-                  </button>
-                </motion.div>
-              </motion.div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Suspense>
-    )
-  }
 
   // Show rating form when both actor and movie are selected (or success state)
   if (actor && movie) {
@@ -685,7 +554,7 @@ function RatePageContent() {
               >
             <div className="max-w-2xl mx-auto mb-8">
               <SearchBar 
-                placeholder="Search for actors..."
+                placeholder="Search for actors and movies..."
                 onSearch={handleSearch}
                 initialValue={searchQuery}
                 autoFocus

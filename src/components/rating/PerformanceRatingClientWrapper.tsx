@@ -11,6 +11,7 @@ import { lockScroll, unlockScroll } from '@/lib/lockScroll'
 import { getLevelProgress, getUserBadges } from '@/lib/badges'
 import { Badge } from '@/components/badges/Badge'
 import { getActorUrl } from '@/lib/slugHelper'
+import { ProgressModal } from '@/components/dashboard/ProgressModal'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -676,6 +677,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   } | null>(null)
   const [userBadges, setUserBadges] = useState<any[]>([])
   const gradientIdRef = useRef(`progressGradient-${Math.random().toString(36).substr(2, 9)}`)
+  const rainbowGradientIdRef = useRef(`rainbowGradient-${Math.random().toString(36).substr(2, 9)}`)
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
 
   // Set final score if external submitted rating is provided
   useEffect(() => {
@@ -1698,7 +1701,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-center mb-6"
+                  className="text-center mb-8"
                 >
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <CheckCircle className="w-6 h-6 text-[#FFD700]" />
@@ -1709,97 +1712,102 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       Rating saved
                     </h2>
                   </div>
-                  <div className="mt-4">
-                    <p className="text-base sm:text-lg text-gray-400 mb-1">Your score</p>
-                    <p className="text-4xl sm:text-5xl font-bold text-[#FFD700]">{finalScore}/10</p>
-                  </div>
                 </motion.div>
 
-                {/* User Badges */}
-                {userBadges.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="flex flex-wrap items-center justify-center gap-2 mb-6"
-                  >
-                    {userBadges.map((badge) => (
-                      <Badge key={badge.id} badge={badge} />
-                    ))}
-                  </motion.div>
-                )}
-
-                {/* Progress Ring */}
+                {/* Half Circle Progress with Percentage */}
                 {progressData && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ 
-                      delay: 0.5,
+                      delay: 0.4,
                       duration: 0.5,
                       ease: [0.4, 0, 0.2, 1]
                     }}
                     className="flex flex-col items-center mb-6"
                   >
-                    {/* Circular Progress Ring */}
-                    <div className="relative w-32 h-32 mb-4">
-                      <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                        {/* Background circle */}
-                        <circle
-                          cx="60"
-                          cy="60"
-                          r="50"
+                    {/* Half Circle Progress Ring - Bigger and Rainbow Style */}
+                    <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-4">
+                      <svg className="w-56 h-28 sm:w-64 sm:h-32" viewBox="0 0 200 100" style={{ overflow: 'visible' }}>
+                        {/* Background half circle */}
+                        <path
+                          d="M 20 80 A 60 60 0 0 1 180 80"
                           fill="none"
                           stroke="rgba(255, 255, 255, 0.1)"
-                          strokeWidth="8"
+                          strokeWidth="14"
+                          strokeLinecap="round"
                         />
-                        {/* Progress circle */}
-                        <motion.circle
-                          cx="60"
-                          cy="60"
-                          r="50"
+                        {/* Progress half circle - Rainbow gradient */}
+                        <motion.path
+                          d="M 20 80 A 60 60 0 0 1 180 80"
                           fill="none"
-                          stroke={`url(#${gradientIdRef.current})`}
-                          strokeWidth="8"
+                          stroke={`url(#${rainbowGradientIdRef.current})`}
+                          strokeWidth="14"
                           strokeLinecap="round"
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: progressData.progress / 100 }}
                           transition={{ 
                             duration: 1.5, 
                             ease: [0.4, 0, 0.2, 1],
-                            delay: 0.7
+                            delay: 0.6
                           }}
                         />
                         <defs>
-                          <linearGradient id={gradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <linearGradient id={rainbowGradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor="#FFE55C" />
                             <stop offset="50%" stopColor="#FFD700" />
                             <stop offset="100%" stopColor="#FFA500" />
                           </linearGradient>
                         </defs>
                       </svg>
-                      {/* Percentage in center */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-white">
+                      {/* Percentage in center of half circle */}
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ top: '55%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                        <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
                           {Math.round(progressData.progress)}%
                         </span>
                       </div>
                     </div>
-                    
-                    {/* Progress Text */}
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Critic Progress</p>
-                      {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Lock className="w-4 h-4 text-gray-400" />
-                          <p className="text-base sm:text-lg font-semibold text-white">
-                            <span className="text-[#FFD700]">{progressData.ratingsNeeded}</span> {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to {progressData.nextBadgeName}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-[#FFD700] font-medium">Max level reached</p>
-                      )}
-                    </div>
+                  </motion.div>
+                )}
+
+                {/* User Badge - Clickable */}
+                {userBadges.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex flex-wrap items-center justify-center gap-2 mb-4"
+                  >
+                    {userBadges.map((badge) => (
+                      <button
+                        key={badge.id}
+                        onClick={() => setIsProgressModalOpen(true)}
+                        className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                      >
+                        <Badge badge={badge} />
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Unlock Text */}
+                {progressData && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 }}
+                    className="text-center mb-6"
+                  >
+                    {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                        <p className="text-base sm:text-lg font-semibold text-white">
+                          <span className="text-[#FFD700]">{progressData.ratingsNeeded}</span> {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to unlock {progressData.nextBadgeName}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[#FFD700] font-medium">Max level reached</p>
+                    )}
                   </motion.div>
                 )}
 
@@ -1864,6 +1872,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Progress Modal */}
+        {progressData && (
+          <ProgressModal
+            isOpen={isProgressModalOpen}
+            onClose={() => setIsProgressModalOpen(false)}
+            ratingCount={progressData.ratingCount}
+          />
+        )}
 
       </div>
     </div>

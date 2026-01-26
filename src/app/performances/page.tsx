@@ -337,7 +337,7 @@ export default function PerformancesPage() {
                 }}
               >
                 <SearchBar
-                  placeholder="Search for actors to rate..."
+                  placeholder="Search for actors and movies..."
                   showClear
                   className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-5 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[56px]"
                 />

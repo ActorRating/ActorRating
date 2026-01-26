@@ -68,7 +68,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({
-  placeholder = "Search actors and movies...",
+  placeholder = "Search for actors and movies...",
   className = "",
   onSearch,
   initialValue = "",

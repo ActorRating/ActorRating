@@ -741,7 +741,7 @@ export default function OnboardingRatePage() {
                     }}
                   >
                     <SearchBar
-                      placeholder="Search for actors..."
+                      placeholder="Search for actors and movies..."
                       showClear
                       autoFocus={false}
                       className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-lg"

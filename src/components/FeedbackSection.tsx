@@ -74,7 +74,7 @@ export function FeedbackSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-6 right-6 z-40"
+            className="fixed bottom-6 right-4 z-40"
           >
             <button
               onClick={() => setIsOpen(true)}

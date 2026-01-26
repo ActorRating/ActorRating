@@ -29,6 +29,11 @@ export async function GET(
       return await generateActorsSitemap()
     }
 
+    // Handle movies sitemap
+    if (path === 'movies.xml') {
+      return await generateMoviesSitemap()
+    }
+
     // Handle paginated performances sitemaps (performances-1.xml, performances-2.xml, etc.)
     const performancesMatch = path.match(/^performances-(\d+)\.xml$/)
     if (performancesMatch) {
@@ -101,6 +106,34 @@ async function generateActorsSitemap(): Promise<NextResponse> {
   const urls = actors.map((actor) => ({
     url: `${BASE_URL}/actors/${actor.slug || actor.id}`,
     lastModified: actor.updatedAt,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
+  const xml = generateSitemapXml(urls)
+  return new NextResponse(xml, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+    },
+  })
+}
+
+async function generateMoviesSitemap(): Promise<NextResponse> {
+  const movies = await prisma.movie.findMany({
+    select: {
+      slug: true,
+      id: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+  })
+
+  const urls = movies.map((movie) => ({
+    url: `${BASE_URL}/movies/${movie.slug || movie.id}`,
+    lastModified: movie.updatedAt,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }))

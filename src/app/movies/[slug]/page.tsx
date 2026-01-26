@@ -1018,7 +1018,7 @@ export default function MoviePage() {
                       letterSpacing: '0.02em',
                     }}
                   >
-                    Cast & Performances
+                    Performances
                   </h2>
                 </div>
                 
@@ -1036,7 +1036,7 @@ export default function MoviePage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search actors..."
+                        placeholder="Search for actors and movies..."
                         className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
                         style={{ borderRadius: '9999px' }}
                       />
@@ -1370,7 +1370,7 @@ export default function MoviePage() {
             }
           >
             <button
-              className="px-8 py-4 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 shadow-2xl whitespace-nowrap min-h-[48px] touch-manipulation"
+              className="px-6 py-4 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 shadow-2xl whitespace-nowrap min-h-[48px] touch-manipulation"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                 color: 'black',
@@ -1378,8 +1378,7 @@ export default function MoviePage() {
               }}
             >
               <FaStar className="w-4 h-4" />
-              <span>Rate Performance</span>
-              <ChevronRight className="w-4 h-4" />
+              <span>Rate</span>
             </button>
           </Link>
         </motion.div>
