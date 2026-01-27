@@ -248,6 +248,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
 
   // Native iOS-style touch handlers - instant response, no delays
   // Works like Spotify, Apple Music, YouTube sliders
+  // IMPORTANT: Don't lock immediately - wait to detect horizontal vs vertical gesture
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || !containerRef.current || !trackRef.current) return
 
@@ -255,45 +256,51 @@ const RatingSliderCard = memo(function RatingSliderCard({
     const containerRect = containerRef.current.getBoundingClientRect()
     const trackRect = trackRef.current.getBoundingClientRect()
     
-    // Check if touch is within container bounds (includes padding area)
-    const isWithinContainer = 
-      touch.clientX >= containerRect.left &&
-      touch.clientX <= containerRect.right &&
-      touch.clientY >= containerRect.top &&
-      touch.clientY <= containerRect.bottom
+    // Check if touch is within track bounds (not container padding - that's for scrolling)
+    const isWithinTrack = 
+      touch.clientX >= trackRect.left &&
+      touch.clientX <= trackRect.right &&
+      touch.clientY >= trackRect.top &&
+      touch.clientY <= trackRect.bottom
 
-    if (!isWithinContainer) return
+    // If touch is on the track itself, lock immediately
+    if (isWithinTrack) {
+      const newValue = calculateValueFromTouch(touch.clientX)
+      
+      touchStateRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        isLocked: true, // Lock immediately for track touches
+        currentValue: newValue
+      }
 
-    // Immediately jump thumb to touch position (native iOS behavior)
-    // Use track rect for accurate value calculation
-    const newValue = calculateValueFromTouch(touch.clientX)
-    
-    touchStateRef.current = {
-      startX: touch.clientX,
-      startY: touch.clientY,
-      isLocked: true, // Immediately lock - we're in the slider area
-      currentValue: newValue
+      updateSliderVisuals(newValue)
+      setLocalValue(newValue)
+      onValueChange(newValue)
+      
+      setIsActive(true)
+      haptic.light()
+      onSliderStart?.()
+      
+      e.preventDefault() // Prevent scroll when touching track
+    } else {
+      // Touch is in padding area - don't lock yet, wait to see direction
+      touchStateRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        isLocked: false, // Not locked - will lock only if horizontal movement detected
+        currentValue: localValue
+      }
+      // Don't prevent default - allow scrolling if vertical
     }
-
-    // Update immediately - no waiting, no thresholds, instant response
-    updateSliderVisuals(newValue)
-    setLocalValue(newValue)
-    onValueChange(newValue)
-    
-    setIsActive(true)
-    haptic.light() // Selection feedback (silently fails on iOS)
-    onSliderStart?.()
-    
-    // Prevent default to stop any scroll attempts
-    e.preventDefault()
-  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange, onSliderStart])
+  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange, onSliderStart, localValue])
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!touchStateRef.current || disabled) return
 
     const touch = e.touches[0]
     
-    // If we're locked (touch started on track), immediately follow finger
+    // If we're locked (touch started on track or horizontal movement detected), follow finger
     if (touchStateRef.current.isLocked) {
       e.preventDefault() // Always prevent scroll when dragging slider
       
@@ -307,27 +314,32 @@ const RatingSliderCard = memo(function RatingSliderCard({
       setLocalValue(newValue)
       onValueChange(newValue)
     } else {
-      // This shouldn't happen with new logic, but handle gracefully
+      // Not locked yet - detect direction
       const dx = Math.abs(touch.clientX - touchStateRef.current.startX)
       const dy = Math.abs(touch.clientY - touchStateRef.current.startY)
       
-      // If significant horizontal movement, lock and update
-      if (dx > 5 && dx > dy) {
+      // Require more horizontal movement to lock (prevent accidental activation during scroll)
+      if (dx > 10 && dx > dy * 1.5) {
+        // Horizontal movement detected - lock and activate slider
         touchStateRef.current.isLocked = true
-        e.preventDefault()
+        e.preventDefault() // Now prevent scroll
         const newValue = calculateValueFromTouch(touch.clientX)
         touchStateRef.current.currentValue = newValue
         updateSliderVisuals(newValue)
         setLocalValue(newValue)
         onValueChange(newValue)
-      } else if (dy > 10 && dy > dx) {
-        // Clear vertical scroll intent
+        setIsActive(true)
+        haptic.light()
+        onSliderStart?.()
+      } else if (dy > 10 && dy > dx * 1.5) {
+        // Clear vertical scroll intent - don't interfere with scrolling
         touchStateRef.current = null
         setIsActive(false)
-        return
+        return // Don't prevent default - allow scrolling
       }
+      // If movement is too small or ambiguous, don't do anything yet
     }
-  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange])
+  }, [disabled, calculateValueFromTouch, updateSliderVisuals, onValueChange, onSliderStart])
 
   const handleTouchEnd = useCallback(() => {
     if (!touchStateRef.current) return
@@ -1353,6 +1365,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 style={{
                   transform: 'translate(-50%, 0)',
                   opacity: 1,
+                  visibility: 'visible',
+                  pointerEvents: 'auto',
                 }}
               >
                   <div
@@ -1413,7 +1427,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   marginBottom: '2rem',
                   opacity: isSticky ? 0 : 1,
                   transform: 'none',
-                  display: isSticky ? 'none' : 'block',
+                  visibility: isSticky ? 'hidden' : 'visible',
+                  pointerEvents: isSticky ? 'none' : 'auto',
                 }}
               >
                   <div
