@@ -422,17 +422,14 @@ const RatingSliderCard = memo(function RatingSliderCard({
           }}
         >
           {/* Fill - Gold gradient - Updated directly via ref during drag for smoothness */}
-          {/* Using transform for better iOS compositor performance */}
           {/* pointer-events-none prevents this decorative element from stealing touches */}
           <div
             ref={fillRef}
-            className="absolute top-0 left-0 h-full rounded-full will-change-[width] pointer-events-none"
+            className="absolute top-0 left-0 h-full rounded-full pointer-events-none"
             style={{
               width: localValue === 0 ? '0px' : `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.3)',
-              transform: 'translate3d(0, 0, 0)', // Force GPU layer on iOS
-              WebkitTransform: 'translate3d(0, 0, 0)', // iOS Safari specific
             }}
           />
 
@@ -481,14 +478,12 @@ const RatingSliderCard = memo(function RatingSliderCard({
           {/* Visible Thumb - Updated directly via ref during drag for smoothness */}
           {/* Fixed: Don't resize during drag - use visual emphasis instead to avoid breaking iOS drag gesture */}
           {/* Visual thumb: 36px, but track container has 20px padding above/below for 44px+ touch area */}
-          {/* Using will-change and translate3d for iOS GPU acceleration */}
           <div
             ref={thumbRef}
-            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none will-change-[left]"
+            className="absolute top-1/2 rounded-full shadow-lg pointer-events-none"
             style={{
               left: `calc(16px + ${localValue}% * (100% - 32px) / 100%)`,
-              transform: 'translate3d(-50%, -50%, 0)',
-              WebkitTransform: 'translate3d(-50%, -50%, 0)',
+              transform: 'translate(-50%, -50%)',
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
               width: '36px',
               height: '36px',
@@ -519,6 +514,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
+
+  // Detect iOS Safari to disable animations for critical UI
+  const isIOS = typeof window !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    !(window as any).MSStream
 
   // Check if user has rated before
   const [hasRatedBefore, setHasRatedBefore] = useState<boolean | null>(null)
@@ -1294,12 +1294,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         }}
       >
 
-        {/* Header Section - Mobile optimized - No animations on mobile to prevent disappearing */}
-        <motion.div
-          initial={{ opacity: 1, y: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0 }}
+            {/* Header Section - Mobile optimized - No animations on iOS Safari */}
+        <div
           className="text-center mb-8 sm:mb-12 md:mb-16"
+          style={{
+            opacity: 1,
+            transform: 'none',
+          }}
         >
           {/* Actor Name - Primary Focus, Largest Text, White */}
           <h1
@@ -1341,25 +1342,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {performance.comment && (
             <p className="text-sm sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
           )}
-        </motion.div>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="relative">
-            {/* Sticky Score Display - Appears at top when main score pill reaches top of screen */}
-            <AnimatePresence>
-              {isSticky && submitPhase !== 'success' && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                  className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
-                  style={{
-                    willChange: 'transform, opacity',
-                    transform: 'translate3d(-50%, 0, 0)',
-                    WebkitTransform: 'translate3d(-50%, 0, 0)',
-                  }}
-                >
+            {/* Sticky Score Display - Appears at top when main score pill reaches top of screen - No animations on iOS */}
+            {isSticky && submitPhase !== 'success' && (
+              <div
+                className="fixed top-4 left-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
+                style={{
+                  transform: 'translate(-50%, 0)',
+                  opacity: 1,
+                }}
+              >
                   <div
                     className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
                     style={{
@@ -1405,30 +1400,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       <p className="text-[10px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
-            {/* Score Display - Responsive size, prevent cutoff, optimized for mobile */}
-            <AnimatePresence>
-              {submitPhase !== 'success' && (
-                <motion.div
-                  ref={scoreRef}
-                  initial={{ opacity: 0, y: -30, scale: 0.95 }}
-                  animate={{
-                    opacity: isSticky ? 0 : 1,
-                    y: 0,
-                    scale: 1
-                  }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{
-                    delay: 0,
-                    duration: 0.2,
-                    ease: [0.4, 0, 0.2, 1]
-                  }}
-                  className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
-                  style={{ marginTop: '0', marginBottom: '2rem', willChange: 'transform, opacity' }}
-                >
+            {/* Score Display - Responsive size, prevent cutoff, optimized for mobile - No animations on iOS */}
+            {submitPhase !== 'success' && (
+              <div
+                ref={scoreRef}
+                className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+                style={{ 
+                  marginTop: '0', 
+                  marginBottom: '2rem',
+                  opacity: isSticky ? 0 : 1,
+                  transform: 'none',
+                  display: isSticky ? 'none' : 'block',
+                }}
+              >
                   <div
                     className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                     style={{
@@ -1490,7 +1477,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                               backgroundClip: 'text',
                               lineHeight: '1',
                               verticalAlign: 'baseline',
-                              willChange: 'transform',
                               fontVariantNumeric: 'tabular-nums',
                             }}
                           >
@@ -1509,34 +1495,27 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
-            {/* Rating Card - Extra round corners, mobile optimized - No animations on mobile */}
-            <AnimatePresence>
-              {submitPhase !== 'success' && (
-                <motion.div
-                  initial={{ opacity: 1, y: 0 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: 0, duration: 0 }}
-                  className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
-                  style={{
-                    boxShadow: `
-                      0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                      0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                      0 0 0 1px rgba(255, 255, 255, 0.06),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                    `,
-                    contentVisibility: 'visible',
-                    contain: 'none',
-                  }}
-                >
+            {/* Rating Card - Extra round corners, mobile optimized - No animations on iOS Safari */}
+            {submitPhase !== 'success' && (
+              <div
+                className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
+                style={{
+                  boxShadow: `
+                    0 35px 90px -20px rgba(0, 0, 0, 0.95),
+                    0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                    0 0 0 1px rgba(255, 255, 255, 0.06),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
+                  `,
+                  contentVisibility: 'visible',
+                  contain: 'none',
+                  opacity: 1, // Force visible on iOS
+                  transform: 'none', // No transforms on iOS
+                }}
+              >
                   {/* Decorative corner accent - top left only */}
                   <div
                     className="absolute pointer-events-none"
@@ -1560,6 +1539,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   {/* Sliders - Mobile optimized spacing, consistent width */}
                   {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
                   {/* Extra bottom padding prevents last slider from being affected by Safari's bottom UI */}
+                  {/* NO animations, NO transforms, NO will-change - critical for iOS Safari immediate rendering */}
                   <div
                     className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto"
                     style={{
@@ -1569,6 +1549,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       paddingBottom: '40px', // Extra padding for last slider to prevent bottom edge interference
                       contentVisibility: 'visible', // Force Safari to render all sliders immediately
                       contain: 'none', // Prevent containment that might defer rendering
+                      transform: 'none', // No transforms that could defer rendering
+                      display: 'block', // Ensure block display
                     }}
                   >
                     <div className="relative" ref={firstSliderRef} data-slider-card>
@@ -1766,9 +1748,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </AnimatePresence>
                     </motion.button>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
           </div>
         </form>
 
