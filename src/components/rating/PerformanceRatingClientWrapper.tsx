@@ -384,21 +384,21 @@ const RatingSliderCard = memo(function RatingSliderCard({
 
   return (
     <div 
-      className="space-y-3 sm:space-y-4 relative"
+      className="space-y-2 sm:space-y-4 relative"
       style={{
         contentVisibility: 'visible',
         contain: 'none',
       }}
     >
       {/* Label with Value */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <h3
-          className="text-lg sm:text-xl font-semibold text-white"
+          className="text-sm sm:text-xl font-semibold text-white"
           style={{ fontFamily: 'Inter, sans-serif' }}
         >
           {label}
         </h3>
-        <span className="text-lg sm:text-xl font-bold text-[#FFD700]">
+        <span className="text-sm sm:text-xl font-bold text-[#FFD700]">
           {Math.round(localValue / 10)} / 10
         </span>
       </div>
@@ -410,8 +410,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
         ref={containerRef}
         className="relative" 
         style={{ 
-          paddingTop: '20px', 
-          paddingBottom: '20px',
+          paddingTop: '12px', 
+          paddingBottom: '12px',
           touchAction: 'pan-x', // Prevent vertical scroll, allow horizontal
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none',
@@ -508,7 +508,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
       </div>
 
       {/* Quality Labels */}
-      <div className="flex justify-between mt-2 text-xs text-gray-500">
+      <div className="hidden sm:flex justify-between mt-2 text-[10px] sm:text-xs text-gray-500">
         <span>Weak</span>
         <span>Exceptional</span>
       </div>
@@ -1299,7 +1299,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
       <div 
-        className={`relative max-w-[900px] mx-auto px-4 sm:px-6 pb-16 sm:pb-20 md:pb-24 ${user ? 'pt-20 sm:pt-20 md:pt-24' : 'pt-24 sm:pt-24 md:pt-28'}`}
+        className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${user ? 'pt-16 sm:pt-20 md:pt-24' : 'pt-20 sm:pt-24 md:pt-28'}`}
         style={{
           contentVisibility: 'visible',
           contain: 'none',
@@ -1308,7 +1308,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
             {/* Header Section - Mobile optimized - No animations on iOS Safari */}
         <div
-          className="text-center mb-8 sm:mb-12 md:mb-16"
+          className="text-center mb-4 sm:mb-12 md:mb-16"
           style={{
             opacity: 1,
             transform: 'none',
@@ -1317,7 +1317,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Actor Name - Primary Focus, Largest Text, White */}
           <h1
             id="actor-name-header"
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 tracking-tight px-2 text-white"
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-2 sm:mb-4 tracking-tight px-2 text-white"
             style={{
               fontFamily: 'var(--font-cinzel), serif',
             }}
@@ -1326,9 +1326,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           </h1>
 
           {/* Movie Title - Clean, non-italic styling */}
-          <div className="mb-2 sm:mb-3 px-2">
+          <div className="mb-1.5 sm:mb-3 px-2">
             <h2
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1 sm:mb-1.5 tracking-tight"
+              className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1 sm:mb-1.5 tracking-tight"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                 WebkitBackgroundClip: 'text',
@@ -1341,7 +1341,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.title}
             </h2>
             <p
-              className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
+              className="text-base sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1352,7 +1352,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
           {/* Role/Comment */}
           {performance.comment && (
-            <p className="text-sm sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
+            <p className="text-xs sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
           )}
         </div>
 
@@ -1361,7 +1361,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* Sticky Score Display - Appears at top when main score pill reaches top of screen - No animations on iOS */}
             {isSticky && submitPhase !== 'success' && (
               <div
-                className="fixed top-4 left-1/2 z-[100] w-[220px] sm:w-[240px] md:w-[260px]"
+                className="fixed top-2 sm:top-4 left-1/2 z-[100] w-[180px] sm:w-[240px] md:w-[260px]"
                 style={{
                   transform: 'translate(-50%, 0)',
                   opacity: 1,
@@ -1370,7 +1370,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
               >
                   <div
-                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[2.5rem] px-5 sm:px-6 md:px-7 py-4 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
+                    className="relative backdrop-blur-xl rounded-[1.5rem] sm:rounded-[2.5rem] px-3 sm:px-6 md:px-7 py-2 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
                     style={{
                       width: '100%',
                       background: 'rgba(26, 26, 26, 0.95)',
@@ -1379,15 +1379,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   >
                     <div className="relative text-center z-10">
                       <div
-                        className="font-black mb-1 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3rem] sm:min-h-[3.5rem] md:min-h-[4rem]"
+                        className="font-black mb-0.5 sm:mb-1 flex items-baseline justify-center gap-0.5 sm:gap-1.5 min-h-[2rem] sm:min-h-[3.5rem] md:min-h-[4rem]"
                         style={{
                           fontFamily: 'var(--font-geist-sans), sans-serif',
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[80px] md:min-w-[90px] h-[3rem] sm:h-[3.5rem] md:h-[4rem] leading-[3rem] sm:leading-[3.5rem] md:leading-[4rem]">
+                        <div className="relative inline-block overflow-visible min-w-[50px] sm:min-w-[80px] md:min-w-[90px] h-[2rem] sm:h-[3.5rem] md:h-[4rem] leading-[2rem] sm:leading-[3.5rem] md:leading-[4rem]">
                           <span
-                            className="inline-block text-4xl sm:text-5xl md:text-6xl transition-all duration-75 ease-linear"
+                            className="inline-block text-2xl sm:text-5xl md:text-6xl transition-all duration-75 ease-linear"
                             style={{
                               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                               WebkitBackgroundClip: 'text',
@@ -1403,7 +1403,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           </span>
                         </div>
                         <span
-                          className="text-lg sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
+                          className="text-sm sm:text-xl md:text-2xl text-[#a1a1aa] leading-none"
                           style={{
                             verticalAlign: 'baseline',
                           }}
@@ -1411,7 +1411,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
+                      <p className="text-[9px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
                     </div>
                   </div>
                 </div>
@@ -1421,10 +1421,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {submitPhase !== 'success' && (
               <div
                 ref={scoreRef}
-                className="relative mx-auto mb-8 z-50 w-[260px] sm:w-[280px] md:w-[300px]"
+                className="relative mx-auto mb-4 sm:mb-8 z-50 w-[240px] sm:w-[280px] md:w-[300px]"
                 style={{ 
                   marginTop: '0', 
-                  marginBottom: '2rem',
+                  marginBottom: '1rem',
                   opacity: isSticky ? 0 : 1,
                   transform: 'none',
                   visibility: isSticky ? 'hidden' : 'visible',
@@ -1432,10 +1432,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
               >
                   <div
-                    className="relative backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3rem] px-7 sm:px-8 md:px-10 py-6 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
+                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[3rem] px-5 sm:px-8 md:px-10 py-4 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
                     style={{
                       width: '100%',
-                      minHeight: '130px',
+                      minHeight: '100px',
                       background: 'rgba(26, 26, 26, 0.8)',
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
@@ -1474,7 +1474,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </AnimatePresence>
                     <div className="relative text-center z-10">
                       <div
-                        className="font-black mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3.5rem] sm:min-h-[4.5rem] pt-2 pb-2"
+                        className="font-black mb-1.5 sm:mb-2 flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[3rem] sm:min-h-[4.5rem] pt-1.5 sm:pt-2 pb-1.5 sm:pb-2"
                         style={{
                           fontFamily: 'var(--font-geist-sans), sans-serif',
                           fontVariantNumeric: 'tabular-nums',
@@ -1482,9 +1482,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         }}
                       >
                         {/* Optimized score display - smooth updates on mobile */}
-                        <div className="relative inline-block overflow-visible min-w-[70px] sm:min-w-[90px] h-[3.5rem] sm:h-[4.5rem] leading-[3.5rem] sm:leading-[4.5rem]">
+                        <div className="relative inline-block overflow-visible min-w-[60px] sm:min-w-[90px] h-[3rem] sm:h-[4.5rem] leading-[3rem] sm:leading-[4.5rem]">
                           <span
-                            className="inline-block text-5xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
+                            className="inline-block text-4xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
                             style={{
                               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                               WebkitBackgroundClip: 'text',
@@ -1499,7 +1499,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           </span>
                         </div>
                         <span
-                          className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
+                          className="text-base sm:text-xl md:text-2xl lg:text-3xl text-[#a1a1aa] leading-none"
                           style={{
                             verticalAlign: 'baseline',
                           }}
@@ -1507,7 +1507,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase mt-1">Total Score</p>
+                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
                     </div>
                   </div>
                 </div>
@@ -1516,7 +1516,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* Rating Card - Extra round corners, mobile optimized - No animations on iOS Safari */}
             {submitPhase !== 'success' && (
               <div
-                className="relative rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-8 sm:py-10 md:py-12 space-y-5 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
+                className="relative rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-6 sm:py-10 md:py-12 space-y-4 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -1545,8 +1545,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   />
 
                   {/* Instructions */}
-                  <div className="text-center mb-6 sm:mb-8 max-w-[600px] mx-auto">
-                    <p className="text-sm sm:text-base text-[#a3a3a3] font-light">
+                  <div className="hidden sm:block text-center mb-3 sm:mb-8 max-w-[600px] mx-auto">
+                    <p className="text-xs sm:text-base text-[#a3a3a3] font-light">
                       Each criterion is scored individually. Final score is the average of all five.
                     </p>
                   </div>
@@ -1556,12 +1556,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   {/* Extra bottom padding prevents last slider from being affected by Safari's bottom UI */}
                   {/* NO animations, NO transforms, NO will-change - critical for iOS Safari immediate rendering */}
                   <div
-                    className="space-y-6 sm:space-y-8 relative z-10 w-full max-w-[600px] sm:max-w-[600px] mx-auto"
+                    className="space-y-5 sm:space-y-8 relative z-10 w-full max-w-full sm:max-w-[600px] mx-auto"
                     style={{
                       touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
                       opacity: 1,
                       visibility: 'visible',
-                      paddingBottom: '40px', // Extra padding for last slider to prevent bottom edge interference
+                      paddingBottom: '20px', // Extra padding for last slider to prevent bottom edge interference
                       contentVisibility: 'visible', // Force Safari to render all sliders immediately
                       contain: 'none', // Prevent containment that might defer rendering
                       transform: 'none', // No transforms that could defer rendering
@@ -1641,7 +1641,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                   {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
                   <div
-                    className="pt-4 sm:pt-6 relative max-w-[600px] mx-auto flex justify-center"
+                    className="pt-2 sm:pt-6 relative max-w-[600px] mx-auto flex justify-center"
                     style={{
                       filter: 'blur(0px)',
                       opacity: 1,
@@ -1649,7 +1649,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       zIndex: 60,
                       contentVisibility: 'visible', // Force Safari to render button immediately
                       contain: 'none', // Prevent containment that might defer rendering
-                      minHeight: '80px', // Reserve space to prevent layout shift
+                      minHeight: '60px', // Reserve space to prevent layout shift
                     }}
                   >
                     <motion.button
@@ -1657,12 +1657,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       type="submit"
                       data-submit-button
                       disabled={!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark'}
-                      className="group text-base sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
+                      className="group text-sm sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
                       style={{
                         cursor: (!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
-                        padding: submitPhase === 'loading' ? '0' : '1.25rem 0',
+                        padding: submitPhase === 'loading' ? '0' : '0.875rem 0',
                         borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
                         background: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
                           ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'

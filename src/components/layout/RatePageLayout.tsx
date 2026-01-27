@@ -1,30 +1,44 @@
 "use client"
 
 import { useRouter } from 'next/navigation'
-import { FaArrowLeft } from 'react-icons/fa'
+import { useEffect } from 'react'
+import { ArrowLeft } from 'lucide-react'
 
 export function RatePageLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
+  // Hide any navbars on rate pages
+  useEffect(() => {
+    const navs = document.querySelectorAll('nav')
+    navs.forEach(nav => {
+      nav.style.display = 'none'
+    })
+
+    return () => {
+      // Restore navbars when leaving rate page
+      navs.forEach(nav => {
+        nav.style.display = ''
+      })
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-black">
-      {/* Back Button - Not sticky, at top of content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a1a] hover:bg-[#2a2a2a] transition-colors duration-200 min-h-[48px] touch-manipulation group"
-          style={{
-            boxShadow: `
-              0 10px 30px -10px rgba(0, 0, 0, 0.7),
-              0 0 0 1px rgba(255, 255, 255, 0.05)
-            `,
-          }}
-          aria-label="Go back"
-        >
-          <FaArrowLeft className="w-4 h-4 text-[#FFD700] group-hover:text-[#FFE55C] transition-colors duration-200" />
-          <span className="text-sm font-medium text-white">Back</span>
-        </button>
-      </div>
+      {/* Back Button - Fixed at top left, icon-only on mobile, works like browser back */}
+      <button
+        onClick={() => router.back()}
+        className="fixed top-3 left-3 sm:top-4 sm:left-4 z-[100] flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 rounded-full sm:rounded-xl bg-[#1a1a1a]/90 backdrop-blur-sm hover:bg-[#2a2a2a] transition-colors duration-200 w-10 h-10 sm:w-auto sm:h-auto sm:min-h-[48px] touch-manipulation group border border-white/10"
+        style={{
+          boxShadow: `
+            0 10px 30px -10px rgba(0, 0, 0, 0.7),
+            0 0 0 1px rgba(255, 255, 255, 0.05)
+          `,
+        }}
+        aria-label="Go back"
+      >
+        <ArrowLeft className="w-5 h-5 sm:w-4 sm:h-4 text-[#FFD700] group-hover:text-[#FFE55C] transition-colors duration-200 flex-shrink-0" />
+        <span className="hidden sm:inline text-sm font-medium text-white">Back</span>
+      </button>
 
       {/* Main Content */}
       <div>

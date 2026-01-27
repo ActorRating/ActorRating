@@ -96,7 +96,7 @@ export default function OnboardingRatePage() {
   const [performancesWithRatings, setPerformancesWithRatings] = useState<PerformanceWithRating[]>([])
   const [communityData, setCommunityData] = useState<{ average: number; count: number } | null>(null)
   const [levelProgress, setLevelProgress] = useState<{ ratingsNeeded: number; nextBadge: string } | null>(null)
-  
+
   // Carousel state for mobile
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeCard, setActiveCard] = useState(0)
@@ -110,7 +110,7 @@ export default function OnboardingRatePage() {
         setLoading(false)
         return
       }
-      
+
       try {
         // Check if user has ratings
         const res = await fetch('/api/ratings/me', { cache: 'no-store' })
@@ -141,7 +141,7 @@ export default function OnboardingRatePage() {
         if (response.ok) {
           const data = await response.json()
           const performances = data.performances || []
-          
+
           // Map the fetched data back to our curated list with ratings
           const enriched = CURATED_PERFORMANCES.map(curated => {
             // Find by matching actor name and movie title (API returns by name, not ID)
@@ -150,17 +150,17 @@ export default function OnboardingRatePage() {
               const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
               const curatedActorName = curated.actorName.toLowerCase().trim()
               const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
-              
+
               return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
             })
-            
+
             return {
               ...curated,
               averageRating: found?.averageRating ?? null,
               ratingCount: found?.ratingCount ?? 0
             }
           })
-          
+
           setPerformancesWithRatings(enriched)
         } else {
           // If API fails, use curated list without ratings
@@ -409,8 +409,8 @@ export default function OnboardingRatePage() {
       <AuthGuard>
         <SignedInLayout>
           <div className="min-h-screen bg-black flex items-center justify-center">
-            <BouncingBallsLoader 
-              size="lg" 
+            <BouncingBallsLoader
+              size="lg"
               color="#FFD700"
               showText={true}
               text="Loading..."
@@ -447,16 +447,16 @@ export default function OnboardingRatePage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 300, 
+              transition={{
+                type: "spring",
+                stiffness: 300,
                 damping: 30,
                 duration: 0.6
               }}
               className="w-full max-w-md"
             >
               {/* Success Card */}
-              <div 
+              <div
                 className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-8 sm:p-10"
                 style={{
                   boxShadow: `
@@ -495,9 +495,9 @@ export default function OnboardingRatePage() {
                     className="text-center mb-8"
                   >
                     <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-[#FFD700] mx-auto mb-4" />
-                    <h2 
+                    <h2
                       className="text-2xl sm:text-3xl font-bold text-white"
-                      style={{ 
+                      style={{
                         fontFamily: 'var(--font-cinzel), serif',
                         letterSpacing: '0.02em',
                       }}
@@ -517,7 +517,7 @@ export default function OnboardingRatePage() {
                       <span className="text-[#a3a3a3] text-sm sm:text-base">Your rating:</span>
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]" />
-                        <span 
+                        <span
                           className="text-xl sm:text-2xl font-bold"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -545,7 +545,7 @@ export default function OnboardingRatePage() {
                       <span className="text-[#a3a3a3] text-sm sm:text-base">Community:</span>
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4 text-[#FFD700]" />
-                        <span 
+                        <span
                           className="text-xl sm:text-2xl font-bold"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
@@ -582,10 +582,10 @@ export default function OnboardingRatePage() {
                         <TrendingUp className="w-4 h-4 text-[#FFD700]" />
                       </div>
                       <div className="w-full h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] transition-all duration-500"
-                          style={{ 
-                            width: `${Math.min(100, (1 / 10) * 100)}%` 
+                          style={{
+                            width: `${Math.min(100, (1 / 10) * 100)}%`
                           }}
                         />
                       </div>
@@ -631,50 +631,50 @@ export default function OnboardingRatePage() {
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-12 lg:col-start-3 lg:col-span-8">
                   <PerformanceRatingClientWrapper
-                  performance={{
-                    id: `${actor.id}-${movie.id}`,
-                    actor: {
-                      id: actor.id,
-                      name: actor.name,
-                      imageUrl: actor.imageUrl
-                    },
-                    movie: {
-                      id: movie.id,
-                      title: movie.title,
-                      year: movie.year,
-                      director: movie.director
-                    },
-                    emotionalRangeDepth: 0,
-                    characterBelievability: 0,
-                    technicalSkill: 0,
-                    screenPresence: 0,
-                    chemistryInteraction: 0,
-                    comment: '',
-                    user: {
-                      name: '',
-                      email: ''
-                    },
-                    createdAt: '',
-                    updatedAt: ''
-                  }}
-                  onSubmit={handleSubmit}
-                  submitting={submitting}
-                  submittedRating={submittedRating ? {
-                    id: submittedRating.id,
-                    emotionalRangeDepth: submittedRating.emotionalRangeDepth,
-                    characterBelievability: submittedRating.characterBelievability,
-                    technicalSkill: submittedRating.technicalSkill,
-                    screenPresence: submittedRating.screenPresence,
-                    chemistryInteraction: submittedRating.chemistryInteraction
-                  } : undefined}
-                  onSuccess={() => {
-                    // Success is handled by redirect
-                  }}
-                />
+                    performance={{
+                      id: `${actor.id}-${movie.id}`,
+                      actor: {
+                        id: actor.id,
+                        name: actor.name,
+                        imageUrl: actor.imageUrl
+                      },
+                      movie: {
+                        id: movie.id,
+                        title: movie.title,
+                        year: movie.year,
+                        director: movie.director
+                      },
+                      emotionalRangeDepth: 0,
+                      characterBelievability: 0,
+                      technicalSkill: 0,
+                      screenPresence: 0,
+                      chemistryInteraction: 0,
+                      comment: '',
+                      user: {
+                        name: '',
+                        email: ''
+                      },
+                      createdAt: '',
+                      updatedAt: ''
+                    }}
+                    onSubmit={handleSubmit}
+                    submitting={submitting}
+                    submittedRating={submittedRating ? {
+                      id: submittedRating.id,
+                      emotionalRangeDepth: submittedRating.emotionalRangeDepth,
+                      characterBelievability: submittedRating.characterBelievability,
+                      technicalSkill: submittedRating.technicalSkill,
+                      screenPresence: submittedRating.screenPresence,
+                      chemistryInteraction: submittedRating.chemistryInteraction
+                    } : undefined}
+                    onSuccess={() => {
+                      // Success is handled by redirect
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </SignedInLayout>
       </AuthGuard>
     )
@@ -693,16 +693,16 @@ export default function OnboardingRatePage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-8"
             >
-              <h1 
+              <h1
                 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3"
-                style={{ 
+                style={{
                   fontFamily: 'var(--font-cinzel), serif',
                   letterSpacing: '0.02em',
                 }}
               >
                 <span className="text-white">Welcome, </span>
                 {user?.email && (
-                  <span 
+                  <span
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
                       WebkitBackgroundClip: 'text',
@@ -717,16 +717,16 @@ export default function OnboardingRatePage() {
               <p className="text-lg sm:text-xl text-[#a3a3a3] font-light mb-8">
                 Choose a performance you've seen to rate
               </p>
-              
+
               {/* Search Bar - Exact same as search page */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="max-w-3xl mx-auto mb-12"
               >
                 <div className="relative group">
-                  <div 
+                  <div
                     className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
                     style={{
                       boxShadow: `
@@ -766,51 +766,51 @@ export default function OnboardingRatePage() {
               <OscarBanner buttonMarginLeft={true} />
             </motion.div>
 
-          {/* Desktop: Grid layout */}
-          <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
-            {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
-              const character = performance.character || "—"
-              const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
-              // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
-              const rating = hasRating && performance.averageRating != null 
-                ? (performance.averageRating / 10).toFixed(1) 
-                : null
+            {/* Desktop: Grid layout */}
+            <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+              {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
+                const character = performance.character || "—"
+                const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+                // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+                const rating = hasRating && performance.averageRating != null
+                  ? (performance.averageRating / 10).toFixed(1)
+                  : null
 
-              return (
-                <motion.div
-                  key={`${performance.actorId}-${performance.movieId}`}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="flex h-full"
-                >
-                  {/* Premium Card - Clean & Cinematic - Matching performances page */}
-                  <div 
-                    className="relative w-full h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] flex flex-col"
-                    style={{
-                      boxShadow: `
+                return (
+                  <motion.div
+                    key={`${performance.actorId}-${performance.movieId}`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    className="flex h-full"
+                  >
+                    {/* Premium Card - Clean & Cinematic - Matching performances page */}
+                    <div
+                      className="relative w-full h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] flex flex-col"
+                      style={{
+                        boxShadow: `
                         0 25px 70px -15px rgba(0, 0, 0, 0.9),
                         0 15px 40px -10px rgba(0, 0, 0, 0.7),
                         0 0 0 1px rgba(255, 255, 255, 0.05),
                         inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
                         inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
                       `,
-                    }}
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                    </div>
+                      }}
+                    >
+                      {/* Glow effect */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                      </div>
 
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col h-full">
-                      <div className="flex-1">
+                      {/* Content */}
+                      <div className="relative z-10 flex flex-col h-full">
+                        <div className="flex-1">
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-6">
                             {rating ? (
                               <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                                 <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span 
+                                <span
                                   className="text-2xl font-bold text-[#FFD700]"
                                   style={{
                                     fontFamily: 'var(--font-geist-sans), sans-serif',
@@ -826,7 +826,7 @@ export default function OnboardingRatePage() {
                                 <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                               </div>
                             )}
-                            
+
                             {/* Movie Year */}
                             <div className="text-[#a3a3a3] text-base font-medium">
                               {performance.year}
@@ -834,7 +834,7 @@ export default function OnboardingRatePage() {
                           </div>
 
                           {/* Actor Name */}
-                          <h3 
+                          <h3
                             className="text-xl sm:text-2xl font-bold text-white mb-2"
                             style={{ fontFamily: 'var(--font-cinzel), serif' }}
                           >
@@ -856,141 +856,11 @@ export default function OnboardingRatePage() {
                           </div>
                         </div>
 
-                      {/* Rate Button */}
-                      <div className="mt-auto pt-3">
-                        <button
-                          onClick={() => handlePerformanceSelect(performance)}
-                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
-                          style={{
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                          }}
-                        >
-                          <span className="flex items-center justify-center gap-2">
-                            Rate
-                            <FaStar className="w-4 h-4" />
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Decorative accent */}
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Mobile: Carousel with nav dots */}
-          <div className="lg:hidden relative -mx-4 sm:-mx-0">
-            {/* Carousel Container */}
-            <div
-              ref={scrollContainerRef}
-              className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
-            >
-              {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
-                const character = performance.character || "—"
-                const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
-                // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
-                const rating = hasRating && performance.averageRating != null 
-                  ? (performance.averageRating / 10).toFixed(1) 
-                  : null
-
-                return (
-                  <div
-                    key={`${performance.actorId}-${performance.movieId}`}
-                    ref={(el) => cardRefs.current[index] = el}
-                    className="flex-shrink-0 w-[85vw] sm:w-[70vw] snap-center group lg:cursor-pointer"
-                    style={{
-                      transform: 'translateZ(0)',
-                      WebkitTransform: 'translateZ(0)',
-                    }}
-                    onClick={() => {
-                      if (window.innerWidth >= 1024) {
-                        const element = cardRefs.current[index]
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                        }
-                      }
-                    }}
-                  >
-                  {/* Premium Card - Clean & Cinematic - Matching performances page */}
-                  <div 
-                    className="relative p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                      style={{
-                        boxShadow: `
-                          0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                          0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                          0 0 0 1px rgba(255, 255, 255, 0.05),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                        `,
-                      }}
-                    >
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex-1">
-                          {/* Top Row: Rating Badge and Year */}
-                          <div className="flex items-center justify-between mb-6">
-                            {rating ? (
-                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span 
-                                  className="text-2xl font-bold text-[#FFD700]"
-                                  style={{
-                                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                                    fontVariantNumeric: 'tabular-nums',
-                                  }}
-                                >
-                                  {rating}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                                <FaStar className="w-5 h-5 text-[#666]" />
-                                <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
-                              </div>
-                            )}
-                            
-                            {/* Movie Year */}
-                            <div className="text-[#a3a3a3] text-base font-medium">
-                              {performance.year}
-                            </div>
-                          </div>
-
-                          {/* Actor Name */}
-                          <h3 
-                            className="text-xl sm:text-2xl font-bold text-white mb-2"
-                            style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                          >
-                            {performance.actorName}
-                          </h3>
-
-                          {/* Movie Title */}
-                          <div className="mb-4">
-                            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
-                              {performance.movieTitle}
-                            </span>
-                          </div>
-
-                          {/* Character/Quote */}
-                          <div className="mb-6">
-                            <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                              as {character}
-                            </p>
-                          </div>
-                        </div>
-
                         {/* Rate Button */}
-                        <div className="mt-auto pt-4">
+                        <div className="mt-auto pt-3">
                           <button
                             onClick={() => handlePerformanceSelect(performance)}
-                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-500 hover:scale-105"
+                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
                             style={{
                               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                             }}
@@ -1006,69 +876,199 @@ export default function OnboardingRatePage() {
                       {/* Decorative accent */}
                       <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                     </div>
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
 
-            {/* Navigation Dots - Mobile Only */}
-            <div className="relative flex justify-center items-center mt-8 px-4">
-              <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
-                style={{
-                  boxShadow: `
+            {/* Mobile: Carousel with nav dots */}
+            <div className="lg:hidden relative -mx-4 sm:-mx-0">
+              {/* Carousel Container */}
+              <div
+                ref={scrollContainerRef}
+                className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
+              >
+                {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
+                  const character = performance.character || "—"
+                  const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+                  // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
+                  const rating = hasRating && performance.averageRating != null
+                    ? (performance.averageRating / 10).toFixed(1)
+                    : null
+
+                  return (
+                    <div
+                      key={`${performance.actorId}-${performance.movieId}`}
+                      ref={(el) => cardRefs.current[index] = el}
+                      className="flex-shrink-0 w-[85vw] sm:w-[70vw] snap-center group lg:cursor-pointer"
+                      style={{
+                        transform: 'translateZ(0)',
+                        WebkitTransform: 'translateZ(0)',
+                      }}
+                      onClick={() => {
+                        if (window.innerWidth >= 1024) {
+                          const element = cardRefs.current[index]
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                          }
+                        }
+                      }}
+                    >
+                      {/* Premium Card - Clean & Cinematic - Matching performances page */}
+                      <div
+                        className="relative p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                        style={{
+                          boxShadow: `
+                          0 25px 70px -15px rgba(0, 0, 0, 0.9),
+                          0 15px 40px -10px rgba(0, 0, 0, 0.7),
+                          0 0 0 1px rgba(255, 255, 255, 0.05),
+                          inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
+                        `,
+                        }}
+                      >
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="relative z-10 flex flex-col h-full">
+                          <div className="flex-1">
+                            {/* Top Row: Rating Badge and Year */}
+                            <div className="flex items-center justify-between mb-6">
+                              {rating ? (
+                                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                  <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                  <span
+                                    className="text-2xl font-bold text-[#FFD700]"
+                                    style={{
+                                      fontFamily: 'var(--font-geist-sans), sans-serif',
+                                      fontVariantNumeric: 'tabular-nums',
+                                    }}
+                                  >
+                                    {rating}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                  <FaStar className="w-5 h-5 text-[#666]" />
+                                  <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
+                                </div>
+                              )}
+
+                              {/* Movie Year */}
+                              <div className="text-[#a3a3a3] text-base font-medium">
+                                {performance.year}
+                              </div>
+                            </div>
+
+                            {/* Actor Name */}
+                            <h3
+                              className="text-xl sm:text-2xl font-bold text-white mb-2"
+                              style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                            >
+                              {performance.actorName}
+                            </h3>
+
+                            {/* Movie Title */}
+                            <div className="mb-4">
+                              <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+                                {performance.movieTitle}
+                              </span>
+                            </div>
+
+                            {/* Character/Quote */}
+                            <div className="mb-6">
+                              <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
+                                as {character}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Rate Button */}
+                          <div className="mt-auto pt-4">
+                            <button
+                              onClick={() => handlePerformanceSelect(performance)}
+                              className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-500 hover:scale-105"
+                              style={{
+                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                              }}
+                            >
+                              <span className="flex items-center justify-center gap-2">
+                                Rate
+                                <FaStar className="w-4 h-4" />
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Decorative accent */}
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Navigation Dots - Mobile Only */}
+              <div className="relative flex justify-center items-center mt-8 px-4">
+                <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
+                  style={{
+                    boxShadow: `
                     0 10px 30px -5px rgba(0, 0, 0, 0.7),
                     0 0 0 1px rgba(255, 255, 255, 0.03),
                     inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
                   `,
-                  padding: '6px 12px',
-                }}
-              >
-                <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
-                  {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        const container = scrollContainerRef.current
-                        if (container) {
-                          const cards = container.querySelectorAll('.recent-scroll-container > div')
-                          const targetCard = cards[index] as HTMLElement
-                          if (targetCard) {
-                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                            setCurrentIndex(index)
+                    padding: '6px 12px',
+                  }}
+                >
+                  <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
+                    {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          const container = scrollContainerRef.current
+                          if (container) {
+                            const cards = container.querySelectorAll('.recent-scroll-container > div')
+                            const targetCard = cards[index] as HTMLElement
+                            if (targetCard) {
+                              targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                              setCurrentIndex(index)
+                            }
                           }
-                        }
-                      }}
-                      style={{
-                        width: index === currentIndex ? '20px' : '8px',
-                        height: '8px',
-                        minWidth: '8px',
-                        minHeight: '8px',
-                        padding: '8px',
-                        border: 'none',
-                        backgroundColor: index === currentIndex ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
-                        borderRadius: '9999px',
-                        transition: 'all 0.3s',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (index !== currentIndex) {
-                          e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.6)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (index !== currentIndex) {
-                          e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)'
-                        }
-                      }}
-                      aria-label={`Go to performance ${index + 1}`}
-                    />
-                  ))}
+                        }}
+                        style={{
+                          width: index === currentIndex ? '20px' : '8px',
+                          height: '8px',
+                          minWidth: '8px',
+                          minHeight: '8px',
+                          padding: '8px',
+                          border: 'none',
+                          backgroundColor: index === currentIndex ? '#FFD700' : 'rgba(115, 115, 115, 0.4)',
+                          borderRadius: '9999px',
+                          transition: 'all 0.3s',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (index !== currentIndex) {
+                            e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.6)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (index !== currentIndex) {
+                            e.currentTarget.style.backgroundColor = 'rgba(115, 115, 115, 0.4)'
+                          }
+                        }}
+                        aria-label={`Go to performance ${index + 1}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </SignedInLayout>
     </AuthGuard>
   )
