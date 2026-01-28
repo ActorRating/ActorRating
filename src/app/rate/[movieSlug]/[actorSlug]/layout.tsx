@@ -1,8 +1,27 @@
 import { Metadata } from "next"
+import { prisma } from "@/lib/prisma"
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
   children: React.ReactNode
+}
+
+function computeAverage100FromAvgRow(avg: {
+  emotionalRangeDepth: number | null
+  characterBelievability: number | null
+  technicalSkill: number | null
+  screenPresence: number | null
+  chemistryInteraction: number | null
+}) {
+  const parts = [
+    avg.emotionalRangeDepth,
+    avg.characterBelievability,
+    avg.technicalSkill,
+    avg.screenPresence,
+    avg.chemistryInteraction,
+  ].filter((v): v is number => typeof v === "number")
+  if (parts.length === 0) return null
+  return parts.reduce((s, v) => s + v, 0) / parts.length
 }
 
 async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
@@ -48,21 +67,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const { actor, movie } = data
-  const fullMovieTitle = movie.year ? `${movie.title} (${movie.year})` : movie.title
+  const yearPart = movie.year ? ` (${movie.year})` : ''
+  const title = `${actor.name} in ${movie.title} — Performance Rating${yearPart}`
 
   return {
-    title: `Rate ${actor.name}'s Performance in ${fullMovieTitle} - ActorRating`,
-    description: `Rate ${actor.name}'s acting performance in ${fullMovieTitle} using our 0-10 performance rating system based on five Oscar-inspired criteria. Join the community in evaluating this performance.`,
+    title,
+    description: `Critics and viewers rated ${actor.name}’s performance in ${movie.title}. Some call it iconic. Others disagree. See the score.`,
     openGraph: {
-      title: `Rate ${actor.name} in ${fullMovieTitle}`,
-      description: `Rate ${actor.name}'s performance using ActorRating's comprehensive scoring system.`,
+      title,
+      description: `See the full performance breakdown and community rating. Rate it yourself in seconds.`,
       type: 'website',
       url: `https://www.actorrating.com/rate/${movieSlug}/${actorSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Rate ${actor.name} in ${fullMovieTitle}`,
-      description: `Rate ${actor.name}'s performance using ActorRating's comprehensive scoring system.`,
+      title,
+      description: `See the full performance breakdown and community rating. Rate it yourself in seconds.`,
     },
   }
 }
@@ -71,39 +91,75 @@ export default async function RateLayout({ params, children }: Props) {
   const { actorSlug, movieSlug } = await params
   const data = await fetchActorAndMovie(actorSlug, movieSlug)
 
-  // JSON-LD - Always rendered on SSR for crawlers (not conditional on auth)
-  const jsonLd = data ? {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: `Rate ${data.actor.name}'s Performance in ${data.movie.title}`,
-    description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria.`,
-    mainEntity: {
-      "@type": "Review",
-      itemReviewed: {
-        "@type": "PerformanceRole",
-        actor: {
-          "@type": "Person",
-          name: data.actor.name
+  // Aggregate stats for schema (minimal, no overkill)
+  const ratingAgg = data?.actor?.id && data?.movie?.id
+    ? await prisma.rating.aggregate({
+        where: { actorId: data.actor.id, movieId: data.movie.id },
+        _count: { _all: true },
+        _avg: {
+          emotionalRangeDepth: true,
+          characterBelievability: true,
+          technicalSkill: true,
+          screenPresence: true,
+          chemistryInteraction: true,
         },
-        workFeatured: {
-          "@type": "Movie",
-          name: data.movie.title,
-          ...(data.movie.year && { dateCreated: data.movie.year.toString() })
-        }
-      },
-      reviewRating: {
-        "@type": "Rating",
-        ratingValue: "0-10",
-        worstRating: 0,
-        bestRating: 10
+      })
+    : null
+
+  const ratingCount = ratingAgg?._count?._all ?? 0
+  const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
+  const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
+
+  // JSON-LD - Always rendered on SSR for crawlers (not conditional on auth)
+  const jsonLd = data
+    ? {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Person",
+            name: data.actor.name,
+          },
+          {
+            "@type": "Movie",
+            name: data.movie.title,
+            ...(data.movie.year && { dateCreated: data.movie.year.toString() }),
+          },
+          {
+            "@type": "WebPage",
+            name: `Rate ${data.actor.name}'s Performance in ${data.movie.title}`,
+            description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria.`,
+            mainEntity: {
+              "@type": "Review",
+              itemReviewed: {
+                "@type": "PerformanceRole",
+                actor: { "@type": "Person", name: data.actor.name },
+                workFeatured: {
+                  "@type": "Movie",
+                  name: data.movie.title,
+                  ...(data.movie.year && { dateCreated: data.movie.year.toString() }),
+                },
+              },
+              ...(ratingCount > 0 && avg10 != null
+                ? {
+                    aggregateRating: {
+                      "@type": "AggregateRating",
+                      ratingValue: avg10,
+                      ratingCount,
+                      bestRating: 10,
+                      worstRating: 0,
+                    },
+                  }
+                : {}),
+            },
+            isPartOf: {
+              "@type": "WebSite",
+              name: "ActorRating",
+              url: "https://www.actorrating.com",
+            },
+          },
+        ],
       }
-    },
-    isPartOf: {
-      "@type": "WebSite",
-      name: "ActorRating",
-      url: "https://www.actorrating.com"
-    }
-  } : null
+    : null
 
   return (
     <>

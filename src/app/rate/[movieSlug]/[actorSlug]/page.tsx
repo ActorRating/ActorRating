@@ -28,6 +28,8 @@ export default function SlugBasedRatePage() {
   const [loading, setLoading] = useState(true) // Start with loading true for immediate feedback
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)
+  const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
+  const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
@@ -102,6 +104,31 @@ export default function SlugBasedRatePage() {
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.movieSlug, params?.actorSlug])
+
+  // Fetch community aggregate stats for rich snippet hooks (avg + count).
+  // Best-effort only; does not block rendering.
+  useEffect(() => {
+    async function fetchCommunityStats() {
+      if (!actor?.name || !movie?.title) return
+      try {
+        const res = await fetch('/api/performances/by-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targets: [{ actor: actor.name, movie: movie.title }] }),
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const perf = Array.isArray(data?.performances) ? data.performances[0] : null
+        const count = typeof perf?.ratingCount === 'number' ? perf.ratingCount : null
+        const avg100 = typeof perf?.averageRating === 'number' ? perf.averageRating : null
+        setCommunityRatingCount(count)
+        setCommunityAvg10(avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null)
+      } catch {
+        // ignore
+      }
+    }
+    fetchCommunityStats()
+  }, [actor?.name, movie?.title])
 
   if (loading) {
     return (
@@ -186,8 +213,34 @@ export default function SlugBasedRatePage() {
     }
   }
 
+  const snippetHook = (
+    <div className="px-4 pt-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/90 backdrop-blur">
+          {communityRatingCount != null && communityRatingCount > 0 && communityAvg10 != null ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <div>
+                <span className="font-semibold">⭐ Community average:</span>{" "}
+                <span className="font-semibold text-[#FFD700]">{communityAvg10}/10</span>
+              </div>
+              <div className="text-white/80">
+                <span className="font-semibold">👥 {communityRatingCount}</span>{" "}
+                {communityRatingCount === 1 ? "person has" : "people have"} rated this performance
+              </div>
+            </div>
+          ) : (
+            <div className="text-white/80">
+              <span className="font-semibold">Be the first to rate this performance.</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <RatePageLayout>
+      {snippetHook}
       {/* SEO Content - Only visible to crawlers when logged out */}
       <PerformanceSEOContent
         actorName={actor.name}

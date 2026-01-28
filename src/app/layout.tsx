@@ -36,7 +36,7 @@ const cormorantGaramond = Cormorant_Garamond({
 
 // ✅ Enhanced SEO Metadata
 export const metadata: Metadata = {
-  title: "ActorRating – Rate Acting Performances, Not Just Movies",
+  title: "ActorRating — Acting Performance Ratings & Reviews",
   description:
     "Rate and analyze acting performances using Oscar-inspired criteria. Join our community platform to discover acclaimed performances from cinema history.",
   keywords: [
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "ActorRating – Rate Acting Performances",
+    title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
       "Community-driven platform to rate and analyze acting performances using Oscar-inspired criteria. Discover your favorite actors' best performances.",
     url: "https://www.actorrating.com",
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ActorRating – Rate Acting Performances",
+    title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
       "Join the world’s first platform for rating and analyzing acting performances using professional criteria.",
     images: ["https://www.actorrating.com/logo.png"],

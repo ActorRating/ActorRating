@@ -5,15 +5,15 @@ import HomePageClient from "@/components/HomePageClient";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
-  title: "ActorRating - Rate Acting Performances, Not Just Movies",
-  description: "Rate and analyze acting performances using Oscar-inspired criteria. Join our community platform to discover acclaimed performances from cinema history.",
+  title: "ActorRating — Rate Acting Performances Scene by Scene",
+  description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
   keywords: [
     "actor rating", "acting performance", "movie ratings", "community-driven ratings",
     "Oscar-inspired criteria", "film performance analysis", "rate actors", "cinema"
   ],
   openGraph: {
-    title: "ActorRating - Rate Acting Performances",
-    description: "Community-driven platform to rate and analyze acting performances with professional criteria.",
+    title: "ActorRating — Rate Acting Performances Scene by Scene",
+    description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
     url: "https://actorrating.com",
     siteName: "ActorRating",
     images: [
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ActorRating - Rate Acting Performances",
-    description: "Community-driven platform to rate and analyze acting performances with professional criteria.",
+    title: "ActorRating — Rate Acting Performances Scene by Scene",
+    description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
     images: ["https://actorrating.com/logo.png"],
   },
 };

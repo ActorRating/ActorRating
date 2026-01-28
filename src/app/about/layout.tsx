@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About ActorRating — Rate the acting, not the movie",
-  description: "ActorRating is a platform dedicated to evaluating individual acting performances, not overall films.",
+  title: "What Is ActorRating? — How Acting Performances Are Rated",
+  description: "ActorRating breaks performances down scene by scene using clear criteria. Here’s how ratings actually work.",
   robots: "index, follow",
 };
 

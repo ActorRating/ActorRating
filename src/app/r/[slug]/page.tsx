@@ -32,8 +32,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return {}
   const { rating } = data
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
-  const title = `ActorRating: ${rating.actor.name} in ${rating.movie.title}`
-  const description = `Score ${Math.round(rating.shareScore ?? rating.weightedScore)}/100`
+  const title = `${rating.actor.name} in ${rating.movie.title} — Rated on ActorRating`
+  const description = `See the full performance breakdown and community rating. Rate it yourself in seconds.`
   const pageUrl = `${base}/r/${slug}`
   const ogDynamicUrl = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`
   return {
