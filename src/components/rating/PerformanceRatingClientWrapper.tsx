@@ -146,6 +146,8 @@ interface PerformanceRatingClientWrapperProps {
     screenPresence: number
     chemistryInteraction: number
   } | null
+  communityAvg10?: number | null
+  communityRatingCount?: number | null
 }
 
 // Individual Slider Component - Premium Gold Design (Optimized for mobile)
@@ -522,7 +524,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   submitting = false,
   initialRating,
   onSuccess,
-  submittedRating: externalSubmittedRating
+  submittedRating: externalSubmittedRating,
+  communityAvg10,
+  communityRatingCount
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
@@ -1324,6 +1328,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           >
             {performance.actor.name}
           </h1>
+
+          {/* Community Rating Stats - Subtle display under actor name */}
+          {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
+            <div className="mb-2 sm:mb-3 px-2">
+              <p className="text-xs sm:text-sm text-white/60 font-medium">
+                ⭐ {communityAvg10}/10 · {communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}
+              </p>
+            </div>
+          )}
 
           {/* Movie Title - Clean, non-italic styling */}
           <div className="mb-1.5 sm:mb-3 px-2">

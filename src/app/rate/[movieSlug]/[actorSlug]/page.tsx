@@ -213,34 +213,8 @@ export default function SlugBasedRatePage() {
     }
   }
 
-  const snippetHook = (
-    <div className="px-4 pt-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/90 backdrop-blur">
-          {communityRatingCount != null && communityRatingCount > 0 && communityAvg10 != null ? (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <div>
-                <span className="font-semibold">⭐ Community average:</span>{" "}
-                <span className="font-semibold text-[#FFD700]">{communityAvg10}/10</span>
-              </div>
-              <div className="text-white/80">
-                <span className="font-semibold">👥 {communityRatingCount}</span>{" "}
-                {communityRatingCount === 1 ? "person has" : "people have"} rated this performance
-              </div>
-            </div>
-          ) : (
-            <div className="text-white/80">
-              <span className="font-semibold">Be the first to rate this performance.</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <RatePageLayout>
-      {snippetHook}
       {/* SEO Content - Only visible to crawlers when logged out */}
       <PerformanceSEOContent
         actorName={actor.name}
@@ -267,6 +241,8 @@ export default function SlugBasedRatePage() {
         onSuccess={() => {
           // Success is handled within the wrapper component
         }}
+        communityAvg10={communityAvg10}
+        communityRatingCount={communityRatingCount}
       />
       
       {/* Sign Up Modal */}
