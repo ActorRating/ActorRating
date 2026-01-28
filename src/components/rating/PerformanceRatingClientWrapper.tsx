@@ -1421,10 +1421,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {submitPhase !== 'success' && (
               <div
                 ref={scoreRef}
-                className="relative mx-auto mb-4 sm:mb-8 z-50 w-[240px] sm:w-[280px] md:w-[300px]"
+                className="relative mx-auto -mb-3 sm:mb-8 z-50 w-[240px] sm:w-[280px] md:w-[300px]"
                 style={{ 
-                  marginTop: '0', 
-                  marginBottom: '1rem',
+                  marginTop: '0',
                   opacity: isSticky ? 0 : 1,
                   transform: 'none',
                   visibility: isSticky ? 'hidden' : 'visible',
@@ -1516,7 +1515,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* Rating Card - Extra round corners, mobile optimized - No animations on iOS Safari */}
             {submitPhase !== 'success' && (
               <div
-                className="relative rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-6 sm:py-10 md:py-12 space-y-4 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-hidden w-full max-w-full mx-auto"
+                className="relative rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-6 sm:py-10 md:py-12 space-y-4 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-visible w-full max-w-full mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -1529,6 +1528,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   contain: 'none',
                   opacity: 1, // Force visible on iOS
                   transform: 'none', // No transforms on iOS
+                  marginTop: '-0.75rem', // Allow score pill to overlap slightly
                 }}
               >
                   {/* Decorative corner accent - top left only */}
@@ -1561,7 +1561,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
                       opacity: 1,
                       visibility: 'visible',
-                      paddingBottom: '20px', // Extra padding for last slider to prevent bottom edge interference
+                      paddingBottom: '0px', // No padding after last slider
                       contentVisibility: 'visible', // Force Safari to render all sliders immediately
                       contain: 'none', // Prevent containment that might defer rendering
                       transform: 'none', // No transforms that could defer rendering
@@ -1649,7 +1649,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       zIndex: 60,
                       contentVisibility: 'visible', // Force Safari to render button immediately
                       contain: 'none', // Prevent containment that might defer rendering
-                      minHeight: '60px', // Reserve space to prevent layout shift
+                      minHeight: 'auto', // No reserved space
                     }}
                   >
                     <motion.button
