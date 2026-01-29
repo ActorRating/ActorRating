@@ -1328,16 +1328,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           >
             {performance.actor.name}
           </h1>
-
-          {/* Community Rating Stats - Subtle display under actor name */}
-          {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
-            <div className="mb-2 sm:mb-3 px-2">
-              <p className="text-xs sm:text-sm text-white/60 font-medium">
-                ⭐ {communityAvg10}/10 · {communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}
-              </p>
-            </div>
-          )}
-
           {/* Movie Title - Clean, non-italic styling */}
           <div className="mb-1.5 sm:mb-3 px-2">
             <h2
@@ -1362,6 +1352,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.year}
             </p>
           </div>
+
+          {/* Community Rating Stats - Subtle display under year */}
+          {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
+            <div className="mb-1.5 sm:mb-3 px-2">
+              <p className="text-xs sm:text-sm text-white/60 font-medium">
+                ⭐ {communityAvg10}/10 · {communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}
+              </p>
+            </div>
+          )}
 
           {/* Role/Comment */}
           {performance.comment && (

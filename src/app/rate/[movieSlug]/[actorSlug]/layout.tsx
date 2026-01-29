@@ -110,7 +110,7 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD - Always rendered on SSR for crawlers (not conditional on auth)
+  // JSON-LD - Minimal: only Movie, Person, AggregateRating (if any)
   const jsonLd = data
     ? {
         "@context": "https://schema.org",
@@ -123,39 +123,17 @@ export default async function RateLayout({ params, children }: Props) {
             "@type": "Movie",
             name: data.movie.title,
             ...(data.movie.year && { dateCreated: data.movie.year.toString() }),
-          },
-          {
-            "@type": "WebPage",
-            name: `Rate ${data.actor.name}'s Performance in ${data.movie.title}`,
-            description: `Rate ${data.actor.name}'s acting performance in ${data.movie.title} using ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria.`,
-            mainEntity: {
-              "@type": "Review",
-              itemReviewed: {
-                "@type": "PerformanceRole",
-                actor: { "@type": "Person", name: data.actor.name },
-                workFeatured: {
-                  "@type": "Movie",
-                  name: data.movie.title,
-                  ...(data.movie.year && { dateCreated: data.movie.year.toString() }),
-                },
-              },
-              ...(ratingCount > 0 && avg10 != null
-                ? {
-                    aggregateRating: {
-                      "@type": "AggregateRating",
-                      ratingValue: avg10,
-                      ratingCount,
-                      bestRating: 10,
-                      worstRating: 0,
-                    },
-                  }
-                : {}),
-            },
-            isPartOf: {
-              "@type": "WebSite",
-              name: "ActorRating",
-              url: "https://www.actorrating.com",
-            },
+            ...(ratingCount > 0 && avg10 != null
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: avg10,
+                    ratingCount,
+                    bestRating: 10,
+                    worstRating: 0,
+                  },
+                }
+              : {}),
           },
         ],
       }
