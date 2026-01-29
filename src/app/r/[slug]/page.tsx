@@ -1,21 +1,21 @@
-export const dynamic = "force-dynamic"
-
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ShareButton } from './ShareButton'
 import { SuccessShare } from './successShare'
 
+// Cache share page and metadata for 1 min — ratings don't change every second
 export const revalidate = 60
 
-async function getData(slug: string) {
-  const rating = await prisma.rating.findFirst({ 
-    where: { OR: [{ slug }, { id: slug }] }, 
-    include: { 
-      actor: true, 
-      movie: true, 
-      shareImage: true 
-    } 
+async function getDataUncached(slug: string) {
+  const rating = await prisma.rating.findFirst({
+    where: { OR: [{ slug }, { id: slug }] },
+    include: {
+      actor: true,
+      movie: true,
+      shareImage: true,
+    },
   })
   if (!rating) return null
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
@@ -24,6 +24,14 @@ async function getData(slug: string) {
   const feedUrl = rating.shareImage?.feedUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=feed`
   const storyUrl = rating.shareImage?.storyUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=story`
   return { rating, ogUrl, feedUrl, storyUrl }
+}
+
+function getData(slug: string) {
+  return unstable_cache(
+    () => getDataUncached(slug),
+    [`r:share:${slug}`],
+    { revalidate: 60 }
+  )
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

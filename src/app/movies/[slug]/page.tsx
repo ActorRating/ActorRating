@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -141,7 +139,7 @@ export default function MoviePage() {
       try {
         // Fetch movie data and user ratings in parallel for better performance
         const [movieResponse, userRatingsResponse] = await Promise.all([
-          fetch(`/api/movies/${movieSlug}`, { cache: 'no-store' }),
+          fetch(`/api/movies/${movieSlug}`),
           user ? fetch(`/api/movies/${movieSlug}/user-rating`, { 
             cache: 'no-store',
             headers: {

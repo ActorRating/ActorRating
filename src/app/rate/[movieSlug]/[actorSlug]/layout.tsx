@@ -1,5 +1,9 @@
 import { Metadata } from "next"
+import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
+
+// Cache rate page metadata and aggregates for 5 min
+export const revalidate = 300
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -30,11 +34,11 @@ async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
     
     const [actorResponse, movieResponse] = await Promise.all([
       fetch(`${baseUrl}/api/actors/${actorSlug}`, { 
-        cache: 'no-store',
+        next: { revalidate: 300 },
         headers: { 'Content-Type': 'application/json' }
       }),
       fetch(`${baseUrl}/api/movies/${movieSlug}`, { 
-        cache: 'no-store',
+        next: { revalidate: 300 },
         headers: { 'Content-Type': 'application/json' }
       })
     ])
@@ -91,20 +95,27 @@ export default async function RateLayout({ params, children }: Props) {
   const { actorSlug, movieSlug } = await params
   const data = await fetchActorAndMovie(actorSlug, movieSlug)
 
-  // Aggregate stats for schema (minimal, no overkill)
-  const ratingAgg = data?.actor?.id && data?.movie?.id
-    ? await prisma.rating.aggregate({
-        where: { actorId: data.actor.id, movieId: data.movie.id },
-        _count: { _all: true },
-        _avg: {
-          emotionalRangeDepth: true,
-          characterBelievability: true,
-          technicalSkill: true,
-          screenPresence: true,
-          chemistryInteraction: true,
-        },
-      })
-    : null
+  // Aggregate stats for schema — cached 5 min so metadata doesn't burn CPU per crawl
+  const getRatingAggregate = (actorId: string, movieId: string) =>
+    prisma.rating.aggregate({
+      where: { actorId, movieId },
+      _count: { _all: true },
+      _avg: {
+        emotionalRangeDepth: true,
+        characterBelievability: true,
+        technicalSkill: true,
+        screenPresence: true,
+        chemistryInteraction: true,
+      },
+    })
+  const ratingAgg =
+    data?.actor?.id && data?.movie?.id
+      ? await unstable_cache(
+          () => getRatingAggregate(data.actor.id, data.movie.id),
+          [`rate:agg:${data.actor.id}:${data.movie.id}`],
+          { revalidate: 300 }
+        )
+      : null
 
   const ratingCount = ratingAgg?._count?._all ?? 0
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null

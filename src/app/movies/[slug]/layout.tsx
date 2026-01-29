@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+// Cache movie metadata for 5 min — ratings don't change every second
+export const revalidate = 300;
+
 type Props = {
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
@@ -9,7 +12,7 @@ async function fetchMovie(slug: string) {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/movies/${slug}`, {
-      cache: "no-store",
+      next: { revalidate: 300 },
       headers: { "Content-Type": "application/json" },
     });
     if (!res.ok) return null;

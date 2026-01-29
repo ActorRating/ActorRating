@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -143,7 +141,7 @@ export default function ActorPage() {
       }
       
       try {
-        const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
+        const response = await fetch(`/api/actors/${actorId}`)
         if (!response.ok) throw new Error('Failed to fetch actor')
         
         const data = await response.json()
