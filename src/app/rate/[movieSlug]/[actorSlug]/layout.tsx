@@ -110,7 +110,7 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD - Minimal: only Movie, Person, AggregateRating (if any)
+  // JSON-LD - Google-approved: Movie (with actor + aggregateRating), Person. No Review/PerformanceRole.
   const jsonLd = data
     ? {
         "@context": "https://schema.org",
@@ -122,13 +122,17 @@ export default async function RateLayout({ params, children }: Props) {
           {
             "@type": "Movie",
             name: data.movie.title,
-            ...(data.movie.year && { dateCreated: data.movie.year.toString() }),
+            ...(data.movie.year && { datePublished: data.movie.year.toString() }),
+            actor: {
+              "@type": "Person",
+              name: data.actor.name,
+            },
             ...(ratingCount > 0 && avg10 != null
               ? {
                   aggregateRating: {
                     "@type": "AggregateRating",
-                    ratingValue: avg10,
-                    ratingCount,
+                    ratingValue: String(avg10),
+                    ratingCount: String(ratingCount),
                     bestRating: 10,
                     worstRating: 0,
                   },
