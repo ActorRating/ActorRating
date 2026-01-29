@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Geist, Geist_Mono, Playfair_Display, Cormorant_Garamond } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
@@ -152,6 +153,7 @@ export default function RootLayout({
             </Suspense>
             <ChunkErrorReload />
             <Suspense fallback={null}>{children}</Suspense>
+            <Analytics />
           </CookieConsentProvider>
         </SessionProvider>
       </body>
