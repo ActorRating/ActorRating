@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
 
 // Cache movie metadata for 5 min — ratings don't change every second
 export const revalidate = 300;
@@ -8,23 +9,16 @@ type Props = {
   children: React.ReactNode;
 };
 
-async function fetchMovie(slug: string) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/movies/${slug}`, {
-      next: { revalidate: 300 },
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const movie = await fetchMovie(slug);
+  const movie = await prisma.movie.findFirst({
+    where: { OR: [{ slug }, { id: slug }] },
+    select: {
+      title: true,
+      year: true,
+      _count: { select: { performances: true } },
+    },
+  });
 
   if (!movie?.title) {
     return {
@@ -37,9 +31,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${movie.title}${yearPart} — Actor Performances Ranked & Rated`;
   const description = `Rate the acting performances in ${movie.title}. See which actors stood out — and which didn’t.`;
 
+  const hasPerformances = movie._count.performances > 0;
+
   return {
     title,
     description,
+    ...(hasPerformances ? {} : { robots: "noindex, nofollow" }),
     openGraph: {
       title,
       description,

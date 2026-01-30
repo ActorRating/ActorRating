@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
 
 // Cache actor metadata for 5 min — ratings don't change every second
 export const revalidate = 300;
@@ -8,23 +9,15 @@ type Props = {
   children: React.ReactNode;
 };
 
-async function fetchActor(id: string) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/actors/${id}`, {
-      next: { revalidate: 300 },
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const actor = await fetchActor(id);
+  const actor = await prisma.actor.findFirst({
+    where: { OR: [{ id }, { slug: id }] },
+    select: {
+      name: true,
+      _count: { select: { performances: true } },
+    },
+  });
 
   if (!actor?.name) {
     return {
@@ -35,10 +28,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${actor.name} Performances Ranked — Ratings & Reviews`;
   const description = `All ${actor.name} performances rated scene by scene. See their highest-rated roles and most controversial performances.`;
+  const hasPerformances = actor._count.performances > 0;
 
   return {
     title,
     description,
+    ...(hasPerformances ? {} : { robots: "noindex, nofollow" }),
     openGraph: {
       title,
       description,
