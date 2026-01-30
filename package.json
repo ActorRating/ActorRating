@@ -20,7 +20,9 @@
     "perf:lighthouse": "lighthouse-ci http://localhost:3000 --config=.lighthouserc.json || true",
     "backfill:tmdb": "tsx scripts/backfill-characters-from-tmdb.ts",
     "backfill:tmdb:goodfellas": "tsx scripts/backfill-characters-from-tmdb.ts --movie=Goodfellas --year=1990",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "remove-adult-content": "tsx scripts/remove-adult-content.ts",
+    "remove-adult-content:yes": "tsx scripts/remove-adult-content.ts --yes"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",

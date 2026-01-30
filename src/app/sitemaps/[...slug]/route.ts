@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isAdultContentMovie } from '@/lib/adult-content-filter'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
 const MAX_URLS_PER_SITEMAP = 10000
@@ -125,13 +126,20 @@ async function generateMoviesSitemap(): Promise<NextResponse> {
       slug: true,
       id: true,
       updatedAt: true,
+      title: true,
+      genre: true,
+      overview: true,
     },
     orderBy: {
       updatedAt: 'desc',
     },
   })
 
-  const urls = movies.map((movie) => ({
+  const safeMovies = movies.filter(
+    (m) => !isAdultContentMovie({ title: m.title, genre: m.genre, overview: m.overview })
+  )
+
+  const urls = safeMovies.map((movie) => ({
     url: `${BASE_URL}/movies/${movie.slug || movie.id}`,
     lastModified: movie.updatedAt,
     changeFrequency: 'weekly' as const,
@@ -154,7 +162,7 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
 
   const skip = (pageNum - 1) * MAX_URLS_PER_SITEMAP
 
-  // Get all performances
+  // Get all performances with movie title/genre/overview for adult-content filter
   const allPerformances = await prisma.performance.findMany({
     select: {
       actor: {
@@ -167,6 +175,9 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
         select: {
           slug: true,
           id: true,
+          title: true,
+          genre: true,
+          overview: true,
         },
       },
       updatedAt: true,
@@ -176,13 +187,14 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
     },
   })
 
-  // Deduplicate by actor-movie combination
+  // Deduplicate by actor-movie combination; exclude adult-content movies
   const uniqueCombinations = new Map<string, {
     url: string
     lastModified: Date
   }>()
 
   for (const perf of allPerformances) {
+    if (isAdultContentMovie(perf.movie)) continue
     const key = `${perf.actor.id}-${perf.movie.id}`
     const url = `${BASE_URL}/rate/${perf.movie.slug || perf.movie.id}/${perf.actor.slug || perf.actor.id}`
     

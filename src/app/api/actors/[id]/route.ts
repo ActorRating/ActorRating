@@ -31,7 +31,7 @@ export async function GET(
       
       if (idError || !actorById) {
         console.error("❌ Actor fetch error:", idError || actorError)
-        return NextResponse.json({ error: "Actor not found" }, { status: 404 })
+        return NextResponse.json({ error: "Actor not found" }, { status: 410 })
       }
       actor = actorById
       actorError = null
@@ -39,7 +39,7 @@ export async function GET(
 
     if (actorError) {
       console.error("❌ Actor fetch error:", actorError)
-      return NextResponse.json({ error: "Actor not found" }, { status: 404 })
+      return NextResponse.json({ error: "Actor not found" }, { status: 410 })
     }
 
     console.log("🎭 Actor found:", actor.name)

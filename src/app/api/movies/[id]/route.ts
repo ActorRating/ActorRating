@@ -29,7 +29,7 @@ export async function GET(
       
       if (idError || !movieById) {
         console.error("❌ Movie fetch error:", idError || movieError)
-        return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+        return NextResponse.json({ error: "Movie not found" }, { status: 410 })
       }
       movie = movieById
       movieError = null
@@ -37,7 +37,7 @@ export async function GET(
 
     if (movieError) {
       console.error("❌ Movie fetch error:", movieError)
-      return NextResponse.json({ error: "Movie not found" }, { status: 404 })
+      return NextResponse.json({ error: "Movie not found" }, { status: 410 })
     }
 
     console.log("🎬 Movie found:", movie.title)
