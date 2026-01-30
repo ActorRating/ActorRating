@@ -3,6 +3,33 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
+  // Return 410 Gone for /rate/[movieSlug]/[actorSlug] when actor or movie no longer exists
+  const rateMatch = req.nextUrl.pathname.match(/^\/rate\/([^/]+)\/([^/]+)\/?$/)
+  if (rateMatch) {
+    const [, movieSlug, actorSlug] = rateMatch
+    const origin = req.nextUrl.origin
+    try {
+      const [actorRes, movieRes] = await Promise.all([
+        fetch(`${origin}/api/actors/${encodeURIComponent(actorSlug)}`, {
+          headers: { "Content-Type": "application/json" },
+          next: { revalidate: 0 },
+        }),
+        fetch(`${origin}/api/movies/${encodeURIComponent(movieSlug)}`, {
+          headers: { "Content-Type": "application/json" },
+          next: { revalidate: 0 },
+        }),
+      ])
+      if (!actorRes.ok || !movieRes.ok) {
+        return new NextResponse(null, {
+          status: 410,
+          headers: { "Cache-Control": "public, max-age=86400" },
+        })
+      }
+    } catch {
+      // On fetch error, continue to page (let it handle 410)
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: req.headers,
@@ -58,8 +85,9 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/auth/signin',
-    '/auth/signup',
+    "/rate/:movieSlug/:actorSlug",
+    "/dashboard/:path*",
+    "/auth/signin",
+    "/auth/signup",
   ],
 }
