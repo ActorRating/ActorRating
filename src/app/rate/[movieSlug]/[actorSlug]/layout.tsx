@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { NextResponse } from "next/server"
 import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
 
@@ -94,6 +95,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RateLayout({ params, children }: Props) {
   const { actorSlug, movieSlug } = await params
   const data = await fetchActorAndMovie(actorSlug, movieSlug)
+
+  // Return 410 Gone when actor or movie no longer exists (e.g. removed content)
+  if (!data) {
+    return new NextResponse(null, {
+      status: 410,
+      headers: { "Cache-Control": "public, max-age=86400" },
+    })
+  }
 
   // Aggregate stats for schema — cached 5 min so metadata doesn't burn CPU per crawl
   const getRatingAggregate = (actorId: string, movieId: string) =>
