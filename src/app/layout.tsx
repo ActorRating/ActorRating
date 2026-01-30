@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Geist, Geist_Mono, Playfair_Display, Cormorant_Garamond } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
@@ -154,6 +155,7 @@ export default function RootLayout({
             <ChunkErrorReload />
             <Suspense fallback={null}>{children}</Suspense>
             <Analytics />
+            <SpeedInsights />
           </CookieConsentProvider>
         </SessionProvider>
       </body>
