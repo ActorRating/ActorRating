@@ -81,6 +81,12 @@ function generateStaticSitemap(): NextResponse {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    {
+      url: `${BASE_URL}/oscars-2026`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
   ]
 
   const xml = generateSitemapXml(urls)

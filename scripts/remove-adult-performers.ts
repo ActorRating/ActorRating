@@ -13,6 +13,7 @@ import { prisma } from "../src/lib/prisma";
 
 const ADULT_PERFORMER_NAMES = [
   "Deborah Révy",
+  "Déborah Révy",
   "Deborah Revy",
   "Nao Saejima",
   "Kaori Asô",
@@ -22,6 +23,15 @@ const ADULT_PERFORMER_NAMES = [
   "Yoon Yool",
   "Min Do-yoon",
 ];
+
+/** Normalize for comparison: lowercase, trim, remove accents (é -> e, etc.) */
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
 
 async function main() {
   const doDelete = process.argv.includes("--yes");
@@ -37,13 +47,9 @@ async function main() {
     },
   });
 
-  const namesToMatch = ADULT_PERFORMER_NAMES;
+  const normalizedList = new Set(ADULT_PERFORMER_NAMES.map(normalizeName));
 
-  const matched = allActors.filter((a) =>
-    namesToMatch.some(
-      (n) => a.name === n || a.name.toLowerCase().trim() === n.toLowerCase().trim()
-    )
-  );
+  const matched = allActors.filter((a) => normalizedList.has(normalizeName(a.name)));
 
   if (matched.length === 0) {
     console.log("No actors from the adult-performer list found in the database.");
