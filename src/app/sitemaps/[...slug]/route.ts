@@ -93,7 +93,9 @@ function generateStaticSitemap(): NextResponse {
 }
 
 async function generateActorsSitemap(): Promise<NextResponse> {
+  // Only include actors that have at least one performance (rate page)
   const actors = await prisma.actor.findMany({
+    where: { performances: { some: {} } },
     select: {
       slug: true,
       id: true,
@@ -121,7 +123,9 @@ async function generateActorsSitemap(): Promise<NextResponse> {
 }
 
 async function generateMoviesSitemap(): Promise<NextResponse> {
+  // Only include movies that have at least one performance (rate page)
   const movies = await prisma.movie.findMany({
+    where: { performances: { some: {} } },
     select: {
       slug: true,
       id: true,
