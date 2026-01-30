@@ -183,7 +183,8 @@ export async function GET(
               chemistryInteraction: Math.round(movieRatings.reduce((sum, r) => sum + (r.chemistryInteraction || 0), 0) / movieRatings.length),
             }
             
-            enrichedPerformances.push({
+            // Synthetic performance entry: match shape expected by frontend (movie/actor as single objects)
+            const syntheticPerf = {
               id: `rating-${movie.id}`,
               userId: firstRating.userId,
               actorId: actor.id,
@@ -192,7 +193,7 @@ export async function GET(
               character: firstRating.roleName || null,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              movie: movie,
+              movie,
               actor: { id: actor.id, name: actor.name, slug: actor.slug },
               roleName: firstRating.roleName || null,
               emotionalRangeDepth: avgRating.emotionalRangeDepth,
@@ -204,7 +205,8 @@ export async function GET(
                 name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
                 email: `user@example.com`
               }
-            })
+            }
+            enrichedPerformances.push(syntheticPerf as unknown as (typeof enrichedPerformances)[number])
           }
         }
       })

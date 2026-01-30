@@ -1,65 +1,42 @@
-# ActorRating Content Policy (Internal)
+# Content Policy (Enforcement)
 
-**Last Updated:** 2025-01-XX
+Before adding **any** new content (movie or actor), all of the following must pass. If any checkbox fails → **do not add**.
 
-## Core Principle
+## Checklist
 
-ActorRating evaluates **screen acting performances in standalone, narrative films**.
+- [ ] **Movie has Wikipedia page (English)**  
+  No Wikipedia (EN) → do not add.
 
-## Eligible Content
+- [ ] **Movie has 1,000+ IMDb votes**  
+  Fewer votes → do not add (avoids obscure/adult titles).
 
-Content must meet ALL of the following criteria:
+- [ ] **Genre does NOT include "Adult," "Erotic," or "18+"**  
+  If genre contains these → do not add.
 
-1. **Standalone narrative film**
-   - Not a compilation, collection, or repackaged content
-   - Not a "best of" or "greatest hits" collection
-   - Not a DVD collection or volume set
+- [ ] **Title does NOT contain sexual keywords**  
+  No sex, voyeur, massage, erotic, seduction, temptation, etc. in title → do not add.
 
-2. **Intentional screen acting**
-   - Performance created for the film itself
-   - Not bloopers, outtakes, or behind-the-scenes footage
-   - Not concert recordings, stand-up specials, or live performances
+- [ ] **Actor has Wikipedia page OR 50+ notable film credits**  
+  No Wikipedia and fewer than 50 notable credits → do not add.
 
-3. **Created primarily as a film**
-   - Not meta-content (making-of documentaries, behind-the-scenes)
-   - Not social media content (TikTok sagas, YouTube skits)
-   - Not TV sketch compilations (SNL "Best of" DVDs)
-   - Not wrestling/sports entertainment compilations
+- [ ] **Theatrical release OR major streaming platform**  
+  Straight-to-video / adult-only platforms → do not add.
 
-## Explicitly Excluded
+## Keywords (auto-exclude / manual review)
 
-- TikTok/YouTube/social media content
-- Compilation DVDs ("Best of", "Volume", "Collection")
-- Bloopers/outtakes compilations
-- Trailer compilations
-- Concert/live performance recordings
-- Making-of/behind-the-scenes documentaries
-- TV sketch compilations (SNL, etc.)
-- Wrestling/sports entertainment compilations
-- Broadway/stage performance compilations
-- Parody videos/skits (but NOT feature-length parody films)
+- **Auto-exclude (no add, remove if present):** sex, voyeur, massage, erotic (title); adult, erotic (genre). See `src/lib/adult-content-filter.ts` and `scripts/remove-adult-content.ts`.
+- **Manual review (list and decide):** seduc, tempt, affair, obsess, desire, forbidden, passion, mistress. See `scripts/list-subtle-adult-movies.ts`. Review top 50; delete if not mainstream.
 
-## Protected Films
+## Known adult performers (remove)
 
-The following films are explicitly protected and must never be auto-deleted:
+Do not add; remove if already in DB: Deborah Révy, Nao Saejima, Kaori Asô, Joo Ah, Kim Do-hee, Yoon Yool, Min Do-yoon. Use `scripts/remove-adult-performers.ts`.
 
-- East of Eden (1955)
-- The Onion Movie (2008) - legitimate feature-length parody film
-- Miracle Apples (2013) - legitimate Japanese feature film
+## Scripts
 
-## Future Considerations
-
-- TV/limited series: Separate product model if added
-- Short films: Evaluate on case-by-case basis (must be standalone narrative)
-- Web series: Only if they meet film criteria (standalone, narrative, intentional acting)
-
-## Enforcement
-
-- Automated filtering during import/creation
-- Admin warnings for suspicious content
-- Manual review for edge cases
-
----
-
-**Note:** This is an internal policy document. Do not publish publicly yet.
-
+| Script | Purpose |
+|--------|--------|
+| `npm run remove-adult-content` | Dry run: list movies matching explicit keywords |
+| `npm run remove-adult-content:yes` | Delete those movies (cascade to performances/ratings) |
+| `npx tsx scripts/list-subtle-adult-movies.ts` | List movies with subtle keywords for manual review |
+| `npx tsx scripts/remove-adult-performers.ts` | Dry run: list known adult performers |
+| `npx tsx scripts/remove-adult-performers.ts --yes` | Delete those actors (cascade) |

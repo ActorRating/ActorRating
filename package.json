@@ -22,7 +22,10 @@
     "backfill:tmdb:goodfellas": "tsx scripts/backfill-characters-from-tmdb.ts --movie=Goodfellas --year=1990",
     "postinstall": "prisma generate",
     "remove-adult-content": "tsx scripts/remove-adult-content.ts",
-    "remove-adult-content:yes": "tsx scripts/remove-adult-content.ts --yes"
+    "remove-adult-content:yes": "tsx scripts/remove-adult-content.ts --yes",
+    "list-subtle-adult-movies": "tsx scripts/list-subtle-adult-movies.ts",
+    "remove-adult-performers": "tsx scripts/remove-adult-performers.ts",
+    "remove-adult-performers:yes": "tsx scripts/remove-adult-performers.ts --yes"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",

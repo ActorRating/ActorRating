@@ -4,10 +4,24 @@
  * - Any movie with "sex", "voyeur", "massage", or "erotic" in the title
  * - Softcore/adult films: "adult" or "erotic" in genre (not in title, to avoid "Young Adult")
  * - Erotic thrillers categorized as adult entertainment (genre)
+ *
+ * Subtle keywords (seduc, tempt, affair, etc.) are for manual review only — not auto-deleted.
  */
 
 const TITLE_KEYWORDS = ['sex', 'voyeur', 'massage', 'erotic'] as const
 const GENRE_KEYWORDS = ['sex', 'voyeur', 'massage', 'adult', 'erotic'] as const
+
+/** Keywords that often indicate adult content; require manual review. Not used for auto-delete. */
+export const SUBTLE_TITLE_KEYWORDS = [
+  'seduc',
+  'tempt',
+  'affair',
+  'obsess',
+  'desire',
+  'forbidden',
+  'passion',
+  'mistress',
+] as const
 
 function normalizeForMatch(text: string | null | undefined): string {
   if (text == null || text === '') return ''
@@ -45,6 +59,14 @@ export function isAdultContentMovie(movie: {
   if (containsAny(movie.title, TITLE_KEYWORDS)) return true
   if (containsAny(movie.genre, GENRE_KEYWORDS)) return true
   return false
+}
+
+/**
+ * Returns true if the movie title contains any "subtle" adult keyword.
+ * Used for listing candidates for manual review; not for auto-delete or sitemap exclusion.
+ */
+export function hasSubtleAdultKeyword(title: string | null | undefined): boolean {
+  return containsAny(title, SUBTLE_TITLE_KEYWORDS)
 }
 
 export { TITLE_KEYWORDS, GENRE_KEYWORDS as ADULT_KEYWORDS }
