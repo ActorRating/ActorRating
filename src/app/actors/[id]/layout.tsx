@@ -27,9 +27,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = `How Good Is ${actor.name}? Performances Ranked & Rated`;
-  const description = `How good is ${actor.name} really? Rate his performances, see community scores, and discover his highest-rated and most debated roles.`;
+  const description = `How good is ${actor.name} really? Rate their performances, see community scores, and discover their highest-rated and most debated roles.`;
   const ogTitle = `How Good Is ${actor.name}? Performances Ranked`;
-  const ogDescription = `Rate ${actor.name}'s performances and see how the community ranks his most iconic and controversial roles.`;
+  const ogDescription = `Rate ${actor.name}'s performances and see how the community ranks their most iconic and controversial roles.`;
   const hasPerformances = actor._count.performances > 0;
 
   return {

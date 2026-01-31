@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { actor, movie } = data
   const yearPart = movie.year ? ` (${movie.year})` : ''
   const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
-  const description = `How do audiences really rate ${actor.name}'s acting in ${movie.title}? See community performance scores and decide for yourself.`
+  const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
   return {
     title,
