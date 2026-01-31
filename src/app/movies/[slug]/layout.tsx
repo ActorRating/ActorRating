@@ -28,8 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const yearPart = movie.year ? ` (${movie.year})` : "";
-  const title = `${movie.title}${yearPart} — Actor Performances Ranked & Rated`;
-  const description = `Rate the acting performances in ${movie.title}. See which actors stood out — and which didn’t.`;
+  const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
+  const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
 
   const hasPerformances = movie._count.performances > 0;
 

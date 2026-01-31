@@ -72,21 +72,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { actor, movie } = data
   const yearPart = movie.year ? ` (${movie.year})` : ''
-  const title = `${actor.name} in ${movie.title} — Performance Rating${yearPart}`
+  const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
+  const description = `How do audiences really rate ${actor.name}'s acting in ${movie.title}? See community performance scores and decide for yourself.`
 
   return {
     title,
-    description: `Critics and viewers rated ${actor.name}’s performance in ${movie.title}. Some call it iconic. Others disagree. See the score.`,
+    description,
     openGraph: {
       title,
-      description: `See the full performance breakdown and community rating. Rate it yourself in seconds.`,
+      description,
       type: 'website',
       url: `https://www.actorrating.com/rate/${movieSlug}/${actorSlug}`,
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: `See the full performance breakdown and community rating. Rate it yourself in seconds.`,
+      description,
     },
   }
 }
