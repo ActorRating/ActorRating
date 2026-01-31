@@ -26,8 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const title = `${actor.name} Performances Ranked — Ratings & Reviews`;
-  const description = `All ${actor.name} performances rated scene by scene. See their highest-rated roles and most controversial performances.`;
+  const title = `How Good Is ${actor.name}? Performances Ranked & Rated`;
+  const description = `How good is ${actor.name} really? Rate his performances, see community scores, and discover his highest-rated and most debated roles.`;
+  const ogTitle = `How Good Is ${actor.name}? Performances Ranked`;
+  const ogDescription = `Rate ${actor.name}'s performances and see how the community ranks his most iconic and controversial roles.`;
   const hasPerformances = actor._count.performances > 0;
 
   return {
@@ -35,14 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     ...(hasPerformances ? {} : { robots: "noindex, nofollow" }),
     openGraph: {
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
     },
   };
 }
