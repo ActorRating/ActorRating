@@ -2,7 +2,37 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function middleware(req: NextRequest) {
+  // Return 410 Gone for /actors/[id] when actor no longer exists
+  const actorMatch = req.nextUrl.pathname.match(/^\/actors\/([^/]+)\/?$/)
+  if (actorMatch) {
+    const [, id] = actorMatch
+    if (id && UUID_REGEX.test(id)) {
+      return new NextResponse(null, {
+        status: 410,
+        headers: { "Cache-Control": "public, max-age=86400" },
+      })
+    }
+    if (id) {
+      try {
+        const res = await fetch(
+          `${req.nextUrl.origin}/api/actors/${encodeURIComponent(id)}`,
+          { headers: { "Content-Type": "application/json" }, next: { revalidate: 0 } }
+        )
+        if (!res.ok) {
+          return new NextResponse(null, {
+            status: 410,
+            headers: { "Cache-Control": "public, max-age=86400" },
+          })
+        }
+      } catch {
+        // On fetch error, continue to page (let client handle)
+      }
+    }
+  }
+
   // Return 410 Gone for /rate/[movieSlug]/[actorSlug] when actor or movie no longer exists
   const rateMatch = req.nextUrl.pathname.match(/^\/rate\/([^/]+)\/([^/]+)\/?$/)
   if (rateMatch) {
@@ -85,6 +115,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/actors/:id*",
     "/rate/:movieSlug/:actorSlug",
     "/dashboard/:path*",
     "/auth/signin",
