@@ -75,9 +75,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
+  // Performance pages: noindex until ≥1 rating (indexing is a reward for engagement)
+  const ratingCount = await prisma.rating.count({
+    where: { actorId: actor.id, movieId: movie.id },
+  })
+  const robots = ratingCount === 0
+    ? { index: false as const, follow: true as const }
+    : undefined
+
   return {
     title,
     description,
+    robots,
     openGraph: {
       title,
       description,
@@ -127,42 +136,39 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD - Google-approved: Movie (with actor + aggregateRating), Person. No Review/PerformanceRole.
-  const jsonLd = data
-    ? {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Person",
-            name: data.actor.name,
-          },
-          {
-            "@type": "Movie",
-            name: data.movie.title,
-            ...(data.movie.year && { datePublished: data.movie.year.toString() }),
-            actor: {
+  // JSON-LD only when ≥1 rating (no schema for 0 ratings — indexing is a reward for engagement)
+  const jsonLd =
+    data && ratingCount >= 1 && avg10 != null
+      ? {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
               "@type": "Person",
               name: data.actor.name,
             },
-            ...(ratingCount > 0 && avg10 != null
-              ? {
-                  aggregateRating: {
-                    "@type": "AggregateRating",
-                    ratingValue: String(avg10),
-                    ratingCount: String(ratingCount),
-                    bestRating: 10,
-                    worstRating: 0,
-                  },
-                }
-              : {}),
-          },
-        ],
-      }
-    : null
+            {
+              "@type": "Movie",
+              name: data.movie.title,
+              ...(data.movie.year && { datePublished: data.movie.year.toString() }),
+              actor: {
+                "@type": "Person",
+                name: data.actor.name,
+              },
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: String(avg10),
+                ratingCount: String(ratingCount),
+                bestRating: 10,
+                worstRating: 0,
+              },
+            },
+          ],
+        }
+      : null
 
   return (
     <>
-      {/* JSON-LD Schema - Server-side only, always rendered for crawlers */}
+      {/* JSON-LD Schema — only for pages with ≥1 rating (eligible for rich snippets) */}
       {jsonLd && (
         <script
           type="application/ld+json"

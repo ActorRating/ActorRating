@@ -10,6 +10,12 @@ function sleep(ms: number) {
 }
 
 const ACTORS_TO_ADD = [
+  "Rowan Atkinson",
+  "Brooke Shields",
+  "Kristin Davis",
+  "Sarah Jessica Parker",
+  "Brigitte Nielsen",
+  "Chadwick Boseman",
   "Josh Brolin",
   "Chris Rock",
   "Ashton Kutcher",

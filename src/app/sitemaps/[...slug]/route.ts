@@ -99,17 +99,26 @@ function generateStaticSitemap(): NextResponse {
 }
 
 async function generateActorsSitemap(): Promise<NextResponse> {
-  // Only include actors that have at least one performance (rate page)
+  // Only include actors with ≥1 rated performance (indexing is a reward for engagement)
+  const actorIdsWithRatings = await prisma.rating.findMany({
+    select: { actorId: true },
+    distinct: ['actorId'],
+  })
+  const ids = actorIdsWithRatings.map((r) => r.actorId)
+  if (ids.length === 0) {
+    const xml = generateSitemapXml([])
+    return new NextResponse(xml, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    })
+  }
+
   const actors = await prisma.actor.findMany({
-    where: { performances: { some: {} } },
-    select: {
-      slug: true,
-      id: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
+    where: { id: { in: ids } },
+    select: { slug: true, id: true, updatedAt: true },
+    orderBy: { updatedAt: 'desc' },
   })
 
   const urls = actors.map((actor) => ({
@@ -129,9 +138,26 @@ async function generateActorsSitemap(): Promise<NextResponse> {
 }
 
 async function generateMoviesSitemap(): Promise<NextResponse> {
-  // Only include movies that have at least one performance (rate page)
+  // Only include movies with ≥3 rated performances (real comparison value)
+  const movieIdsWithEnoughRatings = await prisma.$queryRaw<Array<{ movieId: string }>>`
+    SELECT "movieId"
+    FROM "Rating"
+    GROUP BY "movieId"
+    HAVING COUNT(DISTINCT "actorId") >= 3
+  `
+  const ids = movieIdsWithEnoughRatings.map((r) => r.movieId)
+  if (ids.length === 0) {
+    const xml = generateSitemapXml([])
+    return new NextResponse(xml, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    })
+  }
+
   const movies = await prisma.movie.findMany({
-    where: { performances: { some: {} } },
+    where: { id: { in: ids } },
     select: {
       slug: true,
       id: true,
@@ -140,9 +166,7 @@ async function generateMoviesSitemap(): Promise<NextResponse> {
       genre: true,
       overview: true,
     },
-    orderBy: {
-      updatedAt: 'desc',
-    },
+    orderBy: { updatedAt: 'desc' },
   })
 
   const safeMovies = movies.filter(
@@ -172,54 +196,44 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
 
   const skip = (pageNum - 1) * MAX_URLS_PER_SITEMAP
 
-  // Get all performances with movie title/genre/overview for adult-content filter
-  const allPerformances = await prisma.performance.findMany({
-    select: {
-      actor: {
-        select: {
-          slug: true,
-          id: true,
-        },
-      },
-      movie: {
-        select: {
-          slug: true,
-          id: true,
-          title: true,
-          genre: true,
-          overview: true,
-        },
-      },
-      updatedAt: true,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
+  // Only include rate pages that have ≥1 rating (indexing is a reward for engagement)
+  const ratedPairs = await prisma.rating.groupBy({
+    by: ['actorId', 'movieId'],
+    _max: { updatedAt: true },
   })
 
-  // Deduplicate by actor-movie combination; exclude adult-content movies
-  const uniqueCombinations = new Map<string, {
-    url: string
-    lastModified: Date
-  }>()
+  const actorIds = [...new Set(ratedPairs.map((p) => p.actorId))]
+  const movieIds = [...new Set(ratedPairs.map((p) => p.movieId))]
 
-  for (const perf of allPerformances) {
-    if (isAdultContentMovie(perf.movie)) continue
-    const key = `${perf.actor.id}-${perf.movie.id}`
-    const url = `${BASE_URL}/rate/${perf.movie.slug || perf.movie.id}/${perf.actor.slug || perf.actor.id}`
-    
-    const existing = uniqueCombinations.get(key)
-    if (!existing || perf.updatedAt > existing.lastModified) {
-      uniqueCombinations.set(key, {
-        url,
-        lastModified: perf.updatedAt,
-      })
-    }
+  const [actors, movies] = await Promise.all([
+    prisma.actor.findMany({
+      where: { id: { in: actorIds } },
+      select: { id: true, slug: true },
+    }),
+    prisma.movie.findMany({
+      where: { id: { in: movieIds } },
+      select: { id: true, slug: true, title: true, genre: true, overview: true },
+    }),
+  ])
+
+  const actorMap = new Map(actors.map((a) => [a.id, a]))
+  const movieMap = new Map(movies.map((m) => [m.id, m]))
+
+  const uniqueCombinations: Array<{ url: string; lastModified: Date }> = []
+  for (const p of ratedPairs) {
+    const actor = actorMap.get(p.actorId)
+    const movie = movieMap.get(p.movieId)
+    if (!actor || !movie || !p._max.updatedAt) continue
+    if (isAdultContentMovie(movie)) continue
+    uniqueCombinations.push({
+      url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
+      lastModified: p._max.updatedAt,
+    })
   }
 
-  // Convert to array and paginate
-  const allUrls = Array.from(uniqueCombinations.values())
-  const paginatedUrls = allUrls.slice(skip, skip + MAX_URLS_PER_SITEMAP)
+  // Sort by lastModified desc for stable pagination
+  uniqueCombinations.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
+  const paginatedUrls = uniqueCombinations.slice(skip, skip + MAX_URLS_PER_SITEMAP)
 
   if (paginatedUrls.length === 0) {
     return new NextResponse('Sitemap page not found', { status: 404 })

@@ -14,9 +14,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const movie = await prisma.movie.findFirst({
     where: { OR: [{ slug }, { id: slug }] },
     select: {
+      id: true,
       title: true,
       year: true,
-      _count: { select: { performances: true } },
     },
   });
 
@@ -27,16 +27,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  // Index only if ≥3 rated performances (real comparison value)
+  const ratedPerformances = await prisma.rating.findMany({
+    where: { movieId: movie.id },
+    select: { actorId: true },
+    distinct: ["actorId"],
+  });
+  const ratedCount = ratedPerformances.length;
+  const robots = ratedCount >= 3 ? undefined : { index: false as const, follow: true as const };
+
   const yearPart = movie.year ? ` (${movie.year})` : "";
   const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
   const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
 
-  const hasPerformances = movie._count.performances > 0;
-
   return {
     title,
     description,
-    ...(hasPerformances ? {} : { robots: "noindex, nofollow" }),
+    robots,
     openGraph: {
       title,
       description,

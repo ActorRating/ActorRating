@@ -11,16 +11,15 @@ const MAX_URLS_PER_SITEMAP = 10000
  */
 export async function GET(request: NextRequest) {
   try {
-    // Count unique actor-movie combinations (distinct performances)
-    // We need to get this count to determine pagination
-    const uniquePerformanceCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    // Count rate pages with ≥1 rating (sitemap includes only these)
+    const ratedPairsCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
       SELECT COUNT(DISTINCT ("actorId" || '-' || "movieId"))::bigint as count
-      FROM "Performance"
+      FROM "Rating"
     `
-    const performanceCount = Number(uniquePerformanceCount[0]?.count || 0)
+    const performanceCount = Number(ratedPairsCount[0]?.count || 0)
 
-    // Calculate how many performance sitemaps we need
-    const performanceSitemapCount = Math.max(1, Math.ceil(performanceCount / MAX_URLS_PER_SITEMAP))
+    // Calculate how many performance sitemaps we need (0 if no rated pages)
+    const performanceSitemapCount = Math.ceil(performanceCount / MAX_URLS_PER_SITEMAP)
 
     // Build sitemap index entries
     const sitemapEntries: string[] = [
