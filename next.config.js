@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Prevent Supabase from being bundled into server chunks (avoids ENOENT vendor-chunks)
+  serverExternalPackages: ['@supabase/supabase-js', '@supabase/ssr'],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -8,8 +10,6 @@ const nextConfig = {
   },
   output: 'standalone',
   outputFileTracingRoot: __dirname,
-  // Performance optimizations
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],

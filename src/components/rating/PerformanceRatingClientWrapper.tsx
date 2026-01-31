@@ -539,12 +539,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Check if user has rated before
   const [hasRatedBefore, setHasRatedBefore] = useState<boolean | null>(null)
 
-  // Auto-demo first slider on first load
+  // Auto-demo first slider on first load (one-time per device via localStorage)
+  const RATING_DEMO_STORAGE_KEY = 'hasSeenRatingDemo'
   const [isDemoing, setIsDemoing] = useState(false)
   const [demoValue, setDemoValue] = useState(0)
   const hasDemoedRef = useRef(false)
   const firstSliderRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
+  const demoTimersRef = useRef<{
+    scroll: ReturnType<typeof setTimeout> | null
+    animationStart: ReturnType<typeof setTimeout> | null
+    hold: ReturnType<typeof setTimeout> | null
+  }>({ scroll: null, animationStart: null, hold: null })
+  const demoListenersRef = useRef<(() => void) | null>(null)
+  const demoScrollIgnoreUntilRef = useRef<number>(0)
 
   // Check if user has rated before
   useEffect(() => {
@@ -571,29 +579,78 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     checkUserRatings()
   }, [user])
 
-  // Auto-demo first slider after first load - buttery smooth animation
+  // Auto-demo first slider after first load - one-time per device, cancel on scroll/tap/drag
   useEffect(() => {
-    // Only run once on mount
     if (hasDemoedRef.current) return
-    // Skip demo if user has rated before
+    // Skip if user has already rated
     if (hasRatedBefore === true) {
       hasDemoedRef.current = true
       return
     }
-    // Wait until we know if user has rated before
+    // One-time only: skip if user has already seen the demo (any device, logged in or out)
+    if (typeof window !== 'undefined' && window.localStorage.getItem(RATING_DEMO_STORAGE_KEY) === 'true') {
+      hasDemoedRef.current = true
+      return
+    }
     if (hasRatedBefore === null) return
 
     hasDemoedRef.current = true
+    demoTimersRef.current = { scroll: null, animationStart: null, hold: null }
 
-    let scrollTimer: NodeJS.Timeout | null = null
-    let animationStartTimer: NodeJS.Timeout | null = null
-    let holdTimer: NodeJS.Timeout | null = null
+    const clearDemoTimers = () => {
+      if (demoTimersRef.current.scroll) {
+        clearTimeout(demoTimersRef.current.scroll)
+        demoTimersRef.current.scroll = null
+      }
+      if (demoTimersRef.current.animationStart) {
+        clearTimeout(demoTimersRef.current.animationStart)
+        demoTimersRef.current.animationStart = null
+      }
+      if (demoTimersRef.current.hold) {
+        clearTimeout(demoTimersRef.current.hold)
+        demoTimersRef.current.hold = null
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+    }
+
+    const markDemoSeen = () => {
+      try {
+        window.localStorage.setItem(RATING_DEMO_STORAGE_KEY, 'true')
+      } catch (_) {}
+    }
+
+    const onInterrupt = (e?: Event) => {
+      // Ignore scroll for 600ms after animation start so our own scrollIntoView doesn't cancel
+      if (e?.type === 'scroll' && typeof window !== 'undefined' && Date.now() < demoScrollIgnoreUntilRef.current) {
+        return
+      }
+      demoListenersRef.current?.()
+      demoListenersRef.current = null
+      clearDemoTimers()
+      setIsDemoing(false)
+      setDemoValue(0)
+      markDemoSeen()
+    }
+
+    const scrollHandler = (e: Event) => onInterrupt(e)
+    const touchHandler = () => onInterrupt()
+    const mouseHandler = () => onInterrupt()
+    const removeListeners = () => {
+      if (typeof window === 'undefined') return
+      window.removeEventListener('scroll', scrollHandler, true)
+      window.removeEventListener('touchstart', touchHandler, true)
+      window.removeEventListener('mousedown', mouseHandler, true)
+      demoListenersRef.current = null
+    }
+    demoListenersRef.current = removeListeners
 
     // Wait for next frame to ensure DOM is ready
     requestAnimationFrame(() => {
-      // Wait a tiny bit after first load, then scroll to first slider
-      scrollTimer = setTimeout(() => {
-        // Smooth scroll to first slider
+      // ~200ms after first load, scroll to first slider
+      demoTimersRef.current.scroll = setTimeout(() => {
         const scrollToSlider = () => {
           if (firstSliderRef.current) {
             firstSliderRef.current.scrollIntoView({
@@ -605,63 +662,50 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           }
           return false
         }
-
-        // Try to scroll, retry if ref not ready
         if (!scrollToSlider()) {
-          // Retry after a short delay if ref not ready
           setTimeout(scrollToSlider, 100)
         }
 
-        // Start demo animation after scroll starts
-        animationStartTimer = setTimeout(() => {
+        // ~200ms after scroll starts, start demo animation
+        demoTimersRef.current.animationStart = setTimeout(() => {
           setIsDemoing(true)
-
-          // Buttery smooth animation using requestAnimationFrame timestamp
-          const duration = 2000 // 2 seconds for smooth movement
-          const startValue = 0
-          const endValue = 75
-
-          // Easing function for buttery smooth motion (ease-in-out cubic)
-          const easeInOutCubic = (t: number): number => {
-            return t < 0.5
-              ? 4 * t * t * t
-              : 1 - Math.pow(-2 * t + 2, 3) / 2
+          // Ignore scroll for 600ms so our smooth scrollIntoView doesn't fire and cancel the demo
+          if (typeof window !== 'undefined') {
+            demoScrollIgnoreUntilRef.current = Date.now() + 600
+            window.addEventListener('scroll', scrollHandler, true)
+            window.addEventListener('touchstart', touchHandler, true)
+            window.addEventListener('mousedown', mouseHandler, true)
           }
 
+          const duration = 1000 // 1 second: 0 → 75
+          const startValue = 0
+          const endValue = 75
+          const easeInOutCubic = (t: number): number => {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+          }
           let startTime: number | null = null
 
           const animate = (timestamp: number) => {
-            if (startTime === null) {
-              startTime = timestamp
-            }
-
+            if (startTime === null) startTime = timestamp
             const elapsed = timestamp - startTime
             const progress = Math.min(elapsed / duration, 1)
             const eased = easeInOutCubic(progress)
             const currentValue = startValue + (endValue - startValue) * eased
-
-            // Round to 1 decimal place to avoid long decimals in display
             setDemoValue(Number(currentValue.toFixed(1)))
 
             if (progress < 1) {
               animationFrameRef.current = requestAnimationFrame(animate)
             } else {
-              // Hold at 75 for 150ms, then smoothly return to 0
-              holdTimer = setTimeout(() => {
+              demoTimersRef.current.hold = setTimeout(() => {
                 let returnStartTime: number | null = null
-                const returnDuration = 1500
+                const returnDuration = 1000
 
                 const returnAnimate = (timestamp: number) => {
-                  if (returnStartTime === null) {
-                    returnStartTime = timestamp
-                  }
-
+                  if (returnStartTime === null) returnStartTime = timestamp
                   const returnElapsed = timestamp - returnStartTime
                   const returnProgress = Math.min(returnElapsed / returnDuration, 1)
                   const returnEased = easeInOutCubic(returnProgress)
                   const returnValue = endValue - (endValue - startValue) * returnEased
-
-                  // Round to 1 decimal place to avoid long decimals in display
                   setDemoValue(Number(returnValue.toFixed(1)))
 
                   if (returnProgress < 1) {
@@ -669,28 +713,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   } else {
                     setIsDemoing(false)
                     setDemoValue(0)
+                    markDemoSeen()
+                    removeListeners()
                   }
                 }
                 animationFrameRef.current = requestAnimationFrame(returnAnimate)
-              }, 150) // Hold at 75 for 150ms
+              }, 100)
             }
           }
-
           animationFrameRef.current = requestAnimationFrame(animate)
-        }, 600) // Wait 600ms after scroll starts
-      }, 550) // Wait 550ms after first load
+        }, 200)
+      }, 200)
     })
 
     return () => {
-      if (scrollTimer) clearTimeout(scrollTimer)
-      if (animationStartTimer) clearTimeout(animationStartTimer)
-      if (holdTimer) clearTimeout(holdTimer)
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
+      removeListeners()
+      clearDemoTimers()
     }
-  }, [hasRatedBefore]) // Run when hasRatedBefore changes
+  }, [hasRatedBefore])
 
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(

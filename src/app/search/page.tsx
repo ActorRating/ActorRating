@@ -97,7 +97,7 @@ function SearchPageContent() {
             className="text-center mb-12"
           >
             <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 md:mb-10 lg:mb-12 text-white"
+              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-3 sm:mb-4 text-white"
               style={{ 
                 fontFamily: 'var(--font-cinzel), serif',
                 textShadow: '0 10px 40px rgba(0,0,0,0.7)',
@@ -113,7 +113,7 @@ function SearchPageContent() {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: "180px", opacity: 1 }}
               transition={{ duration: 2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="h-[2px] mx-auto mb-6 sm:mb-8 md:mb-10 lg:mb-12 relative"
+              className="h-[2px] mx-auto mb-3 sm:mb-4 relative"
             >
               <div 
                 className="h-full w-full"

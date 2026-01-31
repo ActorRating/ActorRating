@@ -300,15 +300,7 @@ export default function PerformancesPage() {
               className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
-              <span 
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-                }}
-              >
+              <span className="text-white">
                 Discover
               </span>
             </h1>
