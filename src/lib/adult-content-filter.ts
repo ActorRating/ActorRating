@@ -1,14 +1,14 @@
 /**
  * Category 1: Explicit Adult Content filter
  * Used to exclude from sitemaps and to remove from DB:
- * - Any movie with "sex", "voyeur", "massage", or "erotic" in the title
- * - Softcore/adult films: "adult" or "erotic" in genre (not in title, to avoid "Young Adult")
- * - Erotic thrillers categorized as adult entertainment (genre)
+ * - Title: sex, voyeur, massage, erotic, naked, adulterous, porn, xxx
+ * - Title: "adult" in title except when phrase is "young adult" (e.g. Young Adult genre)
+ * - Genre: sex, voyeur, massage, adult, erotic (softcore/adult categorization)
  *
  * Subtle keywords (seduc, tempt, affair, etc.) are for manual review only — not auto-deleted.
  */
 
-const TITLE_KEYWORDS = ['sex', 'voyeur', 'massage', 'erotic'] as const
+const TITLE_KEYWORDS = ['sex', 'voyeur', 'massage', 'erotic', 'naked', 'adulterous', 'porn', 'xxx'] as const
 const GENRE_KEYWORDS = ['sex', 'voyeur', 'massage', 'adult', 'erotic'] as const
 
 /** Keywords that often indicate adult content; require manual review. Not used for auto-delete. */
@@ -48,7 +48,8 @@ export function textContainsAdultKeyword(text: string | null | undefined): boole
 /**
  * Returns true if a movie should be treated as explicit adult content and
  * excluded from sitemaps / removed from indexed pages.
- * - Title: sex, voyeur, massage, erotic (no "adult" in title to avoid "Young Adult")
+ * - Title: sex, voyeur, massage, erotic, naked, adulterous, porn, xxx
+ * - Title: "adult" in title unless it's "young adult" (e.g. Young Adult genre)
  * - Genre: sex, voyeur, massage, adult, erotic (softcore/adult categorization)
  */
 export function isAdultContentMovie(movie: {
@@ -56,7 +57,10 @@ export function isAdultContentMovie(movie: {
   genre?: string | null
   overview?: string | null
 }): boolean {
+  const titleNorm = normalizeForMatch(movie.title)
   if (containsAny(movie.title, TITLE_KEYWORDS)) return true
+  // "adult" in title = adult content, except "young adult" (genre)
+  if (titleNorm.includes('adult') && !titleNorm.includes('young adult')) return true
   if (containsAny(movie.genre, GENRE_KEYWORDS)) return true
   return false
 }

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Placeholder/junk movie slugs: -YEAR-id (e.g. -2021-2s5jgim7, -2025-qmc9o4xt)
+const JUNK_MOVIE_SLUG_REGEX = /^-?\d{4}-[a-z0-9]+$/i
 
 export async function middleware(req: NextRequest) {
   // Return 410 Gone for /actors/[id] when actor no longer exists
@@ -38,6 +40,12 @@ export async function middleware(req: NextRequest) {
   if (movieMatch) {
     const [, slug] = movieMatch
     if (slug) {
+      if (JUNK_MOVIE_SLUG_REGEX.test(slug)) {
+        return new NextResponse(null, {
+          status: 410,
+          headers: { "Cache-Control": "public, max-age=86400" },
+        })
+      }
       try {
         const res = await fetch(
           `${req.nextUrl.origin}/api/movies/${encodeURIComponent(slug)}`,
