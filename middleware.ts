@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { isJunkMovieSlug } from "@/lib/junk-movie-slugs"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Placeholder/junk movie slugs: -YEAR-id (e.g. -2021-2s5jgim7, -2025-qmc9o4xt)
@@ -40,7 +41,7 @@ export async function middleware(req: NextRequest) {
   if (movieMatch) {
     const [, slug] = movieMatch
     if (slug) {
-      if (JUNK_MOVIE_SLUG_REGEX.test(slug)) {
+      if (JUNK_MOVIE_SLUG_REGEX.test(slug) || isJunkMovieSlug(slug)) {
         return new NextResponse(null, {
           status: 410,
           headers: { "Cache-Control": "public, max-age=86400" },
