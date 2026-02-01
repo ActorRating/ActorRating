@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import supabaseServer from "@/lib/supabaseServer"
+import { isAdultContentMovie } from "@/lib/adult-content-filter"
 
 export async function GET(
   request: NextRequest,
@@ -37,6 +38,11 @@ export async function GET(
 
     if (movieError) {
       console.error("❌ Movie fetch error:", movieError)
+      return NextResponse.json({ error: "Movie not found" }, { status: 410 })
+    }
+
+    // Return 410 for adult content (removed from sitemap / not indexed)
+    if (isAdultContentMovie({ title: movie.title, genre: movie.genre ?? null, overview: movie.overview ?? null })) {
       return NextResponse.json({ error: "Movie not found" }, { status: 410 })
     }
 

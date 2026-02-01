@@ -33,6 +33,28 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // Return 410 Gone for /movies/[slug] when movie no longer exists or is adult (removed from sitemap)
+  const movieMatch = req.nextUrl.pathname.match(/^\/movies\/([^/]+)\/?$/)
+  if (movieMatch) {
+    const [, slug] = movieMatch
+    if (slug) {
+      try {
+        const res = await fetch(
+          `${req.nextUrl.origin}/api/movies/${encodeURIComponent(slug)}`,
+          { headers: { "Content-Type": "application/json" }, next: { revalidate: 0 } }
+        )
+        if (!res.ok) {
+          return new NextResponse(null, {
+            status: 410,
+            headers: { "Cache-Control": "public, max-age=86400" },
+          })
+        }
+      } catch {
+        // On fetch error, continue to page (let client handle)
+      }
+    }
+  }
+
   // Return 410 Gone for /rate/[movieSlug]/[actorSlug] when actor or movie no longer exists
   const rateMatch = req.nextUrl.pathname.match(/^\/rate\/([^/]+)\/([^/]+)\/?$/)
   if (rateMatch) {
@@ -116,6 +138,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/actors/:id*",
+    "/movies/:slug*",
     "/rate/:movieSlug/:actorSlug",
     "/dashboard/:path*",
     "/auth/signin",
