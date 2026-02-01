@@ -138,12 +138,12 @@ async function generateActorsSitemap(): Promise<NextResponse> {
 }
 
 async function generateMoviesSitemap(): Promise<NextResponse> {
-  // Only include movies with ≥3 rated performances (real comparison value)
+  // Only include movies with ≥1 rated performance (engagement signal)
   const movieIdsWithEnoughRatings = await prisma.$queryRaw<Array<{ movieId: string }>>`
     SELECT "movieId"
     FROM "Rating"
     GROUP BY "movieId"
-    HAVING COUNT(DISTINCT "actorId") >= 3
+    HAVING COUNT(DISTINCT "actorId") >= 1
   `
   const ids = movieIdsWithEnoughRatings.map((r) => r.movieId)
   if (ids.length === 0) {

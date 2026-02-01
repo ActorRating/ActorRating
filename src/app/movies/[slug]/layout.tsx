@@ -27,14 +27,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Index only if ≥3 rated performances (real comparison value)
+  // Index only if ≥1 rated performance (engagement signal)
   const ratedPerformances = await prisma.rating.findMany({
     where: { movieId: movie.id },
     select: { actorId: true },
     distinct: ["actorId"],
   });
   const ratedCount = ratedPerformances.length;
-  const robots = ratedCount >= 3 ? undefined : { index: false as const, follow: true as const };
+  const robots = ratedCount >= 1 ? undefined : { index: false as const, follow: true as const };
 
   const yearPart = movie.year ? ` (${movie.year})` : "";
   const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
