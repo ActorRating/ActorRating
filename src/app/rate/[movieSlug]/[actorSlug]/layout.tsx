@@ -136,7 +136,11 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD only when ≥1 rating (no schema for 0 ratings — indexing is a reward for engagement)
+  // JSON-LD only when ≥1 rating (no schema for 0 ratings — indexing is a reward for engagement).
+  // Google rich results: use Movie + aggregateRating ONLY. Do NOT use Review/itemReviewed — that
+  // makes Google interpret "you rated a review" and triggers the warning. Person is optional, no rating on Person.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.actorrating.com"
+  const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${movieSlug}/${actorSlug}`
   const jsonLd =
     data && ratingCount >= 1 && avg10 != null
       ? {
@@ -148,6 +152,7 @@ export default async function RateLayout({ params, children }: Props) {
             },
             {
               "@type": "Movie",
+              "@id": pageUrl,
               name: data.movie.title,
               ...(data.movie.year && { datePublished: data.movie.year.toString() }),
               actor: {

@@ -47,25 +47,35 @@ Added logged-out, read-only, crawlable content to performance rating pages for i
 
 ### 3. JSON-LD Structured Data (Server-Side Only)
 
-**IMPORTANT**: JSON-LD is now in `layout.tsx` (server component) for guaranteed SSR.
+**IMPORTANT**: JSON-LD is in `layout.tsx` (server component) for guaranteed SSR.
 
-Added minimal schema for performance rating pages:
+**Google rich results**: Use **Movie + aggregateRating** only. Do **not** use `Review` or `itemReviewed` — that makes Google interpret “you rated a review” and triggers the warning. Person is optional; do not attach ratings to Person (Google does not show stars for Person).
+
+Schema for performance rating pages (only when ≥1 rating):
 
 ```json
 {
-  "@type": "WebPage",
-  "mainEntity": {
-    "@type": "Review",
-    "itemReviewed": {
-      "@type": "PerformanceRole",
-      "actor": { "@type": "Person", "name": "..." },
-      "workFeatured": { "@type": "Movie", "name": "..." }
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "name": "Michael B. Jordan"
     },
-    "reviewRating": {
-      "@type": "Rating",
-      "ratingValue": "0-100"
+    {
+      "@type": "Movie",
+      "@id": "https://www.actorrating.com/rate/sinners-2025/michael-b-jordan",
+      "name": "Sinners",
+      "datePublished": "2025",
+      "actor": { "@type": "Person", "name": "Michael B. Jordan" },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "8.4",
+        "ratingCount": "127",
+        "bestRating": 10,
+        "worstRating": 0
+      }
     }
-  }
+  ]
 }
 ```
 
@@ -176,13 +186,27 @@ Already available in Tailwind CSS (used throughout the codebase):
 When a crawler or logged-out user visits `/rate/the-wolf-of-wall-street-2013/leonardo-dicaprio`, the HTML contains:
 
 ```html
-<!-- JSON-LD (always in SSR HTML) -->
+<!-- JSON-LD (only when ≥1 rating; Movie + aggregateRating, no Review) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Rate Leonardo DiCaprio's Performance in The Wolf of Wall Street",
-  ...
+  "@graph": [
+    { "@type": "Person", "name": "Leonardo DiCaprio" },
+    {
+      "@type": "Movie",
+      "@id": "https://www.actorrating.com/rate/the-wolf-of-wall-street-2013/leonardo-dicaprio",
+      "name": "The Wolf of Wall Street",
+      "datePublished": "2013",
+      "actor": { "@type": "Person", "name": "Leonardo DiCaprio" },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "8.4",
+        "ratingCount": "127",
+        "bestRating": 10,
+        "worstRating": 0
+      }
+    }
+  ]
 }
 </script>
 

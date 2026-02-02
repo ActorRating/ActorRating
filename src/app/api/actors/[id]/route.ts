@@ -11,16 +11,16 @@ export async function GET(
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const minimal = searchParams.get('minimal') === 'true'
-    
+
     console.log("🎭 Fetching actor with ID or slug:", id, minimal ? "(minimal)" : "")
-    
+
     // Try to fetch by slug first, then fallback to ID
     let { data: actor, error: actorError } = await supabaseServer
       .from('Actor')
       .select('*')
       .eq('slug', id)
       .single()
-    
+
     // If not found by slug, try by ID
     if (actorError || !actor) {
       const { data: actorById, error: idError } = await supabaseServer
@@ -28,7 +28,7 @@ export async function GET(
         .select('*')
         .eq('id', id)
         .single()
-      
+
       if (idError || !actorById) {
         console.error("❌ Actor fetch error:", idError || actorError)
         return NextResponse.json({ error: "Actor not found" }, { status: 410 })
@@ -43,7 +43,7 @@ export async function GET(
     }
 
     console.log("🎭 Actor found:", actor.name)
-    
+
     // If minimal mode, return early with just basic info (much faster)
     if (minimal) {
       const res = NextResponse.json({
@@ -107,7 +107,7 @@ export async function GET(
     // Also create a map to aggregate ratings by movie (for career score calculation)
     const ratingMap = new Map<string, any>()
     const ratingsByMovie = new Map<string, any[]>()
-    
+
     if (ratings) {
       ratings.forEach(rating => {
         // Match by actorId:movieId (not userId:movieId) since ratings are per actor-movie pair
@@ -116,7 +116,7 @@ export async function GET(
           ratingsByMovie.set(key, [])
         }
         ratingsByMovie.get(key)!.push(rating)
-        
+
         // For matching to specific performances, use movieId only
         // (since multiple users can rate the same actor-movie pair)
         if (!ratingMap.has(key)) {
@@ -128,13 +128,13 @@ export async function GET(
 
     // Get all unique movies that have ratings
     const ratedMovieIds = new Set(ratings?.map(r => r.movieId) || [])
-    
+
     // Fetch movie details for rated movies that might not have performances
     const { data: ratedMovies } = await supabaseServer
       .from('Movie')
       .select('id, title, year, director, slug')
       .in('id', Array.from(ratedMovieIds))
-    
+
     // Create a map of existing performances by movieId
     const performanceMap = new Map<string, any>()
     if (performances) {
@@ -142,12 +142,12 @@ export async function GET(
         performanceMap.set(perf.movieId, perf)
       })
     }
-    
+
     // Combine existing performances with their rating data
     const enrichedPerformances = (performances || []).map(performance => {
       const key = performance.movieId
       const rating = ratingMap.get(key)
-      
+
       return {
         ...performance,
         roleName: rating?.roleName || null,
@@ -165,7 +165,7 @@ export async function GET(
         }
       }
     })
-    
+
     // Add performances for movies that have ratings but no performance entry
     if (ratedMovies) {
       ratedMovies.forEach(movie => {
@@ -182,7 +182,7 @@ export async function GET(
               screenPresence: Math.round(movieRatings.reduce((sum, r) => sum + (r.screenPresence || 0), 0) / movieRatings.length),
               chemistryInteraction: Math.round(movieRatings.reduce((sum, r) => sum + (r.chemistryInteraction || 0), 0) / movieRatings.length),
             }
-            
+
             // Synthetic performance entry: match shape expected by frontend (movie/actor as single objects)
             const syntheticPerf = {
               id: `rating-${movie.id}`,
@@ -220,7 +220,7 @@ export async function GET(
     }
 
     console.log("🎭 Returning actor data:", actorData.name, "with", (performances || []).length, "performances")
-    
+
     return NextResponse.json(actorData)
   } catch (error) {
     console.error("❌ Error fetching actor:", error)
