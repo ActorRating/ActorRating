@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import RatePageClient from './RatePageClient'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // 1 hour ISR
 
 export default async function RatePage({
   params,
