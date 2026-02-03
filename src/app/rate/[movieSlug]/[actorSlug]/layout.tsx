@@ -2,7 +2,8 @@ import { Metadata } from "next"
 import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
 
-// Cache rate page metadata and aggregates for 5 min
+// Override dynamic inference from root (SessionProvider) so ISR can cache
+export const dynamic = 'force-static'
 export const revalidate = 300
 
 type Props = {

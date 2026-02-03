@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import RatePageClient from './RatePageClient'
 
+export const dynamic = 'force-static' // override dynamic inference from root (SessionProvider)
 export const revalidate = 3600 // 1 hour ISR
 
 export default async function RatePage({
