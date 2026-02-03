@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { isAdultContentMovie } from '@/lib/adult-content-filter'
+import { isAdultContentMovie, isAdultContentSlug } from '@/lib/adult-content-filter'
+import { isJunkMovieSlug, isAllowedMovieSlug } from '@/lib/junk-movie-slugs'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
 const MAX_URLS_PER_SITEMAP = 10000
@@ -169,9 +170,14 @@ async function generateMoviesSitemap(): Promise<NextResponse> {
     orderBy: { updatedAt: 'desc' },
   })
 
-  const safeMovies = movies.filter(
-    (m) => !isAdultContentMovie({ title: m.title, genre: m.genre, overview: m.overview })
-  )
+  const safeMovies = movies.filter((m) => {
+    const slug = m.slug ?? m.id
+    if (isAllowedMovieSlug(slug)) return true
+    if (isJunkMovieSlug(slug)) return false
+    if (isAdultContentSlug(slug)) return false
+    if (isAdultContentMovie({ title: m.title, genre: m.genre, overview: m.overview })) return false
+    return true
+  })
 
   const urls = safeMovies.map((movie) => ({
     url: `${BASE_URL}/movies/${movie.slug || movie.id}`,
@@ -224,7 +230,13 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
     const actor = actorMap.get(p.actorId)
     const movie = movieMap.get(p.movieId)
     if (!actor || !movie || !p._max.updatedAt) continue
-    if (isAdultContentMovie(movie)) continue
+    const movieSlug = movie.slug ?? movie.id
+    if (isAllowedMovieSlug(movieSlug)) {
+      uniqueCombinations.push({ url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`, lastModified: p._max.updatedAt })
+      continue
+    }
+    if (isJunkMovieSlug(movieSlug) || isAdultContentSlug(movieSlug)) continue
+    if (isAdultContentMovie({ title: movie.title, genre: movie.genre, overview: movie.overview })) continue
     uniqueCombinations.push({
       url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
       lastModified: p._max.updatedAt,

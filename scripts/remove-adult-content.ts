@@ -1,7 +1,10 @@
 /**
- * Remove Category 1: Explicit Adult Content from the database.
- * - Movies with "sex", "voyeur", "massage", "adult", or "erotic" in title (or genre/overview)
- * Deleting a Movie cascades to Performance and Rating, so those rate pages disappear from sitemaps.
+ * Remove junk and adult content from the database.
+ * Deletes movies that match any of:
+ * - Junk slug blocklist (JUNK_MOVIE_SLUGS)
+ * - Slug-based adult detection (e.g. step-mom, penetrated, dirty-wife)
+ * - Title/genre adult keywords (sex, voyeur, massage, erotic, porn, etc.)
+ * Deleting a Movie cascades to Performance and Rating.
  *
  * Usage:
  *   npx ts-node scripts/remove-adult-content.ts         # dry run (report only)
@@ -9,19 +12,36 @@
  */
 
 import { prisma } from "../src/lib/prisma";
-import { isAdultContentMovie } from "../src/lib/adult-content-filter";
+import { isAdultContentMovie, isAdultContentSlug } from "../src/lib/adult-content-filter";
+import { isJunkMovieSlug } from "../src/lib/junk-movie-slugs";
+
+/** Slugs to never delete (legitimate films that match keyword filters). */
+const EXCLUDE_SLUGS = new Set(["the-naked-gun-2025"]);
+
+function shouldRemove(
+  slug: string | null,
+  title: string,
+  genre: string | null,
+  overview: string | null
+): boolean {
+  const slugOrId = slug ?? "";
+  if (isJunkMovieSlug(slugOrId)) return true;
+  if (isAdultContentSlug(slugOrId)) return true;
+  if (isAdultContentMovie({ title, genre: genre ?? undefined, overview: overview ?? undefined })) return true;
+  return false;
+}
 
 async function main() {
   const doDelete = process.argv.includes("--yes");
-  console.log("Category 1: Explicit Adult Content removal");
+  console.log("Junk & Adult Content removal (blocklist + slug + title/genre)");
   console.log(doDelete ? "Mode: DELETE (--yes)" : "Mode: DRY RUN (use --yes to delete)\n");
 
-  // Load all movies with genre and overview for filter
   const allMovies = await prisma.movie.findMany({
     select: {
       id: true,
       title: true,
       year: true,
+      slug: true,
       genre: true,
       overview: true,
       _count: {
@@ -30,25 +50,23 @@ async function main() {
     },
   });
 
-  const adultMovies = allMovies.filter((m) =>
-    isAdultContentMovie({
-      title: m.title,
-      genre: m.genre ?? undefined,
-      overview: m.overview ?? undefined,
-    })
+  const toRemove = allMovies.filter((m) =>
+    shouldRemove(m.slug ?? null, m.title, m.genre ?? null, m.overview ?? null)
   );
+  const adultMovies = toRemove.filter((m) => !EXCLUDE_SLUGS.has((m.slug ?? "").toLowerCase()));
 
   if (adultMovies.length === 0) {
-    console.log("No movies matching adult keywords (sex, voyeur, massage, adult, erotic) found.");
+    console.log("No movies matching junk/adult criteria found.");
     return;
   }
 
   const totalPerformances = adultMovies.reduce((s, m) => s + m._count.performances, 0);
   const totalRatings = adultMovies.reduce((s, m) => s + m._count.ratings, 0);
 
-  console.log(`Found ${adultMovies.length} movie(s) matching adult content criteria:`);
+  console.log(`Found ${adultMovies.length} movie(s) matching junk/adult criteria:`);
   adultMovies.forEach((m, i) => {
-    console.log(`  ${i + 1}. ${m.title} (${m.year}) — ${m._count.performances} performances, ${m._count.ratings} ratings`);
+    const slugPart = m.slug ? ` [${m.slug}]` : "";
+    console.log(`  ${i + 1}. ${m.title} (${m.year})${slugPart} — ${m._count.performances} performances, ${m._count.ratings} ratings`);
   });
   console.log(`\nImpact: ${totalPerformances} performances and ${totalRatings} ratings would be removed (cascade).`);
 

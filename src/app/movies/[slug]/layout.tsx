@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter";
+import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs";
 
 // Cache movie metadata for 5 min — ratings don't change every second
 export const revalidate = 300;
@@ -9,6 +12,19 @@ type Props = {
   children: React.ReactNode;
 };
 
+function isBlockedMovie(
+  slug: string | null,
+  title: string,
+  genre: string | null,
+  overview: string | null
+): boolean {
+  if (slug && isAllowedMovieSlug(slug)) return false;
+  if (slug && isJunkMovieSlug(slug)) return true;
+  if (slug && isAdultContentSlug(slug)) return true;
+  if (isAdultContentMovie({ title, genre, overview })) return true;
+  return false;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const movie = await prisma.movie.findFirst({
@@ -17,6 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       id: true,
       title: true,
       year: true,
+      slug: true,
+      genre: true,
+      overview: true,
     },
   });
 
@@ -25,6 +44,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: "Movie Not Found - ActorRating",
       description: "The requested movie could not be found.",
     };
+  }
+
+  // Junk/adult content: treat as not found (410-style handling at page level)
+  if (isBlockedMovie(movie.slug ?? null, movie.title, movie.genre ?? null, movie.overview ?? null)) {
+    notFound();
   }
 
   // Index only if ≥1 rated performance (engagement signal)

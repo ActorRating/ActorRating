@@ -73,4 +73,34 @@ export function hasSubtleAdultKeyword(title: string | null | undefined): boolean
   return containsAny(title, SUBTLE_TITLE_KEYWORDS)
 }
 
+/**
+ * Slug substrings that strongly indicate adult/junk content.
+ * Used to return 410 for movie URLs even when title/genre don't match keyword lists.
+ */
+const SLUG_ADULT_SUBSTRINGS = [
+  'step-mom',
+  'penetrated',
+  'dirty-wife',
+  'lesbian-in-mourning',
+  'swapping-invited',
+  'kiss-room',
+  'lady-next-door',
+  'nure-niyou',
+  'iro-onna',
+  'hide-the-food-but-not-the-lady',
+  'between-the-lips',
+  'invited-male-and-female',
+  'shameful-mother-and-widow',
+] as const
+
+/**
+ * Returns true if the slug suggests adult/junk content (e.g. euphemistic URLs).
+ * Use in addition to isAdultContentMovie() when serving movie pages.
+ */
+export function isAdultContentSlug(slug: string | null | undefined): boolean {
+  if (slug == null || slug === '') return false
+  const normalized = slug.toLowerCase().trim()
+  return SLUG_ADULT_SUBSTRINGS.some((sub) => normalized.includes(sub))
+}
+
 export { TITLE_KEYWORDS, GENRE_KEYWORDS as ADULT_KEYWORDS }

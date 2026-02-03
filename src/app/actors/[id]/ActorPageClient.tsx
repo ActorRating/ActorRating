@@ -634,7 +634,7 @@ export default function ActorPageClient() {
               {actor.name}
             </h1>
 
-            {/* Primary CTA - Rate a Performance */}
+            {/* Primary CTA - Rate a Performance (scrolls to performance cards) */}
             {performances.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -642,48 +642,20 @@ export default function ActorPageClient() {
                 transition={{ duration: 0.6, delay: 0.6 }}
                 className="mb-8 sm:mb-10"
               >
-                <Link 
-                  href={
-                    communityStats.highestRated 
-                      ? getRateUrl(
-                          { 
-                            id: communityStats.highestRated.actor.id, 
-                            name: communityStats.highestRated.actor.name, 
-                            slug: communityStats.highestRated.actor.slug || null 
-                          },
-                          { 
-                            id: communityStats.highestRated.movie.id, 
-                            title: communityStats.highestRated.movie.title, 
-                            year: communityStats.highestRated.movie.year, 
-                            slug: communityStats.highestRated.movie.slug || null 
-                          }
-                        )
-                      : getRateUrl(
-                          { 
-                            id: performances[0].actor.id, 
-                            name: performances[0].actor.name, 
-                            slug: performances[0].actor.slug || null 
-                          },
-                          { 
-                            id: performances[0].movie.id, 
-                            title: performances[0].movie.title, 
-                            year: performances[0].movie.year, 
-                            slug: performances[0].movie.slug || null 
-                          }
-                        )
-                  }
+                <button
+                  type="button"
+                  onClick={() => {
+                    (document.getElementById('first-performance-card') ?? document.getElementById('performances-section'))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }}
+                  className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                    color: 'black'
+                  }}
                 >
-                  <button
-                    className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      color: 'black'
-                    }}
-                  >
-                    <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Rate A Performance
-                  </button>
-                </Link>
+                  <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
+                  Rate A Performance
+                </button>
               </motion.div>
             )}
 
@@ -1140,7 +1112,7 @@ export default function ActorPageClient() {
         })()}
 
       {/* Performances Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div id="performances-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {performances.length > 0 ? (
           <>
             <motion.div
@@ -1320,6 +1292,7 @@ export default function ActorPageClient() {
                     transition={{ duration: 0.4, delay: 0.3 + index * 0.05, ease: [0.22, 1, 0.36, 1] }}
                     style={{ willChange: 'transform, opacity' }}
                     className="group relative"
+                    id={index === 0 ? 'first-performance-card' : undefined}
                   >
                     {/* Premium Card - Clean & Cinematic - Matching performances page */}
                     {/* Highest Rated Card - Subtle distinction */}
@@ -1541,60 +1514,6 @@ export default function ActorPageClient() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* Floating Mobile CTA */}
-      {performances.length > 0 && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 1.0 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden"
-        >
-          <Link 
-            href={
-              communityStats.highestRated 
-                ? getRateUrl(
-                    { 
-                      id: communityStats.highestRated.actor.id, 
-                      name: communityStats.highestRated.actor.name, 
-                      slug: communityStats.highestRated.actor.slug || null 
-                    },
-                    { 
-                      id: communityStats.highestRated.movie.id, 
-                      title: communityStats.highestRated.movie.title, 
-                      year: communityStats.highestRated.movie.year, 
-                      slug: communityStats.highestRated.movie.slug || null 
-                    }
-                  )
-                : getRateUrl(
-                    { 
-                      id: performances[0].actor.id, 
-                      name: performances[0].actor.name, 
-                      slug: performances[0].actor.slug || null 
-                    },
-                    { 
-                      id: performances[0].movie.id, 
-                      title: performances[0].movie.title, 
-                      year: performances[0].movie.year, 
-                      slug: performances[0].movie.slug || null 
-                    }
-                  )
-            }
-          >
-            <button
-              className="px-6 py-4 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 shadow-2xl whitespace-nowrap min-h-[48px] touch-manipulation"
-              style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                color: 'black',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(255, 215, 0, 0.3)',
-              }}
-            >
-              <FaStar className="w-4 h-4" />
-              <span>Rate</span>
-            </button>
-          </Link>
         </motion.div>
       )}
 
