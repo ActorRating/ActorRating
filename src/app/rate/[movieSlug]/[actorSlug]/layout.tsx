@@ -33,14 +33,16 @@ async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     
     const [actorResponse, movieResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/actors/${actorSlug}`, { 
+      fetch(`${baseUrl}/api/actors/${actorSlug}`, {
         next: { revalidate: 300 },
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit', // ISR: never send cookies — keeps page static
       }),
-      fetch(`${baseUrl}/api/movies/${movieSlug}`, { 
+      fetch(`${baseUrl}/api/movies/${movieSlug}`, {
         next: { revalidate: 300 },
-        headers: { 'Content-Type': 'application/json' }
-      })
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit', // ISR: never send cookies — keeps page static
+      }),
     ])
 
     if (!actorResponse.ok || !movieResponse.ok) {
