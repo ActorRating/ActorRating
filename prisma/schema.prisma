@@ -40,45 +40,60 @@ model Actor {
 }
 
 model Movie {
-  id           String        @id @default(cuid())
-  title        String
-  slug         String?       @unique
-  year         Int
-  director     String?
-  genre        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  overview     String?
-  tmdbId       Int?          @unique
-  performances Performance[]
-  ratings      Rating[]
+  id               String        @id @default(cuid())
+  title            String
+  slug             String?       @unique
+  year             Int
+  director         String?
+  genre            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  overview         String?
+  tmdbId           Int?          @unique
+  /// Set when full cast ingestion last ran for this movie (cosmetic proof).
+  castIngestedAt   DateTime?
+  performances     Performance[]
+  ratings          Rating[]
 
   @@unique([title, year])
   @@index([title])
   @@index([slug])
 }
 
+/// Tier for a performance based on billing order and cast size (ensemble vs non-ensemble).
+/// Used to decide which actors are surfaced, indexable, and eligible for CTAs.
+enum PerformanceTier {
+  LEAD
+  SUPPORTING
+  MINOR
+}
+
 model Performance {
-  id                     String   @id @default(cuid())
+  id                     String          @id @default(cuid())
   userId                 String
   actorId                String
   movieId                String
-  emotionalRangeDepth    Int      @db.SmallInt
-  characterBelievability Int      @db.SmallInt
-  technicalSkill         Int      @db.SmallInt
-  screenPresence         Int      @db.SmallInt
-  chemistryInteraction   Int      @db.SmallInt
+  /// 0-based billing order in the movie's cast (from TMDB credits order).
+  order                  Int?
+  /// Computed from order + cast size: ensemble films surface more leads/supporting.
+  tier                   PerformanceTier @default(MINOR)
+  emotionalRangeDepth    Int             @db.SmallInt
+  characterBelievability Int             @db.SmallInt
+  technicalSkill         Int             @db.SmallInt
+  screenPresence         Int             @db.SmallInt
+  chemistryInteraction   Int             @db.SmallInt
   comment                String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
   character              String?
-  actor                  Actor    @relation(fields: [actorId], references: [id], onDelete: Cascade)
-  movie                  Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  actor                  Actor           @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  movie                  Movie           @relation(fields: [movieId], references: [id], onDelete: Cascade)
 
   @@unique([userId, actorId, movieId])
   @@index([actorId])
   @@index([movieId])
   @@index([actorId, movieId])
+  @@index([tier])
 }
 
 model Rating {

@@ -1,23 +1,34 @@
 "use client"
 
-import Link from 'next/link'
+import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { useUser } from '@/components/providers/SessionProvider'
-import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Logo } from '../ui/Logo'
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
 import { User, Home, Search } from 'lucide-react'
+
+const KEY_ROUTES = ['/dashboard', '/search', '/profile', '/rate'] as const
 
 export function SignedInNavbar() {
   const user = useUser()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Prefetch key routes on mount so first click feels instant
+  useEffect(() => {
+    if (!mounted || !user) return
+    KEY_ROUTES.forEach((route) => {
+      try {
+        if (typeof router.prefetch === 'function') router.prefetch(route)
+      } catch {}
+    })
+  }, [mounted, user, router])
 
   if (!mounted) {
     return (
@@ -53,7 +64,7 @@ export function SignedInNavbar() {
 
           {/* Navigation Links */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <Link href="/dashboard" className="group">
+            <PrefetchLink href="/dashboard" className="group">
               <button
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 
@@ -85,8 +96,8 @@ export function SignedInNavbar() {
                 </div>
                 <Home className={`w-4 h-4 relative z-10 transition-colors duration-200 ${pathname === "/dashboard" ? 'text-[#FFD700]' : 'text-gray-400 group-hover:text-[#FFD700]'}`} />
               </button>
-            </Link>
-            <Link href="/search" className="group">
+            </PrefetchLink>
+            <PrefetchLink href="/search" className="group">
               <button
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 
@@ -118,10 +129,10 @@ export function SignedInNavbar() {
                 </div>
                 <Search className={`w-4 h-4 relative z-10 transition-colors duration-200 ${pathname === "/search" ? 'text-[#FFD700]' : 'text-gray-400 group-hover:text-[#FFD700]'}`} />
               </button>
-            </Link>
+            </PrefetchLink>
 
             {/* Profile button */}
-            <Link href="/profile" className="group">
+            <PrefetchLink href="/profile" className="group">
               <button
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 
@@ -155,7 +166,7 @@ export function SignedInNavbar() {
                   <span className={`text-sm transition-colors duration-200 ${pathname === "/profile" ? 'text-[#FFD700]' : 'text-gray-300 group-hover:text-[#FFD700]'}`}>Profile</span>
                 </span>
               </button>
-            </Link>
+            </PrefetchLink>
           </div>
         </div>
       </div>

@@ -1,13 +1,12 @@
 import { prisma } from "../src/lib/prisma"
-import { getMovieCredits, searchMovie } from "../src/lib/tmdb"
+import { getMovieCreditsForIngestion, searchMovie } from "../src/lib/tmdb"
+import { syncMovieCast } from "../src/lib/movie-ingestion"
 
 type SeedStats = {
   moviesProcessed: number
   moviesSkippedNoTmdb: number
   actorsCreated: number
-  performancesCreated: number
-  performancesExisting: number
-  performancesSkippedDuplicates: number
+  performancesUpserted: number
   moviesSkippedTmdb404: number
   tmdbIdSet: number
 }
@@ -20,17 +19,10 @@ async function getSeedUserId(): Promise<string> {
   const created = await prisma.user.create({
     data: {
       email: seedEmail,
-      // Password is required by schema; empty string is used for OAuth users elsewhere
       password: "",
     },
   })
   return created.id
-}
-
-async function ensureActorByName(name: string) {
-  const existing = await prisma.actor.findUnique({ where: { name } })
-  if (existing) return existing
-  return prisma.actor.create({ data: { name } })
 }
 
 async function main() {
@@ -42,9 +34,7 @@ async function main() {
     moviesProcessed: 0,
     moviesSkippedNoTmdb: 0,
     actorsCreated: 0,
-    performancesCreated: 0,
-    performancesExisting: 0,
-    performancesSkippedDuplicates: 0,
+    performancesUpserted: 0,
     moviesSkippedTmdb404: 0,
     tmdbIdSet: 0,
   }
@@ -107,17 +97,16 @@ async function main() {
       continue
     }
 
+    // Rate-limited full cast fetch (no parallelization)
     let credits
     try {
-      credits = await getMovieCredits(tmdbId)
-    } catch (err: any) {
-      // Skip this movie if credits fetch fails (e.g., 404, rate limits)
-      const code = err?.response?.status
+      credits = await getMovieCreditsForIngestion(tmdbId)
+    } catch (err: unknown) {
+      const code = (err as { response?: { status?: number } })?.response?.status
       if (code === 404) stats.moviesSkippedTmdb404 += 1
       continue
     }
 
-    // Update director/overview if we know them now
     try {
       await prisma.movie.update({
         where: { id: movie.id },
@@ -127,73 +116,15 @@ async function main() {
         },
       })
     } catch {
-      // ignore update issues here
+      // ignore
     }
 
-    for (const cast of credits.cast) {
-      // Ensure actor exists
-      let actor = await prisma.actor.findUnique({ where: { name: cast.name } })
-      if (!actor && cast.id) {
-        try {
-          const byTmdb = await prisma.actor.findUnique({ where: { tmdbId: cast.id } })
-          if (byTmdb) actor = byTmdb
-        } catch {}
-      }
-      if (!actor) {
-        try {
-          actor = await prisma.actor.create({ data: { name: cast.name, tmdbId: cast.id } })
-          stats.actorsCreated += 1
-        } catch (e: any) {
-          // Unique conflict by name or tmdbId: re-query using tmdbId if present else by name
-          if (cast.id) {
-            const existing = await prisma.actor.findUnique({ where: { tmdbId: cast.id } }).catch(() => null)
-            if (existing) actor = existing
-          }
-          if (!actor) {
-            const existingByName = await prisma.actor.findUnique({ where: { name: cast.name } }).catch(() => null)
-            if (existingByName) actor = existingByName
-          }
-          if (!actor) continue
-        }
-      }
-
-      // Ensure seeded performance exists (seed user + actor + movie)
-      const existingPerf = await prisma.performance.findUnique({
-        where: {
-          userId_actorId_movieId: {
-            userId: seedUserId,
-            actorId: actor.id,
-            movieId: movie.id,
-          },
-        },
-      })
-
-      if (existingPerf) {
-        stats.performancesExisting += 1
-        continue
-      }
-
-      try {
-        await prisma.performance.create({
-          data: {
-            userId: seedUserId,
-            actorId: actor.id,
-            movieId: movie.id,
-            emotionalRangeDepth: 0,
-            characterBelievability: 0,
-            technicalSkill: 0,
-            screenPresence: 0,
-            chemistryInteraction: 0,
-            comment: null,
-          },
-        })
-        stats.performancesCreated += 1
-      } catch (e: any) {
-        // Unique constraint or other errors: count duplicate and continue
-        stats.performancesSkippedDuplicates += 1
-        continue
-      }
-    }
+    // Idempotent sync: full cast, actors by tmdbId, performances upserted (order + tier)
+    const result = await syncMovieCast(prisma, movie.id, seedUserId, credits, {
+      director: credits.director,
+    })
+    stats.actorsCreated += result.actorsCreated
+    stats.performancesUpserted += result.performancesUpserted
   }
 
   // eslint-disable-next-line no-console

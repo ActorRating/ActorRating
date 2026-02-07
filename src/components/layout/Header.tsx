@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Menu, 
@@ -38,6 +38,7 @@ export function Header({
   isMobileSidebarOpen = false
 }: HeaderProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const user = useUser()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false)
@@ -59,15 +60,15 @@ export function Header({
     document.documentElement.classList.toggle('dark', newTheme === 'dark')
   }
 
-  // Handle user menu actions
+  // Handle user menu actions (client-side navigation for instant feel)
   const handleUserAction = (action: string) => {
     setIsUserMenuOpen(false)
     switch (action) {
       case 'profile':
-        window.location.href = '/profile'
+        router.push('/profile')
         break
       case 'settings':
-        window.location.href = '/profile/settings'
+        router.push('/profile/settings')
         break
       case 'logout':
         handleLogout()

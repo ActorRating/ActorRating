@@ -20,6 +20,8 @@
     "perf:lighthouse": "lighthouse-ci http://localhost:3000 --config=.lighthouserc.json || true",
     "backfill:tmdb": "tsx scripts/backfill-characters-from-tmdb.ts",
     "backfill:tmdb:goodfellas": "tsx scripts/backfill-characters-from-tmdb.ts --movie=Goodfellas --year=1990",
+    "ingest:all-cast": "tsx scripts/ingest-all-movies-cast.ts",
+    "health:cast-ingestion": "tsx scripts/health-cast-ingestion.ts",
     "postinstall": "prisma generate",
     "remove-adult-content": "tsx scripts/remove-adult-content.ts",
     "remove-adult-content:yes": "tsx scripts/remove-adult-content.ts --yes",

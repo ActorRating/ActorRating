@@ -5,7 +5,7 @@ import { LogoutButton } from "@/components/auth/LogoutButton"
 import { useState, useRef, useEffect } from "react"
 import { User, Settings, Shield, Download } from "lucide-react"
 import { Button } from "@/components/ui/Button"
-import Link from "next/link"
+import { PrefetchLink } from "@/components/ui/PrefetchLink"
 
 export function UserMenu() {
   const user = useUser()
@@ -52,41 +52,41 @@ export function UserMenu() {
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
             
-            <Link
+            <PrefetchLink
               href="/profile"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >
               <User className="w-4 h-4 mr-3" />
               Profile
-            </Link>
+            </PrefetchLink>
             
-            <Link
+            <PrefetchLink
               href="/profile/settings"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >
               <Settings className="w-4 h-4 mr-3" />
               Settings
-            </Link>
+            </PrefetchLink>
             
-            <Link
+            <PrefetchLink
               href="/profile/privacy"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >
               <Shield className="w-4 h-4 mr-3" />
               Privacy
-            </Link>
+            </PrefetchLink>
             
-            <Link
+            <PrefetchLink
               href="/profile/export"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >
               <Download className="w-4 h-4 mr-3" />
               Export Data
-            </Link>
+            </PrefetchLink>
             
             <div className="border-t border-gray-100">
               <LogoutButton 
