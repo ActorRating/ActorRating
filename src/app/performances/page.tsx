@@ -9,6 +9,7 @@ import { FaStar, FaChevronLeft, FaChevronRight, FaSearch } from "react-icons/fa"
 import Link from "next/link"
 import { getRateUrl } from "@/lib/slugHelper"
 import { SearchBar } from "@/components/SearchBar"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 // Predefined performances to display (lookup by actor + movie)
 const RECENT_PERFORMANCE_TARGETS = [
@@ -366,35 +367,8 @@ export default function PerformancesPage() {
               </div>
 
               {loading ? (
-                <div className="relative">
-                  {/* Carousel Container with Fade Edges */}
-                  <div className="relative -mx-4 sm:-mx-0">
-                    <div
-                      className="overflow-hidden"
-                      style={isDesktop ? {
-                        maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
-                      } : {}}
-                    >
-                      <div className="flex gap-8 overflow-x-auto pb-8 pt-4 scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
-                        {[...Array(6)].map((_, i) => (
-                          <div key={i} className="animate-pulse flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw]">
-                            <div className="bg-[#1a1a1a]/80 rounded-[2rem] border border-transparent p-8 sm:p-10 md:p-12 h-96"
-                              style={{
-                                boxShadow: `
-                                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                                  0 0 0 1px rgba(255, 255, 255, 0.05),
-                                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                                `,
-                              }}
-                            ></div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex justify-center py-16">
+                  <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
                 </div>
               ) : recentPerformances.length > 0 ? (
                 <div className="relative">

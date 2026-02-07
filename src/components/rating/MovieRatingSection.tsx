@@ -9,6 +9,7 @@ import { GiClapperboard, GiHeartWings } from "react-icons/gi"
 import { FaStar, FaHandshake, FaUserSecret } from "react-icons/fa"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
+import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface UserPerformance {
   id: string
@@ -145,16 +146,8 @@ export function MovieRatingSection({
 
   if (isLoadingUser) {
     return (
-      <div className="bg-muted/60 rounded-2xl border border-gray-800 p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-700 rounded mb-4 max-w-md"></div>
-          <div className="h-4 bg-gray-700 rounded mb-6 max-w-lg"></div>
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-700 rounded"></div>
-            ))}
-          </div>
-        </div>
+      <div className="bg-muted/60 rounded-2xl border border-gray-800 p-6 flex justify-center min-h-[200px] items-center">
+        <BouncingBallsLoader size="sm" color="#FFD700" showText={false} />
       </div>
     )
   }

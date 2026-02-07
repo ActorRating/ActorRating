@@ -17,13 +17,18 @@ import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
-export default function RatePageClient() {
+type RatePageClientProps = {
+  initialMovie?: Movie | null
+  initialActor?: Actor | null
+}
+
+export default function RatePageClient({ initialMovie = null, initialActor = null }: RatePageClientProps) {
   const params = useParams()
   const router = useRouter()
   const user = useUser()
-  const [loading, setLoading] = useState(true)
-  const [actor, setActor] = useState<Actor | null>(null)
-  const [movie, setMovie] = useState<Movie | null>(null)
+  const [loading, setLoading] = useState(!initialMovie || !initialActor)
+  const [actor, setActor] = useState<Actor | null>(initialActor)
+  const [movie, setMovie] = useState<Movie | null>(initialMovie)
   const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
   const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,56 +49,63 @@ export default function RatePageClient() {
   } | null>(null)
   const { executeRecaptcha } = useRecaptchaV3()
 
+  // Always load at top: on mount (client nav) and when content finishes loading (so top is visible before demo scroll)
   useEffect(() => {
-    async function fetchData() {
-      const movieSlug = params?.movieSlug as string
-      const actorSlug = params?.actorSlug as string
+    window.scrollTo(0, 0)
+  }, [])
 
-      if (!movieSlug || !actorSlug) {
-        router.push('/search')
+  useEffect(() => {
+    if (!loading) window.scrollTo(0, 0)
+  }, [loading])
+
+  useEffect(() => {
+    if (initialMovie && initialActor) return
+    const movieSlug = params?.movieSlug as string
+    const actorSlug = params?.actorSlug as string
+    if (!movieSlug || !actorSlug) {
+      router.push('/search')
+      return
+    }
+    let cancelled = false
+    Promise.all([
+      fetch(`/api/movies/${movieSlug}`),
+      fetch(`/api/actors/${actorSlug}?minimal=true`)
+    ]).then(([movieResponse, actorResponse]) => {
+      if (cancelled) return
+      if (!movieResponse.ok || !actorResponse.ok) {
+        router.push(`/search?error=notfound&movie=${encodeURIComponent(movieSlug)}&actor=${encodeURIComponent(actorSlug)}`)
         return
       }
-
-      try {
-        const [movieResponse, actorResponse] = await Promise.all([
-          fetch(`/api/movies/${movieSlug}`),
-          fetch(`/api/actors/${actorSlug}?minimal=true`)
-        ])
-
-        if (!movieResponse.ok || !actorResponse.ok) {
-          router.push(`/search?error=notfound&movie=${encodeURIComponent(movieSlug)}&actor=${encodeURIComponent(actorSlug)}`)
-          return
-        }
-
-        const movieData = await movieResponse.json()
-        const actorData = await actorResponse.json()
-
-        setMovie({
-          id: movieData.id,
-          title: movieData.title,
-          year: movieData.year,
-          director: movieData.director || 'Unknown',
-          slug: movieData.slug,
-          createdAt: movieData.createdAt || new Date().toISOString(),
-          updatedAt: movieData.updatedAt || new Date().toISOString(),
-        })
-        setActor({
-          id: actorData.id,
-          name: actorData.name,
-          imageUrl: actorData.imageUrl,
-          slug: actorData.slug,
-          createdAt: actorData.createdAt || new Date().toISOString(),
-          updatedAt: actorData.updatedAt || new Date().toISOString(),
-        })
-        setLoading(false)
-      } catch (error) {
+      return Promise.all([movieResponse.json(), actorResponse.json()])
+    }).then((data) => {
+      if (cancelled || !data) return
+      const [movieData, actorData] = data
+      setMovie({
+        id: movieData.id,
+        title: movieData.title,
+        year: movieData.year,
+        director: movieData.director || 'Unknown',
+        slug: movieData.slug,
+        createdAt: movieData.createdAt || new Date().toISOString(),
+        updatedAt: movieData.updatedAt || new Date().toISOString(),
+      })
+      setActor({
+        id: actorData.id,
+        name: actorData.name,
+        imageUrl: actorData.imageUrl,
+        slug: actorData.slug,
+        createdAt: actorData.createdAt || new Date().toISOString(),
+        updatedAt: actorData.updatedAt || new Date().toISOString(),
+      })
+      setLoading(false)
+    }).catch((error) => {
+      if (!cancelled) {
         console.error('Error fetching data:', error)
         router.push('/search?error=loadfailed')
       }
-    }
-
-    fetchData()
-  }, [params?.movieSlug, params?.actorSlug, router])
+    })
+    return () => { cancelled = true }
+  }, [params?.movieSlug, params?.actorSlug, router, initialMovie, initialActor])
 
   useEffect(() => {
     async function fetchCommunityStats() {

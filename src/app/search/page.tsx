@@ -161,7 +161,8 @@ function SearchPageContent() {
                 <SearchBar
                   placeholder="Search for actors and movies..."
                   showClear
-                  autoFocus 
+                  autoFocus
+                  disableAutoScrollOnFocus
                   initialValue={query}
                   className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-lg"
                 />
@@ -183,13 +184,8 @@ function SearchPageContent() {
               </h2>
 
               {searching ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="aspect-square bg-gray-800 rounded-2xl mb-3"></div>
-                      <div className="h-4 bg-gray-800 rounded w-3/4 mx-auto"></div>
-                    </div>
-                  ))}
+                <div className="flex justify-center py-16">
+                  <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">

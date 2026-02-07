@@ -263,44 +263,9 @@ export default function OnboardingRatePage() {
   }, [])
 
 
-  const handlePerformanceSelect = async (performance: typeof CURATED_PERFORMANCES[0]) => {
-    // Set performance immediately with minimal data (no delay)
-    setSelectedPerformance(performance)
-    setActor({
-      id: performance.actorId,
-      name: performance.actorName,
-      imageUrl: null,
-      slug: null
-    })
-    setMovie({
-      id: performance.movieId,
-      title: performance.movieTitle,
-      year: performance.year,
-      director: 'Unknown',
-      slug: null
-    })
-    setLoading(false) // No loading state needed - show form immediately
-
-    // Fetch additional data in the background (optional enhancement)
-    try {
-      const [actorRes, movieRes] = await Promise.all([
-        fetch(`/api/actors/${performance.actorId}`),
-        fetch(`/api/movies/${performance.movieId}`)
-      ])
-
-      // Update with full data if available (non-blocking)
-      if (actorRes.ok) {
-        const actorData = await actorRes.json()
-        setActor(prev => ({ ...prev, ...actorData }))
-      }
-      if (movieRes.ok) {
-        const movieData = await movieRes.json()
-        setMovie(prev => ({ ...prev, ...movieData }))
-      }
-    } catch (error) {
-      // Silently fail - we already have minimal data
-      console.error('Failed to fetch additional performance data:', error)
-    }
+  const handlePerformanceSelect = (performance: typeof CURATED_PERFORMANCES[0]) => {
+    // Navigate to slug-based rate page: /rate/[movieSlug]/[actorSlug]
+    router.push(`/rate/${performance.movieId}/${performance.actorId}`)
   }
 
   const handleSubmit = async (ratingData: {

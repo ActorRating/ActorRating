@@ -10,18 +10,34 @@ export async function GET(request: NextRequest) {
     
     console.log("🔍 Search API called with query:", query, suggestions ? "(suggestions)" : "")
 
-    if (!query || query.trim().length < 2) {
-      console.log("❌ Invalid query:", query)
+    // Query is required
+    if (query === null || query === undefined) {
       return NextResponse.json(
-        { error: "Query parameter 'q' is required and must be at least 2 characters long" },
+        { error: "Query parameter 'q' is required" },
         { status: 400 }
       )
     }
 
     const searchTerm = query.trim()
+
+    // Suggestions: allow 1+ characters; return empty for 0 characters
+    if (suggestions) {
+      if (searchTerm.length < 1) {
+        return NextResponse.json({ actors: [], movies: [] })
+      }
+    } else {
+      // Full search: require at least 2 characters
+      if (searchTerm.length < 2) {
+        return NextResponse.json(
+          { error: "Query must be at least 2 characters long for full search" },
+          { status: 400 }
+        )
+      }
+    }
+
     console.log("🔍 Processing search term:", searchTerm)
 
-    // Cache key with short TTL to keep results hot without being stale
+    // Cache key: normalized query + mode (suggestions vs full)
     const cacheKey = makeCacheKey('search', [searchTerm.toLowerCase(), suggestions ? 'suggestions' : 'full'])
     const cached = await cacheGet<{ actors: any[]; movies: any[] }>(cacheKey)
     if (cached) {
@@ -30,22 +46,76 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Fast path for suggestions - simple prefix search for instant autocomplete
+    // Suggestions: ranked fuzzy + multi-token, 1-char minimum. Ranking weights depend on query length:
+    // - Prefix/word-start weight increases as query grows (stronger exact intent).
+    // - Token and similarity weight decay slightly for longer queries (less fuzzy noise).
     if (suggestions) {
-      console.log("⚡ Fast suggestions search for:", searchTerm)
+      const queryLen = Math.min(searchTerm.length, 30)
+      // Decay token/similarity weight for longer queries so prefix/word-start dominate.
+      const tokenDecay = Math.max(0.5, 1.0 - (queryLen - 1) * 0.02)
+      const simDecay = Math.max(0.5, 1.0 - (queryLen - 1) * 0.015)
+      console.log("⚡ Ranked suggestions search for:", searchTerm, "len:", queryLen)
       const [actors, movies] = await Promise.all([
+        // Actor suggestions: prefix > word-start > token match (any order) > similarity > popularity tie-breaker
         prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-          SELECT id, name, slug
-          FROM "Actor"
-          WHERE name ILIKE ${`${searchTerm}%`}
-          ORDER BY name ASC
+          WITH tokens AS (
+            SELECT unnest(string_to_array(lower(${searchTerm}), ' ')) AS token
+          )
+          SELECT
+            a.id,
+            a.name,
+            a.slug
+          FROM "Actor" a
+          WHERE
+            lower(a.name) LIKE '%' || lower(${searchTerm}) || '%'
+            OR similarity(a.name, ${searchTerm}) > 0.2
+          ORDER BY
+            (
+              CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%'
+                THEN 100 + LEAST(${queryLen} * 2, 30)
+                ELSE 0 END
+              +
+              CASE WHEN lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%'
+                THEN 80 + LEAST(${queryLen}, 20)
+                ELSE 0 END
+              +
+              (SELECT COUNT(*)::int FROM tokens WHERE lower(a.name) LIKE '%' || token || '%') * 20 * ${tokenDecay}
+              +
+              similarity(a.name, ${searchTerm}) * 50 * ${simDecay}
+              +
+              log(COALESCE((SELECT COUNT(*)::int FROM "Performance" WHERE "actorId" = a.id), 0) + 1) * 5
+            ) DESC,
+            a.name ASC
           LIMIT 8
         `,
+        // Movie suggestions: same ranking (prefix boost, token/similarity decay)
         prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-          SELECT id, title, slug, year
-          FROM "Movie"
-          WHERE title ILIKE ${`${searchTerm}%`}
-          ORDER BY year DESC, title ASC
+          WITH tokens AS (
+            SELECT unnest(string_to_array(lower(${searchTerm}), ' ')) AS token
+          )
+          SELECT
+            m.id,
+            m.title,
+            m.slug,
+            m.year
+          FROM "Movie" m
+          WHERE
+            lower(m.title) LIKE '%' || lower(${searchTerm}) || '%'
+            OR similarity(m.title, ${searchTerm}) > 0.2
+          ORDER BY
+            (
+              CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%'
+                THEN 100 + LEAST(${queryLen} * 2, 30)
+                ELSE 0 END
+              +
+              (SELECT COUNT(*)::int FROM tokens WHERE lower(m.title) LIKE '%' || token || '%') * 20 * ${tokenDecay}
+              +
+              similarity(m.title, ${searchTerm}) * 40 * ${simDecay}
+              +
+              COALESCE((SELECT COUNT(*)::int FROM "Performance" WHERE "movieId" = m.id), 0) * 0.05
+            ) DESC,
+            m.year DESC NULLS LAST,
+            m.title ASC
           LIMIT 8
         `
       ])
@@ -55,7 +125,6 @@ export async function GET(request: NextRequest) {
         movies: movies || []
       }
       
-      // Cache suggestions for shorter time
       await cacheSet(cacheKey, payload, 30)
       
       const res = NextResponse.json(payload)

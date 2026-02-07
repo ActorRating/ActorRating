@@ -67,16 +67,25 @@ interface Performance {
   }
 }
 
-export default function MoviePageClient() {
+type MoviePageClientProps = {
+  initialMovie?: Movie | null
+  initialPerformances?: Performance[]
+}
+
+export default function MoviePageClient({
+  initialMovie = null,
+  initialPerformances = [],
+}: MoviePageClientProps = {}) {
   const params = useParams()
   const router = useRouter()
   const pathname = usePathname()
   const user = useUser()
   const movieSlug = params?.slug as string
 
-  const [movie, setMovie] = useState<Movie | null>(null)
-  const [performances, setPerformances] = useState<Performance[]>([])
-  const [loading, setLoading] = useState(true)
+  const hasInitial = initialMovie != null
+  const [movie, setMovie] = useState<Movie | null>(initialMovie)
+  const [performances, setPerformances] = useState<Performance[]>(initialPerformances)
+  const [loading, setLoading] = useState(!hasInitial)
   const [is410, setIs410] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'relevance' | 'alphabetical' | 'rating' | 'most-rated' | 'controversial'>('rating')
@@ -131,31 +140,45 @@ export default function MoviePageClient() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Skip fetching if UUID detected (410 Gone)
-      if (isUUID) {
+      if (isUUID) return
+      if (hasInitial) {
+        if (!user) {
+          setLoading(false)
+          return
+        }
+        try {
+          const userRatingsResponse = await fetch(`/api/movies/${movieSlug}/user-rating`, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' },
+          })
+          if (userRatingsResponse.ok) {
+            const userRatings = await userRatingsResponse.json()
+            if (Array.isArray(userRatings)) {
+              setUserRatedActors(new Set(userRatings.map((r: any) => r.actorId)))
+              setUserHasRatedMovie(userRatings.length > 0)
+              const scoresMap = new Map<string, number>()
+              userRatings.forEach((r: any) => {
+                const scores = [r.emotionalRangeDepth, r.characterBelievability, r.technicalSkill, r.screenPresence, r.chemistryInteraction].filter((s): s is number => typeof s === 'number' && s > 0)
+                if (scores.length > 0) scoresMap.set(r.actorId, scores.reduce((a, b) => a + b, 0) / scores.length)
+              })
+              setUserRatingsMap(scoresMap)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch user ratings:', e)
+        }
+        setLoading(false)
         return
       }
-      
       try {
-        // Fetch movie data and user ratings in parallel for better performance
         const [movieResponse, userRatingsResponse] = await Promise.all([
           fetch(`/api/movies/${movieSlug}`),
-          user ? fetch(`/api/movies/${movieSlug}/user-rating`, { 
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          }) : Promise.resolve(null)
+          user ? fetch(`/api/movies/${movieSlug}/user-rating`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } }) : Promise.resolve(null)
         ])
-        
         if (!movieResponse.ok) throw new Error('Failed to fetch movie')
-        
         const data = await movieResponse.json()
         setMovie(data)
         setPerformances(data.performances || [])
-        
-        // Process user ratings if available
         if (user && userRatingsResponse) {
           console.log('Processing user ratings for movie:', movieSlug, 'user:', user.id)
           
@@ -230,7 +253,7 @@ export default function MoviePageClient() {
     if (movieSlug) {
       fetchData()
     }
-  }, [movieSlug, user, refreshKey, isUUID])
+  }, [movieSlug, user, refreshKey, isUUID, hasInitial])
 
   // Close dropdown and update sort when search query changes
   useEffect(() => {

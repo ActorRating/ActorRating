@@ -40,7 +40,7 @@ const IconFilm = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
-// Debounce utility function - optimized for instant UI updates
+// Debounce utility — short delay (100–120ms) so suggestions feel live on every keystroke
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -48,13 +48,30 @@ function debounce<T extends (...args: any[]) => any>(
   let timeout: NodeJS.Timeout | null = null
 
   return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-    timeout = setTimeout(() => {
-      func(...args)
-    }, wait)
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
   }
+}
+
+// Client-side match highlighting (Google-style). Wraps matched substrings in <mark>.
+// Escapes query for RegExp so special characters (e.g. parentheses) don't break the regex.
+function highlightMatches(text: string, query: string): React.ReactNode {
+  const q = query.trim()
+  if (!q) return text
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const regex = new RegExp(`(${escaped})`, "gi")
+  return text.split(regex).map((part, i) =>
+    part.toLowerCase() === q.toLowerCase() ? (
+      <mark
+        key={i}
+        className="font-semibold bg-[#FFD700]/20 text-[#FFD700] rounded px-0.5"
+      >
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  )
 }
 
 interface SearchBarProps {
@@ -65,6 +82,8 @@ interface SearchBarProps {
   showClear?: boolean
   autoFocus?: boolean
   showSuggestions?: boolean
+  /** When true, do not scroll the page on input focus/click (e.g. on dedicated search page). */
+  disableAutoScrollOnFocus?: boolean
 }
 
 export function SearchBar({
@@ -75,12 +94,12 @@ export function SearchBar({
   showClear = true,
   autoFocus = false,
   showSuggestions = true,
+  disableAutoScrollOnFocus = false,
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialValue)
   const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<NewSearchResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
@@ -90,74 +109,89 @@ export function SearchBar({
   const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<AbortController | null>(null)
 
-  // Debounced search for suggestions - optimized for instant appearance
+  // Dropdown visibility: focus + non-empty input only. Not tied to loading or results.
+  const showDropdown = isFocused && showSuggestions && query.trim().length >= 1
+
+  // Debounced search for suggestions. Replace results only on success; never clear on keystroke.
   const performSearch = useCallback(async (searchQuery: string, shouldShowSuggestions: boolean) => {
     const q = searchQuery.trim()
-    if (!q || q.length < 2 || !shouldShowSuggestions) {
+    if (!q || q.length < 1 || !shouldShowSuggestions) {
       if (controllerRef.current) controllerRef.current.abort()
       setSuggestions(null)
-      setShowSuggestionsDropdown(false)
       return
     }
 
-      // Make dropdown visible while loading
-      setShowSuggestionsDropdown(true)
-      setLoading(true)
-      setHasSearched(false)
-      try {
-        if (controllerRef.current) controllerRef.current.abort()
-        const controller = new AbortController()
-        controllerRef.current = controller
-        const response = await fetch(`/api/search?q=${encodeURIComponent(q)}&suggestions=true`, { signal: controller.signal })
-        if (!response.ok) {
-          setSuggestions(null)
-          setHasSearched(true)
-          return
-        }
-        const data = await response.json()
-        setSuggestions(data)
+    setLoading(true)
+    setHasSearched(false)
+    try {
+      if (controllerRef.current) controllerRef.current.abort()
+      const controller = new AbortController()
+      controllerRef.current = controller
+      const response = await fetch(`/api/search?q=${encodeURIComponent(q)}&suggestions=true`, { signal: controller.signal })
+      if (!response.ok) {
         setHasSearched(true)
-        if (!hasFetchedOnce) setHasFetchedOnce(true)
-      } catch (error: any) {
-        if (error?.name === 'AbortError') return
-        console.error('Search failed:', error)
-        setSuggestions(null)
-        setHasSearched(true)
-      } finally {
-        setLoading(false)
+        return
       }
+      const data = await response.json()
+      setSuggestions(data)
+      setHasSearched(true)
+      if (!hasFetchedOnce) setHasFetchedOnce(true)
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return
+      console.error('Search failed:', error)
+      setHasSearched(true)
+    } finally {
+      setLoading(false)
+    }
   }, [hasFetchedOnce])
 
   const debouncedSearch = useMemo(
-    () => debounce(performSearch, 150),
+    () => debounce(performSearch, 100),
     [performSearch]
   )
+
+  // Track previous suggestions and current highlight so we can preserve highlight when results only reorder (same IDs)
+  const prevSuggestionsRef = useRef<NewSearchResult | null>(null)
+  const highlightedIndexRef = useRef(highlightedIndex)
+  highlightedIndexRef.current = highlightedIndex
 
 
 
   useEffect(() => {
-    if (query.trim() && query.trim().length >= 2 && showSuggestions) {
-      // Show dropdown instantly while typing (before API call completes)
-      setShowSuggestionsDropdown(true)
+    if (query.trim() && query.trim().length >= 1 && showSuggestions) {
       debouncedSearch(query, showSuggestions)
-      // Reset highlighted index when query changes (will be set to 0 when suggestions arrive)
       setHighlightedIndex(-1)
     } else {
+      // Only clear results when input becomes empty
       setSuggestions(null)
-      setShowSuggestionsDropdown(false)
       setHighlightedIndex(-1)
     }
   }, [query, debouncedSearch, showSuggestions])
 
-  // Update highlighted index when suggestions change - always highlight first suggestion
+  // When suggestions change: reset to 0 if IDs changed; preserve index when results only reordered (same IDs)
   useEffect(() => {
-    const totalItems = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
-    if (totalItems > 0) {
-      // Always highlight the first suggestion
-      setHighlightedIndex(0)
-    } else {
+    const prev = prevSuggestionsRef.current
+    prevSuggestionsRef.current = suggestions ?? null
+    const actors = suggestions?.actors ?? []
+    const movies = suggestions?.movies ?? []
+    const totalItems = actors.length + movies.length
+    if (totalItems === 0) {
       setHighlightedIndex(-1)
+      return
     }
+    const newIds = [...actors.map((a) => a.id), ...movies.map((m) => m.id)]
+    const prevHighlighted = highlightedIndexRef.current
+    if (prev && prevHighlighted >= 0) {
+      const prevActors = prev.actors ?? []
+      const prevMovies = prev.movies ?? []
+      const prevIds = [...prevActors.map((a) => a.id), ...prevMovies.map((m) => m.id)]
+      const prevId = prevIds[prevHighlighted]
+      if (prevId && newIds.includes(prevId)) {
+        setHighlightedIndex(newIds.indexOf(prevId))
+        return
+      }
+    }
+    setHighlightedIndex(0)
   }, [suggestions])
 
   // Scroll highlighted item into view
@@ -173,7 +207,7 @@ export function SearchBar({
 
 
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside (dropdown visibility is driven by isFocused)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -182,7 +216,7 @@ export function SearchBar({
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setShowSuggestionsDropdown(false)
+        setIsFocused(false)
       }
     }
 
@@ -197,7 +231,6 @@ export function SearchBar({
     }
     setQuery('')
     setSuggestions(null)
-    setShowSuggestionsDropdown(false)
     setHighlightedIndex(-1)
     if (onSearch) {
       onSearch('')
@@ -218,12 +251,10 @@ export function SearchBar({
       const selected = allItems[highlightedIndex]
       if (selected.type === 'actor') {
         setQuery(selected.item.name)
-        setShowSuggestionsDropdown(false)
         setHighlightedIndex(-1)
         router.push(getActorUrl(selected.item))
       } else {
         setQuery(selected.item.title)
-        setShowSuggestionsDropdown(false)
         setHighlightedIndex(-1)
         router.push(getMovieUrl(selected.item))
       }
@@ -232,7 +263,6 @@ export function SearchBar({
     
     // If no suggestions but query exists, navigate to search page
     if (query.trim() && allItems.length === 0) {
-      setShowSuggestionsDropdown(false)
       setHighlightedIndex(-1)
       if (onSearch) {
         onSearch(query.trim())
@@ -254,7 +284,7 @@ export function SearchBar({
       case 'ArrowDown':
         e.preventDefault()
         e.stopPropagation()
-        if (showSuggestionsDropdown && maxIndex >= 0) {
+        if (showDropdown && maxIndex >= 0) {
           setHighlightedIndex((prev) => {
             if (prev < maxIndex) {
               return prev + 1
@@ -266,7 +296,7 @@ export function SearchBar({
       case 'ArrowUp':
         e.preventDefault()
         e.stopPropagation()
-        if (showSuggestionsDropdown && maxIndex >= 0) {
+        if (showDropdown && maxIndex >= 0) {
           setHighlightedIndex((prev) => {
             if (prev <= 0) {
               return -1
@@ -283,7 +313,7 @@ export function SearchBar({
       case 'Escape':
         e.preventDefault()
         e.stopPropagation()
-        setShowSuggestionsDropdown(false)
+        setIsFocused(false)
         setHighlightedIndex(-1)
         break
       default:
@@ -293,7 +323,6 @@ export function SearchBar({
   }
 
   const handleSuggestionClick = () => {
-    setShowSuggestionsDropdown(false)
     setQuery('')
   }
 
@@ -313,8 +342,8 @@ export function SearchBar({
             "relative overflow-hidden transition-all duration-200"
           )}
           animate={{
-            borderRadius: showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions 
-              ? '2rem 2rem 2rem 2rem' 
+            borderRadius: showDropdown
+              ? '2rem 2rem 2rem 2rem'
               : '2rem'
           }}
         >
@@ -326,65 +355,50 @@ export function SearchBar({
               type="text"
               value={query}
               onChange={(e) => {
-                const newValue = e.target.value
-                setQuery(newValue)
-                
-                // Show dropdown instantly when typing (optimistic UI)
-                if (newValue.trim().length >= 2 && showSuggestions) {
-                  setShowSuggestionsDropdown(true)
-                } else {
-                  setShowSuggestionsDropdown(false)
-                }
+                setQuery(e.target.value)
               }}
               onClick={(e) => {
-                // Also trigger scroll on click
-                e.preventDefault()
-                requestAnimationFrame(() => {
-                  if (inputRef.current) {
-                    const inputRect = inputRef.current.getBoundingClientRect()
-                    const currentScroll = window.scrollY || window.pageYOffset
-                    const inputTop = inputRect.top + currentScroll
-                    const viewportHeight = window.innerHeight
-                    const isDesktop = window.innerWidth >= 1024
-                    
-                    // On desktop, position higher (1/4 from top), on mobile use 1/3
-                    const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
-                    const targetScroll = inputTop - scrollOffset
-                    
-                    window.scrollTo({
-                      top: Math.max(0, targetScroll),
-                      behavior: 'smooth'
-                    })
-                  }
-                })
+                if (!disableAutoScrollOnFocus) {
+                  e.preventDefault()
+                  requestAnimationFrame(() => {
+                    if (inputRef.current) {
+                      const inputRect = inputRef.current.getBoundingClientRect()
+                      const currentScroll = window.scrollY || window.pageYOffset
+                      const inputTop = inputRect.top + currentScroll
+                      const viewportHeight = window.innerHeight
+                      const isDesktop = window.innerWidth >= 1024
+                      const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                      const targetScroll = inputTop - scrollOffset
+                      window.scrollTo({
+                        top: Math.max(0, targetScroll),
+                        behavior: 'smooth'
+                      })
+                    }
+                  })
+                }
               }}
               onFocus={(e) => {
                 setIsFocused(true)
-                
-                // Smooth scroll to position search bar in upper portion of screen
-                requestAnimationFrame(() => {
-                  if (inputRef.current) {
-                    const inputRect = inputRef.current.getBoundingClientRect()
-                    const currentScroll = window.scrollY || window.pageYOffset
-                    const inputTop = inputRect.top + currentScroll
-                    const viewportHeight = window.innerHeight
-                    const isDesktop = window.innerWidth >= 1024
-                    
-                    // On desktop, position higher (1/4 from top), on mobile use 1/3
-                    const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
-                    const targetScroll = inputTop - scrollOffset
-                    
-                    window.scrollTo({
-                      top: Math.max(0, targetScroll),
-                      behavior: 'smooth'
-                    })
-                  }
-                })
-                
-                // Warm suggestions cache on first focus using current query if present
-                if (query.trim().length >= 2 && !loading && showSuggestions) {
-                  debouncedSearch(query, showSuggestions)
-                  setShowSuggestionsDropdown(true)
+                if (!disableAutoScrollOnFocus) {
+                  requestAnimationFrame(() => {
+                    if (inputRef.current) {
+                      const inputRect = inputRef.current.getBoundingClientRect()
+                      const currentScroll = window.scrollY || window.pageYOffset
+                      const inputTop = inputRect.top + currentScroll
+                      const viewportHeight = window.innerHeight
+                      const isDesktop = window.innerWidth >= 1024
+                      const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                      const targetScroll = inputTop - scrollOffset
+                      window.scrollTo({
+                        top: Math.max(0, targetScroll),
+                        behavior: 'smooth'
+                      })
+                    }
+                  })
+                }
+                // Instant prefetch on focus when input has text (no debounce) so first result is already there
+                if (query.trim().length >= 1 && showSuggestions) {
+                  performSearch(query.trim(), showSuggestions)
                 }
               }}
               onKeyDown={handleKeyDown}
@@ -416,7 +430,7 @@ export function SearchBar({
 
           {/* Suggestions - Container extends downward */}
           <AnimatePresence>
-            {showSuggestionsDropdown && query.trim().length >= 2 && showSuggestions && (
+            {showDropdown && (
               <motion.div
                 ref={dropdownRef}
                 initial={{ opacity: 0, maxHeight: 0 }}
@@ -429,17 +443,8 @@ export function SearchBar({
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
                 }}
               >
-                {loading ? (
-                  <div className="p-6 text-center">
-                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
-                    <p className="text-sm text-gray-300">Searching...</p>
-                  </div>
-                ) : !hasSearched ? (
-                  <div className="p-6 text-center">
-                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
-                    <p className="text-sm text-gray-300">Searching...</p>
-                  </div>
-                ) : hasResults ? (
+                {/* When we have previous results, keep showing them; no loading message (avoids distraction) */}
+                {hasResults ? (
                   <motion.div className="p-2" initial={{}} animate={{}}>
                     {/* Actors */}
                     {suggestions?.actors && suggestions.actors.length > 0 && (
@@ -475,7 +480,7 @@ export function SearchBar({
                                       "truncate transition-all",
                                       isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
                                     )}>
-                                      {actor.name}
+                                      {highlightMatches(actor.name, query.trim())}
                                     </div>
                                   </div>
                                 </PrefetchLink>
@@ -522,7 +527,7 @@ export function SearchBar({
                                       "truncate transition-all",
                                       isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
                                     )}>
-                                      {movie.title}
+                                      {highlightMatches(movie.title, query.trim())}
                                     </div>
                                     {movie.year && (
                                       <div className={cn(
@@ -547,19 +552,24 @@ export function SearchBar({
                         <PrefetchLink
                           href={`/search?q=${encodeURIComponent(query)}`}
                           className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
-                          onClick={() => setShowSuggestionsDropdown(false)}
+                          onClick={() => setIsFocused(false)}
                         >
                           View all {totalSuggestions} results
                         </PrefetchLink>
                       </motion.div>
                     </div>
                   </motion.div>
-                ) : hasSearched && !loading && !hasResults ? (
+                ) : loading || !hasSearched ? (
+                  <div className="p-6 text-center">
+                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
+                    <p className="text-sm text-gray-300">Searching…</p>
+                  </div>
+                ) : (
                   <div className="p-6 text-center">
                     <p className="text-sm text-white">No results found</p>
                     <p className="text-xs text-gray-400 mt-1">Try different keywords</p>
                   </div>
-                ) : null}
+                )}
               </motion.div>
             )}
           </AnimatePresence>

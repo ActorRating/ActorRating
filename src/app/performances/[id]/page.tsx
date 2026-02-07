@@ -11,6 +11,7 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { Button } from '@/components/ui/Button'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface Performance {
   id: string
@@ -141,26 +142,10 @@ export default function PerformanceDetailPage() {
 
   if (loading) {
     const LoadingContent = () => (
-      <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16 lg:py-20">
-          <div className="animate-pulse">
-            <div className="h-12 bg-gray-700 rounded mb-6 max-w-md mx-auto"></div>
-            <div className="h-6 bg-gray-700 rounded mb-12 max-w-lg mx-auto"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-700 rounded-2xl"></div>
-              ))}
-              <div className="lg:col-span-2 lg:flex lg:justify-center">
-                <div className="w-full lg:w-1/2">
-                  <div className="h-32 bg-gray-700 rounded-2xl"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <BouncingBallsLoader size="lg" color="#FFD700" showText text="Loading..." />
       </div>
     )
-
     return user ? (
       <SignedInLayout>
         <LoadingContent />

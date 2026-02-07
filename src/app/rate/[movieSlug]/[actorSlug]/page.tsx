@@ -1,6 +1,7 @@
 /**
  * Slug-based rate page: /rate/[movieSlug]/[actorSlug]
  * Returns 410 Gone if movie or actor no longer exists (e.g. removed adult content).
+ * Fetches movie + actor on the server so the client can render immediately (no loading spinner).
  */
 
 import { NextResponse } from 'next/server'
@@ -20,14 +21,38 @@ export default async function RatePage({
     return new NextResponse(null, { status: 410 })
   }
 
-  const [movie, actor] = await Promise.all([
-    prisma.movie.findFirst({ where: { slug: movieSlug }, select: { id: true } }),
-    prisma.actor.findFirst({ where: { slug: actorSlug }, select: { id: true } }),
+  const [movieRow, actorRow] = await Promise.all([
+    prisma.movie.findFirst({
+      where: { slug: movieSlug },
+      select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.actor.findFirst({
+      where: { slug: actorSlug },
+      select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
+    }),
   ])
 
-  if (!movie || !actor) {
+  if (!movieRow || !actorRow) {
     return new NextResponse(null, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } })
   }
 
-  return <RatePageClient />
+  const initialMovie = {
+    id: movieRow.id,
+    title: movieRow.title,
+    year: movieRow.year,
+    director: movieRow.director ?? 'Unknown',
+    slug: movieRow.slug ?? undefined,
+    createdAt: movieRow.createdAt.toISOString(),
+    updatedAt: movieRow.updatedAt.toISOString(),
+  }
+  const initialActor = {
+    id: actorRow.id,
+    name: actorRow.name,
+    imageUrl: actorRow.imageUrl ?? undefined,
+    slug: actorRow.slug ?? undefined,
+    createdAt: actorRow.createdAt.toISOString(),
+    updatedAt: actorRow.updatedAt.toISOString(),
+  }
+
+  return <RatePageClient initialMovie={initialMovie} initialActor={initialActor} />
 }

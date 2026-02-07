@@ -95,34 +95,6 @@ export function PerformanceGrid({
     return true
   })
 
-  const LoadingSkeleton = () => (
-    <div className="bg-card rounded-2xl border border-border p-6 animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="h-6 bg-muted rounded mb-2 w-3/4"></div>
-          <div className="h-4 bg-muted rounded mb-2 w-1/2"></div>
-          <div className="h-3 bg-muted rounded w-1/3"></div>
-        </div>
-        <div className="text-right">
-          <div className="h-8 bg-muted rounded w-12 mb-1"></div>
-          <div className="h-3 bg-muted rounded w-16"></div>
-        </div>
-      </div>
-      <div className="space-y-2 mb-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex justify-between items-center">
-            <div className="h-3 bg-muted rounded w-20"></div>
-            <div className="h-3 bg-muted rounded w-8"></div>
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <div className="h-10 bg-muted rounded flex-1"></div>
-        <div className="h-10 bg-muted rounded w-20"></div>
-      </div>
-    </div>
-  )
-
   const EmptyState = () => (
     <motion.div
       variants={fadeInUp}
@@ -275,15 +247,9 @@ export function PerformanceGrid({
         className={`grid ${gridVariants[variant]} ${gapVariants[variant]}`}
       >
         {loading ? (
-          // Loading skeletons
-          [...Array(8)].map((_, index) => (
-            <motion.div
-              key={`skeleton-${index}`}
-              variants={fadeInUp}
-            >
-              <LoadingSkeleton />
-            </motion.div>
-          ))
+          <div className="col-span-full flex justify-center py-16">
+            <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
+          </div>
         ) : filteredPerformances.length === 0 ? (
           <EmptyState />
         ) : (
