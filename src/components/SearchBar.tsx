@@ -1,15 +1,22 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NewSearchResult } from '@/types'
+import type { SearchActor, SearchMovie } from '@/types'
 import Link from 'next/link'
+
+// Normalized preload: lowercase _name/_title computed once so local filter does no per-keystroke work.
+type NormalizedPreload = {
+  actors: (SearchActor & { _name: string })[]
+  movies: (SearchMovie & { _title: string })[]
+}
+let GLOBAL_PRELOAD: NormalizedPreload | null = null
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
-import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (
@@ -40,40 +47,6 @@ const IconFilm = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
-// Debounce utility — short delay (100–120ms) so suggestions feel live on every keystroke
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
-
-  return (...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
-}
-
-// Client-side match highlighting (Google-style). Wraps matched substrings in <mark>.
-// Escapes query for RegExp so special characters (e.g. parentheses) don't break the regex.
-function highlightMatches(text: string, query: string): React.ReactNode {
-  const q = query.trim()
-  if (!q) return text
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const regex = new RegExp(`(${escaped})`, "gi")
-  return text.split(regex).map((part, i) =>
-    part.toLowerCase() === q.toLowerCase() ? (
-      <mark
-        key={i}
-        className="font-semibold bg-[#FFD700]/20 text-[#FFD700] rounded px-0.5"
-      >
-        {part}
-      </mark>
-    ) : (
-      part
-    )
-  )
-}
-
 interface SearchBarProps {
   placeholder?: string
   className?: string
@@ -99,76 +72,118 @@ export function SearchBar({
   const [query, setQuery] = useState(initialValue)
   const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<NewSearchResult | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
-  const [hasSearched, setHasSearched] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<AbortController | null>(null)
+  const cacheRef = useRef(new Map<string, NewSearchResult>())
+  const preloadRef = useRef<NormalizedPreload | null>(null)
+  // Keep last known suggestions so we never show an empty dropdown while a new request is in flight
+  const lastSuggestionsRef = useRef<NewSearchResult | null>(null)
+  if (suggestions != null) lastSuggestionsRef.current = suggestions
 
-  // Dropdown visibility: focus + non-empty input only. Not tied to loading or results.
+  // Preload on focus (and mount) so first keystroke is ready. Global cache makes every SearchBar warm after the first.
+  const ensurePreload = useCallback(() => {
+    if (GLOBAL_PRELOAD) {
+      preloadRef.current = GLOBAL_PRELOAD
+      return
+    }
+    fetch('/api/search/preload')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: NewSearchResult | null) => {
+        if (!d) return
+        const normalized: NormalizedPreload = {
+          actors: d.actors.map((a) => ({ ...a, _name: a.name.toLowerCase() })),
+          movies: d.movies.map((m) => ({ ...m, _title: m.title.toLowerCase() })),
+        }
+        GLOBAL_PRELOAD = normalized
+        preloadRef.current = normalized
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    ensurePreload()
+  }, [ensurePreload])
+
+  // Dropdown visibility: focus + non-empty input only. Instant — not tied to network.
   const showDropdown = isFocused && showSuggestions && query.trim().length >= 1
 
-  // Debounced search for suggestions. Replace results only on success; never clear on keystroke.
+  // Local filter: precomputed _name/_title, scan only first 50, actors-only on first char.
+  const localFilter = useCallback((q: string): NewSearchResult | null => {
+    if (!preloadRef.current) return null
+    const term = q.toLowerCase().trim()
+    if (!term) return null
+    const actors = preloadRef.current.actors
+      .slice(0, 50)
+      .filter((a) => a._name.includes(term))
+      .slice(0, 8)
+    if (q.length === 1) {
+      return { actors, movies: [] }
+    }
+    const movies = preloadRef.current.movies
+      .slice(0, 50)
+      .filter((m) => m._title.includes(term))
+      .slice(0, 8)
+    return { actors, movies }
+  }, [])
+
+  // Fire immediately (no debounce). Abort previous request. Cache makes type→delete→retype instant.
   const performSearch = useCallback(async (searchQuery: string, shouldShowSuggestions: boolean) => {
     const q = searchQuery.trim()
     if (!q || q.length < 1 || !shouldShowSuggestions) {
       if (controllerRef.current) controllerRef.current.abort()
       setSuggestions(null)
+      lastSuggestionsRef.current = null
       return
     }
 
-    setLoading(true)
-    setHasSearched(false)
+    const key = q.toLowerCase()
+    if (cacheRef.current.has(key)) {
+      setSuggestions(cacheRef.current.get(key)!)
+      return
+    }
+
     try {
       if (controllerRef.current) controllerRef.current.abort()
       const controller = new AbortController()
       controllerRef.current = controller
       const response = await fetch(`/api/search?q=${encodeURIComponent(q)}&suggestions=true`, { signal: controller.signal })
-      if (!response.ok) {
-        setHasSearched(true)
-        return
-      }
+      if (!response.ok) return
       const data = await response.json()
+      cacheRef.current.set(key, data)
       setSuggestions(data)
-      setHasSearched(true)
-      if (!hasFetchedOnce) setHasFetchedOnce(true)
-    } catch (error: any) {
-      if (error?.name === 'AbortError') return
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') return
       console.error('Search failed:', error)
-      setHasSearched(true)
-    } finally {
-      setLoading(false)
     }
-  }, [hasFetchedOnce])
+  }, [])
 
-  const debouncedSearch = useMemo(
-    () => debounce(performSearch, 100),
-    [performSearch]
-  )
+  // Only clear suggestions when input becomes empty. Never clear on backspace/typing/slow response.
+  // First 1–2 chars: show local filter instantly, then upgrade when network returns.
+  useEffect(() => {
+    if (query.trim().length === 0) {
+      setSuggestions(null)
+      lastSuggestionsRef.current = null
+      setHighlightedIndex(-1)
+      return
+    }
+    if (showSuggestions) {
+      const q = query.trim()
+      if (q.length <= 2 && preloadRef.current) {
+        setSuggestions(localFilter(q))
+      }
+      performSearch(query, showSuggestions)
+      setHighlightedIndex(-1)
+    }
+  }, [query, showSuggestions, performSearch, localFilter])
 
-  // Track previous suggestions and current highlight so we can preserve highlight when results only reorder (same IDs)
+  // When suggestions change: reset highlight to 0 or preserve by ID when results only reorder
   const prevSuggestionsRef = useRef<NewSearchResult | null>(null)
   const highlightedIndexRef = useRef(highlightedIndex)
   highlightedIndexRef.current = highlightedIndex
-
-
-
-  useEffect(() => {
-    if (query.trim() && query.trim().length >= 1 && showSuggestions) {
-      debouncedSearch(query, showSuggestions)
-      setHighlightedIndex(-1)
-    } else {
-      // Only clear results when input becomes empty
-      setSuggestions(null)
-      setHighlightedIndex(-1)
-    }
-  }, [query, debouncedSearch, showSuggestions])
-
-  // When suggestions change: reset to 0 if IDs changed; preserve index when results only reordered (same IDs)
   useEffect(() => {
     const prev = prevSuggestionsRef.current
     prevSuggestionsRef.current = suggestions ?? null
@@ -241,9 +256,9 @@ export function SearchBar({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
-    const actors = suggestions?.actors?.slice(0, 10) || []
-    const movies = suggestions?.movies?.slice(0, 10) || []
+    const displayed = suggestions ?? lastSuggestionsRef.current
+    const actors = displayed?.actors?.slice(0, 10) || []
+    const movies = displayed?.movies?.slice(0, 10) || []
     const allItems = [...actors.map(a => ({ type: 'actor' as const, item: a })), ...movies.map(m => ({ type: 'movie' as const, item: m }))]
     
     // If we have suggestions and a highlighted one, navigate to that item
@@ -276,8 +291,9 @@ export function SearchBar({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const actors = suggestions?.actors?.slice(0, 10) || []
-    const movies = suggestions?.movies?.slice(0, 10) || []
+    const displayed = suggestions ?? lastSuggestionsRef.current
+    const actors = displayed?.actors?.slice(0, 10) || []
+    const movies = displayed?.movies?.slice(0, 10) || []
     const maxIndex = actors.length + movies.length - 1
 
     switch (e.key) {
@@ -326,8 +342,9 @@ export function SearchBar({
     setQuery('')
   }
 
-  const totalSuggestions = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
-
+  // Optimistic: show current suggestions or last known so dropdown is never empty while loading
+  const displaySuggestions = suggestions ?? lastSuggestionsRef.current
+  const totalSuggestions = (displaySuggestions?.actors?.length || 0) + (displaySuggestions?.movies?.length || 0)
   const hasResults = totalSuggestions > 0
 
   return (
@@ -354,8 +371,8 @@ export function SearchBar({
               ref={inputRef}
               type="text"
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
+              onInput={(e) => {
+                setQuery(e.currentTarget.value)
               }}
               onClick={(e) => {
                 if (!disableAutoScrollOnFocus) {
@@ -377,8 +394,9 @@ export function SearchBar({
                   })
                 }
               }}
-              onFocus={(e) => {
+              onFocus={() => {
                 setIsFocused(true)
+                ensurePreload()
                 if (!disableAutoScrollOnFocus) {
                   requestAnimationFrame(() => {
                     if (inputRef.current) {
@@ -396,7 +414,6 @@ export function SearchBar({
                     }
                   })
                 }
-                // Instant prefetch on focus when input has text (no debounce) so first result is already there
                 if (query.trim().length >= 1 && showSuggestions) {
                   performSearch(query.trim(), showSuggestions)
                 }
@@ -443,17 +460,17 @@ export function SearchBar({
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
                 }}
               >
-                {/* When we have previous results, keep showing them; no loading message (avoids distraction) */}
+                {/* Always show last-known suggestions (never "Searching…" or empty state) */}
                 {hasResults ? (
                   <motion.div className="p-2" initial={{}} animate={{}}>
                     {/* Actors */}
-                    {suggestions?.actors && suggestions.actors.length > 0 && (
+                    {displaySuggestions?.actors && displaySuggestions.actors.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           Actors
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                          {suggestions.actors.slice(0, 10).map((actor, index) => {
+                          {displaySuggestions.actors.slice(0, 10).map((actor, index) => {
                             const isHighlighted = highlightedIndex === index
                             return (
                               <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
@@ -480,7 +497,7 @@ export function SearchBar({
                                       "truncate transition-all",
                                       isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
                                     )}>
-                                      {highlightMatches(actor.name, query.trim())}
+                                      {actor.name}
                                     </div>
                                   </div>
                                 </PrefetchLink>
@@ -492,14 +509,14 @@ export function SearchBar({
                     )}
 
                     {/* Movies */}
-                    {suggestions?.movies && suggestions.movies.length > 0 && (
+                    {displaySuggestions?.movies && displaySuggestions.movies.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           Movies
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                          {suggestions.movies.slice(0, 10).map((movie, index) => {
-                            const actorOffset = (suggestions?.actors?.length || 0)
+                          {displaySuggestions.movies.slice(0, 10).map((movie, index) => {
+                            const actorOffset = (displaySuggestions?.actors?.length || 0)
                             const movieIndex = actorOffset + index
                             const isHighlighted = highlightedIndex === movieIndex
                             return (
@@ -527,7 +544,7 @@ export function SearchBar({
                                       "truncate transition-all",
                                       isHighlighted ? "text-white font-medium text-base" : "text-gray-300 text-sm group-hover:text-white"
                                     )}>
-                                      {highlightMatches(movie.title, query.trim())}
+                                      {movie.title}
                                     </div>
                                     {movie.year && (
                                       <div className={cn(
@@ -559,17 +576,7 @@ export function SearchBar({
                       </motion.div>
                     </div>
                   </motion.div>
-                ) : loading || !hasSearched ? (
-                  <div className="p-6 text-center">
-                    <BouncingBallsLoader size="sm" color="#FFD700" className="mb-3" />
-                    <p className="text-sm text-gray-300">Searching…</p>
-                  </div>
-                ) : (
-                  <div className="p-6 text-center">
-                    <p className="text-sm text-white">No results found</p>
-                    <p className="text-xs text-gray-400 mt-1">Try different keywords</p>
-                  </div>
-                )}
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>

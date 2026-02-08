@@ -21,7 +21,8 @@ export default async function RatePage({
     return new NextResponse(null, { status: 410 })
   }
 
-  const [movieRow, actorRow] = await Promise.all([
+  // Resolve by slug first, then by id (so /rate/{id}/{id} works when slug is null)
+  const [movieBySlug, actorBySlug] = await Promise.all([
     prisma.movie.findFirst({
       where: { slug: movieSlug },
       select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true },
@@ -31,6 +32,15 @@ export default async function RatePage({
       select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
     }),
   ])
+
+  const movieRow = movieBySlug ?? await prisma.movie.findFirst({
+    where: { id: movieSlug },
+    select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true },
+  })
+  const actorRow = actorBySlug ?? await prisma.actor.findFirst({
+    where: { id: actorSlug },
+    select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
+  })
 
   if (!movieRow || !actorRow) {
     return new NextResponse(null, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } })

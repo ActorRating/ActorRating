@@ -53,14 +53,12 @@ export function getMovieUrl(movie: Movie): string {
 }
 
 /**
- * Generate a rate page URL
- * Always prefers new slug-based format, generates slugs on-the-fly if needed
+ * Generate a rate page URL.
+ * Uses slug when present (pretty URLs); falls back to id when slug is null so the rate page can resolve.
  */
 export function getRateUrl(actor: Actor, movie: Movie): string {
-  // Use slug generation helpers to ensure correct format
-  const actorSlugOrId = getActorSlugOrGenerate(actor)
-  const movieSlugOrId = getMovieSlugOrGenerate(movie)
-  
+  const movieSlugOrId = movie.slug ?? movie.id
+  const actorSlugOrId = actor.slug ?? actor.id
   return `/rate/${movieSlugOrId}/${actorSlugOrId}`
 }
 

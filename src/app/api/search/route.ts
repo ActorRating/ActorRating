@@ -46,74 +46,28 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Suggestions: ranked fuzzy + multi-token, 1-char minimum. Ranking weights depend on query length:
-    // - Prefix/word-start weight increases as query grows (stronger exact intent).
-    // - Token and similarity weight decay slightly for longer queries (less fuzzy noise).
+    // Suggestions: best-effort hints. Prefix match first, then contains; order by popularity.
     if (suggestions) {
-      const queryLen = Math.min(searchTerm.length, 30)
-      // Decay token/similarity weight for longer queries so prefix/word-start dominate.
-      const tokenDecay = Math.max(0.5, 1.0 - (queryLen - 1) * 0.02)
-      const simDecay = Math.max(0.5, 1.0 - (queryLen - 1) * 0.015)
-      console.log("⚡ Ranked suggestions search for:", searchTerm, "len:", queryLen)
       const [actors, movies] = await Promise.all([
-        // Actor suggestions: prefix > word-start > token match (any order) > similarity > popularity tie-breaker
         prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-          WITH tokens AS (
-            SELECT unnest(string_to_array(lower(${searchTerm}), ' ')) AS token
-          )
-          SELECT
-            a.id,
-            a.name,
-            a.slug
+          SELECT a.id, a.name, a.slug
           FROM "Actor" a
-          WHERE
-            lower(a.name) LIKE '%' || lower(${searchTerm}) || '%'
-            OR similarity(a.name, ${searchTerm}) > 0.2
+          WHERE lower(a.name) LIKE lower(${searchTerm}) || '%'
+             OR lower(a.name) LIKE '%' || lower(${searchTerm}) || '%'
           ORDER BY
-            (
-              CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%'
-                THEN 100 + LEAST(${queryLen} * 2, 30)
-                ELSE 0 END
-              +
-              CASE WHEN lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%'
-                THEN 80 + LEAST(${queryLen}, 20)
-                ELSE 0 END
-              +
-              (SELECT COUNT(*)::int FROM tokens WHERE lower(a.name) LIKE '%' || token || '%') * 20 * ${tokenDecay}
-              +
-              similarity(a.name, ${searchTerm}) * 50 * ${simDecay}
-              +
-              log(COALESCE((SELECT COUNT(*)::int FROM "Performance" WHERE "actorId" = a.id), 0) + 1) * 5
-            ) DESC,
+            CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%' THEN 0 ELSE 1 END,
+            (SELECT COUNT(*) FROM "Performance" WHERE "actorId" = a.id) DESC,
             a.name ASC
           LIMIT 8
         `,
-        // Movie suggestions: same ranking (prefix boost, token/similarity decay)
         prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-          WITH tokens AS (
-            SELECT unnest(string_to_array(lower(${searchTerm}), ' ')) AS token
-          )
-          SELECT
-            m.id,
-            m.title,
-            m.slug,
-            m.year
+          SELECT m.id, m.title, m.slug, m.year
           FROM "Movie" m
-          WHERE
-            lower(m.title) LIKE '%' || lower(${searchTerm}) || '%'
-            OR similarity(m.title, ${searchTerm}) > 0.2
+          WHERE lower(m.title) LIKE lower(${searchTerm}) || '%'
+             OR lower(m.title) LIKE '%' || lower(${searchTerm}) || '%'
           ORDER BY
-            (
-              CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%'
-                THEN 100 + LEAST(${queryLen} * 2, 30)
-                ELSE 0 END
-              +
-              (SELECT COUNT(*)::int FROM tokens WHERE lower(m.title) LIKE '%' || token || '%') * 20 * ${tokenDecay}
-              +
-              similarity(m.title, ${searchTerm}) * 40 * ${simDecay}
-              +
-              COALESCE((SELECT COUNT(*)::int FROM "Performance" WHERE "movieId" = m.id), 0) * 0.05
-            ) DESC,
+            CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%' THEN 0 ELSE 1 END,
+            (SELECT COUNT(*) FROM "Performance" WHERE "movieId" = m.id) DESC,
             m.year DESC NULLS LAST,
             m.title ASC
           LIMIT 8

@@ -1,7 +1,8 @@
 /**
  * Script to populate slug fields for existing actors and movies
  * This is a one-time migration that adds slugs to all existing records
- * 
+ * Uses batched updates for speed (1000 actors / 500 movies per batch).
+ *
  * Run with: npx tsx scripts/populate-slugs.ts
  */
 
@@ -9,114 +10,114 @@ import { PrismaClient } from '@prisma/client'
 import { createActorSlug, createMovieSlug } from '../src/lib/createSlug'
 
 const prisma = new PrismaClient()
+const ACTOR_BATCH = 1000
+const MOVIE_BATCH = 500
 
 async function populateSlugs() {
-  console.log('🔄 Starting slug population...\n')
+  console.log('🔄 Starting slug population (actors, then movies)...\n')
 
   try {
-    // Populate Actor slugs
+    // Populate Actor slugs (batched)
     console.log('📝 Populating actor slugs...')
     const actors = await prisma.actor.findMany({
       where: {
-        OR: [
-          { slug: null },
-          { slug: '' }
-        ]
+        OR: [{ slug: null }, { slug: '' }]
       },
-      select: { id: true, name: true, slug: true }
+      select: { id: true, name: true }
     })
 
     console.log(`Found ${actors.length} actors without slugs`)
 
     let actorCount = 0
-    for (const actor of actors) {
-      const slug = createActorSlug(actor.name)
-      
-      // Check if slug already exists (handle duplicates)
-      const existing = await prisma.actor.findUnique({
-        where: { slug }
-      })
+    for (let i = 0; i < actors.length; i += ACTOR_BATCH) {
+      const batch = actors.slice(i, i + ACTOR_BATCH)
+      const slugToActor = new Map<string, { id: string; name: string }>()
+      const updates: { id: string; slug: string }[] = []
 
-      let finalSlug = slug
-      if (existing && existing.id !== actor.id) {
-        // Append ID to make unique
-        finalSlug = `${slug}-${actor.id.slice(-8)}`
-        console.log(`  ⚠️  Duplicate slug "${slug}" found, using "${finalSlug}"`)
+      for (const actor of batch) {
+        const baseSlug = createActorSlug(actor.name)
+        slugToActor.set(baseSlug, actor)
       }
 
-      await prisma.actor.update({
-        where: { id: actor.id },
-        data: { slug: finalSlug }
+      const existingBySlug = await prisma.actor.findMany({
+        where: { slug: { in: [...slugToActor.keys()] } },
+        select: { id: true, slug: true }
       })
+      const takenSlugs = new Set(existingBySlug.map((r) => r.slug).filter(Boolean))
 
-      actorCount++
-      if (actorCount % 10 === 0) {
-        process.stdout.write(`  ✓ Updated ${actorCount}/${actors.length} actors\r`)
+      const slugCount = new Map<string, number>()
+      for (const actor of batch) {
+        const baseSlug = createActorSlug(actor.name)
+        const taken = takenSlugs.has(baseSlug)
+        const sameSlugInBatch = (slugCount.get(baseSlug) ?? 0) + 1
+        slugCount.set(baseSlug, sameSlugInBatch)
+        const needSuffix = taken || sameSlugInBatch > 1
+        const finalSlug = needSuffix ? `${baseSlug}-${actor.id.slice(-8)}` : baseSlug
+        updates.push({ id: actor.id, slug: finalSlug })
+        if (needSuffix) takenSlugs.add(finalSlug)
+        else takenSlugs.add(baseSlug)
       }
+
+      await prisma.$transaction(
+        updates.map(({ id, slug }) =>
+          prisma.actor.update({ where: { id }, data: { slug } })
+        )
+      )
+      actorCount += batch.length
+      process.stdout.write(`  ✓ Actors: ${actorCount}/${actors.length}\r`)
     }
-    console.log(`  ✅ Updated ${actorCount} actor slugs\n`)
+    console.log(`  ✅ Actors: ${actorCount} slugs updated\n`)
 
-    // Populate Movie slugs
+    // Populate Movie slugs (batched)
     console.log('📝 Populating movie slugs...')
     const movies = await prisma.movie.findMany({
       where: {
-        OR: [
-          { slug: null },
-          { slug: '' }
-        ]
+        OR: [{ slug: null }, { slug: '' }]
       },
-      select: { id: true, title: true, year: true, slug: true }
+      select: { id: true, title: true, year: true }
     })
 
     console.log(`Found ${movies.length} movies without slugs`)
 
     let movieCount = 0
-    
-    // Process movies ONE AT A TIME to avoid connection pool exhaustion
-    for (const movie of movies) {
-      try {
-        const slug = createMovieSlug(movie.title, movie.year)
-        
-        // Check if slug already exists (handle duplicates)
-        const existing = await prisma.movie.findUnique({
-          where: { slug }
-        })
+    for (let i = 0; i < movies.length; i += MOVIE_BATCH) {
+      const batch = movies.slice(i, i + MOVIE_BATCH)
+      const updates: { id: string; slug: string }[] = []
+      const slugs = batch.map((m) => createMovieSlug(m.title, m.year))
 
-        let finalSlug = slug
-        if (existing && existing.id !== movie.id) {
-          // Append ID to make unique
-          finalSlug = `${slug}-${movie.id.slice(-8)}`
-        }
+      const existingBySlug = await prisma.movie.findMany({
+        where: { slug: { in: slugs } },
+        select: { id: true, slug: true }
+      })
+      const takenSlugs = new Set(existingBySlug.map((r) => r.slug).filter(Boolean))
 
-        await prisma.movie.update({
-          where: { id: movie.id },
-          data: { slug: finalSlug }
-        })
-
-        movieCount++
-        
-        // Progress update every 100 movies
-        if (movieCount % 100 === 0) {
-          process.stdout.write(`  ✓ Updated ${movieCount}/${movies.length} movies (${Math.round(movieCount/movies.length*100)}%)\r`)
-        }
-        
-        // Small delay every 10 movies to avoid overwhelming the connection
-        if (movieCount % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 50))
-        }
-      } catch (error) {
-        console.error(`\n  ❌ Error updating movie ${movie.id} (${movie.title}):`, (error as any).message)
-        // Wait longer on error
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Continue with next movie
+      const slugCount = new Map<string, number>()
+      for (let j = 0; j < batch.length; j++) {
+        const movie = batch[j]
+        const baseSlug = slugs[j]
+        const taken = takenSlugs.has(baseSlug)
+        const sameInBatch = (slugCount.get(baseSlug) ?? 0) + 1
+        slugCount.set(baseSlug, sameInBatch)
+        const needSuffix = taken || sameInBatch > 1
+        const finalSlug = needSuffix ? `${baseSlug}-${movie.id.slice(-8)}` : baseSlug
+        updates.push({ id: movie.id, slug: finalSlug })
+        if (needSuffix) takenSlugs.add(finalSlug)
+        else takenSlugs.add(baseSlug)
       }
+
+      await prisma.$transaction(
+        updates.map(({ id, slug }) =>
+          prisma.movie.update({ where: { id }, data: { slug } })
+        )
+      )
+      movieCount += batch.length
+      process.stdout.write(`  ✓ Movies: ${movieCount}/${movies.length}\r`)
     }
-    console.log(`\n  ✅ Updated ${movieCount} movie slugs\n`)
+    console.log(`\n  ✅ Movies: ${movieCount} slugs updated\n`)
 
     console.log('✅ Slug population completed successfully!')
-    console.log(`   - ${actorCount} actors updated`)
-    console.log(`   - ${movieCount} movies updated`)
-
+    console.log(`   - Actors: ${actorCount}`)
+    console.log(`   - Movies: ${movieCount}`)
   } catch (error) {
     console.error('❌ Error populating slugs:', error)
     throw error

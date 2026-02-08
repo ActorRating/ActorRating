@@ -29,6 +29,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { Actor, Performance } from "@prisma/client";
+import { createActorSlug } from "@/lib/createSlug";
 import { computePerformanceTier } from "@/lib/performance-tier";
 import { getMovieCreditsForIngestion } from "@/lib/tmdb";
 import type { MovieCreditsForIngestion } from "@/lib/tmdb";
@@ -64,7 +65,7 @@ export async function ensureActorByTmdbId(
     if (existing) return { actor: existing, created: false };
     try {
       const actor = await prisma.actor.create({
-        data: { name, tmdbId, ...(imageUrl && { imageUrl }) },
+        data: { name, tmdbId, slug: createActorSlug(name), ...(imageUrl && { imageUrl }) },
       });
       return { actor, created: true };
     } catch (e: unknown) {
@@ -79,7 +80,7 @@ export async function ensureActorByTmdbId(
   if (byName) return { actor: byName, created: false };
   try {
     const actor = await prisma.actor.create({
-      data: { name, ...(imageUrl && { imageUrl }) },
+      data: { name, slug: createActorSlug(name), ...(imageUrl && { imageUrl }) },
     });
     return { actor, created: true };
   } catch (e: unknown) {
@@ -293,7 +294,7 @@ export async function ingestMovieCast(
     const existing = performanceByActorId.get(actor.id);
 
     if (!existing) {
-      await prisma.performance.create({
+      const created = await prisma.performance.create({
         data: {
           userId: SYSTEM_USER_ID,
           movieId: movie.id,
@@ -306,6 +307,7 @@ export async function ingestMovieCast(
         },
       });
       performancesCreated += 1;
+      performanceByActorId.set(actor.id, { id: created.id, actorId: created.actorId });
     } else {
       await prisma.performance.update({
         where: { id: existing.id },
