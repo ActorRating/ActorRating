@@ -47,15 +47,28 @@ async function populateSlugs() {
 
       const slugCount = new Map<string, number>()
       for (const actor of batch) {
-        const baseSlug = createActorSlug(actor.name)
+        let baseSlug = createActorSlug(actor.name)
+        if (!baseSlug) baseSlug = actor.id // names that normalize to empty (e.g. CJK) -> use id
         const taken = takenSlugs.has(baseSlug)
         const sameSlugInBatch = (slugCount.get(baseSlug) ?? 0) + 1
         slugCount.set(baseSlug, sameSlugInBatch)
         const needSuffix = taken || sameSlugInBatch > 1
-        const finalSlug = needSuffix ? `${baseSlug}-${actor.id.slice(-8)}` : baseSlug
+        let finalSlug = needSuffix ? `${baseSlug}-${actor.id}` : baseSlug
         updates.push({ id: actor.id, slug: finalSlug })
-        if (needSuffix) takenSlugs.add(finalSlug)
-        else takenSlugs.add(baseSlug)
+        takenSlugs.add(finalSlug)
+      }
+
+      // Dedupe: ensure every slug is unique (empty baseSlug or same slug across batch)
+      const seen = new Set<string>()
+      for (const u of updates) {
+        let slug = u.slug
+        const actor = batch.find((a) => a.id === u.id)!
+        const base = createActorSlug(actor.name) || actor.id
+        while (seen.has(slug)) {
+          slug = `${base}-${u.id}`
+        }
+        u.slug = slug
+        seen.add(slug)
       }
 
       await prisma.$transaction(
@@ -94,15 +107,27 @@ async function populateSlugs() {
       const slugCount = new Map<string, number>()
       for (let j = 0; j < batch.length; j++) {
         const movie = batch[j]
-        const baseSlug = slugs[j]
+        let baseSlug = slugs[j]
+        if (!baseSlug) baseSlug = movie.id
         const taken = takenSlugs.has(baseSlug)
         const sameInBatch = (slugCount.get(baseSlug) ?? 0) + 1
         slugCount.set(baseSlug, sameInBatch)
         const needSuffix = taken || sameInBatch > 1
-        const finalSlug = needSuffix ? `${baseSlug}-${movie.id.slice(-8)}` : baseSlug
+        const finalSlug = needSuffix ? `${baseSlug}-${movie.id}` : baseSlug
         updates.push({ id: movie.id, slug: finalSlug })
-        if (needSuffix) takenSlugs.add(finalSlug)
-        else takenSlugs.add(baseSlug)
+        takenSlugs.add(finalSlug)
+      }
+
+      const seenMovie = new Set<string>()
+      for (const u of updates) {
+        let slug = u.slug
+        const movie = batch.find((m) => m.id === u.id)!
+        const base = createMovieSlug(movie.title, movie.year) || movie.id
+        while (seenMovie.has(slug)) {
+          slug = `${base}-${u.id}`
+        }
+        u.slug = slug
+        seenMovie.add(slug)
       }
 
       await prisma.$transaction(

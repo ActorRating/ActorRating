@@ -1,22 +1,42 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NewSearchResult } from '@/types'
-import type { SearchActor, SearchMovie } from '@/types'
-import Link from 'next/link'
-
-// Normalized preload: lowercase _name/_title computed once so local filter does no per-keystroke work.
-type NormalizedPreload = {
-  actors: (SearchActor & { _name: string })[]
-  movies: (SearchMovie & { _title: string })[]
-}
-let GLOBAL_PRELOAD: NormalizedPreload | null = null
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
-import { fadeInUp, getMotionProps, fadeIn, staggerContainer } from '@/lib/animations'
+import { fadeInUp, staggerContainer } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
+
+const DEBOUNCE_MS = 120
+const MAX_SUGGESTIONS = 8
+
+function BouncingBalls({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-center justify-center gap-1.5 py-6", className)} aria-hidden>
+      <span
+        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
+        style={{ animationDelay: "0ms" }}
+      />
+      <span
+        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
+        style={{ animationDelay: "150ms" }}
+      />
+      <span
+        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
+        style={{ animationDelay: "300ms" }}
+      />
+    </div>
+  )
+}
+
+/** Preload shape for inline autocomplete (prefix-only, no network after load). */
+type PreloadData = {
+  actors: Array<{ id: string; name: string; slug: string | null }>
+  movies: Array<{ id: string; title: string; slug: string | null; year: number }>
+}
+let preloadCache: PreloadData | null = null
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (
@@ -72,34 +92,30 @@ export function SearchBar({
   const [query, setQuery] = useState(initialValue)
   const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<NewSearchResult | null>(null)
+  const [navigating, setNavigating] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [preload, setPreload] = useState<PreloadData | null>(preloadCache)
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const controllerRef = useRef<AbortController | null>(null)
-  const cacheRef = useRef(new Map<string, NewSearchResult>())
-  const preloadRef = useRef<NormalizedPreload | null>(null)
-  // Keep last known suggestions so we never show an empty dropdown while a new request is in flight
-  const lastSuggestionsRef = useRef<NewSearchResult | null>(null)
-  if (suggestions != null) lastSuggestionsRef.current = suggestions
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastQueryRef = useRef<string>("")
 
-  // Preload on focus (and mount) so first keystroke is ready. Global cache makes every SearchBar warm after the first.
+  const showDropdown = (isFocused && showSuggestions && query.trim().length >= 1) || navigating
+
+  // Preload for inline autocomplete only (prefix match, <16ms). Fetched once, cached globally.
   const ensurePreload = useCallback(() => {
-    if (GLOBAL_PRELOAD) {
-      preloadRef.current = GLOBAL_PRELOAD
+    if (preloadCache) {
+      setPreload(preloadCache)
       return
     }
-    fetch('/api/search/preload')
+    fetch("/api/search/preload")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: NewSearchResult | null) => {
+      .then((d: PreloadData | null) => {
         if (!d) return
-        const normalized: NormalizedPreload = {
-          actors: d.actors.map((a) => ({ ...a, _name: a.name.toLowerCase() })),
-          movies: d.movies.map((m) => ({ ...m, _title: m.title.toLowerCase() })),
-        }
-        GLOBAL_PRELOAD = normalized
-        preloadRef.current = normalized
+        preloadCache = d
+        setPreload(d)
       })
       .catch(() => {})
   }, [])
@@ -108,77 +124,79 @@ export function SearchBar({
     ensurePreload()
   }, [ensurePreload])
 
-  // Dropdown visibility: focus + non-empty input only. Instant — not tied to network.
-  const showDropdown = isFocused && showSuggestions && query.trim().length >= 1
-
-  // Local filter: precomputed _name/_title, scan only first 50, actors-only on first char.
-  const localFilter = useCallback((q: string): NewSearchResult | null => {
-    if (!preloadRef.current) return null
-    const term = q.toLowerCase().trim()
-    if (!term) return null
-    const actors = preloadRef.current.actors
-      .slice(0, 50)
-      .filter((a) => a._name.includes(term))
-      .slice(0, 8)
-    if (q.length === 1) {
-      return { actors, movies: [] }
+  // Inline autocomplete: single best prefix match from preload (actor or movie) so we can navigate on accept.
+  const inlineCompletionMatch = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q || !preload) return null
+    for (const a of preload.actors) {
+      if (a.name.toLowerCase().startsWith(q)) return { type: "actor" as const, item: a }
     }
-    const movies = preloadRef.current.movies
-      .slice(0, 50)
-      .filter((m) => m._title.includes(term))
-      .slice(0, 8)
-    return { actors, movies }
-  }, [])
+    for (const m of preload.movies) {
+      if (m.title.toLowerCase().startsWith(q)) return { type: "movie" as const, item: m }
+    }
+    return null
+  }, [query, preload])
 
-  // Fire immediately (no debounce). Abort previous request. Cache makes type→delete→retype instant.
-  const performSearch = useCallback(async (searchQuery: string, shouldShowSuggestions: boolean) => {
-    const q = searchQuery.trim()
-    if (!q || q.length < 1 || !shouldShowSuggestions) {
-      if (controllerRef.current) controllerRef.current.abort()
-      setSuggestions(null)
-      lastSuggestionsRef.current = null
+  const inlineCompletionText = inlineCompletionMatch
+    ? inlineCompletionMatch.type === "actor"
+      ? inlineCompletionMatch.item.name
+      : inlineCompletionMatch.item.title
+    : null
+
+  const showInlineCompletion =
+    isFocused &&
+    inlineCompletionText !== null &&
+    query.trim().length > 0 &&
+    query.trim().toLowerCase() === inlineCompletionText.slice(0, query.trim().length).toLowerCase()
+  const inlineSuffix = showInlineCompletion ? inlineCompletionText!.slice(query.trim().length) : ""
+
+  // Measure query width so gray suffix starts exactly after typed text (no overlap)
+  const measureRef = useRef<HTMLSpanElement>(null)
+  const [queryWidthPx, setQueryWidthPx] = useState(0)
+  useLayoutEffect(() => {
+    if (!showInlineCompletion || !inlineSuffix) {
+      setQueryWidthPx(0)
       return
     }
+    const input = inputRef.current
+    const measure = measureRef.current
+    if (!input || !measure) return
+    const s = getComputedStyle(input)
+    measure.style.font = s.font
+    measure.style.letterSpacing = s.letterSpacing
+    setQueryWidthPx(measure.offsetWidth)
+  }, [showInlineCompletion, inlineSuffix, query])
 
-    const key = q.toLowerCase()
-    if (cacheRef.current.has(key)) {
-      setSuggestions(cacheRef.current.get(key)!)
-      return
-    }
-
-    try {
-      if (controllerRef.current) controllerRef.current.abort()
-      const controller = new AbortController()
-      controllerRef.current = controller
-      const response = await fetch(`/api/search?q=${encodeURIComponent(q)}&suggestions=true`, { signal: controller.signal })
-      if (!response.ok) return
-      const data = await response.json()
-      cacheRef.current.set(key, data)
-      setSuggestions(data)
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'AbortError') return
-      console.error('Search failed:', error)
-    }
-  }, [])
-
-  // Only clear suggestions when input becomes empty. Never clear on backspace/typing/slow response.
-  // First 1–2 chars: show local filter instantly, then upgrade when network returns.
+  // Server-side suggestions: debounced fetch on every keystroke. No UI blocking.
   useEffect(() => {
-    if (query.trim().length === 0) {
+    const raw = query.trim()
+    if (raw.length === 0) {
       setSuggestions(null)
-      lastSuggestionsRef.current = null
       setHighlightedIndex(-1)
       return
     }
-    if (showSuggestions) {
-      const q = query.trim()
-      if (q.length <= 2 && preloadRef.current) {
-        setSuggestions(localFilter(q))
-      }
-      performSearch(query, showSuggestions)
-      setHighlightedIndex(-1)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
+      const q = raw
+      lastQueryRef.current = q
+      fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: NewSearchResult | null) => {
+          if (!d || lastQueryRef.current !== q) return
+          setSuggestions({ actors: d.actors ?? [], movies: d.movies ?? [] })
+          setHighlightedIndex(-1)
+        })
+        .catch(() => {
+          if (lastQueryRef.current === q) setSuggestions({ actors: [], movies: [] })
+        })
+    }, DEBOUNCE_MS)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [query, showSuggestions, performSearch, localFilter])
+  }, [query, showSuggestions])
 
   // When suggestions change: reset highlight to 0 or preserve by ID when results only reorder
   const prevSuggestionsRef = useRef<NewSearchResult | null>(null)
@@ -256,7 +274,7 @@ export function SearchBar({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    const displayed = suggestions ?? lastSuggestionsRef.current
+    const displayed = suggestions
     const actors = displayed?.actors?.slice(0, 10) || []
     const movies = displayed?.movies?.slice(0, 10) || []
     const allItems = [...actors.map(a => ({ type: 'actor' as const, item: a })), ...movies.map(m => ({ type: 'movie' as const, item: m }))]
@@ -267,10 +285,12 @@ export function SearchBar({
       if (selected.type === 'actor') {
         setQuery(selected.item.name)
         setHighlightedIndex(-1)
+        setNavigating(true)
         router.push(getActorUrl(selected.item))
       } else {
         setQuery(selected.item.title)
         setHighlightedIndex(-1)
+        setNavigating(true)
         router.push(getMovieUrl(selected.item))
       }
       return
@@ -291,7 +311,22 @@ export function SearchBar({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const displayed = suggestions ?? lastSuggestionsRef.current
+    // Accept inline autocomplete (Tab, ArrowRight, or Enter): fill input and navigate to that actor/movie
+    if ((e.key === "Tab" || e.key === "ArrowRight" || e.key === "Enter") && showInlineCompletion && inlineCompletionMatch) {
+      e.preventDefault()
+      e.stopPropagation()
+      const text = inlineCompletionMatch.type === "actor" ? inlineCompletionMatch.item.name : inlineCompletionMatch.item.title
+      setQuery(text)
+      setNavigating(true)
+      if (inlineCompletionMatch.type === "actor") {
+        router.push(getActorUrl(inlineCompletionMatch.item))
+      } else {
+        router.push(getMovieUrl(inlineCompletionMatch.item))
+      }
+      return
+    }
+
+    const displayed = suggestions
     const actors = displayed?.actors?.slice(0, 10) || []
     const movies = displayed?.movies?.slice(0, 10) || []
     const maxIndex = actors.length + movies.length - 1
@@ -342,9 +377,7 @@ export function SearchBar({
     setQuery('')
   }
 
-  // Optimistic: show current suggestions or last known so dropdown is never empty while loading
-  const displaySuggestions = suggestions ?? lastSuggestionsRef.current
-  const totalSuggestions = (displaySuggestions?.actors?.length || 0) + (displaySuggestions?.movies?.length || 0)
+  const totalSuggestions = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
   const hasResults = totalSuggestions > 0
 
   return (
@@ -364,9 +397,32 @@ export function SearchBar({
               : '2rem'
           }}
         >
-          {/* Input Row - Always visible at top */}
+          {/* Input Row - Always visible at top. Inline autocomplete = gray suffix overlay. */}
           <div className="relative">
             <IconSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 z-10" />
+            {/* Inline autocomplete: gray suffix starts exactly after typed text (measured). */}
+            {showInlineCompletion && inlineSuffix && (
+              <div
+                aria-hidden
+                className="absolute left-12 right-10 top-0 bottom-0 flex items-center pointer-events-none overflow-hidden z-[2]"
+              >
+                <span
+                  ref={measureRef}
+                  className="absolute left-0 top-0 whitespace-nowrap opacity-0 pointer-events-none select-none"
+                  style={{ visibility: 'hidden' }}
+                >
+                  {query}
+                </span>
+                {queryWidthPx > 0 && (
+                  <span
+                    className="text-muted-foreground whitespace-nowrap shrink-0"
+                    style={{ marginLeft: queryWidthPx }}
+                  >
+                    {inlineSuffix}
+                  </span>
+                )}
+              </div>
+            )}
             <input
               ref={inputRef}
               type="text"
@@ -414,9 +470,6 @@ export function SearchBar({
                     }
                   })
                 }
-                if (query.trim().length >= 1 && showSuggestions) {
-                  performSearch(query.trim(), showSuggestions)
-                }
               }}
               onKeyDown={handleKeyDown}
               onBlur={() => {
@@ -426,7 +479,7 @@ export function SearchBar({
               placeholder={placeholder}
               autoFocus={autoFocus}
               className={cn(
-                "w-full pl-12 pr-10 py-3 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 border-0 transition-all duration-200"
+                "relative z-[1] w-full pl-12 pr-10 py-3 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 border-0 transition-all duration-200"
               )}
             />
             <AnimatePresence>
@@ -460,17 +513,19 @@ export function SearchBar({
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
                 }}
               >
-                {/* Always show last-known suggestions (never "Searching…" or empty state) */}
-                {hasResults ? (
+                {navigating ? (
+                  <BouncingBalls />
+                ) : (
+                  hasResults ? (
                   <motion.div className="p-2" initial={{}} animate={{}}>
                     {/* Actors */}
-                    {displaySuggestions?.actors && displaySuggestions.actors.length > 0 && (
+                    {suggestions?.actors && suggestions.actors.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           Actors
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                          {displaySuggestions.actors.slice(0, 10).map((actor, index) => {
+                          {suggestions.actors.slice(0, 10).map((actor, index) => {
                             const isHighlighted = highlightedIndex === index
                             return (
                               <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
@@ -509,14 +564,14 @@ export function SearchBar({
                     )}
 
                     {/* Movies */}
-                    {displaySuggestions?.movies && displaySuggestions.movies.length > 0 && (
+                    {suggestions?.movies && suggestions.movies.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           Movies
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
-                          {displaySuggestions.movies.slice(0, 10).map((movie, index) => {
-                            const actorOffset = (displaySuggestions?.actors?.length || 0)
+                          {suggestions.movies.slice(0, 10).map((movie, index) => {
+                            const actorOffset = (suggestions?.actors?.length || 0)
                             const movieIndex = actorOffset + index
                             const isHighlighted = highlightedIndex === movieIndex
                             return (
@@ -576,7 +631,8 @@ export function SearchBar({
                       </motion.div>
                     </div>
                   </motion.div>
-                ) : null}
+                  ) : null
+                )}
               </motion.div>
             )}
           </AnimatePresence>

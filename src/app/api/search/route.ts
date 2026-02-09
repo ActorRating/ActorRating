@@ -8,8 +8,6 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')
     const suggestions = searchParams.get('suggestions') === 'true'
     
-    console.log("🔍 Search API called with query:", query, suggestions ? "(suggestions)" : "")
-
     // Query is required
     if (query === null || query === undefined) {
       return NextResponse.json(
@@ -35,8 +33,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log("🔍 Processing search term:", searchTerm)
-
     // Cache key: normalized query + mode (suggestions vs full)
     const cacheKey = makeCacheKey('search', [searchTerm.toLowerCase(), suggestions ? 'suggestions' : 'full'])
     const cached = await cacheGet<{ actors: any[]; movies: any[] }>(cacheKey)
@@ -46,17 +42,22 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Suggestions: best-effort hints. Prefix match first, then contains; order by popularity.
+    // Suggestions: first letter+, match first/last/full name, any order, typos (trigram). Rank: text match then popularity. Limit 8.
     if (suggestions) {
       const [actors, movies] = await Promise.all([
         prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
           SELECT a.id, a.name, a.slug
           FROM "Actor" a
           WHERE lower(a.name) LIKE lower(${searchTerm}) || '%'
+             OR lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%'
              OR lower(a.name) LIKE '%' || lower(${searchTerm}) || '%'
+             OR (octet_length(${searchTerm}) >= 2 AND similarity(a.name, ${searchTerm}) > 0.2)
           ORDER BY
-            CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%' THEN 0 ELSE 1 END,
-            (SELECT COUNT(*) FROM "Performance" WHERE "actorId" = a.id) DESC,
+            CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%' THEN 0
+                 WHEN lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%' THEN 1
+                 WHEN lower(a.name) LIKE '%' || lower(${searchTerm}) || '%' THEN 2
+                 ELSE 3 END,
+            COALESCE((SELECT COUNT(*) FROM "Performance" WHERE "actorId" = a.id), 0) DESC,
             a.name ASC
           LIMIT 8
         `,
@@ -64,10 +65,15 @@ export async function GET(request: NextRequest) {
           SELECT m.id, m.title, m.slug, m.year
           FROM "Movie" m
           WHERE lower(m.title) LIKE lower(${searchTerm}) || '%'
+             OR lower(m.title) LIKE '% ' || lower(${searchTerm}) || '%'
              OR lower(m.title) LIKE '%' || lower(${searchTerm}) || '%'
+             OR (octet_length(${searchTerm}) >= 2 AND similarity(m.title, ${searchTerm}) > 0.2)
           ORDER BY
-            CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%' THEN 0 ELSE 1 END,
-            (SELECT COUNT(*) FROM "Performance" WHERE "movieId" = m.id) DESC,
+            CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%' THEN 0
+                 WHEN lower(m.title) LIKE '% ' || lower(${searchTerm}) || '%' THEN 1
+                 WHEN lower(m.title) LIKE '%' || lower(${searchTerm}) || '%' THEN 2
+                 ELSE 3 END,
+            COALESCE((SELECT COUNT(*) FROM "Performance" WHERE "movieId" = m.id), 0) DESC,
             m.year DESC NULLS LAST,
             m.title ASC
           LIMIT 8
@@ -91,9 +97,6 @@ export async function GET(request: NextRequest) {
     // - Exact matches (full-text search) - highest priority
     // - Similar matches (trigram similarity > 0.2) - handles typos
     // - Partial matches (ILIKE) - substring matches
-    // Run both queries in parallel for better performance
-    console.log("🔍 Searching actors and movies in parallel for:", searchTerm)
-    
     const [actors, movies] = await Promise.all([
       prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
         WITH exact_matches AS (
@@ -163,16 +166,10 @@ export async function GET(request: NextRequest) {
       `
     ])
 
-    console.log("👤 Actors results:", actors, "Count:", actors.length)
-    console.log("🎬 Movies results:", movies, "Count:", movies.length)
-
     const payload = { 
       actors: actors || [],
       movies: movies || []
     }
-    
-    console.log("📦 Final payload:", payload)
-    console.log("📊 Total results - Actors:", (actors || []).length, "Movies:", (movies || []).length)
     
     // Set small TTL in Redis to reduce database pressure
     await cacheSet(cacheKey, payload, 60)

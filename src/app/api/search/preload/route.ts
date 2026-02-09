@@ -14,18 +14,19 @@ export async function GET() {
       return res
     }
 
+    // 200 each for inline autocomplete: prefix-only, popularity-sorted, no network after load
     const [actors, movies] = await Promise.all([
       prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
         SELECT a.id, a.name, a.slug
         FROM "Actor" a
         ORDER BY (SELECT COUNT(*) FROM "Performance" p WHERE p."actorId" = a.id) DESC
-        LIMIT 100
+        LIMIT 200
       `,
       prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
         SELECT m.id, m.title, m.slug, m.year
         FROM "Movie" m
         ORDER BY (SELECT COUNT(*) FROM "Performance" p WHERE p."movieId" = m.id) DESC
-        LIMIT 100
+        LIMIT 200
       `
     ])
 
