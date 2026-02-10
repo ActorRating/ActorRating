@@ -8,6 +8,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
+import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -152,6 +153,7 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <RouteChangeScroll />
             </Suspense>
+            <SearchPreloadTrigger />
             <ChunkErrorReload />
             <Suspense fallback={null}>{children}</Suspense>
             <Analytics />

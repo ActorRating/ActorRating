@@ -9,34 +9,22 @@ import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { fadeInUp, staggerContainer } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 
-const DEBOUNCE_MS = 120
+const DEBOUNCE_MS = 80
 const MAX_SUGGESTIONS = 8
+const LOCAL_LIMIT = 4
 
-function BouncingBalls({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center justify-center gap-1.5 py-6", className)} aria-hidden>
-      <span
-        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
-        style={{ animationDelay: "0ms" }}
-      />
-      <span
-        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
-        style={{ animationDelay: "150ms" }}
-      />
-      <span
-        className="w-2 h-2 rounded-full bg-[#FFD700] animate-bounce"
-        style={{ animationDelay: "300ms" }}
-      />
-    </div>
-  )
-}
-
-/** Preload shape for inline autocomplete (prefix-only, no network after load). */
+/** Preload shape for inline autocomplete and instant dropdown. */
 type PreloadData = {
   actors: Array<{ id: string; name: string; slug: string | null }>
   movies: Array<{ id: string; title: string; slug: string | null; year: number }>
 }
+/** Normalized for instant local filter (no per-keystroke toLowerCase). */
+type NormalizedPreload = {
+  actors: Array<{ id: string; name: string; slug: string | null; _name: string }>
+  movies: Array<{ id: string; title: string; slug: string | null; year: number; _title: string }>
+}
 let preloadCache: PreloadData | null = null
+let normalizedPreloadCache: NormalizedPreload | null = null
 
 // Inline lightweight icons to avoid bundling external icon libraries in server/vendor chunks
 const IconSearch = (props: React.SVGProps<SVGSVGElement>) => (
@@ -92,7 +80,6 @@ export function SearchBar({
   const [query, setQuery] = useState(initialValue)
   const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<NewSearchResult | null>(null)
-  const [navigating, setNavigating] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const [preload, setPreload] = useState<PreloadData | null>(preloadCache)
   const router = useRouter()
@@ -102,12 +89,23 @@ export function SearchBar({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastQueryRef = useRef<string>("")
 
-  const showDropdown = (isFocused && showSuggestions && query.trim().length >= 1) || navigating
+  const showDropdown = isFocused && showSuggestions && query.trim().length >= 1
 
-  // Preload for inline autocomplete only (prefix match, <16ms). Fetched once, cached globally.
+  // Preload: inline autocomplete + instant dropdown. Check global (e.g. from layout) then fetch once.
   const ensurePreload = useCallback(() => {
     if (preloadCache) {
       setPreload(preloadCache)
+      return
+    }
+    const fromGlobal =
+      typeof window !== "undefined" && (window as unknown as { __SEARCH_PRELOAD__?: PreloadData }).__SEARCH_PRELOAD__
+    if (fromGlobal) {
+      preloadCache = fromGlobal
+      normalizedPreloadCache = {
+        actors: fromGlobal.actors.map((a) => ({ ...a, _name: a.name.toLowerCase() })),
+        movies: fromGlobal.movies.map((m) => ({ ...m, _title: m.title.toLowerCase() })),
+      }
+      setPreload(fromGlobal)
       return
     }
     fetch("/api/search/preload")
@@ -115,6 +113,10 @@ export function SearchBar({
       .then((d: PreloadData | null) => {
         if (!d) return
         preloadCache = d
+        normalizedPreloadCache = {
+          actors: d.actors.map((a) => ({ ...a, _name: a.name.toLowerCase() })),
+          movies: d.movies.map((m) => ({ ...m, _title: m.title.toLowerCase() })),
+        }
         setPreload(d)
       })
       .catch(() => {})
@@ -167,13 +169,42 @@ export function SearchBar({
     setQueryWidthPx(measure.offsetWidth)
   }, [showInlineCompletion, inlineSuffix, query])
 
-  // Server-side suggestions: debounced fetch on every keystroke. No UI blocking.
+  // Instant dropdown: show local results from preload immediately. Multi-word = all tokens in name (any order). Rank: starts with > word-start > contains.
   useEffect(() => {
     const raw = query.trim()
     if (raw.length === 0) {
       setSuggestions(null)
       setHighlightedIndex(-1)
       return
+    }
+
+    const term = raw.toLowerCase()
+    const tokens = term.split(/\s+/).filter(Boolean)
+    const allTokensIn = (normalized: string) =>
+      tokens.length === 0 ? false : tokens.every((t) => normalized.includes(t))
+    const score = (normalized: string): number => {
+      if (normalized.startsWith(term)) return 0
+      if (tokens.length > 0 && tokens.every((t) => normalized.split(/\s+/).some((w) => w.startsWith(t)))) return 1
+      if (normalized.includes(term)) return 2
+      if (allTokensIn(normalized)) return 3
+      return 99
+    }
+
+    if (normalizedPreloadCache) {
+      const actors = normalizedPreloadCache.actors
+        .filter((a) => score(a._name) < 99)
+        .sort((a, b) => score(a._name) - score(b._name))
+        .slice(0, LOCAL_LIMIT)
+        .map(({ _name, ...a }) => a)
+      const movies =
+        raw.length === 1
+          ? []
+          : normalizedPreloadCache.movies
+              .filter((m) => score(m._title) < 99)
+              .sort((a, b) => score(a._title) - score(b._title))
+              .slice(0, LOCAL_LIMIT)
+              .map(({ _title, ...m }) => m)
+      setSuggestions({ actors, movies })
     }
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -189,7 +220,7 @@ export function SearchBar({
           setHighlightedIndex(-1)
         })
         .catch(() => {
-          if (lastQueryRef.current === q) setSuggestions({ actors: [], movies: [] })
+          if (lastQueryRef.current === q) setSuggestions((prev) => prev ?? { actors: [], movies: [] })
         })
     }, DEBOUNCE_MS)
 
@@ -282,15 +313,12 @@ export function SearchBar({
     // If we have suggestions and a highlighted one, navigate to that item
     if (allItems.length > 0 && highlightedIndex >= 0 && highlightedIndex < allItems.length) {
       const selected = allItems[highlightedIndex]
+      setIsFocused(false)
+      setSuggestions(null)
+      setHighlightedIndex(-1)
       if (selected.type === 'actor') {
-        setQuery(selected.item.name)
-        setHighlightedIndex(-1)
-        setNavigating(true)
         router.push(getActorUrl(selected.item))
       } else {
-        setQuery(selected.item.title)
-        setHighlightedIndex(-1)
-        setNavigating(true)
         router.push(getMovieUrl(selected.item))
       }
       return
@@ -315,9 +343,9 @@ export function SearchBar({
     if ((e.key === "Tab" || e.key === "ArrowRight" || e.key === "Enter") && showInlineCompletion && inlineCompletionMatch) {
       e.preventDefault()
       e.stopPropagation()
-      const text = inlineCompletionMatch.type === "actor" ? inlineCompletionMatch.item.name : inlineCompletionMatch.item.title
-      setQuery(text)
-      setNavigating(true)
+      setIsFocused(false)
+      setSuggestions(null)
+      setHighlightedIndex(-1)
       if (inlineCompletionMatch.type === "actor") {
         router.push(getActorUrl(inlineCompletionMatch.item))
       } else {
@@ -373,8 +401,13 @@ export function SearchBar({
     }
   }
 
-  const handleSuggestionClick = () => {
-    setQuery('')
+  const handleSuggestionClick = (e: React.MouseEvent, url: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsFocused(false)
+    setSuggestions(null)
+    setHighlightedIndex(-1)
+    router.push(url)
   }
 
   const totalSuggestions = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
@@ -513,10 +546,7 @@ export function SearchBar({
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
                 }}
               >
-                {navigating ? (
-                  <BouncingBalls />
-                ) : (
-                  hasResults ? (
+                {hasResults ? (
                   <motion.div className="p-2" initial={{}} animate={{}}>
                     {/* Actors */}
                     {suggestions?.actors && suggestions.actors.length > 0 && (
@@ -531,7 +561,7 @@ export function SearchBar({
                               <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
                                 <PrefetchLink
                                   href={getActorUrl(actor)}
-                                  onClick={handleSuggestionClick}
+                                  onClick={(e) => handleSuggestionClick(e, getActorUrl(actor))}
                                   onMouseEnter={() => setHighlightedIndex(index)}
                                   data-highlight-index={index}
                                   className={cn(
@@ -578,7 +608,7 @@ export function SearchBar({
                               <motion.div variants={fadeInUp} key={`search-movie-${movie.id}`}>
                                 <PrefetchLink
                                   href={getMovieUrl(movie)}
-                                  onClick={handleSuggestionClick}
+                                  onClick={(e) => handleSuggestionClick(e, getMovieUrl(movie))}
                                   onMouseEnter={() => setHighlightedIndex(movieIndex)}
                                   data-highlight-index={movieIndex}
                                   className={cn(
@@ -631,8 +661,7 @@ export function SearchBar({
                       </motion.div>
                     </div>
                   </motion.div>
-                  ) : null
-                )}
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>

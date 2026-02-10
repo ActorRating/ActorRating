@@ -300,12 +300,23 @@ export default function ActorPageClient({
     return scores.reduce((sum, score) => sum + score, 0) / scores.length
   }
 
+  // Dedupe by movie: API can return multiple Performance rows per movie (system + per-user). Keep first per movie (API orders preferred).
+  const dedupedPerformances = useMemo(() => {
+    const byMovie = new Map<string, Performance>()
+    ;(performances || []).forEach((p: Performance) => {
+      const mid = (p as any).movie?.id ?? (p as any).movieId
+      if (!mid) return
+      if (!byMovie.has(mid)) byMovie.set(mid, p)
+    })
+    return Array.from(byMovie.values())
+  }, [performances])
+
   const performancesWithScores = useMemo(() => {
-    return performances.map(perf => ({
+    return dedupedPerformances.map(perf => ({
       ...perf,
       averageScore: calculatePerformanceScore(perf)
     }))
-  }, [performances])
+  }, [dedupedPerformances])
 
   const scoredPerformances = useMemo(() => {
     return performancesWithScores.filter(p => p.averageScore !== null)
@@ -321,7 +332,7 @@ export default function ActorPageClient({
   const communityStats = useMemo(() => {
     const totalRatings = actor?.ratings?.length || 0
     const ratedPerformancesCount = scoredPerformances.length
-    const totalPerformances = performances.length
+    const totalPerformances = dedupedPerformances.length
     const unratedPerformances = totalPerformances - ratedPerformancesCount
     
     // Find highest rated performance
@@ -339,7 +350,7 @@ export default function ActorPageClient({
       highestRated,
       criticsCount: totalRatings // Each rating is from a different user session
     }
-  }, [actor, performances, scoredPerformances])
+  }, [actor, dedupedPerformances, scoredPerformances])
 
   // Filter and rank performances based on search query
   const filteredPerformances = useMemo(() => {
@@ -585,7 +596,7 @@ export default function ActorPageClient({
                     </svg>
                   </button>
                 </div>
-                {performances.length > 0 && (
+                {dedupedPerformances.length > 0 && (
                   <Link 
                     href={
                       communityStats.highestRated 
@@ -669,7 +680,7 @@ export default function ActorPageClient({
             </h1>
 
             {/* Primary CTA - Rate a Performance (scrolls to performance cards) */}
-            {performances.length > 0 && (
+            {dedupedPerformances.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1147,7 +1158,7 @@ export default function ActorPageClient({
 
       {/* Performances Grid */}
       <div id="performances-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {performances.length > 0 ? (
+        {dedupedPerformances.length > 0 ? (
           <>
             <motion.div
               id="filmography"

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     const actorWhere = hasTokens ? Prisma.join(actorTokenConditions, " AND ") : Prisma.sql`false`
     const movieWhere = hasTokens ? Prisma.join(movieTokenConditions, " AND ") : Prisma.sql`false`
 
+    // Order by relevance: name starts with query > contains phrase > all tokens; then popularity
     const [actorRows, movieRows] = await Promise.all([
       prisma.$queryRaw<
         Array<{ id: string; name: string; slug: string | null; popularity: number }>
@@ -62,6 +63,9 @@ export async function GET(request: NextRequest) {
         FROM "Actor" a
         WHERE ${actorWhere}
         ORDER BY
+          CASE WHEN lower(a.name) LIKE ${normalized + "%"} THEN 0
+               WHEN lower(a.name) LIKE ${"%" + normalized + "%"} THEN 1
+               ELSE 2 END,
           (SELECT COUNT(*) FROM "Performance" WHERE "actorId" = a.id) DESC,
           a.name ASC
         LIMIT ${LIMIT_ACTORS}
@@ -74,6 +78,9 @@ export async function GET(request: NextRequest) {
         FROM "Movie" m
         WHERE ${movieWhere}
         ORDER BY
+          CASE WHEN lower(m.title) LIKE ${normalized + "%"} THEN 0
+               WHEN lower(m.title) LIKE ${"%" + normalized + "%"} THEN 1
+               ELSE 2 END,
           (SELECT COUNT(*) FROM "Performance" WHERE "movieId" = m.id) DESC,
           m.year DESC NULLS LAST,
           m.title ASC

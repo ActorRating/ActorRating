@@ -135,16 +135,44 @@ export async function GET(
       .select('id, title, year, director, slug')
       .in('id', Array.from(ratedMovieIds))
 
-    // Create a map of existing performances by movieId
+    // Per-movie set of userIds who have rated (so we prefer a performance that has ratings)
+    const userIdsWhoRatedByMovie = new Map<string, Set<string>>()
+    ratingsByMovie.forEach((movieRatings, movieId) => {
+      userIdsWhoRatedByMovie.set(movieId, new Set(movieRatings.map((r: any) => r.userId)))
+    })
+
+    // One row per movie: Performance has @@unique([userId, actorId, movieId]). Dedupe by movieId.
+    // Prefer the performance that has ratings (userId in ratings for this movie), then system, then latest.
     const performanceMap = new Map<string, any>()
+    const SYSTEM_USER_ID = "uuid-from-auth-users"
     if (performances) {
       performances.forEach(perf => {
-        performanceMap.set(perf.movieId, perf)
+        const existing = performanceMap.get(perf.movieId)
+        const ratedUserIds = userIdsWhoRatedByMovie.get(perf.movieId)
+        const perfHasRating = ratedUserIds?.has(perf.userId)
+        const existingHasRating = existing && ratedUserIds?.has(existing.userId)
+        const perfIsSystem = perf.userId === SYSTEM_USER_ID
+        const existingIsSystem = existing?.userId === SYSTEM_USER_ID
+        if (!existing) {
+          performanceMap.set(perf.movieId, perf)
+        } else if (perfHasRating && !existingHasRating) {
+          performanceMap.set(perf.movieId, perf)
+        } else if (!perfHasRating && existingHasRating) {
+          // keep existing (it has ratings)
+        } else if (perfIsSystem && !existingIsSystem) {
+          performanceMap.set(perf.movieId, perf)
+        } else if (!perfIsSystem && existingIsSystem) {
+          // keep existing system
+        } else if (perf.updatedAt > (existing.updatedAt || '')) {
+          performanceMap.set(perf.movieId, perf)
+        }
       })
     }
 
+    const uniquePerformances = Array.from(performanceMap.values())
+
     // Combine existing performances with their rating data
-    const enrichedPerformances = (performances || []).map(performance => {
+    const enrichedPerformances = uniquePerformances.map(performance => {
       const key = performance.movieId
       const rating = ratingMap.get(key)
 
@@ -219,7 +247,7 @@ export async function GET(
       ratings: ratings || []
     }
 
-    console.log("🎭 Returning actor data:", actorData.name, "with", (performances || []).length, "performances")
+    console.log("🎭 Returning actor data:", actorData.name, "with", enrichedPerformances.length, "performances (deduped by movie)")
 
     return NextResponse.json(actorData)
   } catch (error) {
