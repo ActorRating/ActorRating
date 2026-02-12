@@ -10,25 +10,7 @@ import Link from "next/link"
 import { getRateUrl } from "@/lib/slugHelper"
 import { SearchBar } from "@/components/SearchBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
-
-// Predefined performances to display (lookup by actor + movie)
-const RECENT_PERFORMANCE_TARGETS = [
-  { actor: "Timothée Chalamet", movie: "Dune: Part Two" },
-  { actor: "Zendaya", movie: "Challengers" },
-  { actor: "Cillian Murphy", movie: "Oppenheimer" },
-  { actor: "Emma Stone", movie: "Poor Things" },
-  { actor: "Austin Butler", movie: "Elvis" },
-  { actor: "Margot Robbie", movie: "Barbie" }
-]
-
-const ICONIC_PERFORMANCE_TARGETS = [
-  { actor: "Heath Ledger", movie: "The Dark Knight" },
-  { actor: "Al Pacino", movie: "The Godfather Part II" },
-  { actor: "Marlon Brando", movie: "The Godfather" },
-  { actor: "Leonardo DiCaprio", movie: "The Wolf of Wall Street" },
-  { actor: "Robert De Niro", movie: "Taxi Driver" },
-  { actor: "Anthony Hopkins", movie: "The Silence of the Lambs" }
-]
+import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
 
 interface PerformanceData {
   id: string
@@ -285,7 +267,7 @@ export default function PerformancesPage() {
 
   return (
     <LayoutWrapper>
-      <div className="relative z-10 bg-black pt-24 pb-20 sm:pt-32 sm:pb-32 md:pt-40 md:pb-40 lg:pt-48 lg:pb-48" style={{ willChange: 'auto' }}>
+      <div className="relative z-10 bg-black pt-20 pb-20 sm:pt-28 sm:pb-32 md:pt-32 md:pb-40 lg:pt-40 lg:pb-48" style={{ willChange: 'auto' }}>
         {/* Background ambient glow */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
@@ -298,7 +280,7 @@ export default function PerformancesPage() {
             className="text-center mb-8 sm:mb-10 px-4 sm:px-0"
           >
             <h1 
-              className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
+              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
               style={{ fontFamily: 'var(--font-cinzel), serif' }}
             >
               <span className="text-white">

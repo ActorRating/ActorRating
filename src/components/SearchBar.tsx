@@ -145,8 +145,10 @@ export function SearchBar({
       : inlineCompletionMatch.item.title
     : null
 
+  // Only show inline completion when query has no leading/trailing space (avoids buggy " B. Jordan" suffix and layout glitches after space)
   const showInlineCompletion =
     isFocused &&
+    query === query.trim() &&
     inlineCompletionText !== null &&
     query.trim().length > 0 &&
     query.trim().toLowerCase() === inlineCompletionText.slice(0, query.trim().length).toLowerCase()
@@ -395,8 +397,14 @@ export function SearchBar({
         setIsFocused(false)
         setHighlightedIndex(-1)
         break
+      case ' ':
+        // Prevent space from scrolling the page when dropdown is open (keeps focus and suggestions working)
+        if (showDropdown) {
+          e.preventDefault()
+          setQuery((q) => q + ' ')
+        }
+        break
       default:
-        // For other keys, don't prevent default
         break
     }
   }
@@ -473,7 +481,7 @@ export function SearchBar({
                       const inputTop = inputRect.top + currentScroll
                       const viewportHeight = window.innerHeight
                       const isDesktop = window.innerWidth >= 1024
-                      const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                      const scrollOffset = isDesktop ? (viewportHeight / 5) : (viewportHeight / 4)
                       const targetScroll = inputTop - scrollOffset
                       window.scrollTo({
                         top: Math.max(0, targetScroll),
@@ -494,7 +502,7 @@ export function SearchBar({
                       const inputTop = inputRect.top + currentScroll
                       const viewportHeight = window.innerHeight
                       const isDesktop = window.innerWidth >= 1024
-                      const scrollOffset = isDesktop ? (viewportHeight / 4) : (viewportHeight / 3)
+                      const scrollOffset = isDesktop ? (viewportHeight / 5) : (viewportHeight / 4)
                       const targetScroll = inputTop - scrollOffset
                       window.scrollTo({
                         top: Math.max(0, targetScroll),
