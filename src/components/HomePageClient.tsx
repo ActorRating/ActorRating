@@ -14,9 +14,15 @@ import { prefetchPerformancesPageData } from "@/lib/performances-page-targets";
 
 // How It Works Section - Clean Grid Layout with Fan
 function HowItWorksSection() {
+  const router = useRouter();
   const [topCardIndex, setTopCardIndex] = useState(0);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
+
+  const handlePerformancesPrefetch = () => {
+    prefetchPerformancesPageData();
+    router.prefetch("/performances");
+  };
 
   useEffect(() => {
     const checkDevice = () => {
@@ -427,7 +433,7 @@ function HowItWorksSection() {
           <div
             className="col-span-12 lg:col-span-12 text-center mt-12 sm:mt-20 lg:mt-24"
           >
-            <Link href="/performances" onMouseEnter={prefetchPerformancesPageData}>
+            <Link href="/performances" onMouseEnter={handlePerformancesPrefetch}>
               <button
                 className={`group px-10 xs:px-14 sm:px-20 py-6 xs:py-8 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider transition-transform duration-300 min-h-[60px] sm:min-h-[72px] touch-manipulation ${isMobileDevice || prefersReducedMotionDevice ? '' : 'hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]'}`}
                 style={{
@@ -1416,10 +1422,16 @@ function AboutSection() {
 }
 
 export default function HomePageClient() {
+  const router = useRouter();
   // Runtime detection for mobile and reduced motion
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [prefersReducedMotionDevice, setPrefersReducedMotionDevice] = useState(false);
   const ctaPerformancesRef = useRef<HTMLDivElement>(null);
+
+  const handlePerformancesPrefetch = () => {
+    prefetchPerformancesPageData();
+    router.prefetch("/performances");
+  };
 
   // On mobile/touch: prefetch performances page when CTA enters viewport (no hover)
   useEffect(() => {
@@ -1431,7 +1443,7 @@ export default function HomePageClient() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          prefetchPerformancesPageData();
+          handlePerformancesPrefetch();
           observer.disconnect();
         }
       },
@@ -1593,7 +1605,7 @@ export default function HomePageClient() {
                 transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="w-full flex justify-center mt-8 sm:mt-0"
               >
-                <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now" onMouseEnter={prefetchPerformancesPageData}>
+                <Link href="/performances" className="inline-block relative" aria-label="Start rating acting performances now" onMouseEnter={handlePerformancesPrefetch}>
                   <button className="group px-8 xs:px-10 sm:px-20 py-5 xs:py-6 sm:py-10 rounded-full text-black text-lg xs:text-xl sm:text-3xl font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] min-w-[56px] xs:min-h-[60px] sm:min-h-[72px] relative overflow-hidden touch-manipulation"
                     style={{
                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',

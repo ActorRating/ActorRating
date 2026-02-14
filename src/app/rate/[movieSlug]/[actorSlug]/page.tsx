@@ -5,23 +5,17 @@
  */
 
 import { NextResponse } from 'next/server'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { toIsoDate } from '@/lib/dateUtils'
 import RatePageClient from './RatePageClient'
 
 export const dynamic = 'force-static' // override dynamic inference from root (SessionProvider)
 export const revalidate = 3600 // 1 hour ISR
 
-export default async function RatePage({
-  params,
-}: {
-  params: Promise<{ movieSlug: string; actorSlug: string }>
-}) {
-  const { movieSlug, actorSlug } = await params
-  if (!movieSlug || !actorSlug) {
-    return new NextResponse(null, { status: 410 })
-  }
+const RATE_PAGE_CACHE_REVALIDATE = 300 // 5 min — faster repeat loads after prefetch/hover
 
-  // Resolve by slug first, then by id (so /rate/{id}/{id} works when slug is null)
+async function resolveRatePageData(movieSlug: string, actorSlug: string) {
   const [movieBySlug, actorBySlug] = await Promise.all([
     prisma.movie.findFirst({
       where: { slug: movieSlug },
@@ -42,9 +36,31 @@ export default async function RatePage({
     select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
   })
 
-  if (!movieRow || !actorRow) {
+  if (!movieRow || !actorRow) return null
+  return { movieRow, actorRow }
+}
+
+export default async function RatePage({
+  params,
+}: {
+  params: Promise<{ movieSlug: string; actorSlug: string }>
+}) {
+  const { movieSlug, actorSlug } = await params
+  if (!movieSlug || !actorSlug) {
+    return new NextResponse(null, { status: 410 })
+  }
+
+  const resolved = await unstable_cache(
+    () => resolveRatePageData(movieSlug, actorSlug),
+    [`rate-page:${movieSlug}:${actorSlug}`],
+    { revalidate: RATE_PAGE_CACHE_REVALIDATE }
+  )()
+
+  if (!resolved) {
     return new NextResponse(null, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } })
   }
+
+  const { movieRow, actorRow } = resolved
 
   const initialMovie = {
     id: movieRow.id,
@@ -52,16 +68,16 @@ export default async function RatePage({
     year: movieRow.year,
     director: movieRow.director ?? 'Unknown',
     slug: movieRow.slug ?? undefined,
-    createdAt: movieRow.createdAt.toISOString(),
-    updatedAt: movieRow.updatedAt.toISOString(),
+    createdAt: toIsoDate(movieRow.createdAt),
+    updatedAt: toIsoDate(movieRow.updatedAt),
   }
   const initialActor = {
     id: actorRow.id,
     name: actorRow.name,
     imageUrl: actorRow.imageUrl ?? undefined,
     slug: actorRow.slug ?? undefined,
-    createdAt: actorRow.createdAt.toISOString(),
-    updatedAt: actorRow.updatedAt.toISOString(),
+    createdAt: toIsoDate(actorRow.createdAt),
+    updatedAt: toIsoDate(actorRow.updatedAt),
   }
 
   return <RatePageClient initialMovie={initialMovie} initialActor={initialActor} />

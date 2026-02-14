@@ -3,6 +3,7 @@
  * Prefetch movie data on the server for faster first paint.
  */
 
+import { withIsoDates } from '@/lib/dateUtils'
 import MoviePageClient from './MoviePageClient'
 
 export const dynamic = 'force-dynamic'
@@ -67,6 +68,10 @@ export default async function MoviePage({
     if (!res.ok) return <MoviePageClient />
     const data = await res.json()
     const jsonLd = buildMovieJsonLd(data, baseUrl)
+    const initialMovie = withIsoDates(data)
+    const initialPerformances = Array.isArray(data.performances)
+      ? data.performances.map((p: Record<string, unknown>) => withIsoDates(p))
+      : []
     return (
       <>
         <script
@@ -74,8 +79,8 @@ export default async function MoviePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <MoviePageClient
-          initialMovie={data}
-          initialPerformances={data.performances || []}
+          initialMovie={initialMovie}
+          initialPerformances={initialPerformances}
         />
       </>
     )

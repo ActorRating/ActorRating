@@ -3,6 +3,7 @@
  * Prefetch actor data on the server for faster first paint.
  */
 
+import { withIsoDates } from '@/lib/dateUtils'
 import ActorPageClient from './ActorPageClient'
 
 export const dynamic = 'force-dynamic'
@@ -68,6 +69,10 @@ export default async function ActorPage({
     if (!res.ok) return <ActorPageClient />
     const data = await res.json()
     const jsonLd = buildActorJsonLd(data, baseUrl)
+    const initialActor = withIsoDates(data)
+    const initialPerformances = Array.isArray(data.performances)
+      ? data.performances.map((p: Record<string, unknown>) => withIsoDates(p))
+      : []
     return (
       <>
         <script
@@ -75,8 +80,8 @@ export default async function ActorPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <ActorPageClient
-          initialActor={data}
-          initialPerformances={data.performances || []}
+          initialActor={initialActor}
+          initialPerformances={initialPerformances}
         />
       </>
     )
