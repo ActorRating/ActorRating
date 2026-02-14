@@ -158,6 +158,7 @@ export default function RootLayout({
             <SearchPreloadTrigger />
             <ChunkErrorReload />
             <Suspense fallback={null}>{children}</Suspense>
+            {/* These may show "blocked" in console when ad/privacy blockers are used — that's expected */}
             <Analytics />
             <SpeedInsights />
             </NavigationProgressProvider>

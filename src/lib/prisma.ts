@@ -20,14 +20,15 @@ if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgre
   )
 }
 
-// For serverless, add connection limits to prevent pool exhaustion
-// Keep the original URL but add connection management parameters
+// For serverless, add connection limits to prevent pool exhaustion.
+// Supabase: use the pooler in TRANSACTION mode (port 6543), not session mode (5432),
+// or you'll hit "MaxClientsInSessionMode: max clients reached". Same host, change port to 6543.
 let connectionUrl = databaseUrl
 
-// Add connection limit if not already present (helps with serverless connection pooling)
+// Add connection limit and timeouts if not already present (helps with serverless)
 if (!databaseUrl.includes('connection_limit') && !databaseUrl.includes('pgbouncer')) {
   const separator = databaseUrl.includes('?') ? '&' : '?'
-  connectionUrl = `${databaseUrl}${separator}connection_limit=1&pool_timeout=20`
+  connectionUrl = `${databaseUrl}${separator}connection_limit=1&pool_timeout=20&connect_timeout=10`
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
