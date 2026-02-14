@@ -7,6 +7,50 @@ import ActorPageClient from './ActorPageClient'
 
 export const dynamic = 'force-dynamic'
 
+function buildActorJsonLd(data: any, baseUrl: string) {
+  const base = baseUrl.replace(/\/$/, '')
+  const personUrl = `${base}/actors/${data.slug || data.id}`
+
+  const hasPartRaw =
+    Array.isArray(data.performances) &&
+    data.performances
+      .filter((p: any) => p?.movie?.title)
+      .map((p: any) => ({
+        '@type': 'Movie' as const,
+        name: p.movie.title,
+        url: `${base}/movies/${p.movie.slug || p.movie.id}`,
+      }))
+  const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw : []
+
+  const ratings = data.ratings || []
+  const ratingCount = ratings.length
+  const hasAggregateRating =
+    ratingCount >= 1 &&
+    ratings.some((r: any) => r.weightedScore != null)
+  const avg100 = hasAggregateRating
+    ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
+    : null
+  const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: data.name,
+    url: personUrl,
+    ...(hasPart.length > 0 && { hasPart }),
+    ...(ratingCount >= 1 &&
+      ratingValue10 != null && {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: String(ratingValue10),
+          ratingCount: String(ratingCount),
+          bestRating: 10,
+          worstRating: 0,
+        },
+      }),
+  }
+}
+
 export default async function ActorPage({
   params,
 }: {
@@ -23,11 +67,18 @@ export default async function ActorPage({
     })
     if (!res.ok) return <ActorPageClient />
     const data = await res.json()
+    const jsonLd = buildActorJsonLd(data, baseUrl)
     return (
-      <ActorPageClient
-        initialActor={data}
-        initialPerformances={data.performances || []}
-      />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <ActorPageClient
+          initialActor={data}
+          initialPerformances={data.performances || []}
+        />
+      </>
     )
   } catch {
     return <ActorPageClient />

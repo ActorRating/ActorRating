@@ -100,12 +100,18 @@ function generateStaticSitemap(): NextResponse {
 }
 
 async function generateActorsSitemap(): Promise<NextResponse> {
-  // Only include actors with ≥1 rated performance (indexing is a reward for engagement)
-  const actorIdsWithRatings = await prisma.rating.findMany({
-    select: { actorId: true },
-    distinct: ['actorId'],
-  })
-  const ids = actorIdsWithRatings.map((r) => r.actorId)
+  // Include actors with ≥1 rated performance OR ≥5 performances (matches layout indexability)
+  const [actorIdsWithRatings, actorIdsWithFivePlusPerformances] = await Promise.all([
+    prisma.rating.findMany({ select: { actorId: true }, distinct: ['actorId'] }),
+    prisma.$queryRaw<Array<{ actorId: string }>>`
+      SELECT "actorId" FROM "Performance" GROUP BY "actorId" HAVING COUNT(*) >= 5
+    `,
+  ])
+  const idsSet = new Set<string>([
+    ...actorIdsWithRatings.map((r) => r.actorId),
+    ...actorIdsWithFivePlusPerformances.map((r) => r.actorId),
+  ])
+  const ids = Array.from(idsSet)
   if (ids.length === 0) {
     const xml = generateSitemapXml([])
     return new NextResponse(xml, {

@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { NewSearchResult } from '@/types'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
+import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { fadeInUp, staggerContainer } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 
-const DEBOUNCE_MS = 80
+const DEBOUNCE_MS = 60
 const MAX_SUGGESTIONS = 8
 const LOCAL_LIMIT = 4
 
@@ -81,6 +82,7 @@ export function SearchBar({
   const [isFocused, setIsFocused] = useState(false)
   const [suggestions, setSuggestions] = useState<NewSearchResult | null>(null)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [navigating, setNavigating] = useState(false)
   const [preload, setPreload] = useState<PreloadData | null>(preloadCache)
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -198,14 +200,11 @@ export function SearchBar({
         .sort((a, b) => score(a._name) - score(b._name))
         .slice(0, LOCAL_LIMIT)
         .map(({ _name, ...a }) => a)
-      const movies =
-        raw.length === 1
-          ? []
-          : normalizedPreloadCache.movies
-              .filter((m) => score(m._title) < 99)
-              .sort((a, b) => score(a._title) - score(b._title))
-              .slice(0, LOCAL_LIMIT)
-              .map(({ _title, ...m }) => m)
+      const movies = normalizedPreloadCache.movies
+        .filter((m) => score(m._title) < 99)
+        .sort((a, b) => score(a._title) - score(b._title))
+        .slice(0, LOCAL_LIMIT)
+        .map(({ _title, ...m }) => m)
       setSuggestions({ actors, movies })
     }
 
@@ -311,21 +310,41 @@ export function SearchBar({
     const actors = displayed?.actors?.slice(0, 10) || []
     const movies = displayed?.movies?.slice(0, 10) || []
     const allItems = [...actors.map(a => ({ type: 'actor' as const, item: a })), ...movies.map(m => ({ type: 'movie' as const, item: m }))]
-    
-    // If we have suggestions and a highlighted one, navigate to that item
+    const q = query.trim().toLowerCase().replace(/\s+/g, ' ')
+
+    // Direct match: if query exactly matches an actor or movie (case-insensitive, spaces normalized), show full name then navigate
+    if (q && allItems.length > 0) {
+      const exact = allItems.find(({ type, item }) => {
+        const name = (type === 'actor' ? item.name : item.title).toLowerCase().replace(/\s+/g, ' ')
+        return name === q
+      })
+      if (exact) {
+        const fullText = exact.type === 'actor' ? exact.item.name : exact.item.title
+        const url = exact.type === 'actor' ? getActorUrl(exact.item) : getMovieUrl(exact.item)
+        setQuery(fullText)
+        setIsFocused(false)
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+        setNavigating(true)
+        router.push(url)
+        return
+      }
+    }
+
+    // If we have suggestions and a highlighted one, show full name and bouncing balls immediately, then navigate
     if (allItems.length > 0 && highlightedIndex >= 0 && highlightedIndex < allItems.length) {
       const selected = allItems[highlightedIndex]
+      const fullText = selected.type === 'actor' ? selected.item.name : selected.item.title
+      const url = selected.type === 'actor' ? getActorUrl(selected.item) : getMovieUrl(selected.item)
+      setQuery(fullText)
       setIsFocused(false)
       setSuggestions(null)
       setHighlightedIndex(-1)
-      if (selected.type === 'actor') {
-        router.push(getActorUrl(selected.item))
-      } else {
-        router.push(getMovieUrl(selected.item))
-      }
+      setNavigating(true)
+      router.push(url)
       return
     }
-    
+
     // If no suggestions but query exists, navigate to search page
     if (query.trim() && allItems.length === 0) {
       setHighlightedIndex(-1)
@@ -336,23 +355,21 @@ export function SearchBar({
       }
       return
     }
-    
-    // If input is empty, do nothing
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Accept inline autocomplete (Tab, ArrowRight, or Enter): fill input and navigate to that actor/movie
+    // Accept inline autocomplete (Tab, ArrowRight, or Enter): complete text and show bouncing balls immediately, then navigate
     if ((e.key === "Tab" || e.key === "ArrowRight" || e.key === "Enter") && showInlineCompletion && inlineCompletionMatch) {
       e.preventDefault()
       e.stopPropagation()
+      const fullText = inlineCompletionMatch.type === "actor" ? inlineCompletionMatch.item.name : inlineCompletionMatch.item.title
+      const url = inlineCompletionMatch.type === "actor" ? getActorUrl(inlineCompletionMatch.item) : getMovieUrl(inlineCompletionMatch.item)
+      setQuery(fullText)
       setIsFocused(false)
       setSuggestions(null)
       setHighlightedIndex(-1)
-      if (inlineCompletionMatch.type === "actor") {
-        router.push(getActorUrl(inlineCompletionMatch.item))
-      } else {
-        router.push(getMovieUrl(inlineCompletionMatch.item))
-      }
+      setNavigating(true)
+      router.push(url)
       return
     }
 
@@ -415,6 +432,7 @@ export function SearchBar({
     setIsFocused(false)
     setSuggestions(null)
     setHighlightedIndex(-1)
+    setNavigating(true)
     router.push(url)
   }
 
@@ -423,6 +441,12 @@ export function SearchBar({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
+      {/* Overlay on top when navigating: bouncing balls immediately, search bar (with completed text) stays visible underneath */}
+      {navigating && (
+        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" aria-hidden>
+          <BouncingBallsLoader size="lg" color="#FFD700" showText text="Loading..." />
+        </div>
+      )}
       <form onSubmit={(e) => {
         e.preventDefault()
         handleSubmit(e)

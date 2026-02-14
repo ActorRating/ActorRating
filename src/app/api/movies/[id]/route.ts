@@ -156,16 +156,39 @@ export async function GET(
       ratedActors = data || []
     }
     
-    // Create a map of existing performances by actorId
+    // One performance per actor: DB can return multiple rows per actor (system + per-user). Prefer one with rating, then latest.
+    const byActor = new Map<string, any>()
+    ;(performances || []).forEach(perf => {
+      const aid = perf.actorId
+      const hasRating = ratingMap.has(`${aid}:${perf.movieId}`)
+      const existing = byActor.get(aid)
+      if (!existing) {
+        byActor.set(aid, perf)
+        return
+      }
+      const existingHasRating = ratingMap.has(`${existing.actorId}:${existing.movieId}`)
+      if (hasRating && !existingHasRating) {
+        byActor.set(aid, perf)
+        return
+      }
+      if (hasRating && existingHasRating && new Date(perf.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+        byActor.set(aid, perf)
+        return
+      }
+      if (!hasRating && !existingHasRating && new Date(perf.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+        byActor.set(aid, perf)
+      }
+    })
+    const uniquePerformances = Array.from(byActor.values())
+
+    // Map used to avoid adding duplicate synthetic performances for rated actors
     const performanceMap = new Map<string, any>()
-    if (performances) {
-      performances.forEach(perf => {
-        performanceMap.set(perf.actorId, perf)
-      })
-    }
-    
+    uniquePerformances.forEach(perf => {
+      performanceMap.set(perf.actorId, perf)
+    })
+
     // Combine existing performances with their rating data
-    const enrichedPerformances = (performances || []).map(performance => {
+    const enrichedPerformances = uniquePerformances.map(performance => {
       const key = `${performance.actorId}:${performance.movieId}`
       const rating = ratingMap.get(key)
       

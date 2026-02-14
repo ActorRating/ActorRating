@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
-import { getRateUrl } from '@/lib/slugHelper'
+import { getRateUrl, getMovieUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface Award {
@@ -643,8 +643,11 @@ export default function ActorPageClient({
           )}
         </AnimatePresence>
 
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
+        {/* Hero Section - extra top padding + safe area so round back button isn't cut off under navbar */}
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16"
+          style={{ paddingTop: 'max(5.5rem, calc(5rem + env(safe-area-inset-top, 0px)))' }}
+        >
           {/* Back Button */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -820,7 +823,7 @@ export default function ActorPageClient({
                       <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-300">
-                          Top: <span className="font-bold text-white">{communityStats.highestRated.movie.title}</span>
+                          Top: <Link href={getMovieUrl(communityStats.highestRated.movie)} className="font-bold text-white hover:underline">{communityStats.highestRated.movie.title}</Link>
                         </span>
                       </div>
                     )}
@@ -900,7 +903,7 @@ export default function ActorPageClient({
                           Highest Rated So Far
                         </div>
                         <div className="text-base sm:text-lg font-bold text-white mb-2">
-                          {communityStats.highestRated.movie.title}
+                          <Link href={getMovieUrl(communityStats.highestRated.movie)} className="hover:underline">{communityStats.highestRated.movie.title}</Link>
                         </div>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                           <FaStar className="w-4 h-4 text-[#FFD700]" />
@@ -999,11 +1002,11 @@ export default function ActorPageClient({
                     ) : null
                   })()}
 
-                  {/* Movie Title */}
+                  {/* Movie Title - internal link */}
                   <div className="mb-4">
-                    <span className="text-lg text-white font-semibold tracking-wide">
+                    <Link href={getMovieUrl(communityStats.highestRated.movie)} className="text-lg text-white font-semibold tracking-wide hover:underline">
                       {communityStats.highestRated.movie.title}
-                    </span>
+                    </Link>
                   </div>
                 </div>
 
@@ -1424,11 +1427,14 @@ export default function ActorPageClient({
                             </div>
                           )}
 
-                          {/* Movie Title */}
+                          {/* Movie Title - internal link */}
                           <div className="mb-4">
-                            <span className="text-lg text-white font-semibold tracking-wide">
+                            <Link
+                              href={getMovieUrl(performance.movie)}
+                              className="text-lg text-white font-semibold tracking-wide hover:underline focus:outline-none focus:underline"
+                            >
                               {performance.movie.title}
-                            </span>
+                            </Link>
                           </div>
 
                           {/* Character */}

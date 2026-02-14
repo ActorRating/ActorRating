@@ -10,8 +10,8 @@ export type SuggestionsResponse = {
 }
 
 const CACHE_TTL = 60
-const LIMIT_ACTORS = 5
-const LIMIT_MOVIES = 5
+const LIMIT_ACTORS = 8
+const LIMIT_MOVIES = 8
 const MIN_SIMILARITY = 0.2
 
 /** Normalize and tokenize: trim, lowercase, split on whitespace. */

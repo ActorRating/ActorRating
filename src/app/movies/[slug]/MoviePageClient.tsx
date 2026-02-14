@@ -284,12 +284,22 @@ export default function MoviePageClient({
     return scores.reduce((sum, score) => sum + score, 0) / scores.length
   }
 
+  // Dedupe by actor: API can return multiple Performance rows per actor. Keep first per actor (API orders preferred).
+  const dedupedPerformances = useMemo(() => {
+    const byActor = new Map<string, Performance>()
+    ;(performances || []).forEach((p: Performance) => {
+      const aid = p.actorId
+      if (!byActor.has(aid)) byActor.set(aid, p)
+    })
+    return Array.from(byActor.values())
+  }, [performances])
+
   const performancesWithScores = useMemo(() => {
-    return performances.map(perf => ({
+    return dedupedPerformances.map(perf => ({
       ...perf,
       averageScore: calculatePerformanceScore(perf)
     }))
-  }, [performances])
+  }, [dedupedPerformances])
 
   const scoredPerformances = useMemo(() => {
     return performancesWithScores.filter(p => p.averageScore !== null)
@@ -305,7 +315,7 @@ export default function MoviePageClient({
   const communityStats = useMemo(() => {
     const totalRatings = movie?.ratings?.length || 0
     const ratedPerformancesCount = scoredPerformances.length
-    const totalPerformances = performances.length
+    const totalPerformances = dedupedPerformances.length
     const unratedPerformances = totalPerformances - ratedPerformancesCount
     
     // Find highest rated performance
@@ -323,7 +333,7 @@ export default function MoviePageClient({
       highestRated,
       criticsCount: totalRatings // Each rating is from a different user session
     }
-  }, [movie, performances, scoredPerformances])
+  }, [movie, dedupedPerformances, scoredPerformances])
 
   // Filter and rank performances based on search query
   const filteredPerformances = useMemo(() => {
@@ -561,7 +571,7 @@ export default function MoviePageClient({
                     </svg>
                   </button>
                 </div>
-                {performances.length > 0 && (
+                {dedupedPerformances.length > 0 && (
                   <Link 
                     href={
                       communityStats.highestRated 
@@ -608,8 +618,11 @@ export default function MoviePageClient({
           )}
         </AnimatePresence>
 
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
+        {/* Hero Section - extra top padding + safe area so round back button isn't cut off under navbar */}
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16"
+          style={{ paddingTop: 'max(5.5rem, calc(5rem + env(safe-area-inset-top, 0px)))' }}
+        >
           {/* Back Button */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -664,7 +677,7 @@ export default function MoviePageClient({
             </div>
 
             {/* Primary CTA - Rate a Performance (scrolls to performance cards) */}
-            {performances.length > 0 && (
+            {dedupedPerformances.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -772,7 +785,7 @@ export default function MoviePageClient({
                       <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-300">
-                          Top: <span className="font-bold text-white">{communityStats.highestRated.actor.name}</span>
+                          Top: <Link href={getActorUrl(communityStats.highestRated.actor)} className="font-bold text-white hover:underline">{communityStats.highestRated.actor.name}</Link>
                         </span>
                       </div>
                     )}
@@ -852,7 +865,7 @@ export default function MoviePageClient({
                           Highest Rated So Far
                         </div>
                         <div className="text-base sm:text-lg font-bold text-white mb-2">
-                          {communityStats.highestRated.actor.name}
+                          <Link href={getActorUrl(communityStats.highestRated.actor)} className="hover:underline">{communityStats.highestRated.actor.name}</Link>
                         </div>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                           <FaStar className="w-4 h-4 text-[#FFD700]" />
@@ -945,11 +958,11 @@ export default function MoviePageClient({
                     ) : null
                   })()}
 
-                  {/* Actor Name */}
+                  {/* Actor Name - internal link */}
                   <div className="mb-4">
-                    <span className="text-lg text-white font-semibold tracking-wide">
+                    <Link href={getActorUrl(communityStats.highestRated.actor)} className="text-lg text-white font-semibold tracking-wide hover:underline">
                       {communityStats.highestRated.actor.name}
-                    </span>
+                    </Link>
                   </div>
                 </div>
 
@@ -990,7 +1003,7 @@ export default function MoviePageClient({
 
       {/* Performances Grid */}
       <div id="performances-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {performances.length > 0 ? (
+        {dedupedPerformances.length > 0 ? (
           <>
             <motion.div
               id="cast"
@@ -1236,11 +1249,14 @@ export default function MoviePageClient({
                             </div>
                           )}
 
-                          {/* Actor Name */}
+                          {/* Actor Name - internal link */}
                           <div className="mb-4">
-                            <span className="text-lg text-white font-semibold tracking-wide">
+                            <Link
+                              href={getActorUrl(performance.actor)}
+                              className="text-lg text-white font-semibold tracking-wide hover:underline focus:outline-none focus:underline"
+                            >
                               {performance.actor.name}
-                            </span>
+                            </Link>
                           </div>
 
                           {/* Character */}
