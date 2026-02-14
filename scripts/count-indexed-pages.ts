@@ -1,8 +1,8 @@
 /**
  * Count total indexed pages site-wide with current rules:
  * - Static: 6 (home, about, signin, signup, privacy, oscars-2026)
- * - Actor pages: actors with ≥1 rated performance (distinct in Rating)
- * - Movie pages: movies with ≥1 rated performance, excluding adult content
+ * - Actor pages: actors with ≥1 rated performance OR ≥5 performances
+ * - Movie pages: movies with ≥1 rated performance OR ≥5 total performances, excluding adult content
  * - Rate pages: distinct (actorId, movieId) pairs with ≥1 rating
  *
  * Run: npx tsx scripts/count-indexed-pages.ts
@@ -22,14 +22,26 @@ async function main() {
   })
   const actorCount = actorIdsWithRatings.length
 
-  // Movies: movieIds with ≥1 distinct actorId in Rating, then exclude adult
-  const movieIdsWithRatings = await prisma.$queryRaw<Array<{ movieId: string }>>`
-    SELECT "movieId"
-    FROM "Rating"
-    GROUP BY "movieId"
-    HAVING COUNT(DISTINCT "actorId") >= 1
-  `
-  const movieIds = movieIdsWithRatings.map((r) => r.movieId)
+  // Movies: ≥1 rated performance OR ≥5 total performances (same as sitemap + layout)
+  const [movieIdsWithRatings, movieIdsWithFivePlusPerformances] = await Promise.all([
+    prisma.$queryRaw<Array<{ movieId: string }>>`
+      SELECT "movieId"
+      FROM "Rating"
+      GROUP BY "movieId"
+      HAVING COUNT(DISTINCT "actorId") >= 1
+    `,
+    prisma.$queryRaw<Array<{ movieId: string }>>`
+      SELECT "movieId"
+      FROM "Performance"
+      GROUP BY "movieId"
+      HAVING COUNT(*) >= 5
+    `,
+  ])
+  const movieIdsSet = new Set([
+    ...movieIdsWithRatings.map((r) => r.movieId),
+    ...movieIdsWithFivePlusPerformances.map((r) => r.movieId),
+  ])
+  const movieIds = Array.from(movieIdsSet)
   const movies = await prisma.movie.findMany({
     where: { id: { in: movieIds } },
     select: { title: true, genre: true, overview: true },
@@ -50,7 +62,7 @@ async function main() {
   console.log('Breakdown:')
   console.log(`  Static pages:        ${STATIC_PAGES}`)
   console.log(`  Actor pages (≥1):    ${actorCount}`)
-  console.log(`  Movie pages (≥1):   ${movieCount} (adult excluded)`)
+  console.log(`  Movie pages (≥1 rated or ≥5 perf): ${movieCount} (adult excluded)`)
   console.log(`  Rate pages (≥1):     ${rateCount}`)
   console.log('  ─────────────────────────')
   console.log(`  Total indexed:      ${total}`)

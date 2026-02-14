@@ -145,14 +145,26 @@ async function generateActorsSitemap(): Promise<NextResponse> {
 }
 
 async function generateMoviesSitemap(): Promise<NextResponse> {
-  // Only include movies with ≥1 rated performance (engagement signal)
-  const movieIdsWithEnoughRatings = await prisma.$queryRaw<Array<{ movieId: string }>>`
-    SELECT "movieId"
-    FROM "Rating"
-    GROUP BY "movieId"
-    HAVING COUNT(DISTINCT "actorId") >= 1
-  `
-  const ids = movieIdsWithEnoughRatings.map((r) => r.movieId)
+  // Include movies with ≥1 rated performance OR ≥5 total performances (Performance table)
+  const [movieIdsWithRatings, movieIdsWithFivePlusPerformances] = await Promise.all([
+    prisma.$queryRaw<Array<{ movieId: string }>>`
+      SELECT "movieId"
+      FROM "Rating"
+      GROUP BY "movieId"
+      HAVING COUNT(DISTINCT "actorId") >= 1
+    `,
+    prisma.$queryRaw<Array<{ movieId: string }>>`
+      SELECT "movieId"
+      FROM "Performance"
+      GROUP BY "movieId"
+      HAVING COUNT(*) >= 5
+    `,
+  ])
+  const idsSet = new Set<string>([
+    ...movieIdsWithRatings.map((r) => r.movieId),
+    ...movieIdsWithFivePlusPerformances.map((r) => r.movieId),
+  ])
+  const ids = Array.from(idsSet)
   if (ids.length === 0) {
     const xml = generateSitemapXml([])
     return new NextResponse(xml, {
