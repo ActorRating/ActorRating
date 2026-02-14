@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
+import { flushSync, createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -321,11 +322,13 @@ export function SearchBar({
       if (exact) {
         const fullText = exact.type === 'actor' ? exact.item.name : exact.item.title
         const url = exact.type === 'actor' ? getActorUrl(exact.item) : getMovieUrl(exact.item)
-        setQuery(fullText)
-        setIsFocused(false)
-        setSuggestions(null)
-        setHighlightedIndex(-1)
-        setNavigating(true)
+        flushSync(() => {
+          setQuery(fullText)
+          setIsFocused(false)
+          setSuggestions(null)
+          setHighlightedIndex(-1)
+          setNavigating(true)
+        })
         router.push(url)
         return
       }
@@ -336,11 +339,29 @@ export function SearchBar({
       const selected = allItems[highlightedIndex]
       const fullText = selected.type === 'actor' ? selected.item.name : selected.item.title
       const url = selected.type === 'actor' ? getActorUrl(selected.item) : getMovieUrl(selected.item)
-      setQuery(fullText)
-      setIsFocused(false)
-      setSuggestions(null)
-      setHighlightedIndex(-1)
-      setNavigating(true)
+      flushSync(() => {
+        setQuery(fullText)
+        setIsFocused(false)
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+        setNavigating(true)
+      })
+      router.push(url)
+      return
+    }
+
+    // Typing + Enter with no arrow selection: use first suggestion so text completes visually and we navigate
+    if (allItems.length > 0 && highlightedIndex < 0) {
+      const selected = allItems[0]
+      const fullText = selected.type === 'actor' ? selected.item.name : selected.item.title
+      const url = selected.type === 'actor' ? getActorUrl(selected.item) : getMovieUrl(selected.item)
+      flushSync(() => {
+        setQuery(fullText)
+        setIsFocused(false)
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+        setNavigating(true)
+      })
       router.push(url)
       return
     }
@@ -364,11 +385,13 @@ export function SearchBar({
       e.stopPropagation()
       const fullText = inlineCompletionMatch.type === "actor" ? inlineCompletionMatch.item.name : inlineCompletionMatch.item.title
       const url = inlineCompletionMatch.type === "actor" ? getActorUrl(inlineCompletionMatch.item) : getMovieUrl(inlineCompletionMatch.item)
-      setQuery(fullText)
-      setIsFocused(false)
-      setSuggestions(null)
-      setHighlightedIndex(-1)
-      setNavigating(true)
+      flushSync(() => {
+        setQuery(fullText)
+        setIsFocused(false)
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+        setNavigating(true)
+      })
       router.push(url)
       return
     }
@@ -426,13 +449,23 @@ export function SearchBar({
     }
   }
 
-  const handleSuggestionClick = (e: React.MouseEvent, url: string) => {
+  const handleSuggestionClick = (e: React.MouseEvent, url: string, fullText?: string) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsFocused(false)
-    setSuggestions(null)
-    setHighlightedIndex(-1)
-    setNavigating(true)
+    if (fullText != null) {
+      flushSync(() => {
+        setQuery(fullText)
+        setIsFocused(false)
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+        setNavigating(true)
+      })
+    } else {
+      setIsFocused(false)
+      setSuggestions(null)
+      setHighlightedIndex(-1)
+      setNavigating(true)
+    }
     router.push(url)
   }
 
@@ -441,12 +474,15 @@ export function SearchBar({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      {/* Overlay on top when navigating: bouncing balls immediately, search bar (with completed text) stays visible underneath */}
-      {navigating && (
-        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" aria-hidden>
-          <BouncingBallsLoader size="lg" color="#FFD700" showText text="Loading..." />
-        </div>
-      )}
+      {/* Overlay in portal so it's never clipped by parent overflow/transform; full viewport */}
+      {navigating &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center" aria-hidden>
+            <BouncingBallsLoader size="lg" color="#FFD700" showText text="Loading..." />
+          </div>,
+          document.body
+        )}
       <form onSubmit={(e) => {
         e.preventDefault()
         handleSubmit(e)
@@ -593,7 +629,7 @@ export function SearchBar({
                               <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
                                 <PrefetchLink
                                   href={getActorUrl(actor)}
-                                  onClick={(e) => handleSuggestionClick(e, getActorUrl(actor))}
+                                  onClick={(e) => handleSuggestionClick(e, getActorUrl(actor), actor.name)}
                                   onMouseEnter={() => setHighlightedIndex(index)}
                                   data-highlight-index={index}
                                   className={cn(
@@ -640,7 +676,7 @@ export function SearchBar({
                               <motion.div variants={fadeInUp} key={`search-movie-${movie.id}`}>
                                 <PrefetchLink
                                   href={getMovieUrl(movie)}
-                                  onClick={(e) => handleSuggestionClick(e, getMovieUrl(movie))}
+                                  onClick={(e) => handleSuggestionClick(e, getMovieUrl(movie), movie.title)}
                                   onMouseEnter={() => setHighlightedIndex(movieIndex)}
                                   data-highlight-index={movieIndex}
                                   className={cn(

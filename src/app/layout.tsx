@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
+import { NavigationProgressProvider } from "@/components/providers/NavigationProgressProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
@@ -150,6 +151,7 @@ export default function RootLayout({
         {/* App Providers */}
         <SessionProvider>
           <CookieConsentProvider>
+            <NavigationProgressProvider>
             <Suspense fallback={null}>
               <RouteChangeScroll />
             </Suspense>
@@ -158,6 +160,7 @@ export default function RootLayout({
             <Suspense fallback={null}>{children}</Suspense>
             <Analytics />
             <SpeedInsights />
+            </NavigationProgressProvider>
           </CookieConsentProvider>
         </SessionProvider>
       </body>

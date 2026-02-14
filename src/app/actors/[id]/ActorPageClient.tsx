@@ -8,6 +8,7 @@ import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Tro
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
+import { useNavigationProgress } from '@/components/providers/NavigationProgressProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl, getMovieUrl } from '@/lib/slugHelper'
@@ -83,6 +84,7 @@ export default function ActorPageClient({
   const router = useRouter()
   const pathname = usePathname()
   const user = useUser()
+  const { startNavigation, endNavigation } = useNavigationProgress()
   const actorId = params?.id as string
 
   const hasInitial = initialActor != null
@@ -102,6 +104,11 @@ export default function ActorPageClient({
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Clear global navigation overlay when this page has finished loading
+  useEffect(() => {
+    if (!loading) endNavigation()
+  }, [loading, endNavigation])
 
   // Check if actorId is a UUID (if so, return 410 Gone)
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId)
@@ -823,7 +830,7 @@ export default function ActorPageClient({
                       <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-300">
-                          Top: <Link href={getMovieUrl(communityStats.highestRated.movie)} className="font-bold text-white hover:underline">{communityStats.highestRated.movie.title}</Link>
+                          Top: <Link href={getMovieUrl(communityStats.highestRated.movie)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1 font-bold text-white underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors"><span>{communityStats.highestRated.movie.title}</span><ArrowRight className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /></Link>
                         </span>
                       </div>
                     )}
@@ -903,7 +910,7 @@ export default function ActorPageClient({
                           Highest Rated So Far
                         </div>
                         <div className="text-base sm:text-lg font-bold text-white mb-2">
-                          <Link href={getMovieUrl(communityStats.highestRated.movie)} className="hover:underline">{communityStats.highestRated.movie.title}</Link>
+                          <Link href={getMovieUrl(communityStats.highestRated.movie)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1 font-bold text-white underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors"><span>{communityStats.highestRated.movie.title}</span><ArrowRight className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /></Link>
                         </div>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
                           <FaStar className="w-4 h-4 text-[#FFD700]" />
@@ -1004,8 +1011,9 @@ export default function ActorPageClient({
 
                   {/* Movie Title - internal link */}
                   <div className="mb-4">
-                    <Link href={getMovieUrl(communityStats.highestRated.movie)} className="text-lg text-white font-semibold tracking-wide hover:underline">
-                      {communityStats.highestRated.movie.title}
+                    <Link href={getMovieUrl(communityStats.highestRated.movie)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1.5 text-lg text-white font-semibold tracking-wide underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors">
+                      <span>{communityStats.highestRated.movie.title}</span>
+                      <ArrowRight className="w-4 h-4 flex-shrink-0" aria-hidden />
                     </Link>
                   </div>
                 </div>
@@ -1431,9 +1439,13 @@ export default function ActorPageClient({
                           <div className="mb-4">
                             <Link
                               href={getMovieUrl(performance.movie)}
-                              className="text-lg text-white font-semibold tracking-wide hover:underline focus:outline-none focus:underline"
+                              prefetch
+                              onClick={() => startNavigation()}
+                              onMouseEnter={() => router.prefetch(getMovieUrl(performance.movie))}
+                              className="inline-flex items-center gap-1.5 text-lg text-white font-semibold tracking-wide underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid focus:outline-none focus:underline transition-colors"
                             >
-                              {performance.movie.title}
+                              <span>{performance.movie.title}</span>
+                              <ArrowRight className="w-4 h-4 flex-shrink-0" aria-hidden />
                             </Link>
                           </div>
 
