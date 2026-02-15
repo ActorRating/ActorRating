@@ -27,62 +27,70 @@ function isBlockedMovie(
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const movie = await prisma.movie.findFirst({
-    where: { OR: [{ slug }, { id: slug }] },
-    select: {
-      id: true,
-      title: true,
-      year: true,
-      slug: true,
-      genre: true,
-      overview: true,
-    },
-  });
+  try {
+    const movie = await prisma.movie.findFirst({
+      where: { OR: [{ slug }, { id: slug }] },
+      select: {
+        id: true,
+        title: true,
+        year: true,
+        slug: true,
+        genre: true,
+        overview: true,
+      },
+    });
 
-  if (!movie?.title) {
+    if (!movie?.title) {
+      return {
+        title: "Movie Not Found - ActorRating",
+        description: "The requested movie could not be found.",
+      };
+    }
+
+    // Junk/adult content: treat as not found (410-style handling at page level)
+    if (isBlockedMovie(movie.slug ?? null, movie.title, movie.genre ?? null, movie.overview ?? null)) {
+      notFound();
+    }
+
+    // Index if ≥1 rated performance OR ≥5 total performances (actor–movie pairs in Performance table)
+    const [ratedPerformances, performanceCount] = await Promise.all([
+      prisma.rating.findMany({
+        where: { movieId: movie.id },
+        select: { actorId: true },
+        distinct: ["actorId"],
+      }),
+      prisma.performance.count({ where: { movieId: movie.id } }),
+    ]);
+    const ratedCount = ratedPerformances.length;
+    const isIndexable = ratedCount >= 1 || performanceCount >= 5;
+    const robots = isIndexable ? undefined : { index: false as const, follow: true as const };
+
+    const yearPart = movie.year ? ` (${movie.year})` : "";
+    const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
+    const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
+
     return {
-      title: "Movie Not Found - ActorRating",
-      description: "The requested movie could not be found.",
+      title,
+      description,
+      robots,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+      },
+    };
+  } catch (err) {
+    console.error("Movie layout generateMetadata failed:", err);
+    return {
+      title: "ActorRating",
+      description: "Rate acting performances.",
     };
   }
-
-  // Junk/adult content: treat as not found (410-style handling at page level)
-  if (isBlockedMovie(movie.slug ?? null, movie.title, movie.genre ?? null, movie.overview ?? null)) {
-    notFound();
-  }
-
-  // Index if ≥1 rated performance OR ≥5 total performances (actor–movie pairs in Performance table)
-  const [ratedPerformances, performanceCount] = await Promise.all([
-    prisma.rating.findMany({
-      where: { movieId: movie.id },
-      select: { actorId: true },
-      distinct: ["actorId"],
-    }),
-    prisma.performance.count({ where: { movieId: movie.id } }),
-  ]);
-  const ratedCount = ratedPerformances.length;
-  const isIndexable = ratedCount >= 1 || performanceCount >= 5;
-  const robots = isIndexable ? undefined : { index: false as const, follow: true as const };
-
-  const yearPart = movie.year ? ` (${movie.year})` : "";
-  const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
-  const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
-
-  return {
-    title,
-    description,
-    robots,
-    openGraph: {
-      title,
-      description,
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
-  };
 }
 
 export default function MovieLayout({ children }: { children: React.ReactNode }) {

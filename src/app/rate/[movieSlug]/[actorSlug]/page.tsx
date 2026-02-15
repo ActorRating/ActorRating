@@ -9,6 +9,7 @@ import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { toIsoDate } from '@/lib/dateUtils'
 import RatePageClient from './RatePageClient'
+import RatePageFallback from './RatePageFallback'
 
 export const dynamic = 'force-static' // override dynamic inference from root (SessionProvider)
 export const revalidate = 3600 // 1 hour ISR
@@ -50,11 +51,17 @@ export default async function RatePage({
     return new NextResponse(null, { status: 410 })
   }
 
-  const resolved = await unstable_cache(
-    () => resolveRatePageData(movieSlug, actorSlug),
-    [`rate-page:${movieSlug}:${actorSlug}`],
-    { revalidate: RATE_PAGE_CACHE_REVALIDATE }
-  )()
+  let resolved: Awaited<ReturnType<typeof resolveRatePageData>>
+  try {
+    resolved = await unstable_cache(
+      () => resolveRatePageData(movieSlug, actorSlug),
+      [`rate-page:${movieSlug}:${actorSlug}`],
+      { revalidate: RATE_PAGE_CACHE_REVALIDATE }
+    )()
+  } catch (err) {
+    console.error('Rate page data failed:', err)
+    return <RatePageFallback />
+  }
 
   if (!resolved) {
     return new NextResponse(null, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } })

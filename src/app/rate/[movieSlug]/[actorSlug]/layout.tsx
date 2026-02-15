@@ -79,9 +79,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
   // Performance pages: noindex until ≥1 rating (indexing is a reward for engagement)
-  const ratingCount = await prisma.rating.count({
-    where: { actorId: actor.id, movieId: movie.id },
-  })
+  let ratingCount = 0
+  try {
+    ratingCount = await prisma.rating.count({
+      where: { actorId: actor.id, movieId: movie.id },
+    })
+  } catch (err) {
+    console.error('Rate layout generateMetadata rating count failed:', err)
+  }
   const robots = ratingCount === 0
     ? { index: false as const, follow: true as const }
     : undefined
@@ -114,26 +119,30 @@ export default async function RateLayout({ params, children }: Props) {
   }
 
   // Aggregate stats for schema — cached 5 min so metadata doesn't burn CPU per crawl
-  const getRatingAggregate = (actorId: string, movieId: string) =>
-    prisma.rating.aggregate({
-      where: { actorId, movieId },
-      _count: { _all: true },
-      _avg: {
-        emotionalRangeDepth: true,
-        characterBelievability: true,
-        technicalSkill: true,
-        screenPresence: true,
-        chemistryInteraction: true,
-      },
-    })
-  const ratingAgg =
-    data?.actor?.id && data?.movie?.id
-      ? await unstable_cache(
-          () => getRatingAggregate(data.actor.id, data.movie.id),
-          [`rate:agg:${data.actor.id}:${data.movie.id}`],
-          { revalidate: 300 }
-        )
-      : null
+  let ratingAgg: Awaited<ReturnType<typeof prisma.rating.aggregate>> | null = null
+  if (data?.actor?.id && data?.movie?.id) {
+    try {
+      const getRatingAggregate = (actorId: string, movieId: string) =>
+        prisma.rating.aggregate({
+          where: { actorId, movieId },
+          _count: { _all: true },
+          _avg: {
+            emotionalRangeDepth: true,
+            characterBelievability: true,
+            technicalSkill: true,
+            screenPresence: true,
+            chemistryInteraction: true,
+          },
+        })
+      ratingAgg = await unstable_cache(
+        () => getRatingAggregate(data.actor.id, data.movie.id),
+        [`rate:agg:${data.actor.id}:${data.movie.id}`],
+        { revalidate: 300 }
+      )()
+    } catch (err) {
+      console.error('Rate layout aggregate failed:', err)
+    }
+  }
 
   const ratingCount = ratingAgg?._count?._all ?? 0
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null

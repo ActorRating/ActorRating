@@ -56,9 +56,9 @@ export async function GET() {
     return res
   } catch (error) {
     console.error('Search preload failed:', error)
-    return NextResponse.json(
-      { error: 'Preload failed', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    // Return 200 with empty data so the client doesn't break; search will work without preload
+    const res = NextResponse.json({ actors: [], movies: [] } as PreloadPayload)
+    res.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120')
+    return res
   }
 }
