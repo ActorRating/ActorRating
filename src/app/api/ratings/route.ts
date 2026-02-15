@@ -293,6 +293,16 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       if (error.message.includes('null value in column') || error.message.includes('NOT NULL constraint')) {
         return NextResponse.json({ error: "Missing required field", debug: error.message }, { status: 400 })
       }
+      // Database connection / availability (e.g. DATABASE_URL wrong or Postgres down)
+      const msg = error.message.toLowerCase()
+      const isDbConnectionError = msg.includes('connect') || msg.includes('econnrefused') || msg.includes('timeout') ||
+        msg.includes('p1001') || msg.includes('p1002') || msg.includes('p1017') || msg.includes('connection')
+      if (isDbConnectionError) {
+        return NextResponse.json(
+          { error: "Database temporarily unavailable. Check server logs and DATABASE_URL (use same Postgres as Supabase, pooler port 6543).", code: "DATABASE_UNAVAILABLE" },
+          { status: 503 }
+        )
+      }
     }
     return NextResponse.json({ error: "Internal server error", debug: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
