@@ -2,6 +2,7 @@
  * Slug-based rate page: /rate/[movieSlug]/[actorSlug]
  * Returns 410 Gone if movie or actor no longer exists (e.g. removed adult content).
  * Fetches movie + actor on the server so the client can render immediately (no loading spinner).
+ * Uses Prisma first; on failure (e.g. DB unavailable), falls back to internal APIs (Supabase).
  */
 
 import { NextResponse } from 'next/server'
@@ -15,6 +16,51 @@ export const dynamic = 'force-static' // override dynamic inference from root (S
 export const revalidate = 3600 // 1 hour ISR
 
 const RATE_PAGE_CACHE_REVALIDATE = 300 // 5 min — faster repeat loads after prefetch/hover
+
+function toIsoDateSafe(value: string | Date | undefined): string {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  return value.toISOString?.() ?? ''
+}
+
+/** Resolve movie + actor via internal APIs (Supabase). Used when Prisma fails. */
+async function resolveRatePageDataViaApi(movieSlug: string, actorSlug: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const [actorRes, movieRes] = await Promise.all([
+    fetch(`${baseUrl}/api/actors/${actorSlug}?minimal=true`, {
+      next: { revalidate: 300 },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+    }),
+    fetch(`${baseUrl}/api/movies/${movieSlug}?minimal=true`, {
+      next: { revalidate: 300 },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+    }),
+  ])
+  if (!actorRes.ok || !movieRes.ok) return null
+  const [actor, movie] = await Promise.all([actorRes.json(), movieRes.json()])
+  if (!actor?.id || !movie?.id) return null
+  return {
+    initialMovie: {
+      id: movie.id,
+      title: movie.title,
+      year: movie.year,
+      director: movie.director ?? 'Unknown',
+      slug: movie.slug ?? undefined,
+      createdAt: toIsoDateSafe(movie.createdAt),
+      updatedAt: toIsoDateSafe(movie.updatedAt),
+    },
+    initialActor: {
+      id: actor.id,
+      name: actor.name,
+      imageUrl: actor.imageUrl ?? undefined,
+      slug: actor.slug ?? undefined,
+      createdAt: toIsoDateSafe(actor.createdAt),
+      updatedAt: toIsoDateSafe(actor.updatedAt),
+    },
+  }
+}
 
 async function resolveRatePageData(movieSlug: string, actorSlug: string) {
   const [movieBySlug, actorBySlug] = await Promise.all([
@@ -51,7 +97,7 @@ export default async function RatePage({
     return new NextResponse(null, { status: 410 })
   }
 
-  let resolved: Awaited<ReturnType<typeof resolveRatePageData>>
+  let resolved: Awaited<ReturnType<typeof resolveRatePageData>> | null = null
   try {
     resolved = await unstable_cache(
       () => resolveRatePageData(movieSlug, actorSlug),
@@ -59,7 +105,20 @@ export default async function RatePage({
       { revalidate: RATE_PAGE_CACHE_REVALIDATE }
     )()
   } catch (err) {
-    console.error('Rate page data failed:', err)
+    console.error(
+      `Rate page data failed [${movieSlug}/${actorSlug}]:`,
+      err instanceof Error ? err.message : String(err)
+    )
+    // Fallback: fetch from internal APIs (Supabase) when Prisma fails (e.g. DB unavailable or wrong DATABASE_URL)
+    const apiResolved = await resolveRatePageDataViaApi(movieSlug, actorSlug)
+    if (apiResolved) {
+      return (
+        <RatePageClient
+          initialMovie={apiResolved.initialMovie}
+          initialActor={apiResolved.initialActor}
+        />
+      )
+    }
     return <RatePageFallback />
   }
 
