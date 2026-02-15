@@ -40,9 +40,17 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
   try {
     console.log("=== RATING API CALLED ===", { method: isUpdate ? 'PUT' : 'POST' })
 
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("Missing Supabase env: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY")
+      return NextResponse.json(
+        { error: "Server misconfiguration: Supabase env vars not set", code: "MISSING_SUPABASE_ENV" },
+        { status: 503 }
+      )
+    }
+
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {
@@ -304,6 +312,15 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
         )
       }
     }
-    return NextResponse.json({ error: "Internal server error", debug: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
+    const errMessage = error instanceof Error ? error.message : String(error)
+    console.error("RATING API ERROR (returning 500):", errMessage)
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        debug: errMessage,
+        hint: "Check Vercel function logs for 'RATING API ERROR' and ensure DATABASE_URL points to the same Postgres as Supabase (pooler port 6543).",
+      },
+      { status: 500 }
+    )
   }
 }
