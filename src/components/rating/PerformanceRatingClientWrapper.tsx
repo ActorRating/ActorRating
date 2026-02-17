@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -148,6 +148,55 @@ interface PerformanceRatingClientWrapperProps {
   } | null
   communityAvg10?: number | null
   communityRatingCount?: number | null
+}
+
+const THRESHOLD_IN_LINE = 0.35
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function getRandomSuccessMessage(
+  userScore: number,
+  communityAvg: number | null,
+  communityCount: number | null
+): string {
+  const hasCommunity = communityAvg != null && (communityCount ?? 0) > 0
+  const count = communityCount ?? 0
+  const critics = count === 1 ? 'critic' : 'critics'
+
+  if (!hasCommunity) {
+    return pickRandom([
+      "You're the first to rate this performance!",
+      "Rating saved — you're the first critic on this one.",
+      'Your rating is in. More critics will shape the average.',
+    ])
+  }
+
+  const diff = communityAvg! - userScore
+  const percent = Math.round((Math.abs(diff) / communityAvg!) * 100)
+
+  if (diff > THRESHOLD_IN_LINE) {
+    return pickRandom([
+      `You rated ${percent}% harsher than the other ${count} ${critics}`,
+      `You're ${percent}% tougher than the crowd`,
+      `Your score is ${percent}% lower than the community`,
+      `You went ${percent}% lower than other ${critics}`,
+    ])
+  }
+  if (diff < -THRESHOLD_IN_LINE) {
+    return pickRandom([
+      `You rated ${percent}% higher than the other ${count} ${critics}`,
+      `You're ${percent}% more generous than the crowd`,
+      `Your score is ${percent}% higher than the community`,
+      `You went ${percent}% higher than other ${critics}`,
+    ])
+  }
+  return pickRandom([
+    "You're in line with other critics",
+    'Your rating matches the crowd',
+    'Right in line with the community',
+  ])
 }
 
 // Individual Slider Component - Premium Gold Design (Optimized for mobile)
@@ -756,6 +805,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const gradientIdRef = useRef(`progressGradient-${Math.random().toString(36).substr(2, 9)}`)
   const rainbowGradientIdRef = useRef(`rainbowGradient-${Math.random().toString(36).substr(2, 9)}`)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const successHeadlineRef = useRef<string | null>(null)
 
   // Set final score if external submitted rating is provided
   useEffect(() => {
@@ -770,6 +820,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setFinalScore(Number(score.toFixed(1)))
     }
   }, [externalSubmittedRating])
+
+  // Pick a random success headline once when we enter success (ref so it stays stable, no flash)
+  const successHeadline =
+    submitPhase === 'success' && finalScore !== null
+      ? (() => {
+          if (successHeadlineRef.current === null) {
+            successHeadlineRef.current = getRandomSuccessMessage(
+              finalScore,
+              communityAvg10 ?? null,
+              communityRatingCount ?? null
+            )
+          }
+          return successHeadlineRef.current
+        })()
+      : (() => {
+          successHeadlineRef.current = null
+          return null
+        })()
 
   // Force Safari to render all sliders and button immediately (prevent lazy loading)
   useEffect(() => {
@@ -828,6 +896,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const [screenPresence, setScreenPresence] = useState(initialRating?.screenPresence ?? 0)
   const [chemistryInteraction, setChemistryInteraction] = useState(initialRating?.chemistry ?? 0)
 
+  // Simple (one slider) vs in-depth (five sliders) mode - default to simple
+  const [showInDepthSliders, setShowInDepthSliders] = useState(false)
+  const initialOverall = useMemo(() => {
+    if (initialRating?.emotionalDepth == null) return 0
+    const avg = ( (initialRating.emotionalDepth ?? 0) + (initialRating.believability ?? 0) + (initialRating.technicalSkill ?? 0) + (initialRating.screenPresence ?? 0) + (initialRating.chemistry ?? 0) ) / 5
+    return Math.round(avg)
+  }, [initialRating?.emotionalDepth, initialRating?.believability, initialRating?.technicalSkill, initialRating?.screenPresence, initialRating?.chemistry])
+  const [overallScore, setOverallScore] = useState(initialOverall)
+  const [singleSliderTouched, setSingleSliderTouched] = useState(initialOverall > 0)
+
   // Track which sliders have been touched
   const [touchedSliders, setTouchedSliders] = useState({
     emotionalRangeDepth: initialRating?.emotionalDepth !== undefined,
@@ -850,8 +928,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
 
-  // Calculate average of 5 sliders, convert to 0-10 scale
+  // Calculate average of 5 sliders (or single overall when simple mode), convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
+    if (!showInDepthSliders) {
+      const raw = isDemoing ? demoValue : overallScore
+      const v = Number(raw) || 0
+      const totalScore = Math.max(0, Math.min(100, v)) / 10
+      return Number(totalScore.toFixed(1))
+    }
     const sliders = [
       Number(isDemoing ? demoValue : emotionalRangeDepth) || 0,
       Number(characterBelievability) || 0,
@@ -871,7 +955,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Clamp between 0 and 10
     const clamped = Math.max(0, Math.min(10, totalScore))
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
+  }, [showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
 
   // Direct score update - no animation for instant mobile response
   const animatedScore = totalScoreOutOf10
@@ -934,6 +1018,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     return Object.values(touchedSliders).every(touched => touched)
   }, [touchedSliders])
 
+  const canSubmit = showInDepthSliders ? allSlidersTouched : singleSliderTouched
+
   const handleSliderChange = useCallback((key: keyof typeof touchedSliders, value: number) => {
     const wasTouched = touchedSliders[key]
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
@@ -986,6 +1072,23 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     lastInteractionTime.current = releaseTime
     setSliderReleaseTime(releaseTime) // Trigger useEffect
   }, [])
+
+  const handleExpandInDepth = useCallback(() => {
+    setShowInDepthSliders(true)
+    const score = Math.round(overallScore)
+    setEmotionalRangeDepth(score)
+    setCharacterBelievability(score)
+    setTechnicalSkill(score)
+    setScreenPresence(score)
+    setChemistryInteraction(score)
+    setTouchedSliders({
+      emotionalRangeDepth: true,
+      characterBelievability: true,
+      technicalSkill: true,
+      screenPresence: true,
+      chemistryInteraction: true,
+    })
+  }, [overallScore])
 
   // Function to trigger spotlight animation
   const triggerSpotlightAnimation = useCallback(() => {
@@ -1073,15 +1176,23 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!allSlidersTouched) return
+    if (!canSubmit) return
 
-    const ratingData = {
-      emotionalDepth: Math.round(emotionalRangeDepth),
-      technicalSkill: Math.round(technicalSkill),
-      believability: Math.round(characterBelievability),
-      screenPresence: Math.round(screenPresence),
-      chemistry: Math.round(chemistryInteraction)
-    }
+    const ratingData = showInDepthSliders
+      ? {
+          emotionalDepth: Math.round(emotionalRangeDepth),
+          technicalSkill: Math.round(technicalSkill),
+          believability: Math.round(characterBelievability),
+          screenPresence: Math.round(screenPresence),
+          chemistry: Math.round(chemistryInteraction)
+        }
+      : {
+          emotionalDepth: Math.round(overallScore),
+          technicalSkill: Math.round(overallScore),
+          believability: Math.round(overallScore),
+          screenPresence: Math.round(overallScore),
+          chemistry: Math.round(overallScore)
+        }
 
     // Calculate final score
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
@@ -1179,7 +1290,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         }
       }
     }
-  }, [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, allSlidersTouched, onSuccess, performance.actor.name, performance.movie.title])
+  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, performance.actor.name, performance.movie.title])
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined'
@@ -1343,7 +1454,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
       <div 
-        className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${user ? 'pt-16 sm:pt-20 md:pt-24' : 'pt-20 sm:pt-24 md:pt-28'}`}
+        className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${
+          user
+            ? showInDepthSliders
+              ? 'pt-16 sm:pt-20 md:pt-24'
+              : 'pt-28 sm:pt-20 md:pt-24'
+            : showInDepthSliders
+              ? 'pt-20 sm:pt-24 md:pt-28'
+              : 'pt-32 sm:pt-24 md:pt-28'
+        }`}
         style={{
           contentVisibility: 'visible',
           contain: 'none',
@@ -1597,98 +1716,146 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   />
 
                   {/* Instructions */}
-                  <div className="hidden sm:block text-center mb-3 sm:mb-8 max-w-[600px] mx-auto">
+                  <div className="text-center mb-3 sm:mb-6 max-w-[600px] mx-auto">
                     <p className="text-xs sm:text-base text-[#a3a3a3] font-light">
-                      Each criterion is scored individually. Final score is the average of all five.
+                      {showInDepthSliders
+                        ? 'Each criterion is scored individually. Final score is the average of all five.'
+                        : 'Slide to set your overall rating.'}
                     </p>
                   </div>
 
-                  {/* Sliders - Mobile optimized spacing, consistent width */}
-                  {/* touch-action: pan-y on parent allows vertical scroll while slider handles horizontal touches */}
-                  {/* Extra bottom padding prevents last slider from being affected by Safari's bottom UI */}
-                  {/* NO animations, NO transforms, NO will-change - critical for iOS Safari immediate rendering */}
+                  {/* Sliders - One by default, five when "Rate in more depth" is expanded */}
                   <div
                     className="space-y-5 sm:space-y-8 relative z-10 w-full max-w-full sm:max-w-[600px] mx-auto"
                     style={{
-                      touchAction: 'pan-y', // Allow vertical scrolling on parent, slider handles horizontal
+                      touchAction: 'pan-y',
                       opacity: 1,
                       visibility: 'visible',
-                      paddingBottom: '0px', // No padding after last slider
-                      contentVisibility: 'visible', // Force Safari to render all sliders immediately
-                      contain: 'none', // Prevent containment that might defer rendering
-                      transform: 'none', // No transforms that could defer rendering
-                      display: 'block', // Ensure block display
+                      paddingBottom: '0px',
+                      contentVisibility: 'visible',
+                      contain: 'none',
+                      transform: 'none',
+                      display: 'block',
                     }}
                   >
-                    <div className="relative" ref={firstSliderRef} data-slider-card>
-                      <RatingSliderCard
-                        label="Emotional Impact"
-                        value={isDemoing ? demoValue : emotionalRangeDepth}
-                        onValueChange={(v) => {
-                          if (!isDemoing) {
-                            handleSliderChange('emotionalRangeDepth', v)
-                          }
-                        }}
-                        onSliderStart={handleSliderStart}
-                        onSliderEnd={handleSliderEnd}
-                        disabled={submitting || isDemoing}
-                        touched={touchedSliders.emotionalRangeDepth}
-                        spotlightActive={spotlightPhase !== 'none'}
-                        isDemoing={isDemoing}
-                      />
-                    </div>
+                    {!showInDepthSliders ? (
+                      <>
+                        <div className="relative" ref={firstSliderRef} data-slider-card>
+                          <RatingSliderCard
+                            label="Your rating"
+                            value={isDemoing ? demoValue : overallScore}
+                            onValueChange={(v) => {
+                              if (!isDemoing) {
+                                setOverallScore(v)
+                                setSingleSliderTouched(true)
+                              }
+                            }}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting || isDemoing}
+                            touched={singleSliderTouched}
+                            spotlightActive={spotlightPhase !== 'none'}
+                            isDemoing={isDemoing}
+                          />
+                        </div>
+                        <div className="pt-2 sm:pt-4 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={handleExpandInDepth}
+                            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-[#d4d4d8] hover:text-white font-medium text-sm sm:text-base transition-colors w-full max-w-[320px] justify-center"
+                          >
+                            <span>Rate in more depth</span>
+                            <ChevronDown className="w-4 h-4 shrink-0" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative" ref={firstSliderRef} data-slider-card>
+                          <RatingSliderCard
+                            label="Emotional Impact"
+                            value={isDemoing ? demoValue : emotionalRangeDepth}
+                            onValueChange={(v) => {
+                              if (!isDemoing) {
+                                handleSliderChange('emotionalRangeDepth', v)
+                              }
+                            }}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting || isDemoing}
+                            touched={touchedSliders.emotionalRangeDepth}
+                            spotlightActive={spotlightPhase !== 'none'}
+                            isDemoing={isDemoing}
+                          />
+                        </div>
 
-                    <div data-slider-card>
-                      <RatingSliderCard
-                        label="Character Depth"
-                        value={characterBelievability}
-                        onValueChange={(v) => handleSliderChange('characterBelievability', v)}
-                        onSliderStart={handleSliderStart}
-                        onSliderEnd={handleSliderEnd}
-                        disabled={submitting}
-                        touched={touchedSliders.characterBelievability}
-                        spotlightActive={spotlightPhase !== 'none'}
-                      />
-                    </div>
+                        <div data-slider-card>
+                          <RatingSliderCard
+                            label="Character Depth"
+                            value={characterBelievability}
+                            onValueChange={(v) => handleSliderChange('characterBelievability', v)}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting}
+                            touched={touchedSliders.characterBelievability}
+                            spotlightActive={spotlightPhase !== 'none'}
+                          />
+                        </div>
 
-                    <div data-slider-card>
-                      <RatingSliderCard
-                        label="Technical Skill"
-                        value={technicalSkill}
-                        onValueChange={(v) => handleSliderChange('technicalSkill', v)}
-                        onSliderStart={handleSliderStart}
-                        onSliderEnd={handleSliderEnd}
-                        disabled={submitting}
-                        touched={touchedSliders.technicalSkill}
-                        spotlightActive={spotlightPhase !== 'none'}
-                      />
-                    </div>
+                        <div data-slider-card>
+                          <RatingSliderCard
+                            label="Technical Skill"
+                            value={technicalSkill}
+                            onValueChange={(v) => handleSliderChange('technicalSkill', v)}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting}
+                            touched={touchedSliders.technicalSkill}
+                            spotlightActive={spotlightPhase !== 'none'}
+                          />
+                        </div>
 
-                    <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
-                      <RatingSliderCard
-                        label="Screen Presence"
-                        value={screenPresence}
-                        onValueChange={(v) => handleSliderChange('screenPresence', v)}
-                        onSliderStart={handleSliderStart}
-                        onSliderEnd={handleSliderEnd}
-                        disabled={submitting}
-                        touched={touchedSliders.screenPresence}
-                        spotlightActive={spotlightPhase !== 'none'}
-                      />
-                    </div>
+                        <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
+                          <RatingSliderCard
+                            label="Screen Presence"
+                            value={screenPresence}
+                            onValueChange={(v) => handleSliderChange('screenPresence', v)}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting}
+                            touched={touchedSliders.screenPresence}
+                            spotlightActive={spotlightPhase !== 'none'}
+                          />
+                        </div>
 
-                    <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
-                      <RatingSliderCard
-                        label="Originality"
-                        value={chemistryInteraction}
-                        onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
-                        onSliderStart={handleSliderStart}
-                        onSliderEnd={handleSliderEnd}
-                        disabled={submitting}
-                        touched={touchedSliders.chemistryInteraction}
-                        spotlightActive={spotlightPhase !== 'none'}
-                      />
-                    </div>
+                        <div data-slider-card style={{ contentVisibility: 'visible', contain: 'none' }}>
+                          <RatingSliderCard
+                            label="Originality"
+                            value={chemistryInteraction}
+                            onValueChange={(v) => handleSliderChange('chemistryInteraction', v)}
+                            onSliderStart={handleSliderStart}
+                            onSliderEnd={handleSliderEnd}
+                            disabled={submitting}
+                            touched={touchedSliders.chemistryInteraction}
+                            spotlightActive={spotlightPhase !== 'none'}
+                          />
+                        </div>
+
+                        <div className="pt-1 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const avg = Math.round((emotionalRangeDepth + characterBelievability + technicalSkill + screenPresence + chemistryInteraction) / 5)
+                              setOverallScore(avg)
+                              setShowInDepthSliders(false)
+                            }}
+                            className="text-xs sm:text-sm text-[#a3a3a3] hover:text-white/80 transition-colors"
+                          >
+                            Use simple rating
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
@@ -1708,22 +1875,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       ref={buttonRef}
                       type="submit"
                       data-submit-button
-                      disabled={!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark'}
-                      className="group text-sm sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
-                      style={{
-                        cursor: (!allSlidersTouched || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
+      disabled={!canSubmit || submitPhase === 'loading' || submitPhase === 'checkmark'}
+      className="group text-sm sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
+      style={{
+        cursor: (!canSubmit || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
                         padding: submitPhase === 'loading' ? '0' : '0.875rem 0',
                         borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
-                        background: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                        background: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
                           ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
                           : '#1a1a1a',
-                        color: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? '#000000' : '#525252',
-                        boxShadow: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                        color: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? '#000000' : '#525252',
+                        boxShadow: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
                           ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
                           : 'none',
-                        border: (allSlidersTouched && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
+                        border: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1735,10 +1902,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
                       }}
                       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                      whileHover={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
+                      whileHover={canSubmit && !submitting && submitPhase === 'idle' ? {
                         scale: 1.02,
                       } : {}}
-                      whileTap={allSlidersTouched && !submitting && submitPhase === 'idle' ? {
+                      whileTap={canSubmit && !submitting && submitPhase === 'idle' ? {
                         scale: 0.98,
                       } : {}}
                     >
@@ -1756,7 +1923,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         />
                       )}
                       {/* White light sweep effect on hover (only when idle) */}
-                      {allSlidersTouched && !submitting && submitPhase === 'idle' && spotlightPhase !== 'button' && (
+                      {canSubmit && !submitting && submitPhase === 'idle' && spotlightPhase !== 'button' && (
                         <span
                           className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
                           style={{
@@ -1809,7 +1976,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             transition={{ duration: 0.2 }}
                             className="relative z-10 block"
                           >
-                            {submitting ? 'Submitting...' : allSlidersTouched ? 'Submit Rating' : 'Complete All Ratings'}
+                            {submitting ? 'Submitting...' : canSubmit ? 'Submit Rating' : (showInDepthSliders ? 'Complete All Ratings' : 'Slide to rate')}
                           </motion.span>
                         )}
                       </AnimatePresence>
@@ -1852,7 +2019,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   `,
                 }}
               >
-                {/* Success Header */}
+                {/* Success Header - dynamic comparison to community */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1860,12 +2027,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   className="text-center mb-6"
                 >
                   <div className="flex items-center justify-center gap-2 mb-3">
-                    <CheckCircle className="w-6 h-6 text-[#FFD700]" />
+                    <CheckCircle className="w-6 h-6 text-[#FFD700] shrink-0" />
                     <h2
-                      className="text-xl sm:text-2xl font-bold text-white"
-                      style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                      className="text-xl sm:text-2xl font-bold text-white leading-tight"
+                      style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
                     >
-                      Rating saved
+                      {successHeadline ?? 'Rating saved'}
                     </h2>
                   </div>
                   {/* Score Display */}

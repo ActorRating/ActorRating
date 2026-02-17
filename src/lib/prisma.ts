@@ -25,10 +25,11 @@ if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgre
 // or you'll hit "MaxClientsInSessionMode: max clients reached". Same host, change port to 6543.
 let connectionUrl = databaseUrl
 
-// Add connection limit and timeouts if not already present (helps with serverless)
+// Add connection limit and timeouts if not already present (helps with serverless).
+// Use at least 3 so layout generateMetadata + layout body can run without waiting (both may use Prisma).
 if (!databaseUrl.includes('connection_limit') && !databaseUrl.includes('pgbouncer')) {
   const separator = databaseUrl.includes('?') ? '&' : '?'
-  connectionUrl = `${databaseUrl}${separator}connection_limit=1&pool_timeout=20&connect_timeout=10`
+  connectionUrl = `${databaseUrl}${separator}connection_limit=3&pool_timeout=25&connect_timeout=10`
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
