@@ -104,16 +104,18 @@ export async function middleware(req: NextRequest) {
     return response
   }
   
-  // Get the session and validate it
-  const { data: { session }, error } = await supabase.auth.getSession()
-  
-  // If there's an error or no session, and the user is trying to access protected routes
-  if ((error || !session) && req.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/auth/signin', req.url))
+  // Validate the JWT with Supabase (getUser), not just read cookie (getSession).
+  // This prevents invalid/expired tokens from reaching the dashboard and causing Server Component errors.
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (req.nextUrl.pathname.startsWith('/dashboard')) {
+    if (error || !user) {
+      return NextResponse.redirect(new URL('/auth/signin', req.url))
+    }
   }
 
   // If user is authenticated and trying to access auth pages, redirect to dashboard
-  if (session && (req.nextUrl.pathname.startsWith('/auth/signin') || req.nextUrl.pathname.startsWith('/auth/signup'))) {
+  if (user && (req.nextUrl.pathname.startsWith('/auth/signin') || req.nextUrl.pathname.startsWith('/auth/signup'))) {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 

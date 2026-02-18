@@ -20,16 +20,23 @@ if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgre
   )
 }
 
-// For serverless, add connection limits to prevent pool exhaustion.
-// Supabase: use the pooler in TRANSACTION mode (port 6543), not session mode (5432),
-// or you'll hit "MaxClientsInSessionMode: max clients reached". Same host, change port to 6543.
+// For serverless (Vercel), use the pooler URL with pgbouncer=true so Prisma does NOT use
+// prepared statements. Otherwise you get: "prepared statement already exists",
+// "bind message supplies X parameters but prepared statement requires Y", "prepared statement does not exist".
+// Supabase: use pooler (e.g. port 6543) with ?pgbouncer=true. Neon/Vercel Postgres: same.
 let connectionUrl = databaseUrl
 
+const hasParams = databaseUrl.includes('?')
+const separator = hasParams ? '&' : '?'
+
+if (!databaseUrl.includes('pgbouncer=')) {
+  connectionUrl = `${databaseUrl}${separator}pgbouncer=true`
+}
+
 // Add connection limit and timeouts if not already present (helps with serverless).
-// Use at least 3 so layout generateMetadata + layout body can run without waiting (both may use Prisma).
-if (!databaseUrl.includes('connection_limit') && !databaseUrl.includes('pgbouncer')) {
-  const separator = databaseUrl.includes('?') ? '&' : '?'
-  connectionUrl = `${databaseUrl}${separator}connection_limit=3&pool_timeout=25&connect_timeout=10`
+if (!databaseUrl.includes('connection_limit')) {
+  const sep = connectionUrl.includes('?') ? '&' : '?'
+  connectionUrl += `${sep}connection_limit=3&pool_timeout=25&connect_timeout=10`
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({

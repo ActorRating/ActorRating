@@ -2,6 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Production (Vercel/serverless): use your pooler URL with ?pgbouncer=true so Prisma
+// does not use prepared statements (avoids "prepared statement already exists" etc.).
+// Migrations: if the pooler rejects DDL, set DIRECT_URL for migrations only (optional).
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

@@ -536,6 +536,9 @@ const RatingSliderCard = memo(function RatingSliderCard({
             className="absolute top-1/2 left-0 w-full h-16 sm:h-12 -translate-y-1/2 opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed pointer-events-none sm:pointer-events-auto"
             style={{
               WebkitTapHighlightColor: 'transparent',
+              // On touch devices we handle interaction via native touch handlers on the container.
+              // On non-touch (mouse/trackpad), let the range input receive events even on small viewports.
+              pointerEvents: isTouchDevice ? 'none' : 'auto',
               paddingLeft: '16px',
               paddingRight: '16px',
             }}

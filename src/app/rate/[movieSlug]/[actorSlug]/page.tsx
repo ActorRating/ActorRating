@@ -146,5 +146,9 @@ export default async function RatePage({
     updatedAt: toIsoDate(actorRow.updatedAt),
   }
 
-  return <RatePageClient initialMovie={initialMovie} initialActor={initialActor} />
+  // Serialize to plain objects so Client Component never receives Prisma/Date/class instances
+  const plainMovie = JSON.parse(JSON.stringify(initialMovie))
+  const plainActor = JSON.parse(JSON.stringify(initialActor))
+
+  return <RatePageClient initialMovie={plainMovie} initialActor={plainActor} />
 }

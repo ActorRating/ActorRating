@@ -16,31 +16,40 @@ export type ServerUser = {
 }
 
 export async function getServerUser(): Promise<ServerUser | null> {
-  if (isDevMode) {
-    const dev = getDevUser()
-    if (dev) return dev as ServerUser
-  }
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll() {
-          // No-op in Server Components; middleware handles cookie updates
-        },
-      },
+  try {
+    if (isDevMode) {
+      const dev = getDevUser()
+      if (dev) return dev as ServerUser
     }
-  )
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return null
-  return user as ServerUser
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll() {
+            // No-op in Server Components; middleware handles cookie updates
+          },
+        },
+      }
+    )
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error || !user) return null
+    return user as ServerUser
+  } catch {
+    // Avoid leaking errors in production; invalid/malformed cookies or Supabase failures
+    return null
+  }
 }
 
 export async function getServerUserId(): Promise<string | null> {
-  const user = await getServerUser()
-  return user?.id ?? null
+  try {
+    const user = await getServerUser()
+    return user?.id ?? null
+  } catch {
+    return null
+  }
 }
