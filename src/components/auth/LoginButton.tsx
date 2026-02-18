@@ -3,6 +3,7 @@ import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
 import supabase from "@/lib/supabaseClient"
+import { getAuthCallbackUrl } from "@/lib/auth"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 interface LoginButtonProps {
@@ -34,7 +35,7 @@ export function LoginButton({
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback` }
+        options: { redirectTo: getAuthCallbackUrl() }
       })
       if (error) {
         console.error("Login error:", error)

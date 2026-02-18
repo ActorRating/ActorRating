@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import supabase from '@/lib/supabaseClient'
+import { getAuthCallbackUrl } from '@/lib/auth'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface SignUpToSaveModalProps {
@@ -82,7 +83,7 @@ export function SignUpToSaveModal({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/auth/callback`,
+          redirectTo: getAuthCallbackUrl(),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'

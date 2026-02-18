@@ -209,7 +209,8 @@ const RatingSliderCard = memo(function RatingSliderCard({
   disabled = false,
   touched = false,
   spotlightActive = false,
-  isDemoing = false
+  isDemoing = false,
+  hideScore = false,
 }: {
   label: string
   value: number
@@ -220,6 +221,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   touched?: boolean
   spotlightActive?: boolean
   isDemoing?: boolean
+  hideScore?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
   const [localValue, setLocalValue] = useState(value)
@@ -449,9 +451,11 @@ const RatingSliderCard = memo(function RatingSliderCard({
         >
           {label}
         </h3>
-        <span className="text-sm sm:text-xl font-bold text-[#FFD700]">
-          {Math.round(localValue / 10)} / 10
-        </span>
+        {!hideScore && (
+          <span className="text-sm sm:text-xl font-bold text-[#FFD700]">
+            {Math.round(localValue / 10)} / 10
+          </span>
+        )}
       </div>
 
       {/* Slider Container */}
@@ -1756,6 +1760,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             touched={singleSliderTouched}
                             spotlightActive={spotlightPhase !== 'none'}
                             isDemoing={isDemoing}
+                            hideScore
                           />
                         </div>
                         <div className="pt-2 sm:pt-4 flex justify-center">

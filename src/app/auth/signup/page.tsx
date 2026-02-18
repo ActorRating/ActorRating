@@ -304,10 +304,11 @@ export default function SignUp() {
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true)
     try {
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`
+          redirectTo: redirectUrl
         }
       })
       if (error) console.error(error)
