@@ -1222,14 +1222,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
       const elapsed = Date.now() - startTime
 
-      // 800ms: Morph to checkmark (ensure minimum 800ms total)
-      const checkmarkDelay = Math.max(0, 800 - elapsed)
+      // 400ms: Morph to checkmark (shorter so success feels snappier)
+      const checkmarkDelay = Math.max(0, 400 - elapsed)
       setTimeout(() => {
         setSubmitPhase('checkmark')
       }, checkmarkDelay)
 
-      // 1300ms: Fade transitions (ensure minimum 1300ms total)
-      const successDelay = Math.max(0, 1300 - elapsed)
+      // 700ms: Show success card (reduced from 1300ms)
+      const successDelay = Math.max(0, 700 - elapsed)
       setTimeout(() => {
         setSubmitPhase('success')
 
@@ -1457,7 +1457,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
 
 
-      <div 
+      <motion.div
         className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${
           user
             ? showInDepthSliders
@@ -1471,9 +1471,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           contentVisibility: 'visible',
           contain: 'none',
         }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }}
       >
 
-            {/* Header Section - Mobile optimized - No animations on iOS Safari */}
+            {/* Header Section - Mobile optimized */}
         <div
           className="text-center mb-4 sm:mb-12 md:mb-16"
           style={{
@@ -2028,13 +2031,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.15 }}
                   className="text-center mb-6"
                 >
-                  <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-2 mb-3">
                     <CheckCircle className="w-6 h-6 text-[#FFD700] shrink-0" />
                     <h2
-                      className="text-xl sm:text-2xl font-bold text-white leading-tight"
+                      className="text-2xl sm:text-3xl font-bold text-white leading-tight italic text-balance"
                       style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
                     >
                       {successHeadline ?? 'Rating saved'}
@@ -2049,61 +2052,51 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   )}
                 </motion.div>
 
-                {/* Half Circle Progress with Percentage */}
-                {progressData && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ 
-                      delay: 0.4,
-                      duration: 0.5,
-                      ease: [0.4, 0, 0.2, 1]
-                    }}
-                    className="flex flex-col items-center mb-3"
-                  >
-                    {/* Half Circle Progress Ring - Bigger and Rainbow Style */}
-                    <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-2">
-                      <svg className="w-56 h-28 sm:w-64 sm:h-32" viewBox="0 0 200 100" style={{ overflow: 'visible' }}>
-                        {/* Background half circle */}
-                        <path
-                          d="M 20 80 A 60 60 0 0 1 180 80"
-                          fill="none"
-                          stroke="rgba(255, 255, 255, 0.1)"
-                          strokeWidth="14"
-                          strokeLinecap="round"
-                        />
-                        {/* Progress half circle - Rainbow gradient */}
-                        <motion.path
-                          d="M 20 80 A 60 60 0 0 1 180 80"
-                          fill="none"
-                          stroke={`url(#${rainbowGradientIdRef.current})`}
-                          strokeWidth="14"
-                          strokeLinecap="round"
-                          initial={{ pathLength: 0 }}
-                          animate={{ pathLength: progressData.progress / 100 }}
-                          transition={{ 
-                            duration: 1.5, 
-                            ease: [0.4, 0, 0.2, 1],
-                            delay: 0.6
-                          }}
-                        />
-                        <defs>
-                          <linearGradient id={rainbowGradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#FFE55C" />
-                            <stop offset="50%" stopColor="#FFD700" />
-                            <stop offset="100%" stopColor="#FFA500" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                      {/* Percentage in center of half circle */}
-                      <div className="absolute inset-0 flex items-center justify-center" style={{ top: '55%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                        <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
-                          {Math.round(progressData.progress)}%
-                        </span>
-                      </div>
+                {/* Half Circle Progress with Percentage - always rendered to avoid pop-in glitch */}
+                <motion.div
+                  initial={{ opacity: 1, scale: 1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0 }}
+                  className="flex flex-col items-center mb-3"
+                >
+                  <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-2">
+                    <svg className="w-56 h-28 sm:w-64 sm:h-32" viewBox="0 0 200 100" style={{ overflow: 'visible' }}>
+                      <path
+                        d="M 20 80 A 60 60 0 0 1 180 80"
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.1)"
+                        strokeWidth="14"
+                        strokeLinecap="round"
+                      />
+                      <motion.path
+                        d="M 20 80 A 60 60 0 0 1 180 80"
+                        fill="none"
+                        stroke={`url(#${rainbowGradientIdRef.current})`}
+                        strokeWidth="14"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: (progressData?.progress ?? 0) / 100 }}
+                        transition={{
+                          duration: 1,
+                          ease: [0.4, 0, 0.2, 1],
+                          delay: 0.2,
+                        }}
+                      />
+                      <defs>
+                        <linearGradient id={rainbowGradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#FFE55C" />
+                          <stop offset="50%" stopColor="#FFD700" />
+                          <stop offset="100%" stopColor="#FFA500" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ top: '55%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                      <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
+                        {Math.round(progressData?.progress ?? 0)}%
+                      </span>
                     </div>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.div>
 
                 {/* User Badge with Arrow - Clickable */}
                 {userBadges.length > 0 && (
@@ -2220,7 +2213,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           />
         )}
 
-      </div>
+      </motion.div>
     </div>
   )
 })
