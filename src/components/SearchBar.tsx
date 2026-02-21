@@ -92,7 +92,9 @@ export function SearchBar({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastQueryRef = useRef<string>("")
 
-  const showDropdown = isFocused && showSuggestions && query.trim().length >= 1
+  const isEmptyQuery = query.trim().length === 0
+  const hasDiscovery = Boolean(preload && (preload.actors?.length > 0 || preload.movies?.length > 0))
+  const showDropdown = isFocused && showSuggestions && (query.trim().length >= 1 || (isEmptyQuery && hasDiscovery))
 
   // Preload: inline autocomplete + instant dropdown. Check global (e.g. from layout) then fetch once.
   const ensurePreload = useCallback(() => {
@@ -148,9 +150,10 @@ export function SearchBar({
       : inlineCompletionMatch.item.title
     : null
 
-  // Only show inline completion when query has no leading/trailing space (avoids buggy " B. Jordan" suffix and layout glitches after space)
+  // Only show inline completion when query has no leading/trailing space and query is non-empty (disabled in discovery mode).
   const showInlineCompletion =
     isFocused &&
+    !isEmptyQuery &&
     query === query.trim() &&
     inlineCompletionText !== null &&
     query.trim().length > 0 &&
@@ -174,12 +177,21 @@ export function SearchBar({
     setQueryWidthPx(measure.offsetWidth)
   }, [showInlineCompletion, inlineSuffix, query])
 
-  // Instant dropdown: show local results from preload immediately. Multi-word = all tokens in name (any order). Rank: starts with > word-start > contains.
+  // Discovery mode: when query is empty and focused, show top 5 actors + top 5 movies from preload. No API, no debounce.
+  // Non-empty: instant local filter from preload, then after debounce replace with server suggestions.
   useEffect(() => {
     const raw = query.trim()
     if (raw.length === 0) {
-      setSuggestions(null)
-      setHighlightedIndex(-1)
+      if (preload && (preload.actors?.length > 0 || preload.movies?.length > 0)) {
+        setSuggestions({
+          actors: preload.actors.slice(0, 5),
+          movies: preload.movies.slice(0, 5),
+        })
+        setHighlightedIndex(-1)
+      } else {
+        setSuggestions(null)
+        setHighlightedIndex(-1)
+      }
       return
     }
 
@@ -229,7 +241,7 @@ export function SearchBar({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [query, showSuggestions])
+  }, [query, showSuggestions, preload])
 
   // When suggestions change: reset highlight to 0 or preserve by ID when results only reorder
   const prevSuggestionsRef = useRef<NewSearchResult | null>(null)
@@ -471,6 +483,7 @@ export function SearchBar({
 
   const totalSuggestions = (suggestions?.actors?.length || 0) + (suggestions?.movies?.length || 0)
   const hasResults = totalSuggestions > 0
+  const isDiscoveryMode = isEmptyQuery && hasResults
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
@@ -620,7 +633,7 @@ export function SearchBar({
                     {suggestions?.actors && suggestions.actors.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
-                          Actors
+                          {isDiscoveryMode ? "Popular Actors" : "Actors"}
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
                           {suggestions.actors.slice(0, 10).map((actor, index) => {
@@ -665,7 +678,7 @@ export function SearchBar({
                     {suggestions?.movies && suggestions.movies.length > 0 && (
                       <div className="mb-2">
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
-                          Movies
+                          {isDiscoveryMode ? "Popular Movies" : "Movies"}
                         </div>
                         <motion.div variants={staggerContainer} initial="hidden" animate="show">
                           {suggestions.movies.slice(0, 10).map((movie, index) => {
@@ -716,18 +729,20 @@ export function SearchBar({
                       </div>
                     )}
 
-                    {/* View All Results */}
-                    <div className="border-t border-white/10 pt-2 mt-2">
-                      <motion.div variants={fadeInUp}>
-                        <PrefetchLink
-                          href={`/search?q=${encodeURIComponent(query)}`}
-                          className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
-                          onClick={() => setIsFocused(false)}
-                        >
-                          View all {totalSuggestions} results
-                        </PrefetchLink>
-                      </motion.div>
-                    </div>
+                    {/* View All Results - only when user has typed a query */}
+                    {!isEmptyQuery && (
+                      <div className="border-t border-white/10 pt-2 mt-2">
+                        <motion.div variants={fadeInUp}>
+                          <PrefetchLink
+                            href={`/search?q=${encodeURIComponent(query)}`}
+                            className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
+                            onClick={() => setIsFocused(false)}
+                          >
+                            View all {totalSuggestions} results
+                          </PrefetchLink>
+                        </motion.div>
+                      </div>
+                    )}
                   </motion.div>
                 ) : null}
               </motion.div>

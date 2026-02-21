@@ -42,126 +42,101 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Suggestions: first letter+, match first/last/full name, any order, typos (trigram). Rank: text match then popularity. Limit 8.
+    // Suggestions: weighted score (exact 100 + prefix 50 + word_start 25 + similarity*10), MIN_SIMILARITY 0.15. Limit 8.
+    const normalizedTerm = searchTerm.toLowerCase()
+    const MIN_SIMILARITY = 0.15
     if (suggestions) {
       const [actors, movies] = await Promise.all([
         prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-          SELECT a.id, a.name, a.slug
-          FROM "Actor" a
-          WHERE lower(a.name) LIKE lower(${searchTerm}) || '%'
-             OR lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%'
-             OR lower(a.name) LIKE '%' || lower(${searchTerm}) || '%'
-             OR (octet_length(${searchTerm}) >= 2 AND similarity(a.name, ${searchTerm}) > 0.2)
-          ORDER BY
-            CASE WHEN lower(a.name) LIKE lower(${searchTerm}) || '%' THEN 0
-                 WHEN lower(a.name) LIKE '% ' || lower(${searchTerm}) || '%' THEN 1
-                 WHEN lower(a.name) LIKE '%' || lower(${searchTerm}) || '%' THEN 2
-                 ELSE 3 END,
-            COALESCE((SELECT COUNT(*) FROM "Performance" WHERE "actorId" = a.id), 0) DESC,
-            a.name ASC
+          SELECT sub.id, sub.name, sub.slug
+          FROM (
+            SELECT a.id, a.name, a.slug,
+              (CASE WHEN lower(a.name) = ${normalizedTerm} THEN 100 ELSE 0 END
+               + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
+               + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
+               + COALESCE(similarity(lower(a.name), ${normalizedTerm}), 0) * 10) AS score
+            FROM "Actor" a
+            WHERE lower(a.name) LIKE ${normalizedTerm + "%"}
+               OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"}
+               OR lower(a.name) LIKE ${"%" + normalizedTerm + "%"}
+               OR (octet_length(${normalizedTerm}) >= 2 AND similarity(lower(a.name), ${normalizedTerm}) > ${MIN_SIMILARITY})
+          ) sub
+          ORDER BY sub.score DESC,
+                   (SELECT COUNT(*) FROM "Performance" p WHERE p."actorId" = sub.id) DESC,
+                   sub.name ASC
           LIMIT 8
         `,
         prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-          SELECT m.id, m.title, m.slug, m.year
-          FROM "Movie" m
-          WHERE lower(m.title) LIKE lower(${searchTerm}) || '%'
-             OR lower(m.title) LIKE '% ' || lower(${searchTerm}) || '%'
-             OR lower(m.title) LIKE '%' || lower(${searchTerm}) || '%'
-             OR (octet_length(${searchTerm}) >= 2 AND similarity(m.title, ${searchTerm}) > 0.2)
-          ORDER BY
-            CASE WHEN lower(m.title) LIKE lower(${searchTerm}) || '%' THEN 0
-                 WHEN lower(m.title) LIKE '% ' || lower(${searchTerm}) || '%' THEN 1
-                 WHEN lower(m.title) LIKE '%' || lower(${searchTerm}) || '%' THEN 2
-                 ELSE 3 END,
-            COALESCE((SELECT COUNT(*) FROM "Performance" WHERE "movieId" = m.id), 0) DESC,
-            m.year DESC NULLS LAST,
-            m.title ASC
+          SELECT sub.id, sub.title, sub.slug, sub.year
+          FROM (
+            SELECT m.id, m.title, m.slug, m.year,
+              (CASE WHEN lower(m.title) = ${normalizedTerm} THEN 100 ELSE 0 END
+               + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
+               + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
+               + COALESCE(similarity(lower(m.title), ${normalizedTerm}), 0) * 10) AS score
+            FROM "Movie" m
+            WHERE lower(m.title) LIKE ${normalizedTerm + "%"}
+               OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"}
+               OR lower(m.title) LIKE ${"%" + normalizedTerm + "%"}
+               OR (octet_length(${normalizedTerm}) >= 2 AND similarity(lower(m.title), ${normalizedTerm}) > ${MIN_SIMILARITY})
+          ) sub
+          ORDER BY sub.score DESC,
+                   (SELECT COUNT(*) FROM "Performance" p WHERE p."movieId" = sub.id) DESC,
+                   sub.year DESC NULLS LAST,
+                   sub.title ASC
           LIMIT 8
         `
       ])
 
-      const payload = { 
+      const payload = {
         actors: actors || [],
-        movies: movies || []
+        movies: movies || [],
       }
-      
       await cacheSet(cacheKey, payload, 30)
-      
       const res = NextResponse.json(payload)
       res.headers.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120')
       return res
     }
 
-    // Fuzzy search using PostgreSQL trigram similarity, full-text search, and ILIKE
-    // This provides typo-tolerant search that handles:
-    // - Exact matches (full-text search) - highest priority
-    // - Similar matches (trigram similarity > 0.2) - handles typos
-    // - Partial matches (ILIKE) - substring matches
+    // Full search: same weighted score (exact 100 + prefix 50 + word_start 25 + similarity*10), MIN_SIMILARITY 0.15. Limit 10.
     const [actors, movies] = await Promise.all([
       prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-        WITH exact_matches AS (
-          -- Full-text search (exact word matches) - highest priority
-          SELECT id, name, slug, 1 as priority, similarity(name, ${searchTerm}) as sim
-          FROM "Actor"
-          WHERE to_tsvector('english', name) @@ plainto_tsquery('english', ${searchTerm})
-        ),
-        fuzzy_matches AS (
-          -- Trigram similarity (fuzzy/typo-tolerant) - medium priority
-          SELECT id, name, slug, 2 as priority, similarity(name, ${searchTerm}) as sim
-          FROM "Actor"
-          WHERE similarity(name, ${searchTerm}) > 0.2
-            AND id NOT IN (SELECT id FROM exact_matches)
-        ),
-        partial_matches AS (
-          -- ILIKE (partial substring matches) - lower priority
-          SELECT id, name, slug, 3 as priority, similarity(name, ${searchTerm}) as sim
-          FROM "Actor"
-          WHERE name ILIKE ${`%${searchTerm}%`}
-            AND id NOT IN (SELECT id FROM exact_matches)
-            AND id NOT IN (SELECT id FROM fuzzy_matches)
-        )
-        SELECT id, name, slug
+        SELECT sub.id, sub.name, sub.slug
         FROM (
-          SELECT * FROM exact_matches
-          UNION ALL
-          SELECT * FROM fuzzy_matches
-          UNION ALL
-          SELECT * FROM partial_matches
-        ) combined
-        ORDER BY priority ASC, sim DESC, name ASC
+          SELECT a.id, a.name, a.slug,
+            (CASE WHEN lower(a.name) = ${normalizedTerm} THEN 100 ELSE 0 END
+             + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
+             + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
+             + COALESCE(similarity(lower(a.name), ${normalizedTerm}), 0) * 10) AS score
+          FROM "Actor" a
+          WHERE lower(a.name) LIKE ${normalizedTerm + "%"}
+             OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"}
+             OR lower(a.name) LIKE ${"%" + normalizedTerm + "%"}
+             OR (octet_length(${normalizedTerm}) >= 2 AND similarity(lower(a.name), ${normalizedTerm}) > ${MIN_SIMILARITY})
+        ) sub
+        ORDER BY sub.score DESC,
+                 (SELECT COUNT(*) FROM "Performance" p WHERE p."actorId" = sub.id) DESC,
+                 sub.name ASC
         LIMIT 10
       `,
       prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-        WITH exact_matches AS (
-          -- Full-text search (exact word matches) - highest priority
-          SELECT id, title, slug, year, 1 as priority, similarity(title, ${searchTerm}) as sim
-          FROM "Movie"
-          WHERE to_tsvector('english', title) @@ plainto_tsquery('english', ${searchTerm})
-        ),
-        fuzzy_matches AS (
-          -- Trigram similarity (fuzzy/typo-tolerant) - medium priority
-          SELECT id, title, slug, year, 2 as priority, similarity(title, ${searchTerm}) as sim
-          FROM "Movie"
-          WHERE similarity(title, ${searchTerm}) > 0.2
-            AND id NOT IN (SELECT id FROM exact_matches)
-        ),
-        partial_matches AS (
-          -- ILIKE (partial substring matches) - lower priority
-          SELECT id, title, slug, year, 3 as priority, similarity(title, ${searchTerm}) as sim
-          FROM "Movie"
-          WHERE title ILIKE ${`%${searchTerm}%`}
-            AND id NOT IN (SELECT id FROM exact_matches)
-            AND id NOT IN (SELECT id FROM fuzzy_matches)
-        )
-        SELECT id, title, slug, year
+        SELECT sub.id, sub.title, sub.slug, sub.year
         FROM (
-          SELECT * FROM exact_matches
-          UNION ALL
-          SELECT * FROM fuzzy_matches
-          UNION ALL
-          SELECT * FROM partial_matches
-        ) combined
-        ORDER BY priority ASC, sim DESC, year DESC, title ASC
+          SELECT m.id, m.title, m.slug, m.year,
+            (CASE WHEN lower(m.title) = ${normalizedTerm} THEN 100 ELSE 0 END
+             + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
+             + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
+             + COALESCE(similarity(lower(m.title), ${normalizedTerm}), 0) * 10) AS score
+          FROM "Movie" m
+          WHERE lower(m.title) LIKE ${normalizedTerm + "%"}
+             OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"}
+             OR lower(m.title) LIKE ${"%" + normalizedTerm + "%"}
+             OR (octet_length(${normalizedTerm}) >= 2 AND similarity(lower(m.title), ${normalizedTerm}) > ${MIN_SIMILARITY})
+        ) sub
+        ORDER BY sub.score DESC,
+                 (SELECT COUNT(*) FROM "Performance" p WHERE p."movieId" = sub.id) DESC,
+                 sub.year DESC NULLS LAST,
+                 sub.title ASC
         LIMIT 10
       `
     ])

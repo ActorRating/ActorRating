@@ -95,15 +95,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? { index: false as const, follow: true as const }
     : undefined
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
+  const canonical = `${baseUrl}/rate/${movieSlug}/${actorSlug}`
+
   return {
     title,
     description,
     robots,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
       type: 'website',
-      url: `https://www.actorrating.com/rate/${movieSlug}/${actorSlug}`,
+      url: canonical,
     },
     twitter: {
       card: 'summary_large_image',

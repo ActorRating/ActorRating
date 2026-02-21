@@ -65,7 +65,7 @@ ${sitemapEntries.join('\n')}
     <loc>${escapeXml(`${BASE_URL}/sitemaps/static.xml`)}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
   </sitemap>
-      <sitemap>
+  <sitemap>
     <loc>${escapeXml(`${BASE_URL}/sitemaps/actors.xml`)}</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
   </sitemap>
