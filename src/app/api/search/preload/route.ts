@@ -10,7 +10,7 @@ type PreloadPayload = {
 }
 
 export async function GET() {
-  const cacheKey = makeCacheKey('search-preload', [])
+  const cacheKey = makeCacheKey('search-preload-v2', [])
 
   // Try cache first; if Redis is misconfigured or down, skip cache and hit DB
   let cached: PreloadPayload | null = null
@@ -27,19 +27,27 @@ export async function GET() {
   }
 
   try {
-    // 300 each so more names (e.g. Jim Carrey) and movies appear in local search
+    // Discovery order: actual popularity by ratingsCount DESC, then averageRating DESC, then name/title. Only entities with at least one rating. Limit 50 each.
     const [actors, movies] = await Promise.all([
       prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
         SELECT a.id, a.name, a.slug
         FROM "Actor" a
-        ORDER BY (SELECT COUNT(*) FROM "Performance" p WHERE p."actorId" = a.id) DESC
-        LIMIT 300
+        WHERE (SELECT COUNT(*) FROM "Rating" r WHERE r."actorId" = a.id) > 0
+        ORDER BY
+          (SELECT COUNT(*) FROM "Rating" r WHERE r."actorId" = a.id) DESC,
+          (SELECT AVG(r."weightedScore") FROM "Rating" r WHERE r."actorId" = a.id) DESC NULLS LAST,
+          a.name ASC
+        LIMIT 50
       `,
       prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
         SELECT m.id, m.title, m.slug, m.year
         FROM "Movie" m
-        ORDER BY (SELECT COUNT(*) FROM "Performance" p WHERE p."movieId" = m.id) DESC
-        LIMIT 300
+        WHERE (SELECT COUNT(*) FROM "Rating" r WHERE r."movieId" = m.id) > 0
+        ORDER BY
+          (SELECT COUNT(*) FROM "Rating" r WHERE r."movieId" = m.id) DESC,
+          (SELECT AVG(r."weightedScore") FROM "Rating" r WHERE r."movieId" = m.id) DESC NULLS LAST,
+          m.title ASC
+        LIMIT 50
       `
     ])
 
