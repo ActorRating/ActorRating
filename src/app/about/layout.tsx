@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "What Is ActorRating? — How Acting Performances Are Rated",
-  description: "ActorRating breaks performances down scene by scene using clear criteria. Here’s how ratings actually work.",
+  description: "ActorRating: 570K+ performances, 208K+ actors. Quick single-slider or 5-criteria ratings. Here's how it works.",
   robots: "index, follow",
 };
 

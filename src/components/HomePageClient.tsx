@@ -51,13 +51,13 @@ function HowItWorksSection() {
       number: "1",
       icon: FaSearch,
       title: "Find a Performance",
-      description: "Search 25,000+ actor performances from cinema history."
+      description: "Search 570,000+ actor performances from cinema history."
     },
     {
       number: "2",
       icon: FaStar,
       title: "Rate in 2 Minutes",
-      description: "Five professional criteria. Submit your score."
+      description: "Quick single slider or rate across 5 criteria. Submit your score."
     },
     {
       number: "3",
@@ -937,7 +937,7 @@ function PerformanceSection() {
                   href="/performances" 
                   className="text-[#FFD700] hover:text-[#FFE55C] transition-colors duration-200 underline decoration-[#FFD700]/30 hover:decoration-[#FFE55C]/50"
                 >
-                  Explore 25,000+ performances
+                  Explore 570K+ performances
                 </a>
               </p>
             </div>
@@ -983,14 +983,14 @@ function FeaturesSection() {
       title: "Actor-by-actor insights",
       description: "Deep analysis across performances and career trajectories.",
       descriptionFull: "Deep analysis across performances, roles, and career trajectories. Track evolution, compare eras, and discover patterns in acting excellence across the history of cinema.",
-      stats: "25K+ performances"
+      stats: "570K+ performances"
     },
     {
       icon: FaStar,
       title: "Thoughtful rating experience",
-      description: "Five professional criteria ensure nuanced evaluations.",
-      descriptionFull: "Five professional criteria ensure nuanced, meaningful evaluations. Emotional depth, technical skill, authenticity, impact, and overall performance combine for comprehensive analysis.",
-      stats: "5-criteria system"
+      description: "Quick single-slider rate or dive into 5 criteria for nuanced evaluations.",
+      descriptionFull: "Rate in seconds with the quick single slider, or use the full 5-criteria breakdown: emotional depth, technical skill, authenticity, impact, and overall performance for comprehensive analysis.",
+      stats: "208K+ Actors"
     }
   ];
 
@@ -1189,8 +1189,8 @@ function AboutSection() {
   }, []);
 
   const stats = [
-    { value: "25K+", label: "Performances" },
-    { value: "5", label: "Rating Criteria" },
+    { value: "570K+", label: "Performances" },
+    { value: "208K+", label: "Actors" },
     { value: "Live", label: "Growing Daily", isLive: true }
   ];
 
@@ -1331,7 +1331,7 @@ function AboutSection() {
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  25K+
+                  570K+
                 </div>
             <div className="text-lg text-[#e4e4e7] font-semibold">
               Performances
@@ -1360,10 +1360,10 @@ function AboutSection() {
                     WebkitTextFillColor: 'transparent',
                   }}
                 >
-                  5
+                  208K+
                 </div>
             <div className="text-lg text-[#e4e4e7] font-semibold">
-              Rating Criteria
+              Actors
             </div>
               </div>
 

@@ -31,6 +31,14 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   const [movie, setMovie] = useState<Movie | null>(initialMovie)
   const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
   const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
+  const [userExistingRating, setUserExistingRating] = useState<{
+    id: string
+    emotionalDepth: number
+    believability: number
+    technicalSkill: number
+    screenPresence: number
+    chemistry: number
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
@@ -130,6 +138,41 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     fetchCommunityStats()
   }, [actor?.name, movie?.title])
 
+  // Fetch current user's rating for this performance so we can prefill the form (Edit flow)
+  useEffect(() => {
+    if (!user || !actor?.id || !movie?.id) {
+      setUserExistingRating(null)
+      return
+    }
+    let cancelled = false
+    fetch('/api/ratings/me', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((ratings: Array<{ id: string; actorId: string; movieId: string; emotionalRangeDepth: number; characterBelievability: number; technicalSkill: number; screenPresence: number; chemistryInteraction: number }>) => {
+        if (cancelled) return
+        const match = Array.isArray(ratings)
+          ? ratings.find((r) => r.actorId === actor.id && r.movieId === movie.id)
+          : null
+        if (match) {
+          setUserExistingRating({
+            id: match.id,
+            emotionalDepth: match.emotionalRangeDepth,
+            believability: match.characterBelievability,
+            technicalSkill: match.technicalSkill,
+            screenPresence: match.screenPresence,
+            chemistry: match.chemistryInteraction,
+          })
+        } else {
+          setUserExistingRating(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setUserExistingRating(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user, actor?.id, movie?.id])
+
   if (loading) {
     return (
       <RatePageLayout>
@@ -186,17 +229,27 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
 
     setSubmitting(true)
     try {
-      const recaptchaToken = await executeRecaptcha('submit_rating')
-      await ratingsApi.create({
-        actorId: actor.id,
-        movieId: movie.id,
-        emotionalRangeDepth: ratingData.emotionalDepth,
-        characterBelievability: ratingData.believability,
-        technicalSkill: ratingData.technicalSkill,
-        screenPresence: ratingData.screenPresence,
-        chemistryInteraction: ratingData.chemistry,
-        recaptchaToken,
-      })
+      if (userExistingRating?.id) {
+        await ratingsApi.update(userExistingRating.id, {
+          emotionalRangeDepth: ratingData.emotionalDepth,
+          characterBelievability: ratingData.believability,
+          technicalSkill: ratingData.technicalSkill,
+          screenPresence: ratingData.screenPresence,
+          chemistryInteraction: ratingData.chemistry,
+        })
+      } else {
+        const recaptchaToken = await executeRecaptcha('submit_rating')
+        await ratingsApi.create({
+          actorId: actor.id,
+          movieId: movie.id,
+          emotionalRangeDepth: ratingData.emotionalDepth,
+          characterBelievability: ratingData.believability,
+          technicalSkill: ratingData.technicalSkill,
+          screenPresence: ratingData.screenPresence,
+          chemistryInteraction: ratingData.chemistry,
+          recaptchaToken,
+        })
+      }
     } catch (err: unknown) {
       console.error('Failed to submit rating:', err)
       setError(err instanceof Error ? err.message : 'Failed to submit rating. Please try again.')
@@ -229,6 +282,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         onSubmit={handleSubmit}
         submitting={submitting}
         onSuccess={() => {}}
+        initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
         communityAvg10={communityAvg10}
         communityRatingCount={communityRatingCount}
       />

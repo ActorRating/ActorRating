@@ -225,7 +225,7 @@ export default function DashboardClient({
         name: "How do I rate a performance from my dashboard?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Click on any actor card or use the search bar to find a specific actor and movie. Then navigate to their performance page to submit your rating across five criteria."
+          text: "Click on any actor card or use the search bar to find a specific actor and movie. Then navigate to their performance page to rate with the quick single slider or across five criteria."
         }
       }
     ]

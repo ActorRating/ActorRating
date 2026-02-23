@@ -15,7 +15,7 @@ export default function AboutPage() {
     name: "About ActorRating",
     url: "https://www.actorrating.com/about",
     description:
-      "ActorRating is a platform dedicated to evaluating individual acting performances, not overall films.",
+      "ActorRating: 570K+ performances, 208K+ actors. Rate with a quick slider or 5 criteria. We evaluate acting performances, not overall films.",
     publisher: {
       "@type": "Organization",
       name: "ActorRating",
@@ -32,18 +32,18 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How ActorRating Works",
-    description: "Step-by-step guide to rating acting performances on ActorRating",
+    description: "Step-by-step guide to rating acting performances: quick single slider or 5 criteria",
     step: [
       {
         "@type": "HowToStep",
         name: "Select a Performance",
-        text: "Choose an actor's role in a specific film that you want to rate",
+        text: "Choose an actor's role from 570K+ performances that you want to rate",
         position: 1
       },
       {
         "@type": "HowToStep",
-        name: "Rate Using 5 Criteria",
-        text: "Evaluate the performance across five standardized categories: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
+        name: "Rate: Quick Slider or 5 Criteria",
+        text: "Use the quick single-slider score or evaluate across five categories: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
         position: 2
       },
       {
@@ -71,7 +71,7 @@ export default function AboutPage() {
         name: "What is ActorRating?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "ActorRating is a community-driven platform that allows users to rate and analyze individual acting performances in films, not the movies themselves. We use Oscar-inspired criteria to evaluate the craft of acting independently from overall film quality."
+          text: "ActorRating is a community-driven platform to rate and analyze 570K+ acting performances and 208K+ actors. Rate with a quick single slider or across five Oscar-inspired criteria. We evaluate the craft of acting, not overall films."
         }
       },
       {
@@ -79,7 +79,7 @@ export default function AboutPage() {
         name: "How are actor performances rated?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Performances are rated across five professional criteria: Emotional Range & Depth (ability to convey complex emotions), Character Believability (creating convincing characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention), and Chemistry & Interaction (working effectively with other actors). Each category is scored individually, then normalized to create an overall 0-10 performance score."
+          text: "You can rate with a quick single-slider score or across five criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction. Each category is scored individually, then normalized to create an overall 0-10 performance score."
         }
       },
       {
@@ -119,7 +119,7 @@ export default function AboutPage() {
         name: "What criteria does ActorRating use?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "ActorRating uses five Oscar-inspired criteria: Emotional Range & Depth (conveying complex emotions authentically), Character Believability (creating convincing, memorable characters), Technical Skill & Authenticity (mastery of acting techniques), Screen Presence & Impact (commanding attention and making an impression), and Chemistry & Interaction (working effectively with other actors). These criteria are inspired by Academy Award evaluation standards."
+          text: "ActorRating lets you rate with a quick single slider or five Oscar-inspired criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction. The detailed criteria are inspired by Academy Award evaluation standards."
         }
       }
     ]

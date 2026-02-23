@@ -79,7 +79,7 @@ export default function OnboardingPage() {
     {
       id: 2,
       title: "Rate Performances",
-      description: "Rate your favorite actors' performances across 5 different criteria.",
+      description: "Rate performances with a quick single score or across 5 criteria.",
       icon: Star,
     },
     {

@@ -42,7 +42,7 @@ const cormorantGaramond = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "ActorRating — Acting Performance Ratings & Reviews",
   description:
-    "Rate and analyze acting performances using Oscar-inspired criteria. Join our community platform to discover acclaimed performances from cinema history.",
+    "Rate and analyze 570K+ acting performances across 208K+ actors. Quick single-slider or 5-criteria ratings. Community-driven, growing daily.",
   keywords: [
     "actor rating",
     "actors rating",
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
-      "Community-driven platform to rate and analyze acting performances using Oscar-inspired criteria. Discover your favorite actors' best performances.",
+      "Community-driven platform to rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Discover and rank the best acting performances.",
     url: "https://www.actorrating.com",
     siteName: "ActorRating",
     images: [
@@ -92,7 +92,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
-      "Join the world’s first platform for rating and analyzing acting performances using professional criteria.",
+      "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Join the community.",
     images: ["https://www.actorrating.com/logo.png"],
     creator: "@ActorRating",
   },

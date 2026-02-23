@@ -6,14 +6,14 @@ import HomePageClient from "@/components/HomePageClient";
 // --- SEO Metadata ---
 export const metadata: Metadata = {
   title: "ActorRating — Rate Acting Performances Scene by Scene",
-  description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
+  description: "Rate 570K+ acting performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Compare performances and see who truly deserved the awards.",
   keywords: [
     "actor rating", "acting performance", "movie ratings", "community-driven ratings",
-    "Oscar-inspired criteria", "film performance analysis", "rate actors", "cinema"
+    "Oscar-inspired criteria", "film performance analysis", "rate actors", "cinema", "quick rate"
   ],
   openGraph: {
     title: "ActorRating — Rate Acting Performances Scene by Scene",
-    description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
+    description: "Rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Compare actors and see who truly deserved the awards.",
     url: "https://actorrating.com",
     siteName: "ActorRating",
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "ActorRating — Rate Acting Performances Scene by Scene",
-    description: "Rate acting performances, not just movies. Compare actors scene by scene and see who truly deserved the awards.",
+    description: "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria. Compare and see who deserved the awards.",
     images: ["https://actorrating.com/logo.png"],
   },
 };
@@ -42,7 +42,7 @@ export default function Home() {
     "@type": "WebSite",
     name: "ActorRating",
     url: "https://actorrating.com",
-    description: "Community-driven platform for rating acting performances",
+    description: "Community-driven platform for rating 570K+ acting performances and 208K+ actors. Quick single-slider or 5-criteria ratings.",
     potentialAction: {
       "@type": "SearchAction",
       target: "https://actorrating.com/search?q={search_term_string}",
@@ -60,7 +60,7 @@ export default function Home() {
         name: "What is ActorRating?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "ActorRating is a community-driven platform that allows users to rate and analyze individual acting performances in films, not the movies themselves. We use Oscar-inspired criteria including emotional range, character believability, technical skill, screen presence, and chemistry with other actors."
+          text: "ActorRating is a community-driven platform to rate and analyze 570K+ acting performances and 208K+ actors. Rate with a quick single slider or across five Oscar-inspired criteria: emotional range, character believability, technical skill, screen presence, and chemistry."
         }
       },
       {
@@ -68,7 +68,7 @@ export default function Home() {
         name: "How does ActorRating work?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Users select an actor's performance in a specific film, then rate it across five professional criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction. These scores are aggregated to provide comprehensive performance ratings."
+          text: "Users select an actor's performance in a film, then rate it with a quick single-slider score or across five criteria: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction. Scores are aggregated for comprehensive performance ratings."
         }
       },
       {
@@ -95,18 +95,18 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How to Rate Acting Performances on ActorRating",
-    description: "Step-by-step guide to rating an actor's performance using Oscar-inspired criteria",
+    description: "Step-by-step guide to rating an actor's performance: quick single slider or 5 Oscar-inspired criteria",
     step: [
       {
         "@type": "HowToStep",
         name: "Select an Actor's Performance",
-        text: "Choose an actor and a specific film role you want to rate",
+        text: "Choose an actor and a specific film role from 570K+ performances to rate",
         position: 1
       },
       {
         "@type": "HowToStep",
-        name: "Rate Across Five Criteria",
-        text: "Evaluate the performance on: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
+        name: "Rate: Quick or 5 Criteria",
+        text: "Use the quick single-slider score or evaluate across: Emotional Range & Depth, Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and Chemistry & Interaction",
         position: 2
       },
       {

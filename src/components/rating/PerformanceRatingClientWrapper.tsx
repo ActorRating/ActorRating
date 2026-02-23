@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown, X } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -928,6 +928,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const previousScoreRef = useRef(0)
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
+  const [successClosing, setSuccessClosing] = useState(false)
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -1222,14 +1223,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
       const elapsed = Date.now() - startTime
 
-      // 400ms: Morph to checkmark (shorter so success feels snappier)
-      const checkmarkDelay = Math.max(0, 400 - elapsed)
+      // 200ms: Morph to checkmark
+      const checkmarkDelay = Math.max(0, 200 - elapsed)
       setTimeout(() => {
         setSubmitPhase('checkmark')
       }, checkmarkDelay)
 
-      // 700ms: Show success card (reduced from 1300ms)
-      const successDelay = Math.max(0, 700 - elapsed)
+      // 350ms: Show success card (minimal wait after API)
+      const successDelay = Math.max(0, 350 - elapsed)
       setTimeout(() => {
         setSubmitPhase('success')
 
@@ -1387,18 +1388,23 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }
 
   const handleContinueRating = () => {
-    // Unlock body scroll when closing
+    if (submitPhase === 'success') {
+      setSuccessClosing(true)
+      doNavigateToActorPage()
+      return
+    }
+    doNavigateToActorPage()
+  }
+
+  const doNavigateToActorPage = () => {
     if (typeof document !== 'undefined') {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
     }
-    // Store flag to indicate we need to refresh ratings on actor page
-    // Store both ID and slug to handle both cases
     sessionStorage.setItem('refreshActorRatings', performance.actor.id)
     if (performance.actor.slug) {
       sessionStorage.setItem('refreshActorRatingsSlug', performance.actor.slug)
     }
-    // Navigate to actor's page filmography section using slug
     const actorUrl = getActorUrl(performance.actor)
     router.push(`${actorUrl}#filmography`)
   }
@@ -1995,14 +2001,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           </div>
         </form>
 
-        {/* Success Card - Fades in after confetti */}
+        {/* Success Card - Fades in after confetti; navigate instantly, card fades while new page loads */}
         <AnimatePresence>
           {submitPhase === 'success' && finalScore !== null && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: successClosing ? 0 : 1 }}
+              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
               style={{
                 position: 'fixed',
@@ -2010,6 +2015,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 left: 0,
                 right: 0,
                 bottom: 0,
+                pointerEvents: successClosing ? 'none' : 'auto',
               }}
             >
               <motion.div
@@ -2027,6 +2033,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   `,
                 }}
               >
+                {/* Close - go to actor page */}
+                <button
+                  type="button"
+                  onClick={handleContinueRating}
+                  className="absolute top-4 right-4 sm:top-5 sm:right-5 w-11 h-11 flex items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation"
+                  aria-label="Close and go to actor page"
+                >
+                  <X className="w-5 h-5 shrink-0" strokeWidth={2} />
+                </button>
+
                 {/* Success Header - dynamic comparison to community */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -2077,9 +2093,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: (progressData?.progress ?? 0) / 100 }}
                         transition={{
-                          duration: 1,
-                          ease: [0.4, 0, 0.2, 1],
-                          delay: 0.2,
+                          duration: 0.65,
+                          ease: [0.33, 1, 0.68, 1],
+                          delay: 0.1,
                         }}
                       />
                       <defs>
