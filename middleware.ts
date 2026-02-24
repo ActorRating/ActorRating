@@ -22,7 +22,7 @@ export async function middleware(req: NextRequest) {
       try {
         const res = await fetch(
           `${req.nextUrl.origin}/api/actors/${encodeURIComponent(id)}`,
-          { headers: { "Content-Type": "application/json" }, next: { revalidate: 0 } }
+          { headers: { "Content-Type": "application/json" }, next: { revalidate: 300 } }
         )
         if (!res.ok) {
           return new NextResponse(null, {
@@ -50,7 +50,7 @@ export async function middleware(req: NextRequest) {
       try {
         const res = await fetch(
           `${req.nextUrl.origin}/api/movies/${encodeURIComponent(slug)}`,
-          { headers: { "Content-Type": "application/json" }, next: { revalidate: 0 } }
+          { headers: { "Content-Type": "application/json" }, next: { revalidate: 300 } }
         )
         if (!res.ok) {
           return new NextResponse(null, {

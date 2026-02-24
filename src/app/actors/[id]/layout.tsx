@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 
-// Cache actor metadata for 5 min — ratings don't change every second
-export const revalidate = 300;
+// Cache actor metadata for 1 hour — reduce ISR writes from crawlers
+export const revalidate = 3600;
 
 type Props = {
   params: Promise<{ id: string }>;

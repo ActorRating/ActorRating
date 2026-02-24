@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 // Override dynamic inference from root (SessionProvider) so ISR can cache
 export const dynamic = 'force-static'
-export const revalidate = 300
+export const revalidate = 86400
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -35,12 +35,12 @@ async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
     
     const [actorResponse, movieResponse] = await Promise.all([
       fetch(`${baseUrl}/api/actors/${actorSlug}`, {
-        next: { revalidate: 300 },
+        next: { revalidate: 86400 },
         headers: { 'Content-Type': 'application/json' },
         credentials: 'omit', // ISR: never send cookies — keeps page static
       }),
       fetch(`${baseUrl}/api/movies/${movieSlug}`, {
-        next: { revalidate: 300 },
+        next: { revalidate: 86400 },
         headers: { 'Content-Type': 'application/json' },
         credentials: 'omit', // ISR: never send cookies — keeps page static
       }),
@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const getCount = () =>
       prisma.rating.count({ where: { actorId: actor.id, movieId: movie.id } })
     ratingCount = await unstable_cache(getCount, [`rate:count:${actor.id}:${movie.id}`], {
-      revalidate: 300,
+      revalidate: 86400,
     })()
   } catch (err) {
     console.error('Rate layout generateMetadata rating count failed:', err)
@@ -145,7 +145,7 @@ export default async function RateLayout({ params, children }: Props) {
       ratingAgg = await unstable_cache(
         () => getRatingAggregate(data.actor.id, data.movie.id),
         [`rate:agg:${data.actor.id}:${data.movie.id}`],
-        { revalidate: 300 }
+        { revalidate: 86400 }
       )()
     } catch (err) {
       console.error('Rate layout aggregate failed:', err)

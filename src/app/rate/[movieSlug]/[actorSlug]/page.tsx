@@ -13,9 +13,9 @@ import RatePageClient from './RatePageClient'
 import RatePageFallback from './RatePageFallback'
 
 export const dynamic = 'force-static' // override dynamic inference from root (SessionProvider)
-export const revalidate = 3600 // 1 hour ISR
+export const revalidate = 86400 // 24h ISR — prevent massive write cycles from crawlers
 
-const RATE_PAGE_CACHE_REVALIDATE = 300 // 5 min — faster repeat loads after prefetch/hover
+const RATE_PAGE_CACHE_REVALIDATE = 86400
 
 function toIsoDateSafe(value: string | Date | undefined): string {
   if (!value) return ''
@@ -28,12 +28,12 @@ async function resolveRatePageDataViaApi(movieSlug: string, actorSlug: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   const [actorRes, movieRes] = await Promise.all([
     fetch(`${baseUrl}/api/actors/${actorSlug}?minimal=true`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 86400 },
       headers: { 'Content-Type': 'application/json' },
       credentials: 'omit',
     }),
     fetch(`${baseUrl}/api/movies/${movieSlug}?minimal=true`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 86400 },
       headers: { 'Content-Type': 'application/json' },
       credentials: 'omit',
     }),
@@ -93,6 +93,10 @@ export default async function RatePage({
   params: Promise<{ movieSlug: string; actorSlug: string }>
 }) {
   const { movieSlug, actorSlug } = await params
+  // Temporary: log every ISR render/revalidation to verify rate-page load in Vercel
+  if (process.env.NODE_ENV === 'production') {
+    console.log('[ISR] Rate page render', `/rate/${movieSlug}/${actorSlug}`)
+  }
   if (!movieSlug || !actorSlug) {
     return new NextResponse(null, { status: 410 })
   }

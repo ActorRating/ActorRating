@@ -49,6 +49,11 @@ export async function GET(request: NextRequest) {
   const routeStart = Date.now()
   try {
     const q = request.nextUrl.searchParams.get("q")?.trim()
+    // Temporary: log every suggestions API hit with user-agent to detect bot abuse
+    const ua = request.headers.get("user-agent") ?? ""
+    if (process.env.NODE_ENV === "production") {
+      console.log("[Suggestions]", { q: q ?? "(empty)", userAgent: ua.slice(0, 120) })
+    }
     if (!q || q.length < 1) {
       return NextResponse.json({ actors: [], movies: [] } as SuggestionsResponse)
     }

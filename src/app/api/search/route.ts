@@ -7,7 +7,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')
     const suggestions = searchParams.get('suggestions') === 'true'
-    
+    // Temporary: log every search API hit with user-agent to detect bot abuse
+    if (process.env.NODE_ENV === 'production') {
+      const ua = request.headers.get('user-agent') ?? ''
+      console.log('[Search API]', { q: query ?? '(empty)', suggestions, userAgent: ua.slice(0, 120) })
+    }
+
     // Query is required
     if (query === null || query === undefined) {
       return NextResponse.json(
