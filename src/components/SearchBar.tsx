@@ -131,15 +131,23 @@ export function SearchBar({
     ensurePreload()
   }, [ensurePreload])
 
-  // Inline autocomplete: single best prefix match from preload (actor or movie) so we can navigate on accept.
+  // Inline autocomplete: prefer exact match (e.g. "chris evans" → Chris Evans), else first prefix match from preload.
   const inlineCompletionMatch = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = query.trim().toLowerCase().replace(/\s+/g, ' ')
     if (!q || !preload) return null
+    const nameNorm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ')
+    const qPrefix = query.trim().toLowerCase()
     for (const a of preload.actors) {
-      if (a.name.toLowerCase().startsWith(q)) return { type: "actor" as const, item: a }
+      if (nameNorm(a.name) === q) return { type: "actor" as const, item: a }
     }
     for (const m of preload.movies) {
-      if (m.title.toLowerCase().startsWith(q)) return { type: "movie" as const, item: m }
+      if (nameNorm(m.title) === q) return { type: "movie" as const, item: m }
+    }
+    for (const a of preload.actors) {
+      if (a.name.toLowerCase().startsWith(qPrefix)) return { type: "actor" as const, item: a }
+    }
+    for (const m of preload.movies) {
+      if (m.title.toLowerCase().startsWith(qPrefix)) return { type: "movie" as const, item: m }
     }
     return null
   }, [query, preload])
@@ -282,8 +290,34 @@ export function SearchBar({
     }
   }, [highlightedIndex])
 
+  // Prefetch the inline autocomplete target so Enter navigates instantly
+  useEffect(() => {
+    if (!showInlineCompletion || !inlineCompletionMatch) return
+    const url = inlineCompletionMatch.type === 'actor'
+      ? getActorUrl(inlineCompletionMatch.item)
+      : getMovieUrl(inlineCompletionMatch.item)
+    try {
+      if (typeof router.prefetch === 'function') router.prefetch(url)
+    } catch {}
+  }, [showInlineCompletion, inlineCompletionMatch, router])
 
-
+  // Prefetch first or highlighted suggestion so Enter is instant (keyboard users don't trigger PrefetchLink)
+  useEffect(() => {
+    if (!showDropdown || !suggestions) return
+    const actors = suggestions.actors?.slice(0, 10) ?? []
+    const movies = suggestions.movies?.slice(0, 10) ?? []
+    const total = actors.length + movies.length
+    if (total === 0) return
+    const index = highlightedIndex >= 0 && highlightedIndex < total ? highlightedIndex : 0
+    const item =
+      index < actors.length
+        ? { type: 'actor' as const, item: actors[index] }
+        : { type: 'movie' as const, item: movies[index - actors.length] }
+    const url = item.type === 'actor' ? getActorUrl(item.item) : getMovieUrl(item.item)
+    try {
+      if (typeof router.prefetch === 'function') router.prefetch(url)
+    } catch {}
+  }, [showDropdown, suggestions, highlightedIndex, router])
 
   // Close dropdown when clicking outside (dropdown visibility is driven by isFocused)
   useEffect(() => {
@@ -362,9 +396,13 @@ export function SearchBar({
       return
     }
 
-    // Typing + Enter with no arrow selection: use first suggestion so text completes visually and we navigate
+    // Typing + Enter with no arrow selection: prefer exact match (e.g. "inception" → Inception movie), else first suggestion
     if (allItems.length > 0 && highlightedIndex < 0) {
-      const selected = allItems[0]
+      const exactOrFirst = allItems.find(({ type, item }) => {
+        const name = (type === 'actor' ? item.name : item.title).toLowerCase().replace(/\s+/g, ' ')
+        return name === q
+      }) ?? allItems[0]
+      const selected = exactOrFirst
       const fullText = selected.type === 'actor' ? selected.item.name : selected.item.title
       const url = selected.type === 'actor' ? getActorUrl(selected.item) : getMovieUrl(selected.item)
       flushSync(() => {
@@ -378,14 +416,124 @@ export function SearchBar({
       return
     }
 
-    // If no suggestions but query exists, navigate to search page
+    // No suggestions yet (e.g. Enter before API responded): try exact then token match from preload so "inception" / "chris evans" go straight to page
+    if (query.trim() && allItems.length === 0 && preload) {
+      const qNorm = q
+      const tokens = qNorm.split(/\s+/).filter(Boolean)
+      const nameNorm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ')
+      const allTokensIn = (norm: string) => tokens.length > 0 && tokens.every((t) => norm.includes(t))
+
+      // Exact match first
+      let movieMatch = preload.movies.filter((m) => nameNorm(m.title) === qNorm)
+      let actorMatch = preload.actors.filter((a) => nameNorm(a.name) === qNorm)
+      // If no exact match, try token match (e.g. "chris evans" → actor whose name contains both "chris" and "evans")
+      if (actorMatch.length === 0 && movieMatch.length === 0 && tokens.length > 0) {
+        const actorsWithTokens = preload.actors.filter((a) => allTokensIn(nameNorm(a.name)))
+        const moviesWithTokens = preload.movies.filter((m) => allTokensIn(nameNorm(m.title)))
+        if (actorsWithTokens.length === 1 || moviesWithTokens.length === 1) {
+          actorMatch = actorsWithTokens.length === 1 ? actorsWithTokens : []
+          movieMatch = moviesWithTokens.length === 1 ? moviesWithTokens : []
+        } else if (actorsWithTokens.length > 0 || moviesWithTokens.length > 0) {
+          const exactActor = actorsWithTokens.find((a) => nameNorm(a.name) === qNorm)
+          const exactMovie = moviesWithTokens.find((m) => nameNorm(m.title) === qNorm)
+          if (exactActor) actorMatch = [exactActor]
+          else if (exactMovie) movieMatch = [exactMovie]
+          else if (actorsWithTokens.length > 0) actorMatch = [actorsWithTokens[0]]
+          else movieMatch = [moviesWithTokens[0]]
+        }
+      }
+
+      const singleMovie = movieMatch.length === 1 ? movieMatch[0] : null
+      const singleActor = actorMatch.length === 1 ? actorMatch[0] : null
+      if (singleMovie) {
+        flushSync(() => {
+          setQuery(singleMovie.title)
+          setIsFocused(false)
+          setSuggestions(null)
+          setHighlightedIndex(-1)
+          setNavigating(true)
+        })
+        router.push(getMovieUrl(singleMovie))
+        return
+      }
+      if (singleActor) {
+        flushSync(() => {
+          setQuery(singleActor.name)
+          setIsFocused(false)
+          setSuggestions(null)
+          setHighlightedIndex(-1)
+          setNavigating(true)
+        })
+        router.push(getActorUrl(singleActor))
+        return
+      }
+      if (movieMatch.length > 0) {
+        const m = movieMatch[0]
+        flushSync(() => {
+          setQuery(m.title)
+          setIsFocused(false)
+          setSuggestions(null)
+          setHighlightedIndex(-1)
+          setNavigating(true)
+        })
+        router.push(getMovieUrl(m))
+        return
+      }
+      if (actorMatch.length > 0) {
+        const a = actorMatch[0]
+        flushSync(() => {
+          setQuery(a.name)
+          setIsFocused(false)
+          setSuggestions(null)
+          setHighlightedIndex(-1)
+          setNavigating(true)
+        })
+        router.push(getActorUrl(a))
+        return
+      }
+    }
+
+    // No suggestions and no preload match: show loader and try API once so "josh brolin" etc. still go straight to page
     if (query.trim() && allItems.length === 0) {
       setHighlightedIndex(-1)
       if (onSearch) {
         onSearch(query.trim())
-      } else {
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+        return
       }
+      const searchQuery = query.trim()
+      flushSync(() => setNavigating(true))
+      fetch(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: NewSearchResult | null) => {
+          if (!data) {
+            router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+            return
+          }
+          const qNorm = searchQuery.toLowerCase().replace(/\s+/g, ' ')
+          const nameNorm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ')
+          const actors = data.actors ?? []
+          const movies = data.movies ?? []
+          const exactActor = actors.find((a) => nameNorm(a.name) === qNorm)
+          const exactMovie = movies.find((m) => nameNorm(m.title) === qNorm)
+          if (exactActor) {
+            router.push(getActorUrl(exactActor))
+            return
+          }
+          if (exactMovie) {
+            router.push(getMovieUrl(exactMovie))
+            return
+          }
+          if (actors.length === 1 && movies.length === 0) {
+            router.push(getActorUrl(actors[0]))
+            return
+          }
+          if (movies.length === 1 && actors.length === 0) {
+            router.push(getMovieUrl(movies[0]))
+            return
+          }
+          router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+        })
+        .catch(() => router.push(`/search?q=${encodeURIComponent(searchQuery)}`))
       return
     }
   }
@@ -464,20 +612,13 @@ export function SearchBar({
   const handleSuggestionClick = (e: React.MouseEvent, url: string, fullText?: string) => {
     e.preventDefault()
     e.stopPropagation()
-    if (fullText != null) {
-      flushSync(() => {
-        setQuery(fullText)
-        setIsFocused(false)
-        setSuggestions(null)
-        setHighlightedIndex(-1)
-        setNavigating(true)
-      })
-    } else {
+    flushSync(() => {
+      if (fullText != null) setQuery(fullText)
       setIsFocused(false)
       setSuggestions(null)
       setHighlightedIndex(-1)
       setNavigating(true)
-    }
+    })
     router.push(url)
   }
 
