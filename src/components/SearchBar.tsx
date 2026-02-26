@@ -11,7 +11,7 @@ import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { fadeInUp, staggerContainer } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 
-const DEBOUNCE_MS = 60
+const DEBOUNCE_MS = 300
 const MAX_SUGGESTIONS = 8
 const LOCAL_LIMIT = 4
 
@@ -227,6 +227,12 @@ export function SearchBar({
         .slice(0, LOCAL_LIMIT)
         .map(({ _title, ...m }) => m)
       setSuggestions({ actors, movies })
+    }
+
+    // Only call API when query length >= 2 (avoids many single-char requests)
+    if (raw.length < 2) {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      return
     }
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
