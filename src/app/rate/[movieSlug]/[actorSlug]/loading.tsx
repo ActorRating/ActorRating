@@ -1,23 +1,6 @@
-"use client"
-
-import { SignedInLayout, HomeLayout } from '@/components/layout'
-import { useUser } from '@/components/providers/SessionProvider'
-import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-
+/** Minimal loading: thin top bar. PrefetchLink from Oscars/dashboard makes rate nav feel instant. */
 export default function RatePageLoading() {
-  const user = useUser()
-  const Layout = user ? SignedInLayout : HomeLayout
-  
   return (
-    <Layout>
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <BouncingBallsLoader 
-          size="lg" 
-          color="#FFD700"
-          showText={true}
-          text="Loading rating page..."
-        />
-      </div>
-    </Layout>
+    <div className="fixed top-0 left-0 right-0 z-[201] h-0.5 bg-[#FFD700]/80 animate-pulse" aria-hidden />
   )
 }

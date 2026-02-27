@@ -216,7 +216,7 @@ export function PerformancesPageClient({
   return (
     <LayoutWrapper>
       <div
-        className="relative z-10 bg-black pt-16 pb-20 sm:pt-20 sm:pb-24 md:pb-32"
+        className="relative z-10 bg-black pt-20 pb-20 sm:pt-24 sm:pb-24 md:pb-32"
         style={{ willChange: "auto" }}
       >
         <div className="absolute inset-0 opacity-20 pointer-events-none">

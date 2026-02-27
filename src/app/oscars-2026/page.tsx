@@ -1,12 +1,10 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Link from "next/link"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { FaTrophy, FaStar } from "react-icons/fa"
-import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { HomeLayout } from "@/components/layout"
+import { PrefetchLink } from "@/components/ui/PrefetchLink"
 
 // Oscar 2026 Nominees (announced January 2026)
 const OSCAR_CATEGORIES = [
@@ -60,16 +58,12 @@ interface PerformanceData {
 }
 
 export default function Oscars2026Page() {
-  const router = useRouter()
   const [performanceData, setPerformanceData] = useState<Map<string, PerformanceData>>(new Map())
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadingNominee, setLoadingNominee] = useState<string | null>(null)
 
+  // Load performance data in background so the page renders immediately
   useEffect(() => {
-    // Fetch performance data for all nominees
     async function fetchPerformanceData() {
       try {
-        // Create lookup targets for all nominees
         const targets = OSCAR_CATEGORIES.flatMap(category =>
           category.nominees.map(nominee => ({
             actor: nominee.name,
@@ -79,17 +73,11 @@ export default function Oscars2026Page() {
 
         const response = await fetch('/api/performances/by-lookup', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ targets }),
         })
 
-        if (!response.ok) {
-          console.error('Failed to fetch performance data')
-          setIsLoading(false)
-          return
-        }
+        if (!response.ok) return
 
         const data = await response.json()
         const newPerformanceData = new Map<string, PerformanceData>()
@@ -111,28 +99,11 @@ export default function Oscars2026Page() {
         setPerformanceData(newPerformanceData)
       } catch (error) {
         console.error('Error fetching performance data:', error)
-      } finally {
-        setIsLoading(false)
       }
     }
 
     fetchPerformanceData()
   }, [])
-
-  if (isLoading) {
-    return (
-      <HomeLayout>
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <BouncingBallsLoader 
-            size="lg" 
-            color="#FFD700"
-            showText={true}
-            text="Loading Oscar nominees..."
-          />
-        </div>
-      </HomeLayout>
-    )
-  }
 
   return (
     <HomeLayout>
@@ -218,22 +189,56 @@ export default function Oscars2026Page() {
                 {category.nominees.map((nominee, nomIndex) => {
                   const key = `${nominee.name}:${nominee.film}`
                   const perfData = performanceData.get(key)
-                  const hasData = perfData && perfData.ratingCount > 0
-                  const isThisLoading = loadingNominee === key
-                  
-                  // Create slug-friendly versions for URL
-                  const actorSlug = perfData?.actorSlug || nominee.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-                  const movieSlug = perfData?.movieSlug || nominee.film.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                  const hasData = !!perfData && perfData.ratingCount > 0
+                  const actorSlug = perfData?.actorSlug ?? nominee.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+                  const movieSlug = perfData?.movieSlug ?? nominee.film.toLowerCase().replace(/[^a-z0-9]+/g, "-")
                   const href = `/rate/${movieSlug}/${actorSlug}`
 
-                  const handleClick = (e: React.MouseEvent) => {
-                    e.preventDefault()
-                    setLoadingNominee(key)
-                    // Small delay to show loading state, then navigate
-                    setTimeout(() => {
-                      router.push(href)
-                    }, 50)
-                  }
+                  const cardContent = (
+                    <>
+                      <div>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                          <h3 className="text-xl sm:text-2xl font-bold text-white break-words">
+                            {nominee.name}
+                          </h3>
+                          <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                            <FaTrophy className="w-3 h-3 text-[#FFD700]" />
+                            <span className="text-xs font-semibold text-[#FFD700]">Nominee</span>
+                          </span>
+                        </div>
+                        <p className="text-lg sm:text-xl text-[#FFD700] font-medium mb-3 break-words">
+                          {nominee.film}
+                        </p>
+                        <div className="flex items-center justify-between gap-4 mb-2">
+                          {hasData && perfData && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
+                                <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                <span className="text-lg sm:text-xl font-bold text-[#FFD700]">
+                                  {(perfData.averageRating / 10).toFixed(1)}
+                                </span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-[#71717a]">
+                                {perfData.ratingCount} {perfData.ratingCount === 1 ? "rating" : "ratings"}
+                              </span>
+                            </div>
+                          )}
+                          <span
+                            className="px-8 sm:px-10 py-3 sm:py-3.5 rounded-full text-black text-base sm:text-lg font-bold transition-all duration-200 hover:scale-105 flex items-center gap-2 whitespace-nowrap ml-auto"
+                            style={{ background: "linear-gradient(135deg, #FFE55C, #FFD700)" }}
+                          >
+                            {hasData ? "Rate" : "Rate First"}
+                          </span>
+                        </div>
+                        {nominee.character && (
+                          <p className="text-sm sm:text-base text-[#a1a1aa] break-words">
+                            as {nominee.character}
+                          </p>
+                        )}
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl from-[#FFD700]/5 to-transparent rounded-tl-[60px] pointer-events-none" />
+                    </>
+                  )
 
                   return (
                     <motion.div
@@ -243,92 +248,19 @@ export default function Oscars2026Page() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.5, delay: nomIndex * 0.1 }}
                     >
-                      <div
-                        onClick={handleClick}
-                        className="group relative p-6 rounded-2xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.15)] cursor-pointer"
+                      <PrefetchLink
+                        href={href}
+                        className="group relative block p-6 rounded-2xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.15)] cursor-pointer"
                         style={{
                           boxShadow: `
-                            0 10px 30px -10px rgba(0, 0, 0, 0.8),
-                            0 0 0 1px rgba(255, 255, 255, 0.05),
-                            inset 0 1px 0 0 rgba(255, 255, 255, 0.08)
-                          `,
+                              0 10px 30px -10px rgba(0, 0, 0, 0.8),
+                              0 0 0 1px rgba(255, 255, 255, 0.05),
+                              inset 0 1px 0 0 rgba(255, 255, 255, 0.08)
+                            `,
                         }}
                       >
-                        {/* Loading overlay */}
-                        {isThisLoading && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
-                            <div className="flex items-center gap-3">
-                              <div className="w-5 h-5 border-2 border-[#FFD700] border-t-transparent rounded-full animate-spin" />
-                              <span className="text-[#FFD700] font-semibold">Loading...</span>
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          {/* Row 1: Name with Badge */}
-                          <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                            <h3 className="text-xl sm:text-2xl font-bold text-white break-words">
-                              {nominee.name}
-                            </h3>
-                            {/* Oscar Nominee Badge */}
-                            <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                              <FaTrophy className="w-3 h-3 text-[#FFD700]" />
-                              <span className="text-xs font-semibold text-[#FFD700]">
-                                Nominee
-                              </span>
-                            </span>
-                          </div>
-
-                          {/* Row 2: Movie name directly under actor name */}
-                          <p className="text-lg sm:text-xl text-[#FFD700] font-medium mb-3 break-words">
-                            {nominee.film}
-                          </p>
-
-                          {/* Row 3: Score bubble (left) and Rate button (right) - same row */}
-                          <div className="flex items-center justify-between gap-4 mb-2">
-                            {/* Score bubble on left */}
-                            {hasData && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 border border-[#FFD700]/30">
-                                  <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                  <span className="text-lg sm:text-xl font-bold text-[#FFD700]">
-                                    {(perfData.averageRating / 10).toFixed(1)}
-                                  </span>
-                                </div>
-                                <span className="text-xs sm:text-sm text-[#71717a]">
-                                  {perfData.ratingCount} {perfData.ratingCount === 1 ? 'rating' : 'ratings'}
-                                </span>
-                              </div>
-                            )}
-                            {/* Rate button on right */}
-                            <button
-                              disabled={isThisLoading}
-                              className="px-8 sm:px-10 py-3 sm:py-3.5 rounded-full text-black text-base sm:text-lg font-bold transition-all duration-200 hover:scale-105 disabled:opacity-70 disabled:cursor-wait flex items-center gap-2 whitespace-nowrap ml-auto"
-                              style={{
-                                background: 'linear-gradient(135deg, #FFE55C, #FFD700)',
-                              }}
-                            >
-                              {isThisLoading ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                  <span>Loading...</span>
-                                </>
-                              ) : (
-                                hasData ? 'Rate' : 'Rate First'
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Row 4: Character if available */}
-                          {nominee.character && (
-                            <p className="text-sm sm:text-base text-[#a1a1aa] break-words">
-                              as {nominee.character}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Decorative accent */}
-                        <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl from-[#FFD700]/5 to-transparent rounded-tl-[60px] pointer-events-none" />
-                      </div>
+                        {cardContent}
+                      </PrefetchLink>
                     </motion.div>
                   )
                 })}

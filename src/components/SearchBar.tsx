@@ -623,7 +623,7 @@ export function SearchBar({
       setIsFocused(false)
       setSuggestions(null)
       setHighlightedIndex(-1)
-      setNavigating(true)
+      // Do not set navigating: no overlay so click feels instant; router.push does client transition
     })
     router.push(url)
   }
