@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown, X } from 'lucide-react'
+import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -1772,14 +1772,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             hideScore
                           />
                         </div>
-                        <div className="pt-2 sm:pt-4 flex justify-center">
+                        <div className="pt-3 sm:pt-5 flex justify-center w-full max-w-[600px] mx-auto">
                           <button
                             type="button"
                             onClick={handleExpandInDepth}
-                            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-[#d4d4d8] hover:text-white font-medium text-sm sm:text-base transition-colors w-full max-w-[320px] justify-center"
+                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/60 text-amber-200 hover:text-amber-100 font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
                           >
                             <span>Rate in more depth</span>
-                            <ChevronDown className="w-4 h-4 shrink-0" />
+                            <span className="text-xs font-normal text-amber-300/90">(5 criteria)</span>
+                            <ChevronDown className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
                           </button>
                         </div>
                       </>
@@ -1855,7 +1856,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           />
                         </div>
 
-                        <div className="pt-1 flex justify-center">
+                        <div className="pt-3 sm:pt-5 flex justify-center w-full max-w-[600px] mx-auto">
                           <button
                             type="button"
                             onClick={() => {
@@ -1863,9 +1864,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                               setOverallScore(avg)
                               setShowInDepthSliders(false)
                             }}
-                            className="text-xs sm:text-sm text-[#a3a3a3] hover:text-white/80 transition-colors"
+                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/35 text-[#d4d4d8] hover:text-white font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
                           >
-                            Use simple rating
+                            <ChevronUp className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
+                            <span>Use simple rating</span>
                           </button>
                         </div>
                       </>

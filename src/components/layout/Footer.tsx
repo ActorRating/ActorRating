@@ -5,102 +5,138 @@ import { useCookieConsentContext } from '@/components/providers/CookieConsentPro
 import { useUser } from '@/components/providers/SessionProvider'
 import { useState, useEffect } from 'react'
 
+const GOLD_TEXT_STYLE = {
+  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+  WebkitBackgroundClip: 'text' as const,
+  WebkitTextFillColor: 'transparent' as const,
+  backgroundClip: 'text' as const,
+}
+
 export function Footer() {
   const { openSettings } = useCookieConsentContext()
   const user = useUser()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
+  useEffect(() => { setMounted(true) }, [])
+
   return (
-    <footer className="bg-black w-full mt-auto border-t border-[#1a1a1a]">
-      <div className="max-w-7xl mx-auto w-full px-6 sm:px-8 lg:px-12 py-16">
-        {/* Main Footer Content - Enhanced Multi-Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          {/* Branding Column */}
-          <div>
-            <h3 className="text-white font-bold text-lg mb-4" style={{ fontFamily: 'var(--font-cinzel), serif' }}>
+    <footer className="bg-black w-full mt-auto" style={{ borderTop: '1px solid rgba(255,215,0,0.1)' }}>
+      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
+
+        {/* Top row: brand + nav columns */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
+
+          {/* Brand — wider column */}
+          <div className="md:col-span-2">
+            <h3
+              className="text-xl font-bold mb-3"
+              style={{
+                fontFamily: 'var(--font-cinzel), serif',
+                ...GOLD_TEXT_STYLE,
+              }}
+            >
               ActorRating
             </h3>
-            <p className="text-[#a3a3a3] text-sm leading-relaxed">
-              Rate and analyze acting performances using Oscar-inspired criteria.
+            <p className="text-sm text-[#666] leading-relaxed mb-5 max-w-xs">
+              The world&apos;s leading database for rating and discovering acting performances — from silent film to today.
+            </p>
+            <p className="text-xs text-[#444] tracking-wider uppercase">
+              The IMDB for Acting Performance
             </p>
           </div>
 
-          {/* Explore Column */}
+          {/* Explore */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Explore</h4>
-            <nav className="flex flex-col gap-3">
-              <Link href="/performances" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                Recent Performances
+            <h4
+              className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5"
+            >
+              Explore
+            </h4>
+            <nav className="flex flex-col gap-3.5">
+              <Link href="/performances" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                All Performances
               </Link>
-              <Link href="/search" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                Search Actors
+              <Link href="/performances?sort=top" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Top Rated
+              </Link>
+              <Link href="/oscars-2026" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Oscars 2026
+              </Link>
+              <Link href="/search" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Search
               </Link>
               {mounted && user && (
-                <Link href="/dashboard" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                  Your Dashboard
+                <Link href="/dashboard" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                  My Dashboard
                 </Link>
               )}
             </nav>
           </div>
 
-          {/* Popular Actors Column */}
+          {/* Popular Actors */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Popular Actors</h4>
-            <nav className="flex flex-col gap-3">
-              <Link href="/actors/al-pacino" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5">
+              Popular Actors
+            </h4>
+            <nav className="flex flex-col gap-3.5">
+              <Link href="/actors/al-pacino" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Al Pacino
               </Link>
-              <Link href="/actors/meryl-streep" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/actors/meryl-streep" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Meryl Streep
               </Link>
-              <Link href="/actors/robert-de-niro" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/actors/robert-de-niro" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Robert De Niro
               </Link>
-              <Link href="/actors/leonardo-dicaprio" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/actors/leonardo-dicaprio" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Leonardo DiCaprio
               </Link>
             </nav>
           </div>
 
-          {/* Company Column */}
+          {/* Company */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Company</h4>
-            <nav className="flex flex-col gap-3">
-              <Link href="/about" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
-                About Us
+            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5">
+              Company
+            </h4>
+            <nav className="flex flex-col gap-3.5">
+              <Link href="/about" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                About
               </Link>
-              <Link href="/privacy" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/privacy" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/terms" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Terms of Service
               </Link>
-              <Link href="/kvkk" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <Link href="/kvkk" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 KVKK
               </Link>
-              <a href="mailto:contact@actorrating.com" className="text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 text-sm">
+              <a href="mailto:contact@actorrating.com" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Contact
               </a>
             </nav>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-[#1a1a1a]">
-          <div className="text-sm text-[#a3a3a3] font-light tracking-wide">
-            © 2025 ActorRating. All rights reserved.
+        {/* Divider */}
+        <div className="w-full h-px mb-8" style={{ background: 'rgba(255,215,0,0.08)' }} />
+
+        {/* Bottom bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs text-[#444] font-light tracking-widest uppercase">
+            © 2026 ActorRating. All rights reserved.
           </div>
-          <button 
-            onClick={openSettings}
-            className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-300 font-light tracking-wide underline"
-          >
-            Cookie Preferences
-          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={openSettings}
+              className="text-xs text-[#444] hover:text-[#FFD700] transition-colors duration-200 tracking-wider uppercase underline decoration-[#333] hover:decoration-[#FFD700]/50"
+            >
+              Cookie Preferences
+            </button>
+          </div>
         </div>
+
       </div>
     </footer>
   )

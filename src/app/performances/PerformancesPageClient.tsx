@@ -226,10 +226,34 @@ export function PerformancesPageClient({
 
         <div className="w-full relative" style={{ maxWidth: "1280px", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
           <div className="text-center mb-8 sm:mb-10 px-4 sm:px-0">
-            <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
-              <span className="text-white">Discover</span>
+            <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-5">
+              570K+ Performances · 208K+ Actors
+            </p>
+            <h1
+              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight"
+              style={{ fontFamily: "var(--font-cinzel), serif" }}
+            >
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'drop-shadow(0 0 40px rgba(255,215,0,0.3))',
+                }}
+              >
+                Discover
+              </span>
             </h1>
-            <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#e4e4e7] max-w-3xl mx-auto font-light leading-relaxed">
+            <div
+              className="h-[2px] mx-auto mb-6"
+              style={{
+                width: '160px',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,200,0,0.4) 15%, rgba(255,180,0,0.9) 40%, rgba(255,165,0,1) 50%, rgba(255,180,0,0.9) 60%, rgba(255,200,0,0.4) 85%, transparent 100%)',
+                boxShadow: '0 0 20px rgba(255,165,0,0.6), 0 0 40px rgba(255,165,0,0.3)',
+              }}
+            />
+            <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#a0a0a0] max-w-3xl mx-auto font-light leading-relaxed">
               Search and rate acting performances from cinema&apos;s finest
             </p>
           </div>
@@ -256,10 +280,11 @@ export function PerformancesPageClient({
           <div className="grid grid-cols-12">
             <div className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48">
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
-                <h3 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
-                  <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))" }}>Trending</span> Now
+                <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
+                  <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255,215,0,0.3))" }}>Trending</span> Now
                 </h3>
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
+                <div className="h-[2px] mx-auto mb-5" style={{ width: '140px', background: 'linear-gradient(90deg, transparent, rgba(255,165,0,1), transparent)', boxShadow: '0 0 16px rgba(255,165,0,0.5)' }} />
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#a0a0a0] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Latest performances capturing global attention
                 </p>
               </div>
@@ -324,10 +349,11 @@ export function PerformancesPageClient({
 
             <div className="col-span-12 mb-16 sm:mb-20">
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
-                <h3 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
-                  <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))" }}>Iconic</span> Classics
+                <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
+                  <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255,215,0,0.3))" }}>Iconic</span> Classics
                 </h3>
-                <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-[#e4e4e7] max-w-4xl mx-auto font-light leading-relaxed px-4">
+                <div className="h-[2px] mx-auto mb-5" style={{ width: '140px', background: 'linear-gradient(90deg, transparent, rgba(255,165,0,1), transparent)', boxShadow: '0 0 16px rgba(255,165,0,0.5)' }} />
+                <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-[#a0a0a0] max-w-4xl mx-auto font-light leading-relaxed px-4">
                   Legendary performances that defined cinema
                 </p>
               </div>
