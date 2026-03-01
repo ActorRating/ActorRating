@@ -148,7 +148,7 @@ function HeroSection() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-6 sm:mb-8"
+              className="text-center text-[10px] sm:text-xs font-bold tracking-[0.15em] sm:tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-6 sm:mb-8 px-2 max-w-[90vw] mx-auto leading-snug"
             >
               The World&apos;s Acting Performance Database
             </motion.p>
@@ -234,7 +234,7 @@ function HeroSection() {
                   placeholder="Search for an actor or film…"
                   showClear
                   disableAutoScrollOnFocus
-                  className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#555] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-sm sm:[&_input]:text-base [&_input]:min-h-[54px]"
+                  className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#555] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:min-h-[54px]"
                 />
               </div>
             </motion.div>
@@ -386,7 +386,7 @@ function OscarBanner() {
 // ─── LEADERBOARD — sorted by actual rating, always-visible Rate buttons ───────
 
 function LeaderboardSection() {
-  const { isMobile } = useDevice();
+  const { isMobile, prefersReducedMotion } = useDevice();
   const [performancesData, setPerformancesData] = useState<Map<string, any>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   // Start with original order; reorder once ratings arrive
@@ -434,7 +434,7 @@ function LeaderboardSection() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
-        <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated Performances" />
+        <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated" />
 
         {/* Desktop table header */}
         <div className="hidden sm:grid grid-cols-[48px_1fr_80px_120px_130px] gap-4 items-center px-6 pb-3 mb-1">
@@ -462,13 +462,14 @@ function LeaderboardSection() {
             const rankStyle = rankColors[displayIndex] || null;
             const isLast = displayIndex === sortedPerfs.length - 1;
 
+            const reduceMotion = isMobile || prefersReducedMotion;
             return (
               <motion.div
                 key={`${p.actor}-${p.movie}`}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-30px' }}
-                transition={{ duration: 0.4, delay: displayIndex * 0.07 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: displayIndex * 0.04 }}
               >
                 <div
                   className={`grid grid-cols-[40px_1fr] sm:grid-cols-[48px_1fr_80px_120px_130px] gap-3 sm:gap-4 items-center px-5 sm:px-7 py-5 sm:py-6 transition-all duration-200 ${!isLast ? 'border-b' : ''}`}
@@ -589,6 +590,8 @@ const CRITERIA = [
 ];
 
 function RatingCriteriaSection() {
+  const { isMobile, prefersReducedMotion } = useDevice();
+  const reduceMotion = isMobile || prefersReducedMotion;
   return (
     <div className="relative z-10 py-20 sm:py-28 md:py-32" style={{ background: '#040404' }}>
       <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent)' }} />
@@ -613,10 +616,10 @@ function RatingCriteriaSection() {
           {CRITERIA.map((c, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -12 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.4, delay: i * 0.07 }}
+              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.04 }}
             >
               <div
                 className="group flex items-start gap-6 sm:gap-10 py-7 sm:py-8 transition-all duration-200 cursor-default"
@@ -625,9 +628,7 @@ function RatingCriteriaSection() {
                 {/* Gold number */}
                 <span
                   className="text-3xl sm:text-4xl font-black leading-none flex-shrink-0 w-12 sm:w-16 text-right"
-                  style={{ ...GOLD_TEXT, fontVariantNumeric: 'tabular-nums', opacity: 0.5, transition: 'opacity 0.2s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.5')}
+                  style={{ ...GOLD_TEXT, fontVariantNumeric: 'tabular-nums' }}
                 >
                   {c.num}
                 </span>
@@ -647,7 +648,7 @@ function RatingCriteriaSection() {
           ))}
         </div>
 
-        <div className="mt-12 sm:mt-16">
+        <div className="mt-12 sm:mt-16 flex justify-center">
           <Link href="/performances">
             <button
               className="group inline-flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]"
@@ -690,13 +691,14 @@ function HowItWorksSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 md:gap-7">
           {steps.map((step, i) => {
             const Icon = step.icon;
+            const reduceMotion = isMobile || prefersReducedMotion;
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.12 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
                 className="group"
               >
                 <div
@@ -796,13 +798,14 @@ function FeaturesSection() {
           {features.map((f, i) => {
             const Icon = f.icon;
             const isExpanded = expanded.has(i);
+            const reduceMotion = isMobile || prefersReducedMotion;
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
                 className="group"
               >
                 <div
@@ -902,7 +905,8 @@ function AboutTeaser() {
 // ─── COMMUNITY CTA ─────────────────────────────────────────────────────────────
 
 function CommunityCta() {
-  const { isMobile } = useDevice();
+  const { isMobile, prefersReducedMotion } = useDevice();
+  const reduceMotion = isMobile || prefersReducedMotion;
   const stats = [
     { value: '570K+', label: 'Performances' },
     { value: '208K+', label: 'Actors' },
@@ -926,12 +930,12 @@ function CommunityCta() {
         </h2>
 
         <motion.div
-          initial={{ width: 0, opacity: 0 }}
-          whileInView={{ width: '180px', opacity: 1 }}
+          initial={reduceMotion ? { width: '180px', opacity: 1 } : { width: 0, opacity: 0 }}
+          whileInView={reduceMotion ? undefined : { width: '180px', opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.4, delay: 0.05, ease: [0.25, 0.1, 0.25, 1] }}
           className="h-[2px] mx-auto mb-8"
-          style={{ willChange: 'width, opacity' }}
+          style={{ willChange: reduceMotion ? 'auto' : 'width, opacity' }}
         >
           <div className="h-full w-full" style={{
             background: 'linear-gradient(90deg, transparent 0%, rgba(255,200,0,0.4) 15%, rgba(255,180,0,0.9) 40%, rgba(255,165,0,1) 50%, rgba(255,180,0,0.9) 60%, rgba(255,200,0,0.4) 85%, transparent 100%)',

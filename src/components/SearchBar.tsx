@@ -740,7 +740,7 @@ export function SearchBar({
               placeholder={placeholder}
               autoFocus={autoFocus}
               className={cn(
-                "relative z-[1] w-full pl-12 pr-10 py-3 bg-transparent text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 border-0 transition-all duration-200"
+                "relative z-[1] w-full pl-12 pr-10 py-3 text-base bg-transparent text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 border-0 transition-all duration-200"
               )}
             />
             <AnimatePresence>

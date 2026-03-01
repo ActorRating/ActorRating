@@ -7,6 +7,7 @@ import { Logo } from '../ui/Logo'
 import { useState, useEffect, useRef, FormEvent } from 'react'
 import { FaSearch, FaTimes, FaBars } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type NavLink = {
   label: string
@@ -137,7 +138,7 @@ export function HomeNavbar() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search actor or film…"
-                      className="w-52 md:w-64 px-4 py-2 rounded-full text-white text-sm placeholder-[#555] outline-none transition-all duration-200"
+                      className="w-52 md:w-64 px-4 py-2 rounded-full text-white text-base placeholder-[#555] outline-none transition-all duration-200"
                       style={{
                         background: '#111',
                         border: '1px solid rgba(255,215,0,0.4)',
@@ -219,16 +220,21 @@ export function HomeNavbar() {
       </nav>
 
       {/* Mobile slide-down menu */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed top-16 sm:top-20 left-0 right-0 z-40 lg:hidden"
-          style={{
-            background: 'rgba(0,0,0,0.98)',
-            borderBottom: '1px solid rgba(255,215,0,0.1)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
-          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            className="fixed top-16 sm:top-20 left-0 right-0 z-40 lg:hidden"
+            style={{
+              background: 'rgba(0,0,0,0.98)',
+              borderBottom: '1px solid rgba(255,215,0,0.1)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
+            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
             {/* Mobile search */}
             <form onSubmit={handleSearch} className="flex items-center gap-2 mb-3">
               <div className="relative flex-1">
@@ -238,7 +244,7 @@ export function HomeNavbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search actor or film…"
-                  className="w-full pl-9 pr-4 py-3 rounded-full text-white text-sm placeholder-[#555] outline-none"
+                  className="w-full pl-9 pr-4 py-3 rounded-full text-white text-base placeholder-[#555] outline-none"
                   style={{ background: '#111', border: '1px solid rgba(255,215,0,0.2)' }}
                 />
               </div>
@@ -301,8 +307,9 @@ export function HomeNavbar() {
               </div>
             )}
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
