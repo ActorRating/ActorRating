@@ -467,6 +467,7 @@ function LeaderboardSection() {
               <motion.div
                 key={`${p.actor}-${p.movie}`}
                 initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: displayIndex * 0.04 }}
@@ -617,6 +618,7 @@ function RatingCriteriaSection() {
             <motion.div
               key={i}
               initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
+              animate={reduceMotion ? { opacity: 1, x: 0 } : undefined}
               whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }}
               viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.04 }}
@@ -696,6 +698,7 @@ function HowItWorksSection() {
               <motion.div
                 key={i}
                 initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
@@ -803,6 +806,7 @@ function FeaturesSection() {
               <motion.div
                 key={i}
                 initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
@@ -931,6 +935,7 @@ function CommunityCta() {
 
         <motion.div
           initial={reduceMotion ? { width: '180px', opacity: 1 } : { width: 0, opacity: 0 }}
+          animate={reduceMotion ? { width: '180px', opacity: 1 } : undefined}
           whileInView={reduceMotion ? undefined : { width: '180px', opacity: 1 }}
           viewport={{ once: true }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.4, delay: 0.05, ease: [0.25, 0.1, 0.25, 1] }}

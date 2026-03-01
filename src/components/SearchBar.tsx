@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { NewSearchResult } from '@/types'
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-import { fadeInUp, staggerContainer } from '@/lib/animations'
+import { fadeInUp, staggerContainer, getIsMobile, getPrefersReducedMotion } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 
 const DEBOUNCE_MS = 300
@@ -91,6 +91,15 @@ export function SearchBar({
   const containerRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastQueryRef = useRef<string>("")
+  const [reduceMotion, setReduceMotion] = useState(false)
+  useEffect(() => {
+    const check = () => setReduceMotion(getIsMobile() || getPrefersReducedMotion())
+    check()
+    window.addEventListener('resize', check)
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    mq.addEventListener('change', check)
+    return () => { window.removeEventListener('resize', check); mq.removeEventListener('change', check) }
+  }, [])
 
   const isEmptyQuery = query.trim().length === 0
   const hasDiscovery = Boolean(preload && (preload.actors?.length > 0 || preload.movies?.length > 0))
@@ -764,12 +773,21 @@ export function SearchBar({
             {showDropdown && (
               <motion.div
                 ref={dropdownRef}
-                initial={{ opacity: 0, maxHeight: 0 }}
-                animate={{ opacity: 1, maxHeight: '384px' }}
-                exit={{ opacity: 0, maxHeight: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, maxHeight: 0 }}
+                animate={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, maxHeight: '384px' }
+                }
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, maxHeight: 0 }}
+                transition={
+                  reduceMotion
+                    ? { duration: 0.12, ease: 'easeOut' }
+                    : { duration: 0.2, ease: 'easeOut' }
+                }
                 className="overflow-y-auto max-h-96"
                 style={{
+                  ...(reduceMotion && { maxHeight: '384px' }),
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
                 }}
@@ -782,11 +800,18 @@ export function SearchBar({
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           {isDiscoveryMode ? "Popular Actors" : "Actors"}
                         </div>
-                        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+                        <motion.div
+                          variants={reduceMotion ? undefined : staggerContainer}
+                          initial={reduceMotion ? false : 'hidden'}
+                          animate={reduceMotion ? false : 'show'}
+                        >
                           {suggestions.actors.slice(0, 10).map((actor, index) => {
                             const isHighlighted = highlightedIndex === index
                             return (
-                              <motion.div variants={fadeInUp} key={`search-actor-${actor.id}`}>
+                              <motion.div
+                                variants={reduceMotion ? undefined : fadeInUp}
+                                key={`search-actor-${actor.id}`}
+                              >
                                 <PrefetchLink
                                   href={getActorUrl(actor)}
                                   onClick={(e) => handleSuggestionClick(e, getActorUrl(actor), actor.name)}
@@ -827,13 +852,20 @@ export function SearchBar({
                         <div className="px-4 py-2 text-xs font-semibold text-[#FFD700] uppercase tracking-wide">
                           {isDiscoveryMode ? "Popular Movies" : "Movies"}
                         </div>
-                        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+                        <motion.div
+                          variants={reduceMotion ? undefined : staggerContainer}
+                          initial={reduceMotion ? false : 'hidden'}
+                          animate={reduceMotion ? false : 'show'}
+                        >
                           {suggestions.movies.slice(0, 10).map((movie, index) => {
                             const actorOffset = (suggestions?.actors?.length || 0)
                             const movieIndex = actorOffset + index
                             const isHighlighted = highlightedIndex === movieIndex
                             return (
-                              <motion.div variants={fadeInUp} key={`search-movie-${movie.id}`}>
+                              <motion.div
+                                variants={reduceMotion ? undefined : fadeInUp}
+                                key={`search-movie-${movie.id}`}
+                              >
                                 <PrefetchLink
                                   href={getMovieUrl(movie)}
                                   onClick={(e) => handleSuggestionClick(e, getMovieUrl(movie), movie.title)}
@@ -879,7 +911,7 @@ export function SearchBar({
                     {/* View All Results - only when user has typed a query */}
                     {!isEmptyQuery && (
                       <div className="border-t border-white/10 pt-2 mt-2">
-                        <motion.div variants={fadeInUp}>
+                        <motion.div variants={reduceMotion ? undefined : fadeInUp}>
                           <PrefetchLink
                             href={`/search?q=${encodeURIComponent(query)}`}
                             className="block w-full text-center px-4 py-3 text-sm text-[#FFD700] hover:bg-[#1a1a1a] rounded-lg transition-colors font-medium"
