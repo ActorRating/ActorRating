@@ -6,8 +6,8 @@ import { PerformancesPageClient } from "./PerformancesPageClient"
 const CACHE_KEY = "performances-page"
 const REVALIDATE_SECONDS = 300
 
-// Render at request time so build doesn't require DB access (avoids prerender/Prisma errors)
-export const dynamic = "force-dynamic"
+// ISR 5 min — aligns with unstable_cache revalidate; reduces invocations
+export const revalidate = 300
 
 export default async function PerformancesPage() {
   const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]

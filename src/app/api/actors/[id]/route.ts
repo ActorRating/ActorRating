@@ -103,28 +103,37 @@ export async function GET(
       console.error("❌ Ratings fetch error:", ratingsError)
     }
 
-    // Create a map of rating data by (actorId, movieId) for quick lookup
-    // Also create a map to aggregate ratings by movie (for career score calculation)
-    const ratingMap = new Map<string, any>()
+    // Aggregate ratings by movie; compute averaged criteria so community score is accurate
     const ratingsByMovie = new Map<string, any[]>()
 
     if (ratings) {
       ratings.forEach(rating => {
-        // Match by actorId:movieId (not userId:movieId) since ratings are per actor-movie pair
         const key = `${rating.movieId}`
         if (!ratingsByMovie.has(key)) {
           ratingsByMovie.set(key, [])
         }
         ratingsByMovie.get(key)!.push(rating)
-
-        // For matching to specific performances, use movieId only
-        // (since multiple users can rate the same actor-movie pair)
-        if (!ratingMap.has(key)) {
-          // Use the first rating found for this movie (or could average them)
-          ratingMap.set(key, rating)
-        }
       })
     }
+
+    // Build a ratingMap with averaged criteria values per movie (fixes score discrepancy
+    // between actor page and rate page which both use the same weighted average formula)
+    const ratingMap = new Map<string, any>()
+    ratingsByMovie.forEach((movieRatings, movieId) => {
+      const count = movieRatings.length
+      const first = movieRatings[0]
+      const avg = (field: string) =>
+        Math.round(movieRatings.reduce((s, r) => s + (r[field] || 0), 0) / count)
+      ratingMap.set(movieId, {
+        roleName: first.roleName,
+        emotionalRangeDepth: avg('emotionalRangeDepth'),
+        characterBelievability: avg('characterBelievability'),
+        technicalSkill: avg('technicalSkill'),
+        screenPresence: avg('screenPresence'),
+        chemistryInteraction: avg('chemistryInteraction'),
+        ratingCount: count,
+      })
+    })
 
     // Get all unique movies that have ratings
     const ratedMovieIds = new Set(ratings?.map(r => r.movieId) || [])
@@ -179,17 +188,15 @@ export async function GET(
       return {
         ...performance,
         roleName: rating?.roleName || null,
-        // Add the rating scores to the performance for the frontend
-        // Use the first rating found, or average if multiple exist
         emotionalRangeDepth: rating?.emotionalRangeDepth || 0,
         characterBelievability: rating?.characterBelievability || 0,
         technicalSkill: rating?.technicalSkill || 0,
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
-        // Add user info for display
+        ratingCount: rating?.ratingCount || 0,
         user: {
-          name: `User ${performance.userId?.slice(-4) || 'Unknown'}`, // Simple user display
-          email: `user@example.com` // Placeholder
+          name: `User ${performance.userId?.slice(-4) || 'Unknown'}`,
+          email: `user@example.com`
         }
       }
     })

@@ -5,6 +5,7 @@ import { getDashboardData } from '@/lib/dashboardData'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
 
+// User-specific data — must remain dynamic
 export const dynamic = 'force-dynamic'
 
 /** Shown when dashboard data fails (e.g. Prisma/DB unavailable). Avoids generic error boundary. */

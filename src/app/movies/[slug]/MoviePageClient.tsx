@@ -149,6 +149,20 @@ export default function MoviePageClient({
     const fetchData = async () => {
       if (isUUID) return
       if (hasInitial) {
+        // Background community-score refresh — busts both the browser cache and Vercel's
+        // Edge CDN cache (s-maxage=600) by appending a timestamp query param.
+        fetch(`/api/movies/${movieSlug}?_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((freshData) => {
+            if (!freshData) return
+            setMovie(freshData)
+            if (Array.isArray(freshData.performances)) setPerformances(freshData.performances)
+          })
+          .catch(() => {})
+
         if (!user) {
           setLoading(false)
           return
@@ -1211,36 +1225,50 @@ export default function MoviePageClient({
                         {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
-                          {/* Top Row: Rating Badge */}
+                          {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-4">
-                            {/* Score Pill */}
                             <div className="flex flex-col items-start gap-2">
-                              <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span 
-                                  className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
-                                  style={{
-                                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                                    fontVariantNumeric: 'tabular-nums',
-                                  }}
-                                >
-                                  {rating || 'N/A'}
-                                </span>
-                              </div>
-                              {/* User Score */}
-                              {hasUserRated && userScore && (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                                  <span className="text-xs text-gray-400">Your score:</span>
-                                  <span 
-                                    className="text-sm font-bold text-white"
-                                    style={{
-                                      fontFamily: 'var(--font-geist-sans), sans-serif',
-                                      fontVariantNumeric: 'tabular-nums',
-                                    }}
+                              {hasUserRated && userScore ? (
+                                // User has rated: show their score as the primary pill
+                                <>
+                                  <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                    <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                    <span
+                                      className="text-2xl sm:text-3xl font-bold text-[#FFD700] tabular-nums"
+                                      style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+                                    >
+                                      {(userScore / 10).toFixed(1)}
+                                    </span>
+                                    <span className="text-xs font-semibold text-[#FFD700]/55 tracking-wide">YOU</span>
+                                  </div>
+                                  {rating && (
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/8">
+                                      <span className="text-xs text-[#71717a]">Avg</span>
+                                      <span className="text-sm font-semibold text-white/70 tabular-nums">{rating}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                // Not yet rated: community score is primary
+                                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                  <FaStar className="w-5 h-5 text-[#FFD700]" />
+                                  <span
+                                    className="text-2xl sm:text-3xl font-bold text-[#FFD700] tabular-nums"
+                                    style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
                                   >
-                                    {(userScore / 10).toFixed(1)}
+                                    {rating || 'N/A'}
                                   </span>
                                 </div>
+                              )}
+                            </div>
+
+                            {/* Year + Rated badge - Top Right */}
+                            <div className="flex flex-col items-end gap-1.5">
+                              <span className="text-[#a3a3a3] text-base font-medium">{performance.movie.year}</span>
+                              {hasUserRated && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-[#FFD700]/60 px-2 py-0.5 rounded-full border border-[#FFD700]/20">
+                                  ✓ Rated
+                                </span>
                               )}
                             </div>
                           </div>

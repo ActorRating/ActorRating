@@ -121,25 +121,33 @@ export async function GET(
       console.error("❌ Ratings fetch error:", ratingsError)
     }
 
-    // Create a map of rating data by (actorId, movieId) for quick lookup
-    const ratingMap = new Map<string, any>()
+    // Aggregate ratings per actor; compute averaged criteria so community score is accurate.
     const ratingsByActor = new Map<string, any[]>()
-    
     if (ratings) {
       ratings.forEach(rating => {
-        // Match by actorId:movieId
-        const key = `${rating.actorId}:${rating.movieId}`
-        if (!ratingsByActor.has(rating.actorId)) {
-          ratingsByActor.set(rating.actorId, [])
-        }
+        if (!ratingsByActor.has(rating.actorId)) ratingsByActor.set(rating.actorId, [])
         ratingsByActor.get(rating.actorId)!.push(rating)
-        
-        // For matching to specific performances
-        if (!ratingMap.has(key)) {
-          ratingMap.set(key, rating)
-        }
       })
     }
+
+    // Build ratingMap with averaged criteria values per actor (fixes score discrepancy
+    // — without this, enrichedPerformances used only the first rating's individual values).
+    const ratingMap = new Map<string, any>()
+    ratingsByActor.forEach((actorRatings, actorId) => {
+      const count = actorRatings.length
+      const first = actorRatings[0]
+      const avg = (field: string) =>
+        Math.round(actorRatings.reduce((s, r) => s + (r[field] || 0), 0) / count)
+      ratingMap.set(`${actorId}:${movie.id}`, {
+        roleName: first.roleName,
+        emotionalRangeDepth: avg('emotionalRangeDepth'),
+        characterBelievability: avg('characterBelievability'),
+        technicalSkill: avg('technicalSkill'),
+        screenPresence: avg('screenPresence'),
+        chemistryInteraction: avg('chemistryInteraction'),
+        ratingCount: count,
+      })
+    })
 
     // Get all unique actors that have ratings but no performance entry
     const ratedActorIds = new Set(ratings?.map(r => r.actorId) || [])
@@ -195,12 +203,12 @@ export async function GET(
       return {
         ...performance,
         roleName: rating?.roleName || null,
-        // Add the rating scores to the performance for the frontend
         emotionalRangeDepth: rating?.emotionalRangeDepth || 0,
         characterBelievability: rating?.characterBelievability || 0,
         technicalSkill: rating?.technicalSkill || 0,
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
+        ratingCount: rating?.ratingCount || 0,
       }
     })
     

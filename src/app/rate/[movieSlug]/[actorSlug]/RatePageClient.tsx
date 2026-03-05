@@ -116,27 +116,19 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   }, [params?.movieSlug, params?.actorSlug, router, initialMovie, initialActor])
 
   useEffect(() => {
-    async function fetchCommunityStats() {
-      if (!actor?.name || !movie?.title) return
-      try {
-        const res = await fetch('/api/performances/by-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targets: [{ actor: actor.name, movie: movie.title }] }),
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        const perf = Array.isArray(data?.performances) ? data.performances[0] : null
-        const count = typeof perf?.ratingCount === 'number' ? perf.ratingCount : null
-        const avg100 = typeof perf?.averageRating === 'number' ? perf.averageRating : null
-        setCommunityRatingCount(count)
-        setCommunityAvg10(avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null)
-      } catch {
-        // ignore
-      }
-    }
-    fetchCommunityStats()
-  }, [actor?.name, movie?.title])
+    // Use direct-ID GET endpoint — much faster than the name-based POST lookup.
+    // actor.id and movie.id come from initialActor/initialMovie props so this
+    // runs on the very first render cycle with no extra waiting.
+    if (!actor?.id || !movie?.id) return
+    fetch(`/api/ratings/community-stats?actorId=${actor.id}&movieId=${movie.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return
+        if (typeof data.count === 'number') setCommunityRatingCount(data.count > 0 ? data.count : null)
+        if (data.avg10 != null) setCommunityAvg10(data.avg10)
+      })
+      .catch(() => {})
+  }, [actor?.id, movie?.id])
 
   // Fetch current user's rating for this performance so we can prefill the form (Edit flow)
   useEffect(() => {
@@ -238,7 +230,9 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
           chemistryInteraction: ratingData.chemistry,
         })
       } else {
-        const recaptchaToken = await executeRecaptcha('submit_rating')
+        // Skip reCAPTCHA network round-trip for authenticated users — the API already
+        // skips verification for signed-in users, saving ~300ms per submission.
+        const recaptchaToken = user ? '' : await executeRecaptcha('submit_rating')
         await ratingsApi.create({
           actorId: actor.id,
           movieId: movie.id,

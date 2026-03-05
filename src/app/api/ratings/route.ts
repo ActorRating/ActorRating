@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma"
 import { createServerClient } from "@supabase/ssr"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
-import { revalidatePath } from "next/cache"
 import { nanoid } from "nanoid"
 
 export async function GET() {
@@ -285,9 +284,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       }
     }
 
-    // Revalidate dashboard cache
-    try { revalidatePath('/dashboard') } catch (e) { console.log("Cache revalidation failed:", e) }
-
+    // No per-rating revalidatePath — reduces ISR writes; dashboard uses revalidate: 600 and client refetch after submit
     return NextResponse.json(rating, { status: isUpdate ? 200 : 201 })
 
   } catch (error) {

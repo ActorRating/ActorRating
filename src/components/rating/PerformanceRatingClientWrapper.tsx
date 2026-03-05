@@ -3,15 +3,15 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Twitter, Facebook, Instagram, Lock, ArrowRight, ChevronRight, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { CheckCircle, Share2, Star, Lock, ArrowRight, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
-import { lockScroll, unlockScroll } from '@/lib/lockScroll'
-import { getLevelProgress, getUserBadges } from '@/lib/badges'
+import { getLevelProgress, getUserBadges, type BadgeConfig } from '@/lib/badges'
 import { Badge } from '@/components/badges/Badge'
 import { getActorUrl } from '@/lib/slugHelper'
 import { ProgressModal } from '@/components/dashboard/ProgressModal'
+import { ProgressBar } from '@/components/badges/ProgressBar'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -798,6 +798,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     currentBadge: string
     nextBadge: string
     nextBadgeName: string
+    nextBadgeConfig: BadgeConfig | null
     level: string
     levelEmoji: string
     nextLevel: string | null
@@ -870,30 +871,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [submitPhase])
 
-  // Restore scroll when submitPhase changes away from 'success' (critical fix for scroll lock issue)
-  useEffect(() => {
-    if (submitPhase !== 'success') {
-      // Restore scroll when not in success phase
-      if (typeof document !== 'undefined') {
-        document.body.style.overflow = ''
-        document.body.style.paddingRight = ''
-        document.body.style.touchAction = 'pan-y pinch-zoom' // Restore trackpad scrolling
-      }
-    }
-  }, [submitPhase])
-
-  // Cleanup: Restore scroll on unmount (critical fix for scroll lock issue)
-  useEffect(() => {
-    return () => {
-      // Restore scroll when component unmounts
-      if (typeof document !== 'undefined') {
-        document.body.style.overflow = ''
-        document.body.style.paddingRight = ''
-        document.body.style.touchAction = 'pan-y pinch-zoom' // Restore trackpad scrolling
-      }
-    }
-  }, [])
-
   const [emotionalRangeDepth, setEmotionalRangeDepth] = useState(initialRating?.emotionalDepth ?? 0)
   const [characterBelievability, setCharacterBelievability] = useState(initialRating?.believability ?? 0)
   const [technicalSkill, setTechnicalSkill] = useState(initialRating?.technicalSkill ?? 0)
@@ -919,6 +896,30 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     chemistryInteraction: initialRating?.chemistry !== undefined,
   })
 
+  // When `initialRating` arrives after mount (e.g. edit flow on slug-based rate page where
+  // /api/ratings/me is fetched async), sync all slider states so the form is prefilled.
+  const hasAppliedInitialRating = useRef(false)
+  useEffect(() => {
+    if (!initialRating || hasAppliedInitialRating.current) return
+    hasAppliedInitialRating.current = true
+    const { emotionalDepth = 0, believability = 0, technicalSkill: ts = 0, screenPresence: sp = 0, chemistry = 0 } = initialRating
+    setEmotionalRangeDepth(emotionalDepth)
+    setCharacterBelievability(believability)
+    setTechnicalSkill(ts)
+    setScreenPresence(sp)
+    setChemistryInteraction(chemistry)
+    const avg = Math.round((emotionalDepth + believability + ts + sp + chemistry) / 5)
+    setOverallScore(avg)
+    if (avg > 0) setSingleSliderTouched(true)
+    setTouchedSliders({
+      emotionalRangeDepth: emotionalDepth > 0,
+      characterBelievability: believability > 0,
+      technicalSkill: ts > 0,
+      screenPresence: sp > 0,
+      chemistryInteraction: chemistry > 0,
+    })
+  }, [initialRating])
+
   // Spotlight animation state
   const [spotlightPhase, setSpotlightPhase] = useState<'none' | 'score' | 'button'>('none')
   const lastInteractionTime = useRef<number>(Date.now())
@@ -928,7 +929,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const previousScoreRef = useRef(0)
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
-  const [successClosing, setSuccessClosing] = useState(false)
+  const [nextPerfs, setNextPerfs] = useState<{
+    movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number
+  }[]>([])
+  const [nextPerfLoading, setNextPerfLoading] = useState(false)
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -1234,16 +1238,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setTimeout(() => {
         setSubmitPhase('success')
 
-        // Fetch user progress data
+        // Fetch user progress + next performance in parallel
         fetchUserProgress()
-
-        // Lock body scroll when success card shows (prevent background scroll)
-        if (typeof document !== 'undefined') {
-          const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-          document.body.style.overflow = 'hidden'
-          document.body.style.paddingRight = `${scrollbarWidth}px`
-          document.body.style.touchAction = 'pan-y pinch-zoom' // Keep trackpad scrolling enabled even when overflow is hidden
-        }
+        fetchNextPerf()
 
         // Calculate overall score for tracking
         const overallScore = (
@@ -1387,20 +1384,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }
 
-  const handleContinueRating = () => {
-    if (submitPhase === 'success') {
-      setSuccessClosing(true)
-      doNavigateToActorPage()
-      return
-    }
-    doNavigateToActorPage()
-  }
-
   const doNavigateToActorPage = () => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = ''
-      document.body.style.paddingRight = ''
-    }
     sessionStorage.setItem('refreshActorRatings', performance.actor.id)
     if (performance.actor.slug) {
       sessionStorage.setItem('refreshActorRatingsSlug', performance.actor.slug)
@@ -1408,6 +1392,41 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const actorUrl = getActorUrl(performance.actor)
     router.push(`${actorUrl}#filmography`)
   }
+
+  const handleBackToFilmography = () => {
+    doNavigateToActorPage()
+  }
+
+  const handleRateNextPerformance = (p?: { movieSlug: string; actorSlug: string }) => {
+    if (p) {
+      router.push(`/rate/${p.movieSlug}/${p.actorSlug}`)
+    } else if (nextPerfs.length > 0) {
+      router.push(`/rate/${nextPerfs[0].movieSlug}/${nextPerfs[0].actorSlug}`)
+    } else {
+      doNavigateToActorPage()
+    }
+  }
+
+  const fetchNextPerf = useCallback(async () => {
+    const actorIdOrSlug = performance.actor.slug ?? performance.actor.id
+    setNextPerfLoading(true)
+    try {
+      const res = await fetch(
+        `/api/actors/${encodeURIComponent(actorIdOrSlug)}/next-unrated-performance?currentMovieId=${encodeURIComponent(performance.movie.id)}`,
+        { cache: 'no-store' }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setNextPerfs(data.performances ?? [])
+      } else {
+        setNextPerfs([])
+      }
+    } catch {
+      setNextPerfs([])
+    } finally {
+      setNextPerfLoading(false)
+    }
+  }, [performance.actor.id, performance.actor.slug, performance.movie.id])
 
   // Fetch user progress data
   const fetchUserProgress = useCallback(async () => {
@@ -1434,6 +1453,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           currentBadge: levelProgress.currentBadge?.name || 'Viewer',
           nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level',
           nextBadgeName: levelProgress.nextBadge?.name || '',
+          nextBadgeConfig: levelProgress.nextBadge ?? null,
           level: data.level,
           levelEmoji: data.levelEmoji,
           nextLevel: data.nextLevel,
@@ -1525,12 +1545,24 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             </p>
           </div>
 
-          {/* Community Rating Stats - Subtle display under year */}
+          {/* Community Rating Stats */}
           {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
-            <div className="mb-1.5 sm:mb-3 px-2">
-              <p className="text-xs sm:text-sm text-white/60 font-medium">
-                ⭐ {communityAvg10}/10 · {communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}
-              </p>
+            <div className="mb-3 sm:mb-4 flex justify-center">
+              <div
+                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.08) 100%)',
+                  border: '1px solid rgba(255,215,0,0.25)',
+                  boxShadow: '0 0 16px rgba(255,215,0,0.08)',
+                }}
+              >
+                <Star className="w-3.5 h-3.5 text-[#FFD700] fill-[#FFD700]/50 flex-shrink-0" />
+                <span className="text-sm font-bold text-[#FFD700] tabular-nums">{communityAvg10}/10</span>
+                <span className="w-px h-3.5 bg-[#FFD700]/25 flex-shrink-0" />
+                <span className="text-xs text-[#a3a3a3] font-medium whitespace-nowrap">
+                  {communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}
+                </span>
+              </div>
             </div>
           )}
 
@@ -2003,224 +2035,244 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           </div>
         </form>
 
-        {/* Success Card - Fades in after confetti; navigate instantly, card fades while new page loads */}
-        <AnimatePresence>
-          {submitPhase === 'success' && finalScore !== null && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: successClosing ? 0 : 1 }}
-              transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-8 sm:pt-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                pointerEvents: successClosing ? 'none' : 'auto',
-              }}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 md:p-8 lg:p-10 max-w-md md:max-w-md lg:max-w-lg w-[calc(100%-1.5rem)] sm:w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl relative mx-auto"
+        {/* ─── SUCCESS PAGE (Momentum Mode) ─────────────────────────────────── */}
+        {submitPhase === 'success' && finalScore !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+            className="mt-6 space-y-8"
+          >
+            {/* ── Hero: score + headline ───────────────────────────────────────── */}
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10">
+                <CheckCircle className="w-4 h-4 text-[#FFD700]" />
+                <span className="text-sm font-semibold text-[#FFD700] tracking-wide">
+                  {successHeadline ?? 'Rating saved'}
+                </span>
+              </div>
+              <div>
+                <span
+                  className="text-7xl sm:text-8xl font-black tabular-nums"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  {finalScore}
+                </span>
+                <span className="text-2xl text-[#FFD700]/40 font-semibold">/10</span>
+              </div>
+            </div>
+
+            {/* ── Progress bar + badges ────────────────────────────────────────── */}
+            {progressData != null && (
+              <div
+                className="rounded-2xl px-5 py-4 space-y-3"
                 style={{
-                  boxShadow: `
-                    0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                    0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                    0 0 0 1px rgba(255, 255, 255, 0.06),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                  `,
+                  background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
+                  border: '1px solid rgba(255,215,0,0.12)',
                 }}
               >
-                {/* Close - go to actor page */}
-                <button
-                  type="button"
-                  onClick={handleContinueRating}
-                  className="absolute top-4 right-4 sm:top-5 sm:right-5 w-11 h-11 flex items-center justify-center rounded-full text-white/50 hover:text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation"
-                  aria-label="Close and go to actor page"
-                >
-                  <X className="w-5 h-5 shrink-0" strokeWidth={2} />
-                </button>
-
-                {/* Success Header - dynamic comparison to community */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="text-center mb-6"
-                >
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-2 mb-3">
-                    <CheckCircle className="w-6 h-6 text-[#FFD700] shrink-0" />
-                    <h2
-                      className="text-2xl sm:text-3xl font-bold text-white leading-tight italic text-balance"
-                      style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-                    >
-                      {successHeadline ?? 'Rating saved'}
-                    </h2>
-                  </div>
-                  {/* Score Display */}
-                  {finalScore !== null && (
-                    <div className="mt-4">
-                      <p className="text-base sm:text-lg text-gray-400 mb-1">Your score</p>
-                      <p className="text-4xl sm:text-5xl font-bold text-[#FFD700]">{finalScore}/10</p>
-                    </div>
-                  )}
-                </motion.div>
-
-                {/* Half Circle Progress with Percentage - always rendered to avoid pop-in glitch */}
-                <motion.div
-                  initial={{ opacity: 1, scale: 1 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0 }}
-                  className="flex flex-col items-center mb-3"
-                >
-                  <div className="relative w-56 h-28 sm:w-64 sm:h-32 mb-2">
-                    <svg className="w-56 h-28 sm:w-64 sm:h-32" viewBox="0 0 200 100" style={{ overflow: 'visible' }}>
-                      <path
-                        d="M 20 80 A 60 60 0 0 1 180 80"
-                        fill="none"
-                        stroke="rgba(255, 255, 255, 0.1)"
-                        strokeWidth="14"
-                        strokeLinecap="round"
-                      />
-                      <motion.path
-                        d="M 20 80 A 60 60 0 0 1 180 80"
-                        fill="none"
-                        stroke={`url(#${rainbowGradientIdRef.current})`}
-                        strokeWidth="14"
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: (progressData?.progress ?? 0) / 100 }}
-                        transition={{
-                          duration: 0.65,
-                          ease: [0.33, 1, 0.68, 1],
-                          delay: 0.1,
-                        }}
-                      />
-                      <defs>
-                        <linearGradient id={rainbowGradientIdRef.current} x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#FFE55C" />
-                          <stop offset="50%" stopColor="#FFD700" />
-                          <stop offset="100%" stopColor="#FFA500" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center" style={{ top: '55%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                      <span className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
-                        {Math.round(progressData?.progress ?? 0)}%
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* User Badge with Arrow - Clickable */}
-                {userBadges.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="flex items-center justify-center gap-2 mb-2"
-                  >
-                    {userBadges.map((badge) => (
-                      <div key={badge.id} className="flex items-center gap-2">
-                        <Badge badge={badge} />
-                        <button
-                          onClick={() => setIsProgressModalOpen(true)}
-                          className="cursor-pointer transition-transform hover:scale-110 active:scale-95 p-1 rounded-full hover:bg-white/10"
-                          aria-label="View progress details"
-                        >
-                          <ChevronRight className="w-5 h-5 text-[#FFD700]" />
-                        </button>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-
-                {/* Unlock Text */}
-                {progressData && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.55 }}
-                    className="text-center mb-6"
-                  >
-                    {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <Lock className="w-4 h-4 text-gray-400" />
-                        <p className="text-base sm:text-lg font-semibold text-white">
-                          <span className="text-[#FFD700]">{progressData.ratingsNeeded}</span> {progressData.ratingsNeeded === 1 ? 'rating' : 'ratings'} to unlock {progressData.nextBadgeName}
-                        </p>
-                      </div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    {userBadges.length > 0 ? (
+                      userBadges.map((badge) => (
+                        <div key={badge.id} className="flex items-center gap-1">
+                          <Badge badge={badge} />
+                        </div>
+                      ))
                     ) : (
-                      <p className="text-sm text-[#FFD700] font-medium">Max level reached</p>
+                      <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Your progress</span>
                     )}
-                  </motion.div>
-                )}
-
-                {/* Rate Another Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="mb-6"
-                >
-                  <button
-                    onClick={handleContinueRating}
-                    className="w-full py-4 sm:py-5 text-base sm:text-lg md:text-xl font-bold rounded-full transition-all duration-500 tracking-wider relative overflow-hidden flex items-center justify-center gap-2"
+                  </div>
+                  {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsProgressModalOpen(true)}
+                      className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#FFD700] transition-colors"
+                    >
+                      <Lock className="w-3 h-3" />
+                      <span>{progressData.ratingsNeeded} to {progressData.nextBadgeName}</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  ) : null}
+                </div>
+                <div className="relative h-2.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressData.progress}%` }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+                    className="absolute inset-y-0 left-0 rounded-full"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      color: '#000000',
-                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)',
+                      background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                      boxShadow: '0 0 12px rgba(255,215,0,0.4)',
                     }}
-                  >
-                    Rate another
-                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </button>
-                </motion.div>
+                  />
+                </div>
+                <p className="text-xs text-[#52525b] text-right tabular-nums">
+                  {progressData.ratingCount} {progressData.ratingCount === 1 ? 'rating' : 'ratings'} · {Math.round(progressData.progress)}% to next level
+                </p>
+              </div>
+            )}
 
-                {/* Social and Share Buttons */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                  className="flex gap-3 sm:gap-4 justify-center"
+            {/* ── "Keep going" section label ───────────────────────────────────── */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p
+                  className="text-xs font-bold tracking-widest uppercase"
+                  style={{ color: '#a1a1aa' }}
                 >
+                  Keep the streak going
+                </p>
+                {nextPerfs.length > 1 && (
+                  <span className="text-xs text-[#71717a]">
+                    {nextPerfs.length} left to rate
+                  </span>
+                )}
+              </div>
+
+              {/* ── Carousel or states ─────────────────────────────────────────── */}
+              {nextPerfLoading ? (
+                /* Loading skeleton */
+                <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 w-[72vw] sm:w-[52vw] md:w-[38vw] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 sm:p-8 animate-pulse"
+                      style={{ minHeight: 220 }}
+                    />
+                  ))}
+                </div>
+              ) : nextPerfs.length > 0 ? (
+                /* ── Performance Carousel ─────────────────────────────────────── */
+                <div
+                  className="recent-scroll-container flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1"
+                >
+                  {nextPerfs.map((p, idx) => (
+                    <div
+                      key={p.movieSlug}
+                      className="flex-shrink-0 w-[72vw] sm:w-[52vw] md:w-[38vw] snap-center group"
+                      style={{ transform: 'translateZ(0)' }}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.35, delay: idx * 0.06 }}
+                        className="relative h-full rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                        style={{
+                          boxShadow: `
+                            0 25px 70px -15px rgba(0,0,0,0.9),
+                            0 15px 40px -10px rgba(0,0,0,0.7),
+                            0 0 0 1px rgba(255,255,255,0.05),
+                            inset 0 1px 0 0 rgba(255,255,255,0.10),
+                            inset 0 -1px 0 0 rgba(0,0,0,0.3)
+                          `,
+                        }}
+                      >
+                        {/* Gold glow on hover */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                        </div>
+                        {/* Decorative accent */}
+                        <div className="absolute bottom-0 left-0 w-28 h-28 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+
+                        <div className="relative z-10 flex flex-col h-full p-6 sm:p-8">
+                          {/* Top row: N/A pill + year */}
+                          <div className="flex items-center justify-between mb-5">
+                            <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                              <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]/30" />
+                              <span className="text-lg font-bold text-[#FFD700]">N/A</span>
+                            </div>
+                            <span className="text-sm text-[#a3a3a3] font-medium">{p.movieYear}</span>
+                          </div>
+
+                          {/* Movie title */}
+                          <div className="flex-1 mb-5">
+                            <p className="text-base font-semibold mb-2"
+                              style={{
+                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                              }}
+                            >
+                              {p.movieTitle}
+                            </p>
+                            <p
+                              className="text-sm text-[#e4e4e7]/70 italic font-light"
+                              style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                            >
+                              {performance.actor.name}
+                            </p>
+                          </div>
+
+                          {/* Rate button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRateNextPerformance(p)}
+                            className="w-full py-3.5 rounded-full text-black text-sm font-bold tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                            style={{
+                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                            }}
+                          >
+                            <Star className="w-4 h-4 fill-current" />
+                            Rate
+                          </button>
+                        </div>
+                      </motion.div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* All performances rated */
+                <div
+                  className="rounded-[2rem] border border-white/8 p-8 text-center"
+                  style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
+                >
+                  <p className="text-[#a1a1aa] text-sm mb-5">
+                    You&apos;ve rated every performance for{' '}
+                    <span className="text-white font-semibold">{performance.actor.name}</span>!
+                  </p>
                   <button
-                    onClick={handleShare}
-                    className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FFE55C] to-[#FFD700] text-black font-semibold hover:opacity-90 transition-opacity flex items-center justify-center shadow-lg"
-                    title="Share"
+                    type="button"
+                    onClick={handleBackToFilmography}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
                   >
-                    <Share2 className="w-5 h-5" />
+                    <ArrowRight className="w-4 h-4" />
+                    View Filmography
                   </button>
-                  <button
-                    onClick={() => handleSocialShare('twitter')}
-                    className="w-12 h-12 rounded-full bg-[#1DA1F2] text-white font-semibold hover:bg-[#1a8cd8] transition-colors flex items-center justify-center"
-                    title="Share on Twitter"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSocialShare('facebook')}
-                    className="w-12 h-12 rounded-full bg-[#1877F2] text-white font-semibold hover:bg-[#166fe5] transition-colors flex items-center justify-center"
-                    title="Share on Facebook"
-                  >
-                    <Facebook className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleSocialShare('instagram')}
-                    className="w-12 h-12 rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCB045] text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
-                    title="Share on Instagram"
-                  >
-                    <Instagram className="w-5 h-5" />
-                  </button>
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </div>
+              )}
+            </div>
+
+            {/* ── Secondary actions ─────────────────────────────────────────────── */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={handleBackToFilmography}
+                className="text-sm text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+              >
+                ← Back to Filmography
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 hover:bg-white/8 active:scale-95"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  color: '#a1a1aa',
+                }}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Share rating
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Progress Modal */}
         {progressData && (

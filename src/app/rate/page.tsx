@@ -1,6 +1,7 @@
 "use client"
 
-export const dynamic = "force-dynamic"
+// ISR 10 min — rate form is client-side; shell can be cached
+export const revalidate = 600
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'

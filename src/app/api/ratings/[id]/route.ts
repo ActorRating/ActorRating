@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { makeCacheKey } from "@/lib/cache"
 import { createServerClient } from "@supabase/ssr"
@@ -146,17 +145,7 @@ export async function PUT(
       },
     })
 
-    // Revalidate rating share page, dashboard, and user ratings
-    const slug = rating.slug || rating.id
-    revalidatePath(`/r/${slug}`)
-    revalidatePath('/dashboard')
-    revalidatePath('/api/user/ratings')
-    try {
-      revalidatePath(`/r/${rating.slug || rating.id}`)
-      revalidatePath('/dashboard')
-      revalidatePath('/api/user/ratings')
-    } catch {}
-
+    // No per-rating revalidatePath — reduces ISR writes; client updates state; /r/[slug] uses revalidate: 60
     return NextResponse.json(rating)
   } catch (error) {
     console.error("Error updating rating:", error)
