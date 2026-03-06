@@ -845,12 +845,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           return null
         })()
 
-  // Scroll to top when success page appears
-  useEffect(() => {
-    if (submitPhase === 'success' && typeof window !== 'undefined') {
-      window.scrollTo(0, 0)
-    }
-  }, [submitPhase])
+  // Success page: scroll is handled by scroll-to-carousel when overlay fades (no scroll to top)
 
   // Reset overlay state when entering success so the checkmark overlay shows
   useEffect(() => {
@@ -862,6 +857,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (submitPhase !== 'success' || successOverlayFaded) return
     const t = setTimeout(() => setSuccessOverlayFaded(true), 1150)
     return () => clearTimeout(t)
+  }, [submitPhase, successOverlayFaded])
+
+  // When overlay fades, scroll to carousel so next rating options are immediately visible
+  useEffect(() => {
+    if (submitPhase !== 'success' || !successOverlayFaded) return
+    const el = carouselSectionRef.current
+    if (el && typeof window !== 'undefined') {
+      const t = setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+      return () => clearTimeout(t)
+    }
   }, [submitPhase, successOverlayFaded])
 
   // Force Safari to render all sliders and button immediately (prevent lazy loading)
@@ -957,7 +964,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number
   }[]>([])
   const [nextPerfLoading, setNextPerfLoading] = useState(false)
+  const [actorProgress, setActorProgress] = useState<{ totalPerformances: number; userRatedCount: number } | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
+  const carouselSectionRef = useRef<HTMLDivElement>(null)
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -1218,11 +1227,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       if (res.ok) {
         const data = await res.json()
         setNextPerfs(data.performances ?? [])
+        if (typeof data.totalPerformances === 'number' && typeof data.userRatedCount === 'number') {
+          setActorProgress({ totalPerformances: data.totalPerformances, userRatedCount: data.userRatedCount })
+        } else {
+          setActorProgress(null)
+        }
       } else {
         setNextPerfs([])
+        setActorProgress(null)
       }
     } catch {
       setNextPerfs([])
+      setActorProgress(null)
     } finally {
       setNextPerfLoading(false)
     }
@@ -2044,7 +2060,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
               className="mt-6 space-y-8"
             >
-            {/* ── Hero: score + headline ───────────────────────────────────────── */}
+            {/* ── Hero: quote + score + numeric comparison ─────────────────────── */}
             <div className="text-center space-y-3">
               <p className="text-lg sm:text-xl md:text-2xl font-medium italic text-white max-w-2xl mx-auto">
                 &ldquo;{successHeadline ?? 'Rating saved'}&rdquo;
@@ -2065,14 +2081,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             </div>
 
-            {/* ── "Keep going" carousel (above progress bar) ───────────────────── */}
-            <div>
+            {/* ── Actor progress (completion loop) ─────────────────────────────── */}
+            {actorProgress != null && (
+              <div className="text-center">
+                <p className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                  {performance.actor.name} progress
+                </p>
+                <p className="text-sm text-[#a1a1aa] mt-0.5 tabular-nums">
+                  {actorProgress.userRatedCount} / {actorProgress.totalPerformances} performances rated
+                </p>
+              </div>
+            )}
+
+            {/* ── "Rate another performance" carousel ─────────────────────────── */}
+            <div ref={carouselSectionRef}>
               <div className="flex items-center justify-between mb-4">
                 <p
                   className="text-xs font-bold tracking-widest uppercase"
                   style={{ color: '#a1a1aa' }}
                 >
-                  Keep the streak going
+                  {actorProgress != null && actorProgress.totalPerformances > 0 && (actorProgress.totalPerformances - actorProgress.userRatedCount) <= 3
+                    ? 'Almost finished rating this actor'
+                    : 'Rate another performance'}
                 </p>
                 {nextPerfs.length > 1 && (
                   <span className="text-xs text-[#71717a]">
@@ -2200,23 +2230,47 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </div>
               ) : (
                 /* All performances rated */
-                <div
-                  className="rounded-[2rem] border border-white/8 p-8 text-center"
-                  style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
-                >
-                  <p className="text-[#a1a1aa] text-sm mb-5">
-                    You&apos;ve rated every performance for{' '}
-                    <span className="text-white font-semibold">{performance.actor.name}</span>!
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleBackToFilmography}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
+                <>
+                  <div
+                    className="rounded-[2rem] border border-white/8 p-8 text-center"
+                    style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
                   >
-                    <ArrowRight className="w-4 h-4" />
-                    View Filmography
-                  </button>
-                </div>
+                    <p className="text-[#a1a1aa] text-sm mb-5">
+                      You&apos;ve rated every performance for this actor. Try another actor.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleBackToFilmography}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                      View Filmography
+                    </button>
+                  </div>
+                  {/* Discover another actor — 4 suggested actors (hardcoded) */}
+                  <div className="mt-6">
+                    <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3 text-center">
+                      Discover another actor
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {[
+                        { name: 'Robert De Niro', slug: 'robert-de-niro' },
+                        { name: 'Christian Bale', slug: 'christian-bale' },
+                        { name: 'Cillian Murphy', slug: 'cillian-murphy' },
+                        { name: 'Leonardo DiCaprio', slug: 'leonardo-dicaprio' },
+                      ].map((actor) => (
+                        <button
+                          key={actor.slug}
+                          type="button"
+                          onClick={() => router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))}
+                          className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
+                        >
+                          {actor.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 

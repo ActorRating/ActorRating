@@ -68,6 +68,14 @@ export async function GET(
     })
 
     const seenMovies = new Set<string>()
+    const totalPerformances = performances.filter((p) => {
+      if (seenMovies.has(p.movieId)) return false
+      seenMovies.add(p.movieId)
+      return true
+    }).length
+    const userRatedCount = ratedMovieIds.size
+
+    seenMovies.clear()
     const results: { movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number }[] = []
 
     for (const p of performances) {
@@ -84,7 +92,11 @@ export async function GET(
       })
     }
 
-    return NextResponse.json({ performances: results })
+    return NextResponse.json({
+      performances: results,
+      totalPerformances,
+      userRatedCount,
+    })
   } catch (err) {
     console.error('next-unrated-performance error', err)
     return NextResponse.json(
