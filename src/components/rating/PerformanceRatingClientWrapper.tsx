@@ -1276,9 +1276,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       document.body.style.touchAction = ''
     }
 
-    // Pre-fetch next performances immediately (current movie excluded by API param regardless of
-    // whether the rating is saved yet), so the carousel is ready when the success page appears.
-    fetchNextPerf()
+    // Pre-fetch next performances immediately (only for authenticated users — unauthenticated
+    // users get the sign-up modal and never see the success page, so skip the API call).
+    // Current movie is excluded by query param so this can safely run before the rating is saved.
+    if (user) fetchNextPerf()
 
     // Abort flag — set to true if onSubmit rejects (unauthenticated user, sign-up modal case)
     let cancelled = false
