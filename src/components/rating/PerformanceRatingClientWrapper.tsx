@@ -786,7 +786,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [hasRatedBefore])
 
   // Success animation states
-  const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'checkmark' | 'success'>(
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'success'>(
     externalSubmittedRating ? 'success' : 'idle'
   )
   const [finalScore, setFinalScore] = useState<number | null>(null)
@@ -811,6 +811,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const rainbowGradientIdRef = useRef(`rainbowGradient-${Math.random().toString(36).substr(2, 9)}`)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const successHeadlineRef = useRef<string | null>(null)
+  const [successOverlayFaded, setSuccessOverlayFaded] = useState(false)
 
   // Set final score if external submitted rating is provided
   useEffect(() => {
@@ -843,6 +844,25 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           successHeadlineRef.current = null
           return null
         })()
+
+  // Scroll to top when success page appears
+  useEffect(() => {
+    if (submitPhase === 'success' && typeof window !== 'undefined') {
+      window.scrollTo(0, 0)
+    }
+  }, [submitPhase])
+
+  // Reset overlay state when entering success so the checkmark overlay shows
+  useEffect(() => {
+    if (submitPhase === 'success') setSuccessOverlayFaded(false)
+  }, [submitPhase])
+
+  // After checkmark has been visible, fade out the success overlay
+  useEffect(() => {
+    if (submitPhase !== 'success' || successOverlayFaded) return
+    const t = setTimeout(() => setSuccessOverlayFaded(true), 1150)
+    return () => clearTimeout(t)
+  }, [submitPhase, successOverlayFaded])
 
   // Force Safari to render all sliders and button immediately (prevent lazy loading)
   useEffect(() => {
@@ -897,7 +917,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   })
 
   // When `initialRating` arrives after mount (e.g. edit flow on slug-based rate page where
-  // /api/ratings/me is fetched async), sync all slider states so the form is prefilled.
+  // /api/ratings/me is fetched async), sync all slider states and show in-depth sliders so the form is prefilled.
   const hasAppliedInitialRating = useRef(false)
   useEffect(() => {
     if (!initialRating || hasAppliedInitialRating.current) return
@@ -918,6 +938,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       screenPresence: sp > 0,
       chemistryInteraction: chemistry > 0,
     })
+    // When editing, show all 5 sliders prefilled (like dashboard pencil flow)
+    if ([emotionalDepth, believability, ts, sp, chemistry].some((v) => (v ?? 0) > 0)) {
+      setShowInDepthSliders(true)
+    }
   }, [initialRating])
 
   // Spotlight animation state
@@ -1243,7 +1267,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     }
   }, [user])
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!canSubmit) return
@@ -1264,64 +1288,42 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           chemistry: Math.round(overallScore)
         }
 
-    // Calculate final score
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
     setFinalScore(Number(score.toFixed(1)))
 
     haptic.medium()
 
-    // Unlock scroll
     if (typeof document !== 'undefined') {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
     }
 
-    // Pre-fetch next performances immediately (only for authenticated users — unauthenticated
-    // users get the sign-up modal and never see the success page, so skip the API call).
-    // Current movie is excluded by query param so this can safely run before the rating is saved.
+    // Pre-fetch next performances so carousel is ready when success page shows (authenticated only)
     if (user) fetchNextPerf()
 
-    // Abort flag — set to true if onSubmit rejects (unauthenticated user, sign-up modal case)
-    let cancelled = false
+    setSubmitPhase('loading')
 
-    // Fire the API call without awaiting (optimistic submit).
-    // For authenticated users onSubmit always resolves (errors are caught inside RatePageClient).
-    // It only rejects when the user is not signed in, so the sign-up modal can be shown.
-    onSubmit(ratingData).catch(() => {
-      cancelled = true
+    try {
+      await onSubmit(ratingData)
+      setSubmitPhase('success')
+      fetchUserProgress()
+
+      trackRateSubmit(
+        performance.actor.name,
+        performance.movie.title,
+        Number(score.toFixed(1))
+      )
+      trackFirstRatingComplete()
+      if (onSuccess) onSuccess(ratingData)
+    } catch {
+      // Rejection = unauthenticated (sign-up modal); reset so button is clickable again
       setSubmitPhase('idle')
       if (typeof document !== 'undefined') {
         document.body.style.overflow = ''
         document.body.style.touchAction = ''
       }
-    })
-
-    // Optimistic animation — don't block on the API
-    setSubmitPhase('loading')
-
-    setTimeout(() => {
-      if (cancelled) return
-      setSubmitPhase('checkmark')
-    }, 200)
-
-    setTimeout(() => {
-      if (cancelled) return
-      setSubmitPhase('success')
-
-      // Fetch user progress (next-perf fetch already started above)
-      fetchUserProgress()
-
-      const overallScoreForTracking = score
-      trackRateSubmit(
-        performance.actor.name,
-        performance.movie.title,
-        Number(overallScoreForTracking.toFixed(1))
-      )
-      trackFirstRatingComplete()
-
-      if (onSuccess) onSuccess(ratingData)
-    }, 350)
-  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchNextPerf, fetchUserProgress, performance.actor.name, performance.movie.title])
+    }
+  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title])
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined'
@@ -1892,22 +1894,22 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       ref={buttonRef}
                       type="submit"
                       data-submit-button
-      disabled={!canSubmit || submitPhase === 'loading' || submitPhase === 'checkmark'}
+      disabled={!canSubmit || submitPhase === 'loading'}
       className="group text-sm sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
       style={{
-        cursor: (!canSubmit || submitPhase === 'loading' || submitPhase === 'checkmark') ? 'not-allowed' : 'pointer',
+        cursor: (!canSubmit || submitPhase === 'loading') ? 'not-allowed' : 'pointer',
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
                         padding: submitPhase === 'loading' ? '0' : '0.875rem 0',
                         borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
-                        background: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                        background: (canSubmit && !submitting) || submitPhase === 'loading'
                           ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
                           : '#1a1a1a',
-                        color: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? '#000000' : '#525252',
-                        boxShadow: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark'
+                        color: (canSubmit && !submitting) || submitPhase === 'loading' ? '#000000' : '#525252',
+                        boxShadow: (canSubmit && !submitting) || submitPhase === 'loading'
                           ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
                           : 'none',
-                        border: (canSubmit && !submitting) || submitPhase === 'loading' || submitPhase === 'checkmark' ? 'none' : '1px solid #333',
+                        border: (canSubmit && !submitting) || submitPhase === 'loading' ? 'none' : '1px solid #333',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1964,26 +1966,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             }}
                           />
                         )}
-                        {submitPhase === 'checkmark' && (
-                          <motion.span
-                            key="checkmark"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.2 }}
-                            className="relative z-10 flex items-center gap-2"
-                          >
-                            <motion.div
-                              initial={{ scale: 0, rotate: -180 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                              className="flex items-center gap-2"
-                            >
-                              <CheckCircle className="w-5 h-5 text-black" />
-                              <span className="text-black font-bold">Success!</span>
-                            </motion.div>
-                          </motion.span>
-                        )}
                         {submitPhase === 'idle' && (
                           <motion.span
                             key="idle"
@@ -2006,20 +1988,67 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
         {/* ─── SUCCESS PAGE (Momentum Mode) ─────────────────────────────────── */}
         {submitPhase === 'success' && finalScore !== null && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
-            className="mt-6 space-y-8"
-          >
+          <>
+            {/* Full-page dark overlay with success checkmark — fades out after animation */}
+            <motion.div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95"
+              style={{ pointerEvents: successOverlayFaded ? 'none' : 'auto' }}
+              initial={{ opacity: 1 }}
+              animate={{ opacity: successOverlayFaded ? 0 : 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.div
+                className="flex flex-col items-center justify-center"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 200,
+                  damping: 18,
+                  mass: 0.8,
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 260,
+                    damping: 20,
+                    delay: 0.05,
+                  }}
+                  className="rounded-full p-2"
+                  style={{
+                    boxShadow: '0 0 0 4px rgba(255,215,0,0.2), 0 0 60px rgba(255,215,0,0.25)',
+                  }}
+                >
+                  <CheckCircle
+                    className="w-20 h-20 sm:w-24 sm:h-24 text-[#FFD700]"
+                    strokeWidth={2}
+                  />
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35, duration: 0.3 }}
+                  className="mt-4 text-sm font-semibold text-[#FFD700]/90 tracking-wide"
+                >
+                  Rating saved
+                </motion.p>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
+              className="mt-6 space-y-8"
+            >
             {/* ── Hero: score + headline ───────────────────────────────────────── */}
             <div className="text-center space-y-3">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10">
-                <CheckCircle className="w-4 h-4 text-[#FFD700]" />
-                <span className="text-sm font-semibold text-[#FFD700] tracking-wide">
-                  {successHeadline ?? 'Rating saved'}
-                </span>
-              </div>
+              <p className="text-lg sm:text-xl md:text-2xl font-medium italic text-white max-w-2xl mx-auto">
+                &ldquo;{successHeadline ?? 'Rating saved'}&rdquo;
+              </p>
               <div>
                 <span
                   className="text-7xl sm:text-8xl font-black tabular-nums"
@@ -2036,58 +2065,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             </div>
 
-            {/* ── Progress bar + badges ────────────────────────────────────────── */}
-            {progressData != null && (
-              <div
-                className="rounded-2xl px-5 py-4 space-y-3"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
-                  border: '1px solid rgba(255,215,0,0.12)',
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    {userBadges.length > 0 ? (
-                      userBadges.map((badge) => (
-                        <div key={badge.id} className="flex items-center gap-1">
-                          <Badge badge={badge} />
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Your progress</span>
-                    )}
-                  </div>
-                  {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
-                    <button
-                      type="button"
-                      onClick={() => setIsProgressModalOpen(true)}
-                      className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#FFD700] transition-colors"
-                    >
-                      <Lock className="w-3 h-3" />
-                      <span>{progressData.ratingsNeeded} to {progressData.nextBadgeName}</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  ) : null}
-                </div>
-                <div className="relative h-2.5 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressData.progress}%` }}
-                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                      boxShadow: '0 0 12px rgba(255,215,0,0.4)',
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-[#52525b] text-right tabular-nums">
-                  {progressData.ratingCount} {progressData.ratingCount === 1 ? 'rating' : 'ratings'} · {Math.round(progressData.progress)}% to next level
-                </p>
-              </div>
-            )}
-
-            {/* ── "Keep going" section label ───────────────────────────────────── */}
+            {/* ── "Keep going" carousel (above progress bar) ───────────────────── */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <p
@@ -2177,14 +2155,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                             {/* Movie title */}
                             <div className="flex-1 mb-4">
-                              <p className="text-sm font-semibold mb-1.5 line-clamp-2"
-                                style={{
-                                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                                  WebkitBackgroundClip: 'text',
-                                  WebkitTextFillColor: 'transparent',
-                                  backgroundClip: 'text',
-                                }}
-                              >
+                              <p className="text-sm font-semibold mb-1.5 line-clamp-2 text-white">
                                 {p.movieTitle}
                               </p>
                               <p
@@ -2249,6 +2220,57 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               )}
             </div>
 
+            {/* ── Progress bar + badges ────────────────────────────────────────── */}
+            {progressData != null && (
+              <div
+                className="rounded-2xl px-5 py-4 space-y-3"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
+                  border: '1px solid rgba(255,215,0,0.12)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    {userBadges.length > 0 ? (
+                      userBadges.map((badge) => (
+                        <div key={badge.id} className="flex items-center gap-1">
+                          <Badge badge={badge} />
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Your progress</span>
+                    )}
+                  </div>
+                  {progressData.ratingsNeeded > 0 && progressData.nextBadgeName ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsProgressModalOpen(true)}
+                      className="flex items-center gap-1 text-xs text-[#71717a] hover:text-[#FFD700] transition-colors"
+                    >
+                      <Lock className="w-3 h-3" />
+                      <span>{progressData.ratingsNeeded} to {progressData.nextBadgeName}</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  ) : null}
+                </div>
+                <div className="relative h-2.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressData.progress}%` }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                      boxShadow: '0 0 12px rgba(255,215,0,0.4)',
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-[#52525b] text-right tabular-nums">
+                  {progressData.ratingCount} {progressData.ratingCount === 1 ? 'rating' : 'ratings'} · {Math.round(progressData.progress)}% to next level
+                </p>
+              </div>
+            )}
+
             {/* ── Secondary actions ─────────────────────────────────────────────── */}
             <div className="flex items-center justify-between pt-2 border-t border-white/5">
               <button
@@ -2272,7 +2294,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 Share rating
               </button>
             </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
 
         {/* Progress Modal */}

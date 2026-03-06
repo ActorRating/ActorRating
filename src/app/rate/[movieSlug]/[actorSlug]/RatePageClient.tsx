@@ -39,6 +39,8 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     screenPresence: number
     chemistry: number
   } | null>(null)
+  // When true, we've finished checking for an existing rating (so form can show with correct initialRating)
+  const [ratingCheckDone, setRatingCheckDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
@@ -130,12 +132,15 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       .catch(() => {})
   }, [actor?.id, movie?.id])
 
+  // When not logged in, no need to wait for a rating check
+  useEffect(() => {
+    if (!user) setRatingCheckDone(true)
+  }, [user])
+
   // Fetch current user's rating for this performance so we can prefill the form (Edit flow)
   useEffect(() => {
-    if (!user || !actor?.id || !movie?.id) {
-      setUserExistingRating(null)
-      return
-    }
+    if (!user || !actor?.id || !movie?.id) return
+    setRatingCheckDone(false)
     let cancelled = false
     fetch('/api/ratings/me', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : []))
@@ -156,16 +161,23 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         } else {
           setUserExistingRating(null)
         }
+        setRatingCheckDone(true)
       })
       .catch(() => {
-        if (!cancelled) setUserExistingRating(null)
+        if (!cancelled) {
+          setUserExistingRating(null)
+          setRatingCheckDone(true)
+        }
       })
     return () => {
       cancelled = true
     }
   }, [user, actor?.id, movie?.id])
 
-  if (loading) {
+  // When logged in, wait for rating check so the form can render with sliders prefilled (edit flow)
+  const formReady = !loading && (!user || ratingCheckDone)
+
+  if (!formReady) {
     return (
       <RatePageLayout>
         <div className="min-h-screen bg-black flex items-center justify-center">
@@ -173,7 +185,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
             size="lg"
             color="#FFD700"
             showText={true}
-            text="Loading rating page..."
+            text={user && !ratingCheckDone ? 'Loading your rating...' : 'Loading rating page...'}
           />
         </div>
       </RatePageLayout>
@@ -254,6 +266,14 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
 
   return (
     <RatePageLayout>
+      {/* Edit Rating label at the very top when editing an existing rating */}
+      {userExistingRating && (
+        <div className="text-center pt-4 sm:pt-6 pb-1">
+          <h1 className="text-lg sm:text-xl font-semibold text-white/80">
+            Edit Rating
+          </h1>
+        </div>
+      )}
       <PerformanceSEOContent
         actorName={actor.name}
         movieTitle={movie.title}
