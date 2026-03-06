@@ -3,7 +3,7 @@
 import React, { useState, useCallback, memo, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Share2, Star, Lock, ArrowRight, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle, Share2, Star, Lock, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
@@ -933,6 +933,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number
   }[]>([])
   const [nextPerfLoading, setNextPerfLoading] = useState(false)
+  const carouselRef = useRef<HTMLDivElement>(null)
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -1182,7 +1183,67 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   //   }
   // }, [allSlidersTouched, spotlightPhase, sliderReleaseTime, triggerSpotlightAnimation, hasAnimatedOnce])
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const fetchNextPerf = useCallback(async () => {
+    const actorIdOrSlug = performance.actor.slug ?? performance.actor.id
+    setNextPerfLoading(true)
+    try {
+      const res = await fetch(
+        `/api/actors/${encodeURIComponent(actorIdOrSlug)}/next-unrated-performance?currentMovieId=${encodeURIComponent(performance.movie.id)}`,
+        { cache: 'no-store' }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setNextPerfs(data.performances ?? [])
+      } else {
+        setNextPerfs([])
+      }
+    } catch {
+      setNextPerfs([])
+    } finally {
+      setNextPerfLoading(false)
+    }
+  }, [performance.actor.id, performance.actor.slug, performance.movie.id])
+
+  // Fetch user progress data
+  const fetchUserProgress = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      const response = await fetch('/api/user/level-progress', { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        const levelProgress = getLevelProgress(data.ratingCount)
+        
+        // Get user badges
+        const badges = getUserBadges(
+          data.ratingCount,
+          false, // isFoundingMember
+          data.isFirstRater || false
+        )
+        setUserBadges(badges)
+        
+        setProgressData({
+          ratingCount: data.ratingCount,
+          progress: levelProgress.progress,
+          ratingsNeeded: data.ratingsNeeded,
+          currentBadge: levelProgress.currentBadge?.name || 'Viewer',
+          nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level',
+          nextBadgeName: levelProgress.nextBadge?.name || '',
+          nextBadgeConfig: levelProgress.nextBadge ?? null,
+          level: data.level,
+          levelEmoji: data.levelEmoji,
+          nextLevel: data.nextLevel,
+          currentLevelMin: data.currentLevelMin,
+          nextLevelAt: data.nextLevelAt,
+          progressPercent: data.progressPercent
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress data:', error)
+    }
+  }, [user])
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
 
     if (!canSubmit) return
@@ -1207,92 +1268,59 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
     setFinalScore(Number(score.toFixed(1)))
 
-    // Haptic feedback on submit
     haptic.medium()
 
-    try {
-      // Start loading animation AFTER attempting submit (so modal can show first if not signed in)
-      setSubmitPhase('loading')
+    // Unlock scroll
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
 
-      // Unlock scroll in case it was locked from slider
+    // Pre-fetch next performances immediately (current movie excluded by API param regardless of
+    // whether the rating is saved yet), so the carousel is ready when the success page appears.
+    fetchNextPerf()
+
+    // Abort flag — set to true if onSubmit rejects (unauthenticated user, sign-up modal case)
+    let cancelled = false
+
+    // Fire the API call without awaiting (optimistic submit).
+    // For authenticated users onSubmit always resolves (errors are caught inside RatePageClient).
+    // It only rejects when the user is not signed in, so the sign-up modal can be shown.
+    onSubmit(ratingData).catch(() => {
+      cancelled = true
+      setSubmitPhase('idle')
       if (typeof document !== 'undefined') {
         document.body.style.overflow = ''
         document.body.style.touchAction = ''
       }
+    })
 
-      const startTime = Date.now()
+    // Optimistic animation — don't block on the API
+    setSubmitPhase('loading')
 
-      // Wait for API call
-      await onSubmit(ratingData)
+    setTimeout(() => {
+      if (cancelled) return
+      setSubmitPhase('checkmark')
+    }, 200)
 
-      const elapsed = Date.now() - startTime
+    setTimeout(() => {
+      if (cancelled) return
+      setSubmitPhase('success')
 
-      // 200ms: Morph to checkmark
-      const checkmarkDelay = Math.max(0, 200 - elapsed)
-      setTimeout(() => {
-        setSubmitPhase('checkmark')
-      }, checkmarkDelay)
+      // Fetch user progress (next-perf fetch already started above)
+      fetchUserProgress()
 
-      // 350ms: Show success card (minimal wait after API)
-      const successDelay = Math.max(0, 350 - elapsed)
-      setTimeout(() => {
-        setSubmitPhase('success')
+      const overallScoreForTracking = score
+      trackRateSubmit(
+        performance.actor.name,
+        performance.movie.title,
+        Number(overallScoreForTracking.toFixed(1))
+      )
+      trackFirstRatingComplete()
 
-        // Fetch user progress + next performance in parallel
-        fetchUserProgress()
-        fetchNextPerf()
-
-        // Calculate overall score for tracking
-        const overallScore = (
-          ratingData.emotionalDepth +
-          ratingData.believability +
-          ratingData.technicalSkill +
-          ratingData.screenPresence +
-          ratingData.chemistry
-        ) / 5 / 10
-
-        // Track rating submission (MOST IMPORTANT)
-        trackRateSubmit(
-          performance.actor.name,
-          performance.movie.title,
-          Number(overallScore.toFixed(1))
-        )
-
-        // Track first rating completion (only once per user)
-        trackFirstRatingComplete()
-
-        if (onSuccess) {
-          onSuccess(ratingData)
-        }
-      }, successDelay)
-
-    } catch (err) {
-      // Handle intentional rejections (e.g., when user is not signed in) gracefully
-      // Check if this is the expected rejection for unsigned users
-      const errorMessage = err instanceof Error ? err.message : String(err || 'Unknown error')
-      const isUserNotSignedIn = err instanceof Error && err.message === 'USER_NOT_SIGNED_IN'
-
-      if (isUserNotSignedIn) {
-        // For unsigned users, the modal will be shown by the parent component
-        // Reset phase immediately so button is clickable again
-        setSubmitPhase('idle')
-        // Unlock scroll
-        if (typeof document !== 'undefined') {
-          document.body.style.overflow = ''
-          document.body.style.touchAction = ''
-        }
-      } else {
-        // For actual errors, log them
-        console.error('Failed to submit rating:', errorMessage, err)
-        setSubmitPhase('idle')
-        // Unlock scroll
-        if (typeof document !== 'undefined') {
-          document.body.style.overflow = ''
-          document.body.style.touchAction = ''
-        }
-      }
-    }
-  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, performance.actor.name, performance.movie.title])
+      if (onSuccess) onSuccess(ratingData)
+    }, 350)
+  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchNextPerf, fetchUserProgress, performance.actor.name, performance.movie.title])
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined'
@@ -1406,66 +1434,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       doNavigateToActorPage()
     }
   }
-
-  const fetchNextPerf = useCallback(async () => {
-    const actorIdOrSlug = performance.actor.slug ?? performance.actor.id
-    setNextPerfLoading(true)
-    try {
-      const res = await fetch(
-        `/api/actors/${encodeURIComponent(actorIdOrSlug)}/next-unrated-performance?currentMovieId=${encodeURIComponent(performance.movie.id)}`,
-        { cache: 'no-store' }
-      )
-      if (res.ok) {
-        const data = await res.json()
-        setNextPerfs(data.performances ?? [])
-      } else {
-        setNextPerfs([])
-      }
-    } catch {
-      setNextPerfs([])
-    } finally {
-      setNextPerfLoading(false)
-    }
-  }, [performance.actor.id, performance.actor.slug, performance.movie.id])
-
-  // Fetch user progress data
-  const fetchUserProgress = useCallback(async () => {
-    if (!user) return
-    
-    try {
-      const response = await fetch('/api/user/level-progress', { cache: 'no-store' })
-      if (response.ok) {
-        const data = await response.json()
-        const levelProgress = getLevelProgress(data.ratingCount)
-        
-        // Get user badges
-        const badges = getUserBadges(
-          data.ratingCount,
-          false, // isFoundingMember
-          data.isFirstRater || false
-        )
-        setUserBadges(badges)
-        
-        setProgressData({
-          ratingCount: data.ratingCount,
-          progress: levelProgress.progress,
-          ratingsNeeded: data.ratingsNeeded,
-          currentBadge: levelProgress.currentBadge?.name || 'Viewer',
-          nextBadge: levelProgress.nextBadge ? `${levelProgress.nextBadge.name} (${levelProgress.nextBadge.minRatings} ratings)` : 'Max Level',
-          nextBadgeName: levelProgress.nextBadge?.name || '',
-          nextBadgeConfig: levelProgress.nextBadge ?? null,
-          level: data.level,
-          levelEmoji: data.levelEmoji,
-          nextLevel: data.nextLevel,
-          currentLevelMin: data.currentLevelMin,
-          nextLevelAt: data.nextLevelAt,
-          progressPercent: data.progressPercent
-        })
-      }
-    } catch (error) {
-      console.error('Failed to fetch progress data:', error)
-    }
-  }, [user])
 
   return (
     <div 
@@ -2137,94 +2105,126 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {/* ── Carousel or states ─────────────────────────────────────────── */}
               {nextPerfLoading ? (
                 /* Loading skeleton */
-                <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[72vw] sm:w-[52vw] md:w-[38vw] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 sm:p-8 animate-pulse"
-                      style={{ minHeight: 220 }}
+                      className="flex-shrink-0 w-[72vw] sm:w-[260px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
+                      style={{ minHeight: 240 }}
                     />
                   ))}
                 </div>
               ) : nextPerfs.length > 0 ? (
                 /* ── Performance Carousel ─────────────────────────────────────── */
-                <div
-                  className="recent-scroll-container flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide -mx-1 px-1"
-                >
-                  {nextPerfs.map((p, idx) => (
-                    <div
-                      key={p.movieSlug}
-                      className="flex-shrink-0 w-[72vw] sm:w-[52vw] md:w-[38vw] snap-center group"
-                      style={{ transform: 'translateZ(0)' }}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.35, delay: idx * 0.06 }}
-                        className="relative h-full rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                        style={{
-                          boxShadow: `
-                            0 25px 70px -15px rgba(0,0,0,0.9),
-                            0 15px 40px -10px rgba(0,0,0,0.7),
-                            0 0 0 1px rgba(255,255,255,0.05),
-                            inset 0 1px 0 0 rgba(255,255,255,0.10),
-                            inset 0 -1px 0 0 rgba(0,0,0,0.3)
-                          `,
-                        }}
+                <div className="relative group/carousel">
+                  {/* Desktop left arrow */}
+                  <button
+                    type="button"
+                    aria-label="Scroll left"
+                    onClick={() => {
+                      if (!carouselRef.current) return
+                      const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
+                      carouselRef.current.scrollBy({ left: -(card ? card.offsetWidth + 16 : 280), behavior: 'smooth' })
+                    }}
+                    className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div
+                    ref={carouselRef}
+                    className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide"
+                  >
+                    {nextPerfs.map((p, idx) => (
+                      <div
+                        key={p.movieSlug}
+                        className="carousel-card flex-shrink-0 w-[72vw] sm:w-[260px] snap-center group"
+                        style={{ transform: 'translateZ(0)' }}
                       >
-                        {/* Gold glow on hover */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                          <div className="absolute top-0 right-0 w-48 h-48 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                        </div>
-                        {/* Decorative accent */}
-                        <div className="absolute bottom-0 left-0 w-28 h-28 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-
-                        <div className="relative z-10 flex flex-col h-full p-6 sm:p-8">
-                          {/* Top row: N/A pill + year */}
-                          <div className="flex items-center justify-between mb-5">
-                            <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                              <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]/30" />
-                              <span className="text-lg font-bold text-[#FFD700]">N/A</span>
-                            </div>
-                            <span className="text-sm text-[#a3a3a3] font-medium">{p.movieYear}</span>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.96 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.35, delay: idx * 0.06 }}
+                          className="relative h-full rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+                          style={{
+                            minHeight: 240,
+                            boxShadow: `
+                              0 25px 70px -15px rgba(0,0,0,0.9),
+                              0 15px 40px -10px rgba(0,0,0,0.7),
+                              0 0 0 1px rgba(255,255,255,0.05),
+                              inset 0 1px 0 0 rgba(255,255,255,0.10),
+                              inset 0 -1px 0 0 rgba(0,0,0,0.3)
+                            `,
+                          }}
+                        >
+                          {/* Gold glow on hover */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-[#FFD700]/10 rounded-full blur-3xl" />
                           </div>
+                          {/* Decorative accent */}
+                          <div className="absolute bottom-0 left-0 w-28 h-28 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
 
-                          {/* Movie title */}
-                          <div className="flex-1 mb-5">
-                            <p className="text-base font-semibold mb-2"
+                          <div className="relative z-10 flex flex-col h-full p-5 sm:p-6">
+                            {/* Top row: N/A pill + year */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                <Star className="w-3.5 h-3.5 text-[#FFD700] fill-[#FFD700]/30" />
+                                <span className="text-sm font-bold text-[#FFD700]">N/A</span>
+                              </div>
+                              <span className="text-xs text-[#a3a3a3] font-medium">{p.movieYear}</span>
+                            </div>
+
+                            {/* Movie title */}
+                            <div className="flex-1 mb-4">
+                              <p className="text-sm font-semibold mb-1.5 line-clamp-2"
+                                style={{
+                                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                  backgroundClip: 'text',
+                                }}
+                              >
+                                {p.movieTitle}
+                              </p>
+                              <p
+                                className="text-xs text-[#e4e4e7]/60 italic font-light"
+                                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                              >
+                                {performance.actor.name}
+                              </p>
+                            </div>
+
+                            {/* Rate button */}
+                            <button
+                              type="button"
+                              onClick={() => handleRateNextPerformance(p)}
+                              className="w-full py-3 rounded-full text-black text-sm font-bold tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                               style={{
-                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
+                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                               }}
                             >
-                              {p.movieTitle}
-                            </p>
-                            <p
-                              className="text-sm text-[#e4e4e7]/70 italic font-light"
-                              style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                            >
-                              {performance.actor.name}
-                            </p>
+                              <Star className="w-3.5 h-3.5 fill-current" />
+                              Rate
+                            </button>
                           </div>
+                        </motion.div>
+                      </div>
+                    ))}
+                  </div>
 
-                          {/* Rate button */}
-                          <button
-                            type="button"
-                            onClick={() => handleRateNextPerformance(p)}
-                            className="w-full py-3.5 rounded-full text-black text-sm font-bold tracking-wide transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                            style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                            }}
-                          >
-                            <Star className="w-4 h-4 fill-current" />
-                            Rate
-                          </button>
-                        </div>
-                      </motion.div>
-                    </div>
-                  ))}
+                  {/* Desktop right arrow */}
+                  <button
+                    type="button"
+                    aria-label="Scroll right"
+                    onClick={() => {
+                      if (!carouselRef.current) return
+                      const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
+                      carouselRef.current.scrollBy({ left: card ? card.offsetWidth + 16 : 280, behavior: 'smooth' })
+                    }}
+                    className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               ) : (
                 /* All performances rated */

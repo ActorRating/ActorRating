@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import supabase from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
@@ -11,20 +11,13 @@ export default function AuthCallback() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const hasRun = useRef(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      if (isProcessing) return
-      setIsProcessing(true)
-      
-      // Prevent multiple executions
-      if (typeof window !== 'undefined' && (window as any).__authCallbackProcessing) {
-        return
-      }
-      if (typeof window !== 'undefined') {
-        (window as any).__authCallbackProcessing = true
-      }
+      // useRef guard — does NOT trigger re-render, preventing retry loops
+      if (hasRun.current) return
+      hasRun.current = true
 
       try {
         console.log('🔄 Starting auth callback...')
@@ -197,22 +190,11 @@ export default function AuthCallback() {
         }
         setError('An unexpected error occurred. Please try signing in again.')
         setIsLoading(false)
-      } finally {
-        setIsProcessing(false)
-        if (typeof window !== 'undefined') {
-          (window as any).__authCallbackProcessing = false
-        }
       }
     }
 
     handleAuthCallback()
-    
-    return () => {
-      if (typeof window !== 'undefined') {
-        (window as any).__authCallbackProcessing = false
-      }
-    }
-  }, [router, searchParams, isProcessing])
+  }, [router, searchParams])
 
   if (error) {
     return (
