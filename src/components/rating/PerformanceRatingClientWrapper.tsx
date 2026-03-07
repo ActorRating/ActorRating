@@ -2060,14 +2060,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
               className="mt-6 space-y-8"
             >
-            {/* ── Hero: quote + score + numeric comparison ─────────────────────── */}
-            <div className="text-center space-y-3">
-              <p className="text-lg sm:text-xl md:text-2xl font-medium italic text-white max-w-2xl mx-auto">
-                &ldquo;{successHeadline ?? 'Rating saved'}&rdquo;
-              </p>
-              <div>
+            {/* ── Hero: Your score vs Community (scores only, no quote text) ─────── */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+              {/* Your score — always shown */}
+              <div
+                className="flex flex-col items-center px-6 py-4 rounded-2xl min-w-[140px]"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.06) 100%)',
+                  border: '1px solid rgba(255,215,0,0.25)',
+                }}
+              >
+                <span className="text-xs font-bold tracking-widest uppercase text-[#FFD700]/80 mb-1">Your score</span>
                 <span
-                  className="text-7xl sm:text-8xl font-black tabular-nums"
+                  className="text-5xl sm:text-6xl font-black tabular-nums"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     WebkitBackgroundClip: 'text',
@@ -2077,19 +2082,62 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 >
                   {finalScore}
                 </span>
-                <span className="text-2xl text-[#FFD700]/40 font-semibold">/10</span>
+                <span className="text-lg text-[#FFD700]/50 font-semibold">/10</span>
               </div>
+              {/* Community score — when available */}
+              {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
+                <div
+                  className="flex flex-col items-center px-6 py-4 rounded-2xl min-w-[140px]"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <span className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-1">Community</span>
+                  <span className="text-5xl sm:text-6xl font-black tabular-nums text-white">
+                    {communityAvg10}
+                  </span>
+                  <span className="text-lg text-[#71717a] font-semibold">/10</span>
+                  <span className="text-[10px] text-[#52525b] mt-0.5">{communityRatingCount} ratings</span>
+                </div>
+              )}
             </div>
 
-            {/* ── Actor progress (completion loop) ─────────────────────────────── */}
+            {/* ── Actor completion: X / Y performances rated (prominent) ─────────── */}
             {actorProgress != null && (
-              <div className="text-center">
-                <p className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+              <div
+                className="rounded-2xl px-6 py-5 text-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                <p className="text-sm font-bold text-white mb-1">
                   {performance.actor.name} progress
                 </p>
-                <p className="text-sm text-[#a1a1aa] mt-0.5 tabular-nums">
+                <p className="text-2xl sm:text-3xl font-black tabular-nums text-[#FFD700]">
                   {actorProgress.userRatedCount} / {actorProgress.totalPerformances} performances rated
                 </p>
+                {actorProgress.totalPerformances > 0 && (
+                  <div className="mt-3 flex items-center justify-center gap-3">
+                    <div className="flex-1 max-w-[200px] h-2 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: `${Math.round((actorProgress.userRatedCount / actorProgress.totalPerformances) * 100)}%`,
+                        }}
+                        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                        className="h-full rounded-full"
+                        style={{
+                          background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-[#a1a1aa] tabular-nums">
+                      {Math.round((actorProgress.userRatedCount / actorProgress.totalPerformances) * 100)}%
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2229,48 +2277,48 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </button>
                 </div>
               ) : (
-                /* All performances rated */
-                <>
-                  <div
-                    className="rounded-[2rem] border border-white/8 p-8 text-center"
-                    style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
+                /* All performances rated — no carousel, just message + filmography */
+                <div
+                  className="rounded-[2rem] border border-white/8 p-8 text-center"
+                  style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
+                >
+                  <p className="text-[#a1a1aa] text-sm mb-5">
+                    You&apos;ve rated every performance for this actor. Try another actor.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleBackToFilmography}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
                   >
-                    <p className="text-[#a1a1aa] text-sm mb-5">
-                      You&apos;ve rated every performance for this actor. Try another actor.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleBackToFilmography}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                      View Filmography
-                    </button>
+                    <ArrowRight className="w-4 h-4" />
+                    View Filmography
+                  </button>
+                </div>
+              )}
+              {/* Discover another actor — always show on success (buttons with actor names) */}
+              {!nextPerfLoading && (
+                <div className="mt-6">
+                  <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3 text-center">
+                    Discover another actor
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {[
+                      { name: 'Robert De Niro', slug: 'robert-de-niro' },
+                      { name: 'Christian Bale', slug: 'christian-bale' },
+                      { name: 'Cillian Murphy', slug: 'cillian-murphy' },
+                      { name: 'Leonardo DiCaprio', slug: 'leonardo-dicaprio' },
+                    ].map((actor) => (
+                      <button
+                        key={actor.slug}
+                        type="button"
+                        onClick={() => router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))}
+                        className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
+                      >
+                        {actor.name}
+                      </button>
+                    ))}
                   </div>
-                  {/* Discover another actor — 4 suggested actors (hardcoded) */}
-                  <div className="mt-6">
-                    <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3 text-center">
-                      Discover another actor
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {[
-                        { name: 'Robert De Niro', slug: 'robert-de-niro' },
-                        { name: 'Christian Bale', slug: 'christian-bale' },
-                        { name: 'Cillian Murphy', slug: 'cillian-murphy' },
-                        { name: 'Leonardo DiCaprio', slug: 'leonardo-dicaprio' },
-                      ].map((actor) => (
-                        <button
-                          key={actor.slug}
-                          type="button"
-                          onClick={() => router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))}
-                          className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
-                        >
-                          {actor.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
 

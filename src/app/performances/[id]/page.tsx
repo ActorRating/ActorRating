@@ -1,6 +1,6 @@
 "use client"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 import React, { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'

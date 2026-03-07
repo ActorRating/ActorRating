@@ -3,64 +3,23 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { isJunkMovieSlug } from "@/lib/junk-movie-slugs"
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Placeholder/junk movie slugs: -YEAR-id (e.g. -2021-2s5jgim7, -2025-qmc9o4xt)
 const JUNK_MOVIE_SLUG_REGEX = /^-?\d{4}-[a-z0-9]+$/i
 
 export async function middleware(req: NextRequest) {
-  // Return 410 Gone for /actors/[id] when actor no longer exists
-  const actorMatch = req.nextUrl.pathname.match(/^\/actors\/([^/]+)\/?$/)
-  if (actorMatch) {
-    const [, id] = actorMatch
-    if (id && UUID_REGEX.test(id)) {
+  // Allow all /actors/[id] requests through. The page loads and the API (or client fetch)
+  // checks if the actor exists; if not, the API returns 410 and the page shows not-found.
+
+  // Return 410 only for known junk/placeholder movie slugs (no API call).
+  // All other /movies/[slug] requests go through; the page/API returns 410/404 if not found.
+  const movieMatch = req.nextUrl.pathname.match(/^\/movies\/([^/]+)\/?$/)
+  if (movieMatch) {
+    const [, slug] = movieMatch
+    if (slug && (JUNK_MOVIE_SLUG_REGEX.test(slug) || isJunkMovieSlug(slug))) {
       return new NextResponse(null, {
         status: 410,
         headers: { "Cache-Control": "public, max-age=86400" },
       })
-    }
-    if (id) {
-      try {
-        const res = await fetch(
-          `${req.nextUrl.origin}/api/actors/${encodeURIComponent(id)}`,
-          { headers: { "Content-Type": "application/json" }, next: { revalidate: 300 } }
-        )
-        if (!res.ok) {
-          return new NextResponse(null, {
-            status: 410,
-            headers: { "Cache-Control": "public, max-age=86400" },
-          })
-        }
-      } catch {
-        // On fetch error, continue to page (let client handle)
-      }
-    }
-  }
-
-  // Return 410 Gone for /movies/[slug] when movie no longer exists or is adult (removed from sitemap)
-  const movieMatch = req.nextUrl.pathname.match(/^\/movies\/([^/]+)\/?$/)
-  if (movieMatch) {
-    const [, slug] = movieMatch
-    if (slug) {
-      if (JUNK_MOVIE_SLUG_REGEX.test(slug) || isJunkMovieSlug(slug)) {
-        return new NextResponse(null, {
-          status: 410,
-          headers: { "Cache-Control": "public, max-age=86400" },
-        })
-      }
-      try {
-        const res = await fetch(
-          `${req.nextUrl.origin}/api/movies/${encodeURIComponent(slug)}`,
-          { headers: { "Content-Type": "application/json" }, next: { revalidate: 300 } }
-        )
-        if (!res.ok) {
-          return new NextResponse(null, {
-            status: 410,
-            headers: { "Cache-Control": "public, max-age=86400" },
-          })
-        }
-      } catch {
-        // On fetch error, continue to page (let client handle)
-      }
     }
   }
 
