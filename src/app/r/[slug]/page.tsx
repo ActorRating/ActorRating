@@ -18,7 +18,7 @@ async function getDataUncached(slug: string) {
     },
   })
   if (!rating) return null
-  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
   const dynamicOg = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`
   const ogUrl = rating.shareImage?.ogUrl || dynamicOg
   const feedUrl = rating.shareImage?.feedUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=feed`
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const data = await getData(slug)
   if (!data) return {}
   const { rating } = data
-  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+  const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
   const title = `${rating.actor.name} in ${rating.movie.title} — Rated on ActorRating`
   const description = `See the full performance breakdown and community rating. Rate it yourself in seconds.`
   const pageUrl = `${base}/r/${slug}`
@@ -63,7 +63,7 @@ export default async function RatingPage({ params }: { params: Promise<{ slug: s
   if (!data) return <div className="p-6">Rating not found</div>
   const { rating, ogUrl, feedUrl, storyUrl } = data
   const xText = `ActorRating: ${rating.actor.name} in ${rating.movie.title} — ${Math.round(rating.shareScore ?? rating.weightedScore)}/100`
-  const pageUrl = `${process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''}/r/${slug}`
+  const pageUrl = `${process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'}/r/${slug}`
   const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}&url=${encodeURIComponent(pageUrl)}`
 
   return (
