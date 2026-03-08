@@ -1491,7 +1491,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
             {/* Header Section - Mobile optimized */}
         <div
-          className="text-center mb-4 sm:mb-12 md:mb-16"
+          className="text-center mb-3 sm:mb-12 md:mb-16 px-1 sm:px-0"
           style={{
             opacity: 1,
             transform: 'none',
@@ -1500,7 +1500,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Actor Name - Primary Focus, Largest Text, White */}
           <h1
             id="actor-name-header"
-            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-2 sm:mb-4 tracking-tight px-2 text-white"
+            className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-1.5 sm:mb-4 tracking-tight px-1 text-white"
             style={{
               fontFamily: 'var(--font-cinzel), serif',
             }}
@@ -1508,9 +1508,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {performance.actor.name}
           </h1>
           {/* Movie Title - Clean, non-italic styling */}
-          <div className="mb-1.5 sm:mb-3 px-2">
+          <div className="mb-1 sm:mb-3 px-1">
             <h2
-              className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-1 sm:mb-1.5 tracking-tight"
+              className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-0.5 sm:mb-1.5 tracking-tight"
               style={{
                 background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                 WebkitBackgroundClip: 'text',
@@ -1523,7 +1523,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.title}
             </h2>
             <p
-              className="text-base sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
+              className="text-sm sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1534,9 +1534,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
           {/* Community Rating Stats */}
           {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
-            <div className="mb-3 sm:mb-4 flex justify-center">
+            <div className="mb-2 sm:mb-4 flex justify-center">
               <div
-                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full"
+                className="inline-flex items-center gap-2 px-3 py-1.5 sm:gap-2.5 sm:px-4 sm:py-2 rounded-full"
                 style={{
                   background: 'linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.08) 100%)',
                   border: '1px solid rgba(255,215,0,0.25)',
@@ -1555,7 +1555,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
           {/* Role/Comment */}
           {performance.comment && (
-            <p className="text-xs sm:text-base text-[#a1a1aa] px-2">{performance.comment}</p>
+            <p className="text-xs sm:text-base text-[#a1a1aa] px-1 sm:px-2 line-clamp-2 sm:line-clamp-none">{performance.comment}</p>
           )}
         </div>
 
@@ -1718,7 +1718,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* Rating Card - Extra round corners, mobile optimized - No animations on iOS Safari */}
             {submitPhase !== 'success' && (
               <div
-                className="relative rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-6 md:p-8 lg:p-12 py-6 sm:py-10 md:py-12 space-y-4 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-visible w-full max-w-full mx-auto"
+                className="relative rounded-xl sm:rounded-[2rem] md:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 py-4 sm:py-10 md:py-12 space-y-3 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-visible w-full max-w-full mx-auto"
                 style={{
                   boxShadow: `
                     0 35px 90px -20px rgba(0, 0, 0, 0.95),
@@ -2058,69 +2058,103 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
-              className="mt-6 space-y-8"
+              className="mt-4 sm:mt-6 space-y-4 sm:space-y-8 px-1 sm:px-0"
             >
-            {/* ── Hero: Your score vs Community (scores only, no quote text) ─────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
-              {/* Your score — always shown */}
-              <div
-                className="flex flex-col items-center px-6 py-4 rounded-2xl min-w-[140px]"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.06) 100%)',
-                  border: '1px solid rgba(255,215,0,0.25)',
-                }}
-              >
-                <span className="text-xs font-bold tracking-widest uppercase text-[#FFD700]/80 mb-1">Your score</span>
-                <span
-                  className="text-5xl sm:text-6xl font-black tabular-nums"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  {finalScore}
-                </span>
-                <span className="text-lg text-[#FFD700]/50 font-semibold">/10</span>
-              </div>
-              {/* Community score — when available */}
-              {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
+            {/* ── Hero: Your score vs Community ─────────────────────────────────── */}
+            <div
+              className="overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '1rem',
+              }}
+            >
+              <p className="text-center text-[10px] sm:text-xs font-bold tracking-widest uppercase pt-4 sm:pt-5 pb-1" style={{ color: '#a1a1aa' }}>
+                Your score {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 ? 'vs community' : ''}
+              </p>
+              <div className="flex flex-row items-center justify-center gap-2 sm:gap-6 px-3 sm:px-6 pb-4 sm:pb-6 pt-2">
+                {/* Your score — always shown, rounded card */}
                 <div
-                  className="flex flex-col items-center px-6 py-4 rounded-2xl min-w-[140px]"
+                  className="flex flex-col items-center flex-1 min-w-0 py-3 px-3 sm:py-4 sm:px-5 rounded-xl sm:rounded-2xl"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'linear-gradient(135deg, rgba(255,215,0,0.12) 0%, rgba(255,165,0,0.06) 100%)',
+                    border: '1px solid rgba(255,215,0,0.25)',
                   }}
                 >
-                  <span className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-1">Community</span>
-                  <span className="text-5xl sm:text-6xl font-black tabular-nums text-white">
-                    {communityAvg10}
-                  </span>
-                  <span className="text-lg text-[#71717a] font-semibold">/10</span>
-                  <span className="text-[10px] text-[#52525b] mt-0.5">{communityRatingCount} ratings</span>
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-[#FFD700]/90 mb-0.5">You</span>
+                  <div className="flex items-baseline gap-0.5">
+                    <span
+                      className="text-3xl sm:text-5xl font-black tabular-nums"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      {finalScore}
+                    </span>
+                    <span className="text-sm sm:text-base text-[#FFD700]/60 font-semibold">/10</span>
+                  </div>
                 </div>
+                {/* VS divider — when community exists */}
+                {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
+                  <>
+                    <span
+                      className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-[10px] sm:text-xs font-black text-[#71717a] shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      vs
+                    </span>
+                    {/* Community score — rounded card */}
+                    <div
+                      className="flex flex-col items-center flex-1 min-w-0 py-3 px-3 sm:py-4 sm:px-5 rounded-xl sm:rounded-2xl"
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-[#a1a1aa] mb-0.5">Community</span>
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-3xl sm:text-5xl font-black tabular-nums text-white">
+                          {communityAvg10}
+                        </span>
+                        <span className="text-sm sm:text-base text-[#71717a] font-semibold">/10</span>
+                      </div>
+                      <span className="text-[10px] text-[#52525b] mt-0.5">{communityRatingCount} ratings</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Comparison message when community data exists */}
+              {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && successHeadline && (
+                <p
+                  className="text-center text-xs sm:text-sm font-medium px-4 sm:px-6 pb-4 sm:pb-5 pt-0"
+                  style={{ color: 'rgba(255,255,255,0.75)' }}
+                >
+                  {successHeadline}
+                </p>
               )}
             </div>
 
             {/* ── Actor completion: X / Y performances rated (prominent) ─────────── */}
             {actorProgress != null && (
               <div
-                className="rounded-2xl px-6 py-5 text-center"
+                className="rounded-xl sm:rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-center"
                 style={{
                   background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}
               >
-                <p className="text-sm font-bold text-white mb-1">
+                <p className="text-xs sm:text-sm font-bold text-white mb-0.5 sm:mb-1">
                   {performance.actor.name} progress
                 </p>
-                <p className="text-2xl sm:text-3xl font-black tabular-nums text-[#FFD700]">
+                <p className="text-xl sm:text-3xl font-black tabular-nums text-[#FFD700]">
                   {actorProgress.userRatedCount} / {actorProgress.totalPerformances} performances rated
                 </p>
                 {actorProgress.totalPerformances > 0 && (
-                  <div className="mt-3 flex items-center justify-center gap-3">
-                    <div className="flex-1 max-w-[200px] h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="mt-2 sm:mt-3 flex items-center justify-center gap-2 sm:gap-3">
+                    <div className="flex-1 max-w-[160px] sm:max-w-[200px] h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{
@@ -2143,9 +2177,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
             {/* ── "Rate another performance" carousel ─────────────────────────── */}
             <div ref={carouselSectionRef}>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2 sm:mb-4 gap-2">
                 <p
-                  className="text-xs font-bold tracking-widest uppercase"
+                  className="text-[10px] sm:text-xs font-bold tracking-widest uppercase leading-tight"
                   style={{ color: '#a1a1aa' }}
                 >
                   {actorProgress != null && actorProgress.totalPerformances > 0 && (actorProgress.totalPerformances - actorProgress.userRatedCount) <= 3
@@ -2153,8 +2187,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     : 'Rate another performance'}
                 </p>
                 {nextPerfs.length > 1 && (
-                  <span className="text-xs text-[#71717a]">
-                    {nextPerfs.length} left to rate
+                  <span className="text-[10px] sm:text-xs text-[#71717a] shrink-0">
+                    {nextPerfs.length} left
                   </span>
                 )}
               </div>
@@ -2166,8 +2200,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[72vw] sm:w-[260px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
-                      style={{ minHeight: 240 }}
+                      className="flex-shrink-0 w-[85vw] sm:w-[320px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
+                      style={{ minHeight: 280 }}
                     />
                   ))}
                 </div>
@@ -2181,7 +2215,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     onClick={() => {
                       if (!carouselRef.current) return
                       const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
-                      carouselRef.current.scrollBy({ left: -(card ? card.offsetWidth + 16 : 280), behavior: 'smooth' })
+                      carouselRef.current.scrollBy({ left: -(card ? card.offsetWidth + 16 : 336), behavior: 'smooth' })
                     }}
                     className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
                   >
@@ -2190,12 +2224,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                   <div
                     ref={carouselRef}
-                    className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide"
+                    className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 sm:pb-3 snap-x snap-mandatory scrollbar-hide"
                   >
                     {nextPerfs.map((p, idx) => (
                       <div
                         key={p.movieSlug}
-                        className="carousel-card flex-shrink-0 w-[72vw] sm:w-[260px] snap-center group"
+                        className="carousel-card flex-shrink-0 w-[85vw] sm:w-[320px] snap-center group"
                         style={{ transform: 'translateZ(0)' }}
                       >
                         <motion.div
@@ -2204,7 +2238,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           transition={{ duration: 0.35, delay: idx * 0.06 }}
                           className="relative h-full rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
                           style={{
-                            minHeight: 240,
+                            minHeight: 280,
                             boxShadow: `
                               0 25px 70px -15px rgba(0,0,0,0.9),
                               0 15px 40px -10px rgba(0,0,0,0.7),
@@ -2269,7 +2303,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     onClick={() => {
                       if (!carouselRef.current) return
                       const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
-                      carouselRef.current.scrollBy({ left: card ? card.offsetWidth + 16 : 280, behavior: 'smooth' })
+                      carouselRef.current.scrollBy({ left: card ? card.offsetWidth + 16 : 336, behavior: 'smooth' })
                     }}
                     className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
                   >
@@ -2279,10 +2313,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               ) : (
                 /* All performances rated — no carousel, just message + filmography */
                 <div
-                  className="rounded-[2rem] border border-white/8 p-8 text-center"
+                  className="rounded-xl sm:rounded-[2rem] border border-white/8 p-5 sm:p-8 text-center"
                   style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
                 >
-                  <p className="text-[#a1a1aa] text-sm mb-5">
+                  <p className="text-[#a1a1aa] text-xs sm:text-sm mb-4 sm:mb-5">
                     You&apos;ve rated every performance for this actor. Try another actor.
                   </p>
                   <button
@@ -2297,11 +2331,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               )}
               {/* Discover another actor — always show on success (buttons with actor names) */}
               {!nextPerfLoading && (
-                <div className="mt-6">
-                  <p className="text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-3 text-center">
+                <div className="mt-4 sm:mt-6">
+                  <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2 sm:mb-3 text-center">
                     Discover another actor
                   </p>
-                  <div className="flex flex-wrap justify-center gap-3">
+                  <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                     {[
                       { name: 'Robert De Niro', slug: 'robert-de-niro' },
                       { name: 'Christian Bale', slug: 'christian-bale' },
@@ -2312,7 +2346,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         key={actor.slug}
                         type="button"
                         onClick={() => router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))}
-                        className="px-4 py-2 rounded-full text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
                       >
                         {actor.name}
                       </button>
@@ -2325,7 +2359,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Progress bar + badges ────────────────────────────────────────── */}
             {progressData != null && (
               <div
-                className="rounded-2xl px-5 py-4 space-y-3"
+                className="rounded-xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 space-y-2 sm:space-y-3"
                 style={{
                   background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
                   border: '1px solid rgba(255,215,0,0.12)',
