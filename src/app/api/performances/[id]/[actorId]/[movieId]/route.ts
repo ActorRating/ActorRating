@@ -13,7 +13,8 @@ export async function GET(
     const performance = await prisma.performance.findFirst({
       where: {
         actorId: actorId,
-        movieId: movieId
+        movieId: movieId,
+        movie: { isFeaturette: false },
       },
       include: {
         actor: {

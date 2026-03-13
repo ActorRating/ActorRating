@@ -229,10 +229,14 @@ export async function ingestMovieCast(
 
   const movie = await prisma.movie.findUnique({
     where: { id: movieId },
-    select: { id: true, title: true, year: true, tmdbId: true },
+    select: { id: true, title: true, year: true, tmdbId: true, isFeaturette: true },
   });
   if (!movie) {
     throw new Error(`Movie not found: ${movieId}`);
+  }
+  if (movie.isFeaturette) {
+    log(`Skipping featurette movie: ${movie.title}`);
+    return { actorsCreated: 0, performancesCreated: 0, performancesUpdated: 0 };
   }
   if (movie.tmdbId == null) {
     throw new Error(`Movie "${movie.title}" (${movieId}) has no tmdbId; cannot fetch credits`);

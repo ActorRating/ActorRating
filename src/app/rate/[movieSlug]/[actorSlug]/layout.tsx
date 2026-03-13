@@ -152,7 +152,7 @@ export default async function RateLayout({ params, children }: Props) {
     }
   }
 
-  const ratingCount = ratingAgg?._count?._all ?? 0
+  const ratingCount = (ratingAgg?._count as { _all?: number } | undefined)?._all ?? 0
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 

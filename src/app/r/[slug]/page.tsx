@@ -36,7 +36,7 @@ function getData(slug: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const data = await getData(slug)
+  const data = await getData(slug)()
   if (!data) return {}
   const { rating } = data
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function RatingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const data = await getData(slug)
+  const data = await getData(slug)()
   if (!data) return <div className="p-6">Rating not found</div>
   const { rating, ogUrl, feedUrl, storyUrl } = data
   const xText = `ActorRating: ${rating.actor.name} in ${rating.movie.title} — ${Math.round(rating.shareScore ?? rating.weightedScore)}/100`

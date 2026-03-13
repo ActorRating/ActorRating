@@ -37,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         slug: true,
         genre: true,
         overview: true,
+        isFeaturette: true,
       },
     });
 
@@ -45,6 +46,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: "Movie Not Found - ActorRating",
         description: "The requested movie could not be found.",
       };
+    }
+
+    if (movie.isFeaturette) {
+      notFound();
     }
 
     // Junk/adult content: treat as not found (410-style handling at page level)

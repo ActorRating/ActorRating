@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       const actorsWithStats = await Promise.all(actors.map(async (actor) => {
         const [performanceCount, ratings] = await Promise.all([
           prisma.performance.count({
-            where: { actorId: actor.id }
+            where: { actorId: actor.id, movie: { isFeaturette: false } }
           }),
           prisma.rating.findMany({
             where: { actorId: actor.id },

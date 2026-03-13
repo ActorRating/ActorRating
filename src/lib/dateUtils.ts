@@ -12,7 +12,7 @@ export function toIsoDate(v: Date | string | undefined | null): string {
 /** Normalize createdAt/updatedAt on an entity (actor, movie, or performance) for safe client props. */
 export function withIsoDates<T extends Record<string, unknown>>(obj: T): T {
   if (!obj || typeof obj !== "object") return obj
-  const out = { ...obj }
+  const out: Record<string, unknown> = { ...obj }
   if ("createdAt" in out) out.createdAt = toIsoDate(out.createdAt as Date | string | null | undefined)
   if ("updatedAt" in out) out.updatedAt = toIsoDate(out.updatedAt as Date | string | null | undefined)
   return out as T

@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         include: { actor: true, movie: true },
       }),
       prisma.performance.findMany({
-        where: { userId: session.user.id },
+        where: { userId: session.user.id, movie: { isFeaturette: false } },
         include: { actor: true, movie: true },
       }),
     ])

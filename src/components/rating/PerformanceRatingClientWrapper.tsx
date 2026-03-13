@@ -2258,20 +2258,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           <div className="relative z-10 flex flex-col h-full p-5 sm:p-6">
                             {/* Top row: N/A pill + year */}
                             <div className="flex items-center justify-between mb-4">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                <Star className="w-3.5 h-3.5 text-[#FFD700] fill-[#FFD700]/30" />
-                                <span className="text-sm font-bold text-[#FFD700]">N/A</span>
+                              <div className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                <Star className="w-4 h-4 text-[#FFD700] fill-[#FFD700]/30" />
+                                <span className="text-base font-bold text-[#FFD700]">N/A</span>
                               </div>
-                              <span className="text-xs text-[#a3a3a3] font-medium">{p.movieYear}</span>
+                              <span className="text-sm text-[#a3a3a3] font-medium tabular-nums">{p.movieYear}</span>
                             </div>
 
                             {/* Movie title */}
-                            <div className="flex-1 mb-4">
-                              <p className="text-sm font-semibold mb-1.5 line-clamp-2 text-white">
+                            <div className="flex-1 mb-4 min-h-[3.5rem] flex flex-col justify-center">
+                              <p className="text-base sm:text-lg font-semibold mb-1.5 line-clamp-2 text-white leading-snug">
                                 {p.movieTitle}
                               </p>
                               <p
-                                className="text-xs text-[#e4e4e7]/60 italic font-light"
+                                className="text-sm text-[#e4e4e7]/60 italic font-light"
                                 style={{ fontFamily: 'var(--font-cinzel), serif' }}
                               >
                                 {performance.actor.name}

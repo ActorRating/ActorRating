@@ -27,7 +27,7 @@ export type DashboardRating = {
   comment: string | null
   createdAt: string
   actor: { id: string; name: string; slug: string | null; imageUrl: string | null }
-  movie: { id: string; title: string; year: number; director: string; slug: string | null }
+  movie: { id: string; title: string; year: number; director: string | null; slug: string | null }
 }
 
 export type DashboardActor = {
@@ -45,7 +45,7 @@ export async function getDashboardData(userId: string): Promise<{
 }> {
   const [ratings, popularActors] = await Promise.all([
     prisma.rating.findMany({
-      where: { userId },
+      where: { userId, movie: { isFeaturette: false } },
       include: {
         actor: {
           select: { id: true, name: true, imageUrl: true, slug: true },
@@ -83,7 +83,7 @@ async function getPopularActorsByNames(names: string[]): Promise<DashboardActor[
   const withStats = await Promise.all(
     actors.map(async (actor) => {
       const [performanceCount, ratingRows] = await Promise.all([
-        prisma.performance.count({ where: { actorId: actor.id } }),
+        prisma.performance.count({ where: { actorId: actor.id, movie: { isFeaturette: false } } }),
         prisma.rating.findMany({
           where: { actorId: actor.id },
           select: {

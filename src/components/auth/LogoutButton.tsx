@@ -55,11 +55,12 @@ export function LogoutButton({
     }
   }
 
+  const buttonVariant = variant === 'destructive' ? 'outline' : variant
   return (
     <Button
       onClick={handleLogoutClick}
       disabled={isLoading}
-      variant={variant}
+      variant={buttonVariant}
       size={size}
       className={`flex items-center gap-2 ${className}`}
     >

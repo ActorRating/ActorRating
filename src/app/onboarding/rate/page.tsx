@@ -862,7 +862,7 @@ export default function OnboardingRatePage() {
                   return (
                     <div
                       key={`${performance.actorId}-${performance.movieId}`}
-                      ref={(el) => cardRefs.current[index] = el}
+                      ref={(el) => { cardRefs.current[index] = el }}
                       className="flex-shrink-0 w-[85vw] sm:w-[70vw] snap-center group lg:cursor-pointer"
                       style={{
                         transform: 'translateZ(0)',

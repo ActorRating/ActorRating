@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     // Fetch performances by IDs
     const performances = await prisma.performance.findMany({
       where: {
-        id: {
-          in: ids
-        }
+        id: { in: ids },
+        movie: { isFeaturette: false },
       },
       include: {
         actor: {

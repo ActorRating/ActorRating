@@ -251,11 +251,26 @@ export default function PerformanceDetailPage() {
     )
   }
 
-  // Main rating interface using the client wrapper
+  // Main rating interface using the client wrapper (maps wrapper's rating shape to API shape)
+  const handleSubmitFromWrapper = async (ratingData: {
+    emotionalDepth: number
+    believability: number
+    technicalSkill: number
+    screenPresence: number
+    chemistry: number
+  }) => {
+    await handleRatingSubmit({
+      emotionalRangeDepth: ratingData.emotionalDepth,
+      characterBelievability: ratingData.believability,
+      technicalSkill: ratingData.technicalSkill,
+      screenPresence: ratingData.screenPresence,
+      chemistryInteraction: ratingData.chemistry,
+    })
+  }
   const PerformanceContent = () => (
     <PerformanceRatingClientWrapper
       performance={performance}
-      onSubmit={handleRatingSubmit}
+      onSubmit={handleSubmitFromWrapper}
       submitting={submitting}
     />
   )

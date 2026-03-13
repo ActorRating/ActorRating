@@ -15,6 +15,7 @@ export async function GET(
       },
       select: {
         id: true,
+        movieId: true,
         comment: true,
         createdAt: true,
         updatedAt: true,
@@ -29,6 +30,16 @@ export async function GET(
     })
 
     if (!performance) {
+      return NextResponse.json(
+        { error: "Performance not found" },
+        { status: 404 }
+      )
+    }
+    const movieMeta = await prisma.movie.findUnique({
+      where: { id: performance.movieId },
+      select: { isFeaturette: true },
+    })
+    if (movieMeta?.isFeaturette) {
       return NextResponse.json(
         { error: "Performance not found" },
         { status: 404 }
@@ -64,6 +75,27 @@ export async function PUT(
     }
 
     const { id } = await params
+    const existing = await prisma.performance.findUnique({
+      where: { id },
+      select: { movieId: true },
+    })
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Performance not found" },
+        { status: 404 }
+      )
+    }
+    const movieMeta = await prisma.movie.findUnique({
+      where: { id: existing.movieId },
+      select: { isFeaturette: true },
+    })
+    if (movieMeta?.isFeaturette) {
+      return NextResponse.json(
+        { error: "Performance not found" },
+        { status: 404 }
+      )
+    }
+
     const body = await request.json()
     const { 
       emotionalRangeDepth,
@@ -143,6 +175,27 @@ export async function DELETE(
     }
 
     const { id } = await params
+    const existing = await prisma.performance.findUnique({
+      where: { id },
+      select: { movieId: true },
+    })
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Performance not found" },
+        { status: 404 }
+      )
+    }
+    const movieMeta = await prisma.movie.findUnique({
+      where: { id: existing.movieId },
+      select: { isFeaturette: true },
+    })
+    if (movieMeta?.isFeaturette) {
+      return NextResponse.json(
+        { error: "Performance not found" },
+        { status: 404 }
+      )
+    }
+
     await prisma.performance.delete({
       where: {
         id: id,

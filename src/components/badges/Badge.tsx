@@ -14,7 +14,7 @@ export function Badge({ badge, className = '' }: BadgeProps) {
   
   // Get icon component if iconName is provided
   const IconComponent = badge.iconName 
-    ? (LucideIcons[badge.iconName as keyof typeof LucideIcons] as React.ComponentType<{ className?: string; size?: number }>)
+    ? (LucideIcons[badge.iconName as keyof typeof LucideIcons] as React.ComponentType<{ className?: string; size?: number; style?: React.CSSProperties }>)
     : null
   
   return (

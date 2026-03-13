@@ -53,6 +53,8 @@ model Movie {
   updatedAt        DateTime      @updatedAt
   overview         String?
   tmdbId           Int?          @unique
+  /// Making-of, behind-the-scenes, featurettes, etc. Excluded from rating flow and stats.
+  isFeaturette     Boolean       @default(false)
   /// Set when full cast ingestion last ran for this movie (cosmetic proof).
   castIngestedAt   DateTime?
   performances     Performance[]

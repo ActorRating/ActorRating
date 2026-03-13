@@ -265,7 +265,7 @@ export function FeaturedPerformancesCarousel() {
             return (
               <div
                 key={performance.actorId + performance.movieId}
-                ref={(el) => cardRefs.current[index] = el}
+                ref={(el) => { cardRefs.current[index] = el }}
                 className="flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[calc(33.333%-16px)] snap-center group lg:cursor-pointer"
                 style={{
                   transform: 'translateZ(0)',

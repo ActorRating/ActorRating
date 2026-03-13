@@ -50,7 +50,7 @@ interface Rating {
     id: string
     title: string
     year: number
-    director: string
+    director: string | null
     slug?: string | null
   }
 }
@@ -600,7 +600,7 @@ export default function DashboardClient({
                             name: rating.actor.name,
                             imageUrl: rating.actor.imageUrl ?? undefined,
                           },
-                          movie: rating.movie,
+                          movie: { ...rating.movie, director: rating.movie.director ?? undefined },
                           userId: user?.id || '',
                           emotionalRangeDepth: rating.emotionalRangeDepth,
                           characterBelievability: rating.characterBelievability,

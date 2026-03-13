@@ -283,13 +283,15 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       <PerformanceRatingClientWrapper
         performance={{
           id: `${actor.id}-${movie.id}`,
-          actor: actor,
-          movie: movie,
-          actorId: actor.id,
-          movieId: movie.id,
-          character: null,
-          comment: null,
-          userId: user?.id || '',
+          actor: { ...actor, slug: actor.slug ?? undefined },
+          movie: { ...movie, slug: movie.slug ?? undefined, director: movie.director ?? undefined },
+          emotionalRangeDepth: 0,
+          characterBelievability: 0,
+          technicalSkill: 0,
+          screenPresence: 0,
+          chemistryInteraction: 0,
+          comment: undefined,
+          user: { name: '', email: '' },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }}

@@ -8,6 +8,7 @@ import { calculateOverallScore, getScoreLevel, DEFAULT_WEIGHTS } from '@/utils/r
 import { Button } from '../ui/Button'
 import { RatingVisualization } from './RatingVisualization'
 import { resolveCharacterDisplay } from '@/lib/character'
+import { getRateUrl } from '@/lib/slugHelper'
 
 interface FeaturedPerformanceCardProps {
   performance: Performance

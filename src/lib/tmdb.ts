@@ -154,7 +154,7 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
           profilePath: typeof member.profile_path === 'string' ? member.profile_path : null,
         };
       })
-      .filter((m): m is CastMemberForIngestion => m !== null);
+      .filter((m: CastMemberForIngestion | null): m is CastMemberForIngestion => m != null);
 
     return { director, cast: fullCast };
   } catch (error) {

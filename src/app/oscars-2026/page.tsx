@@ -173,7 +173,7 @@ export default function Oscars2026Page() {
                   className: "text-center mb-16 sm:mb-20 md:mb-24",
                   initial: { opacity: 0, y: 24 },
                   animate: { opacity: 1, y: 0 },
-                  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
                 }
             return (
               <HeroWrap {...heroProps}>

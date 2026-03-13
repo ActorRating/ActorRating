@@ -66,7 +66,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
   const [movieBySlug, actorBySlug] = await Promise.all([
     prisma.movie.findFirst({
       where: { slug: movieSlug },
-      select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true },
+      select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true, isFeaturette: true },
     }),
     prisma.actor.findFirst({
       where: { slug: actorSlug },
@@ -76,14 +76,14 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
 
   const movieRow = movieBySlug ?? await prisma.movie.findFirst({
     where: { id: movieSlug },
-    select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true },
+    select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true, isFeaturette: true },
   })
   const actorRow = actorBySlug ?? await prisma.actor.findFirst({
     where: { id: actorSlug },
     select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
   })
 
-  if (!movieRow || !actorRow) return null
+  if (!movieRow || !actorRow || movieRow.isFeaturette) return null
   return { movieRow, actorRow }
 }
 

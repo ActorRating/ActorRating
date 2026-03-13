@@ -74,6 +74,7 @@ export async function getPerformancesByLookup(
 
   const performances = await prisma.performance.findMany({
     where: {
+      movie: { isFeaturette: false },
       OR: actorMoviePairs.map((pair) => ({
         actorId: pair.actorId,
         movieId: pair.movieId,

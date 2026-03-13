@@ -51,14 +51,16 @@ function shuffleInPlace<T>(arr: T[]): T[] {
 }
 
 async function fetchRandomPairsExcludingMovies(excludedMovieIds: string[], take: number): Promise<AggregatedPair[]> {
-  const whereSql = excludedMovieIds.length
-    ? Prisma.sql`WHERE p."movieId" NOT IN (${Prisma.join(excludedMovieIds)})`
+  const excludeSql = excludedMovieIds.length
+    ? Prisma.sql`AND p."movieId" NOT IN (${Prisma.join(excludedMovieIds)})`
     : Prisma.sql``
 
   const rows = await prisma.$queryRaw<{ actorId: string; movieId: string }[]>(Prisma.sql`
     SELECT p."actorId", p."movieId"
     FROM "Performance" p
-    ${whereSql}
+    INNER JOIN "Movie" m ON p."movieId" = m.id
+    WHERE m."isFeaturette" = false
+    ${excludeSql}
     GROUP BY p."actorId", p."movieId"
     ORDER BY RANDOM()
     LIMIT ${take}
@@ -70,10 +72,12 @@ async function fetchRandomPairsExcludingMovies(excludedMovieIds: string[], take:
 async function getPopularBase(limit: number): Promise<AggregatedPair[]> {
   if (isCacheValid(popularCache)) return popularCache!.data.slice(0, limit)
 
-  // Group ratings by actorId+movieId to determine popularity all-time
+  // Group ratings by actorId+movieId to determine popularity all-time (exclude featurette movies)
   const rows = await prisma.$queryRaw<{ actorId: string; movieId: string; cnt: number }[]>(Prisma.sql`
     SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
     FROM "Rating" r
+    INNER JOIN "Movie" m ON r."movieId" = m.id
+    WHERE m."isFeaturette" = false
     GROUP BY r."actorId", r."movieId"
     ORDER BY COUNT(*) DESC
     LIMIT ${Math.max(limit, TAKE_POOL)}
@@ -93,11 +97,12 @@ async function getTrendingBase(limit: number): Promise<AggregatedPair[]> {
   if (isCacheValid(trendingCache)) return trendingCache!.data.slice(0, limit)
 
   // const sevenDaysAgo = new Date(now() - 7 * 24 * 60 * 60 * 1000) // PROD: 7-day window
-  // Group ratings by actorId+movieId to determine trending (recent activity window optional)
+  // Group ratings by actorId+movieId to determine trending (exclude featurette movies)
   const rows = await prisma.$queryRaw<{ actorId: string; movieId: string; cnt: number }[]>(Prisma.sql`
     SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
     FROM "Rating" r
-    -- WHERE r."createdAt" >= ${new Date(now() - 7 * 24 * 60 * 60 * 1000)}  -- enable in prod for 7-day trending
+    INNER JOIN "Movie" m ON r."movieId" = m.id
+    WHERE m."isFeaturette" = false
     GROUP BY r."actorId", r."movieId"
     ORDER BY COUNT(*) DESC
     LIMIT ${Math.max(limit, TAKE_POOL)}
@@ -126,19 +131,21 @@ async function getRelatedPairs(currentUserId: string, limit: number): Promise<Ag
 
   if (userActorIds.length === 0 && userMovieIds.length === 0) return []
 
-  // Group by pairs that share the same actor or movie the user has engaged with
+  // Group by pairs that share the same actor or movie the user has engaged with (exclude featurette movies)
   let whereClause: Prisma.Sql
   if (userMovieIds.length > 0 && userActorIds.length > 0) {
-    whereClause = Prisma.sql`WHERE r."movieId" IN (${Prisma.join(userMovieIds)}) OR r."actorId" IN (${Prisma.join(userActorIds)})`
+    whereClause = Prisma.sql`AND (r."movieId" IN (${Prisma.join(userMovieIds)}) OR r."actorId" IN (${Prisma.join(userActorIds)}))`
   } else if (userMovieIds.length > 0) {
-    whereClause = Prisma.sql`WHERE r."movieId" IN (${Prisma.join(userMovieIds)})`
+    whereClause = Prisma.sql`AND r."movieId" IN (${Prisma.join(userMovieIds)})`
   } else {
-    whereClause = Prisma.sql`WHERE r."actorId" IN (${Prisma.join(userActorIds)})`
+    whereClause = Prisma.sql`AND r."actorId" IN (${Prisma.join(userActorIds)})`
   }
 
   const rows = await prisma.$queryRaw<{ actorId: string; movieId: string; cnt: number }[]>(Prisma.sql`
     SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
     FROM "Rating" r
+    INNER JOIN "Movie" m ON r."movieId" = m.id
+    WHERE m."isFeaturette" = false
     ${whereClause}
     GROUP BY r."actorId", r."movieId"
     ORDER BY COUNT(*) DESC
@@ -158,7 +165,7 @@ async function enrichPairs(pairs: AggregatedPair[]): Promise<SuggestedItem[]> {
 
   const [actors, movies] = await Promise.all([
     prisma.actor.findMany({ where: { id: { in: actorIds } }, select: { id: true, name: true, imageUrl: true } }),
-    prisma.movie.findMany({ where: { id: { in: movieIds } }, select: { id: true, title: true, year: true } }),
+    prisma.movie.findMany({ where: { id: { in: movieIds } }, select: { id: true, title: true, year: true, isFeaturette: true } }),
   ])
 
   const actorById = new Map(actors.map((a) => [a.id, a]))
@@ -169,7 +176,7 @@ async function enrichPairs(pairs: AggregatedPair[]): Promise<SuggestedItem[]> {
   for (const p of pairs) {
     const actor = actorById.get(p.actorId)
     const movie = movieById.get(p.movieId)
-    if (!actor || !movie) continue
+    if (!actor || !movie || movie.isFeaturette) continue
 
     // Get the latest non-empty comment as character name, if any
     const latestWithComment = await prisma.rating.findFirst({
@@ -364,6 +371,7 @@ export async function GET(_req: NextRequest) {
     try {
       // Last-resort fallback to avoid 500s during testing, ensure unique movies
       const fallback = await prisma.performance.findMany({
+        where: { movie: { isFeaturette: false } },
         distinct: ["movieId"],
         take: 20,
         include: {

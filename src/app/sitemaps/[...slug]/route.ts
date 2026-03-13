@@ -104,7 +104,10 @@ async function generateActorsSitemap(): Promise<NextResponse> {
   const [actorIdsWithRatings, actorIdsWithFivePlusPerformances] = await Promise.all([
     prisma.rating.findMany({ select: { actorId: true }, distinct: ['actorId'] }),
     prisma.$queryRaw<Array<{ actorId: string }>>`
-      SELECT "actorId" FROM "Performance" GROUP BY "actorId" HAVING COUNT(*) >= 5
+      SELECT p."actorId" FROM "Performance" p
+      INNER JOIN "Movie" m ON p."movieId" = m.id
+      WHERE m."isFeaturette" = false
+      GROUP BY p."actorId" HAVING COUNT(*) >= 5
     `,
   ])
   const idsSet = new Set<string>([
@@ -148,15 +151,19 @@ async function generateMoviesSitemap(): Promise<NextResponse> {
   // Include movies with ≥1 rated performance OR ≥5 total performances (Performance table)
   const [movieIdsWithRatings, movieIdsWithFivePlusPerformances] = await Promise.all([
     prisma.$queryRaw<Array<{ movieId: string }>>`
-      SELECT "movieId"
-      FROM "Rating"
-      GROUP BY "movieId"
-      HAVING COUNT(DISTINCT "actorId") >= 1
+      SELECT r."movieId"
+      FROM "Rating" r
+      INNER JOIN "Movie" m ON r."movieId" = m.id
+      WHERE m."isFeaturette" = false
+      GROUP BY r."movieId"
+      HAVING COUNT(DISTINCT r."actorId") >= 1
     `,
     prisma.$queryRaw<Array<{ movieId: string }>>`
-      SELECT "movieId"
-      FROM "Performance"
-      GROUP BY "movieId"
+      SELECT p."movieId"
+      FROM "Performance" p
+      INNER JOIN "Movie" m ON p."movieId" = m.id
+      WHERE m."isFeaturette" = false
+      GROUP BY p."movieId"
       HAVING COUNT(*) >= 5
     `,
   ])
@@ -176,7 +183,7 @@ async function generateMoviesSitemap(): Promise<NextResponse> {
   }
 
   const movies = await prisma.movie.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, isFeaturette: false },
     select: {
       slug: true,
       id: true,
@@ -236,7 +243,7 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
     }),
     prisma.movie.findMany({
       where: { id: { in: movieIds } },
-      select: { id: true, slug: true, title: true, genre: true, overview: true },
+      select: { id: true, slug: true, title: true, genre: true, overview: true, isFeaturette: true },
     }),
   ])
 
@@ -247,7 +254,7 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
   for (const p of ratedPairs) {
     const actor = actorMap.get(p.actorId)
     const movie = movieMap.get(p.movieId)
-    if (!actor || !movie || !p._max.updatedAt) continue
+    if (!actor || !movie || !p._max.updatedAt || movie.isFeaturette) continue
     const movieSlug = movie.slug ?? movie.id
     if (isAllowedMovieSlug(movieSlug)) {
       uniqueCombinations.push({ url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`, lastModified: p._max.updatedAt })
