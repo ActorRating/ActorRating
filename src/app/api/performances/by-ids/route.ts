@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const performances = await prisma.performance.findMany({
       where: {
         id: { in: ids },
-        movie: { isFeaturette: false },
+      movie: { is: { isFeaturette: false } },
       },
       include: {
         actor: {

@@ -2,6 +2,7 @@
 import { Metadata } from "next";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
+import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -134,6 +135,7 @@ export default function Home() {
       />
       <LandingLayout>
         <HomePageClient />
+        <HomeSeoLinkSections />
       </LandingLayout>
     </>
   );

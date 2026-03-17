@@ -45,7 +45,7 @@ export async function getDashboardData(userId: string): Promise<{
 }> {
   const [ratings, popularActors] = await Promise.all([
     prisma.rating.findMany({
-      where: { userId, movie: { isFeaturette: false } },
+      where: { userId, movie: { is: { isFeaturette: false } } },
       include: {
         actor: {
           select: { id: true, name: true, imageUrl: true, slug: true },
@@ -83,7 +83,7 @@ async function getPopularActorsByNames(names: string[]): Promise<DashboardActor[
   const withStats = await Promise.all(
     actors.map(async (actor) => {
       const [performanceCount, ratingRows] = await Promise.all([
-        prisma.performance.count({ where: { actorId: actor.id, movie: { isFeaturette: false } } }),
+        prisma.performance.count({ where: { actorId: actor.id, movie: { is: { isFeaturette: false } } } }),
         prisma.rating.findMany({
           where: { actorId: actor.id },
           select: {

@@ -228,9 +228,17 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
   const skip = (pageNum - 1) * MAX_URLS_PER_SITEMAP
 
   // Only include rate pages that have ≥1 rating (indexing is a reward for engagement)
+  // Use DB-level pagination so we don't materialize all rated pairs for every page.
   const ratedPairs = await prisma.rating.groupBy({
     by: ['actorId', 'movieId'],
     _max: { updatedAt: true },
+    orderBy: {
+      _max: {
+        updatedAt: 'desc',
+      },
+    },
+    skip,
+    take: MAX_URLS_PER_SITEMAP * 3,
   })
 
   const actorIds = [...new Set(ratedPairs.map((p) => p.actorId))]
@@ -250,33 +258,43 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
   const actorMap = new Map(actors.map((a) => [a.id, a]))
   const movieMap = new Map(movies.map((m) => [m.id, m]))
 
-  const uniqueCombinations: Array<{ url: string; lastModified: Date }> = []
+  const combinations: Array<{ url: string; lastModified: Date }> = []
   for (const p of ratedPairs) {
     const actor = actorMap.get(p.actorId)
     const movie = movieMap.get(p.movieId)
     if (!actor || !movie || !p._max.updatedAt || movie.isFeaturette) continue
     const movieSlug = movie.slug ?? movie.id
     if (isAllowedMovieSlug(movieSlug)) {
-      uniqueCombinations.push({ url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`, lastModified: p._max.updatedAt })
+      combinations.push({
+        url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
+        lastModified: p._max.updatedAt,
+      })
       continue
     }
     if (isJunkMovieSlug(movieSlug) || isAdultContentSlug(movieSlug)) continue
     if (isAdultContentMovie({ title: movie.title, genre: movie.genre, overview: movie.overview })) continue
-    uniqueCombinations.push({
+    combinations.push({
       url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
       lastModified: p._max.updatedAt,
     })
   }
 
-  // Sort by lastModified desc for stable pagination
-  uniqueCombinations.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
-  const paginatedUrls = uniqueCombinations.slice(skip, skip + MAX_URLS_PER_SITEMAP)
+  // We already ordered by updatedAt DESC at the DB level.
+  const urlsForPage = combinations.slice(0, MAX_URLS_PER_SITEMAP)
 
-  if (paginatedUrls.length === 0) {
-    return new NextResponse('Sitemap page not found', { status: 404 })
+  // If this page ends up with no URLs (e.g. index overestimated due to filters),
+  // return an empty but valid sitemap instead of 404 to avoid GSC errors.
+  if (urlsForPage.length === 0) {
+    const xml = generateSitemapXml([])
+    return new NextResponse(xml, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    })
   }
 
-  const urls = paginatedUrls.map((item) => ({
+  const urls = urlsForPage.map((item) => ({
     url: item.url,
     lastModified: item.lastModified,
     changeFrequency: 'weekly' as const,

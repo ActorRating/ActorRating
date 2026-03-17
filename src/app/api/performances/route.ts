@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     // Fetch performances (Performance model stores the actual performances)
     console.log('[PERFORMANCES API] Fetching performances from database...')
     const raw = await prisma.performance.findMany({
-      where: { movie: { isFeaturette: false } },
+    where: { movie: { is: { isFeaturette: false } } },
       include: {
         actor: { select: { id: true, name: true, imageUrl: true } },
         movie: { select: { id: true, title: true, year: true, director: true } },

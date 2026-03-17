@@ -14,7 +14,7 @@ export async function GET(
       where: {
         actorId: actorId,
         movieId: movieId,
-        movie: { isFeaturette: false },
+      movie: { is: { isFeaturette: false } },
       },
       include: {
         actor: {

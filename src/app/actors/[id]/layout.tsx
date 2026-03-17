@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         distinct: ["movieId"],
       }),
       prisma.performance.count({
-        where: { actorId: actor.id, movie: { isFeaturette: false } },
+        where: { actorId: actor.id, movie: { is: { isFeaturette: false } } },
       }),
     ]);
     const ratedCount = ratedPerformances.length;

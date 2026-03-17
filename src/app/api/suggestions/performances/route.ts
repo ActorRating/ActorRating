@@ -371,7 +371,7 @@ export async function GET(_req: NextRequest) {
     try {
       // Last-resort fallback to avoid 500s during testing, ensure unique movies
       const fallback = await prisma.performance.findMany({
-        where: { movie: { isFeaturette: false } },
+    where: { movie: { is: { isFeaturette: false } } },
         distinct: ["movieId"],
         take: 20,
         include: {

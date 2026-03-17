@@ -59,7 +59,7 @@ export async function GET(
     )
 
     const performances = await prisma.performance.findMany({
-      where: { actorId, movie: { isFeaturette: false } },
+      where: { actorId, movie: { is: { isFeaturette: false } } },
       include: {
         movie: { select: { id: true, title: true, slug: true, year: true } },
         actor: { select: { slug: true } }
