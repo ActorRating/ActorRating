@@ -10,6 +10,7 @@ import { NavigationProgressProvider } from "@/components/providers/NavigationPro
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
+import { ProductHuntBadge } from "@/components/layout/ProductHuntBadge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -164,6 +165,7 @@ export default function RootLayout({
             </NavigationProgressProvider>
           </CookieConsentProvider>
         </SessionProvider>
+        <ProductHuntBadge />
       </body>
     </html>
   );
