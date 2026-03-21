@@ -145,7 +145,7 @@ export async function PUT(
       },
     })
 
-    // No per-rating revalidatePath — reduces ISR writes; client updates state; /r/[slug] uses revalidate: 60
+    // No per-rating revalidatePath — reduces ISR writes; client updates state; /r/[slug] uses revalidate: 3600
     return NextResponse.json(rating)
   } catch (error) {
     console.error("Error updating rating:", error)

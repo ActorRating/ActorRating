@@ -209,7 +209,6 @@ const RatingSliderCard = memo(function RatingSliderCard({
   disabled = false,
   touched = false,
   spotlightActive = false,
-  isDemoing = false,
   hideScore = false,
 }: {
   label: string
@@ -220,7 +219,6 @@ const RatingSliderCard = memo(function RatingSliderCard({
   disabled?: boolean
   touched?: boolean
   spotlightActive?: boolean
-  isDemoing?: boolean
   hideScore?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
@@ -245,7 +243,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
     /iPad|iPhone|iPod/.test(navigator.userAgent) &&
     !(window as any).MSStream
 
-  // Update local value when prop changes (for demo)
+  // Update local value when prop changes
   useEffect(() => {
     setLocalValue(value)
     lastHapticValueRef.current = value
@@ -589,202 +587,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     /iPad|iPhone|iPod/.test(navigator.userAgent) &&
     !(window as any).MSStream
 
-  // Check if user has rated before
-  const [hasRatedBefore, setHasRatedBefore] = useState<boolean | null>(null)
-
-  // Auto-demo first slider on first load (one-time per device via localStorage)
-  const RATING_DEMO_STORAGE_KEY = 'hasSeenRatingDemo'
-  const [isDemoing, setIsDemoing] = useState(false)
-  const [demoValue, setDemoValue] = useState(0)
-  const hasDemoedRef = useRef(false)
-  const firstSliderRef = useRef<HTMLDivElement>(null)
-  const animationFrameRef = useRef<number | null>(null)
-  const demoTimersRef = useRef<{
-    scroll: ReturnType<typeof setTimeout> | null
-    animationStart: ReturnType<typeof setTimeout> | null
-    hold: ReturnType<typeof setTimeout> | null
-  }>({ scroll: null, animationStart: null, hold: null })
-  const demoListenersRef = useRef<(() => void) | null>(null)
-  const demoScrollIgnoreUntilRef = useRef<number>(0)
-
-  // Check if user has rated before
-  useEffect(() => {
-    if (!user) {
-      setHasRatedBefore(false)
-      return
-    }
-
-    const checkUserRatings = async () => {
-      try {
-        const res = await fetch('/api/ratings/me', { cache: 'no-store' })
-        if (res.ok) {
-          const ratings = await res.json()
-          setHasRatedBefore(Array.isArray(ratings) && ratings.length > 0)
-        } else {
-          setHasRatedBefore(false)
-        }
-      } catch (error) {
-        console.error('Failed to check user ratings:', error)
-        setHasRatedBefore(false)
-      }
-    }
-
-    checkUserRatings()
-  }, [user])
-
-  // Auto-demo first slider after first load - one-time per device, cancel on scroll/tap/drag
-  useEffect(() => {
-    if (hasDemoedRef.current) return
-    // Skip if user has already rated
-    if (hasRatedBefore === true) {
-      hasDemoedRef.current = true
-      return
-    }
-    // One-time only: skip if user has already seen the demo (any device, logged in or out)
-    if (typeof window !== 'undefined' && window.localStorage.getItem(RATING_DEMO_STORAGE_KEY) === 'true') {
-      hasDemoedRef.current = true
-      return
-    }
-    if (hasRatedBefore === null) return
-
-    hasDemoedRef.current = true
-    demoTimersRef.current = { scroll: null, animationStart: null, hold: null }
-
-    const clearDemoTimers = () => {
-      if (demoTimersRef.current.scroll) {
-        clearTimeout(demoTimersRef.current.scroll)
-        demoTimersRef.current.scroll = null
-      }
-      if (demoTimersRef.current.animationStart) {
-        clearTimeout(demoTimersRef.current.animationStart)
-        demoTimersRef.current.animationStart = null
-      }
-      if (demoTimersRef.current.hold) {
-        clearTimeout(demoTimersRef.current.hold)
-        demoTimersRef.current.hold = null
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
-    }
-
-    const markDemoSeen = () => {
-      try {
-        window.localStorage.setItem(RATING_DEMO_STORAGE_KEY, 'true')
-      } catch (_) {}
-    }
-
-    const onInterrupt = (e?: Event) => {
-      // Ignore scroll for 600ms after animation start so our own scrollIntoView doesn't cancel
-      if (e?.type === 'scroll' && typeof window !== 'undefined' && Date.now() < demoScrollIgnoreUntilRef.current) {
-        return
-      }
-      demoListenersRef.current?.()
-      demoListenersRef.current = null
-      clearDemoTimers()
-      setIsDemoing(false)
-      setDemoValue(0)
-      markDemoSeen()
-    }
-
-    const scrollHandler = (e: Event) => onInterrupt(e)
-    const touchHandler = () => onInterrupt()
-    const mouseHandler = () => onInterrupt()
-    const removeListeners = () => {
-      if (typeof window === 'undefined') return
-      window.removeEventListener('scroll', scrollHandler, true)
-      window.removeEventListener('touchstart', touchHandler, true)
-      window.removeEventListener('mousedown', mouseHandler, true)
-      demoListenersRef.current = null
-    }
-    demoListenersRef.current = removeListeners
-
-    // Wait for next frame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      // ~200ms after first load, scroll to first slider
-      demoTimersRef.current.scroll = setTimeout(() => {
-        const scrollToSlider = () => {
-          if (firstSliderRef.current) {
-            firstSliderRef.current.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest'
-            })
-            return true
-          }
-          return false
-        }
-        if (!scrollToSlider()) {
-          setTimeout(scrollToSlider, 100)
-        }
-
-        // ~200ms after scroll starts, start demo animation
-        demoTimersRef.current.animationStart = setTimeout(() => {
-          setIsDemoing(true)
-          // Ignore scroll for 600ms so our smooth scrollIntoView doesn't fire and cancel the demo
-          if (typeof window !== 'undefined') {
-            demoScrollIgnoreUntilRef.current = Date.now() + 600
-            window.addEventListener('scroll', scrollHandler, true)
-            window.addEventListener('touchstart', touchHandler, true)
-            window.addEventListener('mousedown', mouseHandler, true)
-          }
-
-          const duration = 1000 // 1 second: 0 → 75
-          const startValue = 0
-          const endValue = 75
-          const easeInOutCubic = (t: number): number => {
-            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-          }
-          let startTime: number | null = null
-
-          const animate = (timestamp: number) => {
-            if (startTime === null) startTime = timestamp
-            const elapsed = timestamp - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            const eased = easeInOutCubic(progress)
-            const currentValue = startValue + (endValue - startValue) * eased
-            setDemoValue(Number(currentValue.toFixed(1)))
-
-            if (progress < 1) {
-              animationFrameRef.current = requestAnimationFrame(animate)
-            } else {
-              demoTimersRef.current.hold = setTimeout(() => {
-                let returnStartTime: number | null = null
-                const returnDuration = 1000
-
-                const returnAnimate = (timestamp: number) => {
-                  if (returnStartTime === null) returnStartTime = timestamp
-                  const returnElapsed = timestamp - returnStartTime
-                  const returnProgress = Math.min(returnElapsed / returnDuration, 1)
-                  const returnEased = easeInOutCubic(returnProgress)
-                  const returnValue = endValue - (endValue - startValue) * returnEased
-                  setDemoValue(Number(returnValue.toFixed(1)))
-
-                  if (returnProgress < 1) {
-                    animationFrameRef.current = requestAnimationFrame(returnAnimate)
-                  } else {
-                    setIsDemoing(false)
-                    setDemoValue(0)
-                    markDemoSeen()
-                    removeListeners()
-                  }
-                }
-                animationFrameRef.current = requestAnimationFrame(returnAnimate)
-              }, 100)
-            }
-          }
-          animationFrameRef.current = requestAnimationFrame(animate)
-        }, 200)
-      }, 200)
-    })
-
-    return () => {
-      removeListeners()
-      clearDemoTimers()
-    }
-  }, [hasRatedBefore])
-
   // Success animation states
   const [submitPhase, setSubmitPhase] = useState<'idle' | 'loading' | 'success'>(
     externalSubmittedRating ? 'success' : 'idle'
@@ -974,13 +776,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   // Calculate average of 5 sliders (or single overall when simple mode), convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
     if (!showInDepthSliders) {
-      const raw = isDemoing ? demoValue : overallScore
-      const v = Number(raw) || 0
+      const v = Number(overallScore) || 0
       const totalScore = Math.max(0, Math.min(100, v)) / 10
       return Number(totalScore.toFixed(1))
     }
     const sliders = [
-      Number(isDemoing ? demoValue : emotionalRangeDepth) || 0,
+      Number(emotionalRangeDepth) || 0,
       Number(characterBelievability) || 0,
       Number(technicalSkill) || 0,
       Number(screenPresence) || 0,
@@ -998,7 +799,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Clamp between 0 and 10
     const clamped = Math.max(0, Math.min(10, totalScore))
     return Number(clamped.toFixed(1)) // Round to 1 decimal place
-  }, [showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, isDemoing, demoValue])
+  }, [showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction])
 
   // Direct score update - no animation for instant mobile response
   const animatedScore = totalScoreOutOf10
@@ -1772,22 +1573,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   >
                     {!showInDepthSliders ? (
                       <>
-                        <div className="relative" ref={firstSliderRef} data-slider-card>
+                        <div className="relative" data-slider-card>
                           <RatingSliderCard
                             label="Your rating"
-                            value={isDemoing ? demoValue : overallScore}
+                            value={overallScore}
                             onValueChange={(v) => {
-                              if (!isDemoing) {
-                                setOverallScore(v)
-                                setSingleSliderTouched(true)
-                              }
+                              setOverallScore(v)
+                              setSingleSliderTouched(true)
                             }}
                             onSliderStart={handleSliderStart}
                             onSliderEnd={handleSliderEnd}
-                            disabled={submitting || isDemoing}
+                            disabled={submitting}
                             touched={singleSliderTouched}
                             spotlightActive={spotlightPhase !== 'none'}
-                            isDemoing={isDemoing}
                             hideScore
                           />
                         </div>
@@ -1805,21 +1603,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </>
                     ) : (
                       <>
-                        <div className="relative" ref={firstSliderRef} data-slider-card>
+                        <div className="relative" data-slider-card>
                           <RatingSliderCard
                             label="Emotional Impact"
-                            value={isDemoing ? demoValue : emotionalRangeDepth}
-                            onValueChange={(v) => {
-                              if (!isDemoing) {
-                                handleSliderChange('emotionalRangeDepth', v)
-                              }
-                            }}
+                            value={emotionalRangeDepth}
+                            onValueChange={(v) => handleSliderChange('emotionalRangeDepth', v)}
                             onSliderStart={handleSliderStart}
                             onSliderEnd={handleSliderEnd}
-                            disabled={submitting || isDemoing}
+                            disabled={submitting}
                             touched={touchedSliders.emotionalRangeDepth}
                             spotlightActive={spotlightPhase !== 'none'}
-                            isDemoing={isDemoing}
                           />
                         </div>
 

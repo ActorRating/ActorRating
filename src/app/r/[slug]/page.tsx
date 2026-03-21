@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { ShareButton } from './ShareButton'
 import { SuccessShare } from './successShare'
 
-// Cache share page and metadata for 1 min — ratings don't change every second
-export const revalidate = 60
+// Cache share page and metadata for 1h — aligns with actor/movie pages; cuts ISR churn
+export const revalidate = 3600
 
 async function getDataUncached(slug: string) {
   const rating = await prisma.rating.findFirst({
@@ -30,7 +30,7 @@ function getData(slug: string) {
   return unstable_cache(
     () => getDataUncached(slug),
     [`r:share:${slug}`],
-    { revalidate: 60 }
+    { revalidate: 3600 }
   )
 }
 
