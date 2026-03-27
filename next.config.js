@@ -39,6 +39,58 @@ const nextConfig = {
   ...(process.env.CDN_BASE_URL && {
     assetPrefix: process.env.CDN_BASE_URL.replace(/\/$/, ''),
   }),
+
+  async headers() {
+    // Avoid breaking local dev with strict policies. Apply in production only.
+    if (process.env.NODE_ENV !== 'production') return []
+
+    // Permissive-but-targeted CSP to prevent breakage:
+    // - Allow inline scripts/styles because Next injects inline bootstrap code.
+    // - Whitelist the external domains your app actually calls/loads in the browser.
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      // If reCAPTCHA uses an iframe internally, allow it.
+      "frame-src 'self' https://www.google.com",
+
+      // Scripts: Google Analytics, reCAPTCHA, Vercel Analytics/Speed Insights
+      // 'unsafe-eval' helps some Next/runtime tooling and packages; keep with 'unsafe-inline' for Next bootstrap
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://va.vercel-scripts.com",
+
+      // Styles: inline for Next + Google Fonts CSS
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+
+      // Fonts: self/data + Google Fonts
+      "font-src 'self' data: https://fonts.gstatic.com",
+
+      // Images: blob: for generated previews; self/data + TMDB + storage
+      "img-src 'self' data: blob: https://image.tmdb.org https://www.actorrating.com https://*.supabase.co https://*.amazonaws.com",
+
+      // Video/audio previews if ever used
+      "media-src 'self' blob: data:",
+
+      // XHR/fetch/WebSocket: Supabase + GA + reCAPTCHA + Formspree + Vercel telemetry
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://*.amazonaws.com",
+
+      // Supabase realtime (worker) uses realtime.supabase.com by default
+      "worker-src 'self' https://realtime.supabase.com https://*.supabase.co",
+    ].join('; ')
+
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'Content-Security-Policy', value: csp },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
