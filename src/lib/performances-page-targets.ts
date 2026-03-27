@@ -18,6 +18,12 @@ export const ICONIC_PERFORMANCE_TARGETS = [
   { actor: "Anthony Hopkins", movie: "The Silence of the Lambs" },
 ]
 
+type LookupTarget = { actor: string; movie: string }
+
+export function buildByLookupUrl(targets: LookupTarget[]): string {
+  return `/api/performances/by-lookup?targets=${encodeURIComponent(JSON.stringify(targets))}`
+}
+
 const CACHE_KEY = 'performances-page-data'
 const CACHE_TTL_MS = 5 * 60 * 1000
 
@@ -38,10 +44,8 @@ export function prefetchPerformancesPageData(): void {
   }
 
   const targets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
-  fetch('/api/performances/by-lookup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ targets }),
+  fetch(buildByLookupUrl(targets), {
+    cache: "force-cache",
   })
     .then((r) => (r.ok ? r.json() : null))
     .then((data: { performances?: Array<{ actor?: { name: string }; movie?: { title: string } }> } | null) => {

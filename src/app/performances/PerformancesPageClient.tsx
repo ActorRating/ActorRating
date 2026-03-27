@@ -10,7 +10,7 @@ import Link from "next/link"
 import { getRateUrl } from "@/lib/slugHelper"
 import { SearchBar } from "@/components/SearchBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
-import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
+import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS, buildByLookupUrl } from "@/lib/performances-page-targets"
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup"
 
 interface PerformanceData {
@@ -87,10 +87,8 @@ export function PerformancesPageClient({
         }
 
         const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
-        const response = await fetch("/api/performances/by-lookup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targets: allTargets }),
+        const response = await fetch(buildByLookupUrl(allTargets), {
+          cache: "force-cache",
         })
 
         if (!response.ok) {

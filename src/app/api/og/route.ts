@@ -1,10 +1,21 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit } from '@/lib/rateLimit'
+import { getClientIp, isLikelyAbusiveBot } from '@/lib/requestProtection'
 
 export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
   try {
+    if (isLikelyAbusiveBot(req)) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    const clientIp = getClientIp(req)
+    const limit = await checkRateLimit(clientIp, 'og')
+    if (!limit.allowed) {
+      return new Response('Too many requests', { status: 429 })
+    }
+
     const { searchParams } = new URL(req.url)
     const ratingId = searchParams.get('ratingId')
     const size = (searchParams.get('size') || 'og') as 'og' | 'feed' | 'story'

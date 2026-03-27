@@ -2,7 +2,6 @@
 
 import { HomeNavbar } from './HomeNavbar'
 import { Footer } from './Footer'
-import { FeedbackSection } from '../FeedbackSection'
 
 interface LandingLayoutProps {
   children: React.ReactNode
@@ -32,8 +31,6 @@ export function LandingLayout({ children }: LandingLayoutProps) {
         <Footer />
       </div>
 
-      {/* Feedback Section */}
-      <FeedbackSection />
     </div>
   )
 }

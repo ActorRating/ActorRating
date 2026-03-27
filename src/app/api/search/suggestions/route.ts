@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
+import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
 
 export const runtime = "edge"
 
@@ -24,6 +25,9 @@ const searchCache = new Map<string, { data: SuggestionsResponse; expires: number
 const LIMIT_ACTORS = 8
 const LIMIT_MOVIES = 5
 const PREFIX_RETURN_THRESHOLD = 5
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+const RATE_LIMIT_MAX_REQUESTS = 90
+const ipRateWindow = new Map<string, { count: number; resetAt: number }>()
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -34,25 +38,39 @@ function getSupabase() {
 
 export async function GET(request: NextRequest) {
   const routeStart = Date.now()
+  const isProd = process.env.NODE_ENV === "production"
   try {
-    const q = request.nextUrl.searchParams.get("q")?.trim()
-    const ua = request.headers.get("user-agent") ?? ""
-    if (process.env.NODE_ENV === "production") {
-      console.log("[Suggestions]", { q: q ?? "(empty)", userAgent: ua.slice(0, 120) })
+    if (isLikelyAbusiveBot(request)) {
+      return NextResponse.json({ actors: [], movies: [] } as SuggestionsResponse, { status: 403 })
     }
+
+    const clientIp = getClientIp(request)
+    const now = Date.now()
+    const current = ipRateWindow.get(clientIp)
+    if (!current || current.resetAt <= now) {
+      ipRateWindow.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    } else {
+      current.count += 1
+      if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+        return NextResponse.json({ actors: [], movies: [] } as SuggestionsResponse, { status: 429 })
+      }
+    }
+
+    const q = request.nextUrl.searchParams.get("q")?.trim()
 
     if (!q || q.length < 2) {
       return NextResponse.json({ actors: [], movies: [] } as SuggestionsResponse)
     }
 
     const normalized = q.toLowerCase().trim()
-    const now = Date.now()
 
     const memEntry = searchCache.get(normalized)
     if (memEntry && memEntry.expires > now) {
       const res = NextResponse.json(memEntry.data)
       res.headers.set("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=120")
-      console.log("Suggestions query time:", Date.now() - routeStart, "(memory cache hit)")
+      if (!isProd) {
+        console.log("Suggestions query time:", Date.now() - routeStart, "(memory cache hit)")
+      }
       return res
     }
     if (memEntry) searchCache.delete(normalized)
@@ -63,7 +81,9 @@ export async function GET(request: NextRequest) {
       searchCache.set(normalized, { data: cached, expires: now + MEMORY_CACHE_TTL_MS })
       const res = NextResponse.json(cached)
       res.headers.set("Cache-Control", "public, max-age=30, s-maxage=60, stale-while-revalidate=120")
-      console.log("Suggestions query time:", Date.now() - routeStart, "(redis cache hit)")
+      if (!isProd) {
+        console.log("Suggestions query time:", Date.now() - routeStart, "(redis cache hit)")
+      }
       return res
     }
 
@@ -151,11 +171,13 @@ export async function GET(request: NextRequest) {
     const moviesMs = Date.now() - moviesStart
 
     const totalMs = Date.now() - routeStart
-    console.log(
-      `[suggestions] q="${normalized}" actors=${actorsMs}ms movies=${moviesMs}ms total=${totalMs}ms`
-    )
-    if (totalMs > 200) {
-      console.warn(`[suggestions] SLOW: total ${totalMs}ms > 200ms for q="${normalized}"`)
+    if (!isProd) {
+      console.log(
+        `[suggestions] q="${normalized}" actors=${actorsMs}ms movies=${moviesMs}ms total=${totalMs}ms`
+      )
+      if (totalMs > 200) {
+        console.warn(`[suggestions] SLOW: total ${totalMs}ms > 200ms for q="${normalized}"`)
+      }
     }
 
     const payload: SuggestionsResponse = { actors, movies }

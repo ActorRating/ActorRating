@@ -8,11 +8,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const isProd = process.env.NODE_ENV === "production"
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const minimal = searchParams.get('minimal') === 'true'
 
-    console.log("🎭 Fetching actor with ID or slug:", id, minimal ? "(minimal)" : "")
+    if (!isProd) {
+      console.log("🎭 Fetching actor with ID or slug:", id, minimal ? "(minimal)" : "")
+    }
 
     // Try to fetch by slug first, then fallback to ID
     let { data: actor, error: actorError } = await supabaseServer
@@ -42,7 +45,9 @@ export async function GET(
       return NextResponse.json({ error: "Actor not found" }, { status: 410 })
     }
 
-    console.log("🎭 Actor found:", actor.name)
+    if (!isProd) {
+      console.log("🎭 Actor found:", actor.name)
+    }
 
     // If minimal mode, return early with just basic info (much faster)
     if (minimal) {
@@ -254,7 +259,9 @@ export async function GET(
       ratings: ratings || []
     }
 
-    console.log("🎭 Returning actor data:", actorData.name, "with", enrichedPerformances.length, "performances (deduped by movie)")
+    if (!isProd) {
+      console.log("🎭 Returning actor data:", actorData.name, "with", enrichedPerformances.length, "performances (deduped by movie)")
+    }
 
     return NextResponse.json(actorData)
   } catch (error) {

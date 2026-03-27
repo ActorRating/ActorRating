@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { prefetchPerformancesPageData } from "@/lib/performances-page-targets";
+import { prefetchPerformancesPageData, buildByLookupUrl } from "@/lib/performances-page-targets";
 import { SearchBar } from "@/components/SearchBar";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -396,11 +396,7 @@ function LeaderboardSection() {
     (async () => {
       try {
         const targets = PERFORMANCES.map(h => ({ actor: h.actor, movie: h.movie }));
-        const res = await fetch('/api/performances/by-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targets }),
-        });
+        const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
         if (!res.ok) return;
         const data = await res.json();
         const map = new Map<string, any>();

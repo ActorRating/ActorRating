@@ -149,11 +149,9 @@ export default function MoviePageClient({
     const fetchData = async () => {
       if (isUUID) return
       if (hasInitial) {
-        // Background community-score refresh — busts both the browser cache and Vercel's
-        // Edge CDN cache (s-maxage=600) by appending a timestamp query param.
-        fetch(`/api/movies/${movieSlug}?_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
+        // Keep movie payload cacheable to avoid extra function invocations.
+        fetch(`/api/movies/${movieSlug}`, {
+          cache: 'force-cache',
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((freshData) => {

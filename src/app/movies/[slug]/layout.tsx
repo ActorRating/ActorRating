@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter";
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs";
 
-// Cache movie metadata for 1 hour — reduce ISR writes from crawlers
-export const revalidate = 3600;
+// Cache movie metadata for 6 hours — reduce ISR writes from crawlers
+export const revalidate = 21600;
 
 type Props = {
   params: Promise<{ slug: string }>;

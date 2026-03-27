@@ -8,11 +8,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const isProd = process.env.NODE_ENV === "production"
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const minimal = searchParams.get('minimal') === 'true'
     
-    console.log("🎬 Fetching movie with ID or slug:", id, minimal ? "(minimal)" : "")
+    if (!isProd) {
+      console.log("🎬 Fetching movie with ID or slug:", id, minimal ? "(minimal)" : "")
+    }
     
     // Try to fetch by slug first, then fallback to ID
     let { data: movie, error: movieError } = await supabaseServer
@@ -56,7 +59,9 @@ export async function GET(
       }
     }
 
-    console.log("🎬 Movie found:", movie.title)
+    if (!isProd) {
+      console.log("🎬 Movie found:", movie.title)
+    }
     
     // If minimal mode, return early with just basic info (much faster)
     if (minimal) {
@@ -265,7 +270,9 @@ export async function GET(
       ratings: ratings || []
     }
 
-    console.log("🎬 Returning movie data:", movieData.title, "with", enrichedPerformances.length, "performances")
+    if (!isProd) {
+      console.log("🎬 Returning movie data:", movieData.title, "with", enrichedPerformances.length, "performances")
+    }
     
     const res = NextResponse.json(movieData)
     res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800')

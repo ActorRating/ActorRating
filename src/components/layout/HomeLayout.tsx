@@ -3,7 +3,6 @@
 import { HomeNavbar } from './HomeNavbar'
 import { SignedInNavbar } from './SignedInNavbar'
 import { Footer } from './Footer'
-import { FeedbackSection } from '../FeedbackSection'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -36,8 +35,6 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
         {children}
       </main>
 
-      {/* Feedback Section */}
-      <FeedbackSection />
     </div>
   )
 } 

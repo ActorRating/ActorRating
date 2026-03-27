@@ -153,12 +153,9 @@ export default function ActorPageClient({
     const fetchData = async () => {
       if (isUUID) return
       if (hasInitial) {
-        // Fire a background community-score refresh on every visit.
-        // The API route has s-maxage=600 (Vercel Edge CDN), so we append a timestamp
-        // to bust the CDN cache and always get fresh Supabase data.
-        fetch(`/api/actors/${actorId}?_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
+        // Keep actor payload cacheable to avoid extra function invocations.
+        fetch(`/api/actors/${actorId}`, {
+          cache: 'force-cache',
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((freshData) => {

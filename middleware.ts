@@ -83,8 +83,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/actors/:id*",
-    "/movies/:slug*",
     "/dashboard/:path*",
     "/auth/signin",
     "/auth/signup",

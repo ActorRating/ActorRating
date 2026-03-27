@@ -1,7 +1,6 @@
 "use client"
 
 import { SignedInNavbar } from './SignedInNavbar'
-import { FeedbackSection } from '../FeedbackSection'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
 import { useEffect, useState } from 'react'
@@ -32,8 +31,6 @@ export function SignedInLayout({ children }: SignedInLayoutProps) {
         {children}
       </motion.main>
 
-      {/* Feedback Section */}
-      <FeedbackSection />
     </div>
   )
 } 

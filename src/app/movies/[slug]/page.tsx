@@ -6,7 +6,7 @@
 import { withIsoDates } from '@/lib/dateUtils'
 import MoviePageClient from './MoviePageClient'
 
-export const revalidate = 3600
+export const revalidate = 21600
 
 function buildMovieJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')
@@ -62,7 +62,7 @@ export default async function MoviePage({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   try {
     const res = await fetch(`${baseUrl}/api/movies/${slug}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 21600 },
       headers: { 'Content-Type': 'application/json' },
     })
     if (!res.ok) return <MoviePageClient />

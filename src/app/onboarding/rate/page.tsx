@@ -14,6 +14,7 @@ import { FaStar } from 'react-icons/fa'
 import { CheckCircle, Star, Users, TrendingUp, X } from 'lucide-react'
 import { getLevelProgress } from '@/lib/badges'
 import { OscarBanner } from '@/components/OscarBanner'
+import { buildByLookupUrl } from '@/lib/performances-page-targets'
 
 // Curated performances for first rating
 const CURATED_PERFORMANCES = [
@@ -130,10 +131,8 @@ export default function OnboardingRatePage() {
           movie: p.movieTitle
         }))
 
-        const response = await fetch('/api/performances/by-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targets: lookupData })
+        const response = await fetch(buildByLookupUrl(lookupData), {
+          cache: "force-cache",
         })
 
         if (response.ok) {
@@ -316,13 +315,10 @@ export default function OnboardingRatePage() {
       if (isFirstRating) {
         // Fetch community data for this performance
         try {
-          const communityRes = await fetch('/api/performances/by-lookup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              targets: [{ actor: actor.name, movie: movie.title }]
-            })
-          })
+          const communityRes = await fetch(
+            buildByLookupUrl([{ actor: actor.name, movie: movie.title }]),
+            { cache: "force-cache" }
+          )
           if (communityRes.ok) {
             const communityDataRes = await communityRes.json()
             const perf = communityDataRes.performances?.[0]

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { FaTrophy, FaStar, FaArrowRight } from "react-icons/fa"
 import { HomeLayout } from "@/components/layout"
 import Link from "next/link"
+import { buildByLookupUrl } from "@/lib/performances-page-targets"
 
 const GOLD = "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)"
 const GOLD_TEXT: React.CSSProperties = {
@@ -120,11 +121,7 @@ export default function Oscars2026Page() {
         const targets = OSCAR_CATEGORIES.flatMap((category) =>
           category.nominees.map((nominee) => ({ actor: nominee.name, movie: nominee.film }))
         )
-        const response = await fetch("/api/performances/by-lookup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targets }),
-        })
+        const response = await fetch(buildByLookupUrl(targets), { cache: "force-cache" })
         if (!response.ok) return
         const data = await response.json()
         const newPerformanceData = new Map<string, PerformanceData>()

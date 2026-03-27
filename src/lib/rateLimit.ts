@@ -10,6 +10,8 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   signin: { windowMs: 5 * 60 * 1000, maxRequests: 20 }, // 20 signins per 5 minutes (increased for testing)
   rating: { windowMs: 60 * 1000, maxRequests: 10 }, // 10 ratings per minute (increased for testing)
   emailVerification: { windowMs: 5 * 60 * 1000, maxRequests: 5 }, // 5 verification requests per 5 minutes (increased for testing)
+  byLookup: { windowMs: 60 * 1000, maxRequests: 120 },
+  og: { windowMs: 60 * 1000, maxRequests: 60 },
 }
 
 export async function checkRateLimit(

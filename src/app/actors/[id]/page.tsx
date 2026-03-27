@@ -6,7 +6,7 @@
 import { withIsoDates } from '@/lib/dateUtils'
 import ActorPageClient from './ActorPageClient'
 
-export const revalidate = 3600
+export const revalidate = 21600
 
 function buildActorJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')
@@ -63,7 +63,7 @@ export default async function ActorPage({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   try {
     const res = await fetch(`${baseUrl}/api/actors/${id}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 21600 },
       headers: { 'Content-Type': 'application/json' },
     })
     if (!res.ok) return <ActorPageClient />
