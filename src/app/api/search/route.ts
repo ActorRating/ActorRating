@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
     const MIN_SIMILARITY = 0.15
     if (suggestions) {
       const [actors, movies] = await Promise.all([
-        prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-          SELECT sub.id, sub.name, sub.slug
+        prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>>`
+          SELECT sub.id, sub.name, sub.slug, sub."imageUrl"
           FROM (
-            SELECT a.id, a.name, a.slug,
+            SELECT a.id, a.name, a.slug, a."imageUrl",
               (CASE WHEN lower(a.name) = ${normalizedTerm} THEN 100 ELSE 0 END
                + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
                + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
                    sub.name ASC
           LIMIT 8
         `,
-        prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-          SELECT sub.id, sub.title, sub.slug, sub.year
+        prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>>`
+          SELECT sub.id, sub.title, sub.slug, sub.year, sub."posterUrl"
           FROM (
-            SELECT m.id, m.title, m.slug, m.year,
+            SELECT m.id, m.title, m.slug, m.year, m."posterUrl",
               (CASE WHEN lower(m.title) = ${normalizedTerm} THEN 100 ELSE 0 END
                + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
                + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
 
     // Full search: same weighted score (exact 100 + prefix 50 + word_start 25 + similarity*10), MIN_SIMILARITY 0.15. Limit 10.
     const [actors, movies] = await Promise.all([
-      prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-        SELECT sub.id, sub.name, sub.slug
+      prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>>`
+        SELECT sub.id, sub.name, sub.slug, sub."imageUrl"
         FROM (
-          SELECT a.id, a.name, a.slug,
+          SELECT a.id, a.name, a.slug, a."imageUrl",
             (CASE WHEN lower(a.name) = ${normalizedTerm} THEN 100 ELSE 0 END
              + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
              + CASE WHEN lower(a.name) LIKE ${normalizedTerm + "%"} OR lower(a.name) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END
@@ -124,10 +124,10 @@ export async function GET(request: NextRequest) {
                  sub.name ASC
         LIMIT 10
       `,
-      prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-        SELECT sub.id, sub.title, sub.slug, sub.year
+      prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>>`
+        SELECT sub.id, sub.title, sub.slug, sub.year, sub."posterUrl"
         FROM (
-          SELECT m.id, m.title, m.slug, m.year,
+          SELECT m.id, m.title, m.slug, m.year, m."posterUrl",
             (CASE WHEN lower(m.title) = ${normalizedTerm} THEN 100 ELSE 0 END
              + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} THEN 50 ELSE 0 END
              + CASE WHEN lower(m.title) LIKE ${normalizedTerm + "%"} OR lower(m.title) LIKE ${"%" + " " + normalizedTerm + "%"} THEN 25 ELSE 0 END

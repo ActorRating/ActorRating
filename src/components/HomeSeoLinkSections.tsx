@@ -107,23 +107,6 @@ export default async function HomeSeoLinkSections() {
           </ul>
         </div>
       </div>
-
-      {/* Small text-based links for extra crawlability */}
-      <div className="border-t border-white/10 py-6">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-2">
-          <Link href="/performances" className="hover:text-[#FFD700] transition-colors">
-            Explore top rated performances
-          </Link>
-          <span className="text-gray-700">·</span>
-          <Link href="/movies" className="hover:text-[#FFD700] transition-colors">
-            Explore top rated movies
-          </Link>
-          <span className="text-gray-700">·</span>
-          <Link href="/actors" className="hover:text-[#FFD700] transition-colors">
-            Browse popular actors
-          </Link>
-        </div>
-      </div>
     </section>
   )
 }

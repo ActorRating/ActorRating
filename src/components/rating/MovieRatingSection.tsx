@@ -201,7 +201,8 @@ export function MovieRatingSection({
                     <img
                       src={performance.actor.imageUrl}
                       alt={performance.actor.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-xl object-cover"
+                      style={{ objectPosition: 'top center' }}
                     />
                   )}
                   <div>

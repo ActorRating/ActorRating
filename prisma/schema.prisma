@@ -54,6 +54,8 @@ model Movie {
   castIngestedAt DateTime?
   /// Making-of, behind-the-scenes, featurettes, etc. Excluded from rating flow and stats.
   isFeaturette   Boolean       @default(false)
+  /// TMDB poster URL (w342), populated during ingestion and backfill.
+  posterUrl      String?
   performances   Performance[]
   ratings        Rating[]
 

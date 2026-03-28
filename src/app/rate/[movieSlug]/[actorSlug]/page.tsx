@@ -48,6 +48,7 @@ async function resolveRatePageDataViaApi(movieSlug: string, actorSlug: string) {
       year: movie.year,
       director: movie.director ?? 'Unknown',
       slug: movie.slug ?? undefined,
+      posterUrl: movie.posterUrl ?? undefined,
       createdAt: toIsoDateSafe(movie.createdAt),
       updatedAt: toIsoDateSafe(movie.updatedAt),
     },
@@ -66,7 +67,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
   const [movieBySlug, actorBySlug] = await Promise.all([
     prisma.movie.findFirst({
       where: { slug: movieSlug },
-      select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true, isFeaturette: true },
+      select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true, createdAt: true, updatedAt: true, isFeaturette: true },
     }),
     prisma.actor.findFirst({
       where: { slug: actorSlug },
@@ -76,7 +77,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
 
   const movieRow = movieBySlug ?? await prisma.movie.findFirst({
     where: { id: movieSlug },
-    select: { id: true, title: true, year: true, director: true, slug: true, createdAt: true, updatedAt: true, isFeaturette: true },
+    select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true, createdAt: true, updatedAt: true, isFeaturette: true },
   })
   const actorRow = actorBySlug ?? await prisma.actor.findFirst({
     where: { id: actorSlug },
@@ -138,6 +139,7 @@ export default async function RatePage({
     year: movieRow.year,
     director: movieRow.director ?? 'Unknown',
     slug: movieRow.slug ?? undefined,
+    posterUrl: movieRow.posterUrl ?? undefined,
     createdAt: toIsoDate(movieRow.createdAt),
     updatedAt: toIsoDate(movieRow.updatedAt),
   }

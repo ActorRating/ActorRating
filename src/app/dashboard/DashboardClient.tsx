@@ -52,6 +52,7 @@ interface Rating {
     year: number
     director: string | null
     slug?: string | null
+    posterUrl?: string | null
   }
 }
 
@@ -617,6 +618,7 @@ export default function DashboardClient({
                         className="h-full min-h-[380px] md:min-h-0"
                         ratingId={rating.id}
                         showEditButton={true}
+                        imageMode="movie"
                       />
                     </motion.div>
                   ))}

@@ -31,7 +31,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { Actor, Performance } from "@prisma/client";
 import { createActorSlug } from "@/lib/createSlug";
 import { computePerformanceTier } from "@/lib/performance-tier";
-import { getMovieCreditsForIngestion } from "@/lib/tmdb";
+import { getMovieCreditsForIngestion, getMovieDetails, buildPosterUrl } from "@/lib/tmdb";
 import type { MovieCreditsForIngestion } from "@/lib/tmdb";
 
 /** User id used for system-ingested performances (admin/bulk/seed). One performance per (userId, actorId, movieId). */
@@ -242,7 +242,12 @@ export async function ingestMovieCast(
     throw new Error(`Movie "${movie.title}" (${movieId}) has no tmdbId; cannot fetch credits`);
   }
 
-  const credits = await getMovieCreditsForIngestion(movie.tmdbId);
+  // Fetch credits + movie details (for poster) concurrently
+  const [credits, movieDetails] = await Promise.all([
+    getMovieCreditsForIngestion(movie.tmdbId),
+    getMovieDetails(movie.tmdbId),
+  ]);
+  const posterUrl = buildPosterUrl(movieDetails?.posterPath ?? null);
   const cast = credits.cast;
 
   const eligibleCast = cast
@@ -323,7 +328,10 @@ export async function ingestMovieCast(
 
   await prisma.movie.update({
     where: { id: movieId },
-    data: { castIngestedAt: new Date() },
+    data: {
+      castIngestedAt: new Date(),
+      ...(posterUrl && { posterUrl }),
+    },
   });
 
   return { actorsCreated, performancesCreated, performancesUpdated };

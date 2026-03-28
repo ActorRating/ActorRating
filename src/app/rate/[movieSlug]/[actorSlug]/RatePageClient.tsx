@@ -31,6 +31,21 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   const [movie, setMovie] = useState<Movie | null>(initialMovie)
   const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
   const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
+  const [communityDimensions, setCommunityDimensions] = useState<{
+    emotionalRangeDepth: number | null
+    characterBelievability: number | null
+    technicalSkill: number | null
+    screenPresence: number | null
+    chemistryInteraction: number | null
+  } | null>(null)
+  const [movieCast, setMovieCast] = useState<Array<{
+    actorId: string
+    actorName: string
+    actorSlug: string | null
+    actorImageUrl: string | null
+    movieSlug: string | null
+  }>>([])
+
   const [userExistingRating, setUserExistingRating] = useState<{
     id: string
     emotionalDepth: number
@@ -96,6 +111,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         year: movieData.year,
         director: movieData.director || 'Unknown',
         slug: movieData.slug,
+        posterUrl: movieData.posterUrl ?? undefined,
         createdAt: movieData.createdAt || new Date().toISOString(),
         updatedAt: movieData.updatedAt || new Date().toISOString(),
       })
@@ -128,9 +144,21 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         if (!data) return
         if (typeof data.count === 'number') setCommunityRatingCount(data.count > 0 ? data.count : null)
         if (data.avg10 != null) setCommunityAvg10(data.avg10)
+        if (data.dimensions) setCommunityDimensions(data.dimensions)
       })
       .catch(() => {})
   }, [actor?.id, movie?.id])
+
+  useEffect(() => {
+    if (!movie?.id && !movie?.slug) return
+    const movieIdOrSlug = movie.slug ?? movie.id
+    fetch(`/api/movies/${movieIdOrSlug}/cast?excludeActorId=${actor?.id ?? ''}&limit=6`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.cast) setMovieCast(data.cast)
+      })
+      .catch(() => {})
+  }, [movie?.id, movie?.slug, actor?.id])
 
   // When not logged in, no need to wait for a rating check
   useEffect(() => {
@@ -284,7 +312,12 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         performance={{
           id: `${actor.id}-${movie.id}`,
           actor: { ...actor, slug: actor.slug ?? undefined },
-          movie: { ...movie, slug: movie.slug ?? undefined, director: movie.director ?? undefined },
+          movie: {
+            ...movie,
+            slug: movie.slug ?? undefined,
+            director: movie.director ?? undefined,
+            posterUrl: movie.posterUrl ?? undefined,
+          },
           emotionalRangeDepth: 0,
           characterBelievability: 0,
           technicalSkill: 0,
@@ -301,6 +334,8 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
         communityAvg10={communityAvg10}
         communityRatingCount={communityRatingCount}
+        communityDimensions={communityDimensions}
+        movieCast={movieCast}
       />
       {showSignUpModal && pendingRatingData && actor && movie && (
         <SignUpToSaveModal

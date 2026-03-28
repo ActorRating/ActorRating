@@ -38,7 +38,7 @@ export function Footer() {
               ActorRating
             </h3>
             <p className="text-sm text-[#666] leading-relaxed mb-5 max-w-xs">
-              The world&apos;s leading database for rating and discovering acting performances — from silent film to today.
+              The leading place online to rate and find great acting — from silent film to today.
             </p>
             <p className="text-xs text-[#444] tracking-wider uppercase">
               The IMDB for Acting Performance

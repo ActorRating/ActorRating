@@ -75,7 +75,7 @@ export async function GET(
         character,
         createdAt,
         updatedAt,
-        movie:Movie(id, title, year, director, tmdbId, slug),
+        movie:Movie(id, title, year, director, tmdbId, slug, posterUrl),
         actor:Actor(id, name, slug)
       `)
       .eq('actorId', actor.id)
@@ -146,7 +146,7 @@ export async function GET(
     // Fetch movie details for rated movies that might not have performances
     const { data: ratedMovies } = await supabaseServer
       .from('Movie')
-      .select('id, title, year, director, slug')
+      .select('id, title, year, director, slug, posterUrl')
       .in('id', Array.from(ratedMovieIds))
 
     // Per-movie set of userIds who have rated (so we prefer a performance that has ratings)
@@ -263,7 +263,17 @@ export async function GET(
       console.log("🎭 Returning actor data:", actorData.name, "with", enrichedPerformances.length, "performances (deduped by movie)")
     }
 
-    return NextResponse.json(actorData)
+    const res = NextResponse.json(actorData)
+    // Prevent browsers from holding a stale actor JSON (missing new fields like posterUrl) across reloads.
+    if (!isProd) {
+      res.headers.set('Cache-Control', 'no-store, must-revalidate')
+    } else {
+      res.headers.set(
+        'Cache-Control',
+        'public, s-maxage=600, stale-while-revalidate=86400'
+      )
+    }
+    return res
   } catch (error) {
     console.error("❌ Error fetching actor:", error)
     return NextResponse.json(

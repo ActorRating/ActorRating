@@ -63,7 +63,10 @@ export default async function ActorPage({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   try {
     const res = await fetch(`${baseUrl}/api/actors/${id}`, {
-      next: { revalidate: 21600 },
+      // Dev: always fresh so filmography posters match DB; prod: ISR as before.
+      ...(process.env.NODE_ENV === 'development'
+        ? { cache: 'no-store' as const }
+        : { next: { revalidate: 21600 } }),
       headers: { 'Content-Type': 'application/json' },
     })
     if (!res.ok) return <ActorPageClient />

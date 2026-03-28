@@ -17,13 +17,13 @@ const LOCAL_LIMIT = 4
 
 /** Preload shape for inline autocomplete and instant dropdown. */
 type PreloadData = {
-  actors: Array<{ id: string; name: string; slug: string | null }>
-  movies: Array<{ id: string; title: string; slug: string | null; year: number }>
+  actors: Array<{ id: string; name: string; slug: string | null; imageUrl?: string | null }>
+  movies: Array<{ id: string; title: string; slug: string | null; year: number; posterUrl?: string | null }>
 }
 /** Normalized for instant local filter (no per-keystroke toLowerCase). */
 type NormalizedPreload = {
-  actors: Array<{ id: string; name: string; slug: string | null; _name: string }>
-  movies: Array<{ id: string; title: string; slug: string | null; year: number; _title: string }>
+  actors: Array<{ id: string; name: string; slug: string | null; imageUrl?: string | null; _name: string }>
+  movies: Array<{ id: string; title: string; slug: string | null; year: number; posterUrl?: string | null; _title: string }>
 }
 let preloadCache: PreloadData | null = null
 let normalizedPreloadCache: NormalizedPreload | null = null
@@ -826,10 +826,21 @@ export function SearchBar({
                                   {isHighlighted && (
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
                                   )}
-                                  <IconUser className={cn(
-                                    "w-4 h-4 flex-shrink-0 transition-colors",
-                                    isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
-                                  )} />
+                                  {/* Actor avatar — photo (object-top) or initial fallback */}
+                                  <div className="w-8 h-8 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center bg-white/5 border border-white/10">
+                                    {actor.imageUrl ? (
+                                      <img
+                                        src={actor.imageUrl}
+                                        alt={actor.name}
+                                        className="w-full h-full object-cover"
+                                      style={{ objectPosition: 'top center' }}
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    ) : (
+                                      <span className="text-xs font-bold text-[#a1a1aa]">{actor.name.charAt(0)}</span>
+                                    )}
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className={cn(
                                       "truncate transition-all",
@@ -880,10 +891,20 @@ export function SearchBar({
                                   {isHighlighted && (
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] rounded-l-lg" />
                                   )}
-                                  <IconFilm className={cn(
-                                    "w-4 h-4 flex-shrink-0 transition-colors",
-                                    isHighlighted ? "text-[#FFD700]" : "text-gray-400 group-hover:text-[#FFD700]"
-                                  )} />
+                                  {/* Movie poster thumbnail (2:3 ratio) or film icon fallback */}
+                                  <div className="w-6 h-9 rounded flex-shrink-0 overflow-hidden flex items-center justify-center bg-white/5 border border-white/10">
+                                    {movie.posterUrl ? (
+                                      <img
+                                        src={movie.posterUrl}
+                                        alt={movie.title}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        decoding="async"
+                                      />
+                                    ) : (
+                                      <IconFilm className="w-3 h-3 text-[#71717a]" />
+                                    )}
+                                  </div>
                                   <div className="flex-1 min-w-0">
                                     <div className={cn(
                                       "truncate transition-all",

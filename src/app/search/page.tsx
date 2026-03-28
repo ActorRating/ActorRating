@@ -11,6 +11,8 @@ import Link from "next/link"
 import { getActorUrl, getMovieUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
+import { ActorAvatar } from "@/components/ui/ActorAvatar"
+import { MoviePoster } from "@/components/ui/MoviePoster"
 
 interface Actor {
   id: string
@@ -27,6 +29,7 @@ interface SearchResult {
   name?: string
   title?: string
   imageUrl?: string | null
+  posterUrl?: string | null
   slug?: string | null
   year?: number
   performanceCount?: number
@@ -199,13 +202,16 @@ function SearchPageContent() {
                           href={getActorUrl({ id: result.id, name: result.name || '', slug: result.slug || null })}
                           className="group block"
                         >
-                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
+                          {/* Square avatar tile */}
+                          <div className="aspect-square rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
                             {result.imageUrl ? (
                               <img
                                 src={result.imageUrl}
                                 alt={result.name}
                                 loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover"
+                                style={{ objectPosition: 'top center' }}
                               />
                             ) : (
                               <span className="text-4xl font-bold text-gray-600">
@@ -216,27 +222,31 @@ function SearchPageContent() {
                           <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
                             {result.name}
                           </p>
-                          {result.performanceCount && result.performanceCount > 0 && (
-                            <p className="text-xs text-center text-gray-500 mt-1">
-                              {result.performanceCount} {result.performanceCount === 1 ? 'performance' : 'performances'}
-                            </p>
-                          )}
                         </Link>
                       ) : (
                         <Link
                           href={getMovieUrl({ id: result.id, title: result.title || '', year: result.year || 0, slug: result.slug || null })}
                           className="group block"
                         >
-                          <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 mb-3 flex items-center justify-center border-2 border-transparent group-hover:border-[#FFD700] transition-all overflow-hidden">
-                            <Film className="w-12 h-12 text-gray-600" />
+                          {/* Poster tile — 2:3 aspect */}
+                          <div className="aspect-[2/3] rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+                            {result.posterUrl ? (
+                              <img
+                                src={result.posterUrl}
+                                alt={result.title}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Film className="w-12 h-12 text-gray-600" />
+                            )}
                           </div>
                           <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
                             {result.title}
                           </p>
                           {result.year && (
-                            <p className="text-xs text-center text-gray-500 mt-1">
-                              {result.year}
-                            </p>
+                            <p className="text-xs text-center text-gray-500 mt-1">{result.year}</p>
                           )}
                         </Link>
                       )}

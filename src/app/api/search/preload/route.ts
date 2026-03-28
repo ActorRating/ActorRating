@@ -5,12 +5,12 @@ import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
 const PRELOAD_CACHE_TTL_SEC = 600 // 10 minutes
 
 type PreloadPayload = {
-  actors: { id: string; name: string; slug: string | null }[]
-  movies: { id: string; title: string; slug: string | null; year: number }[]
+  actors: { id: string; name: string; slug: string | null; imageUrl: string | null }[]
+  movies: { id: string; title: string; slug: string | null; year: number; posterUrl: string | null }[]
 }
 
 export async function GET() {
-  const cacheKey = makeCacheKey('search-preload-v2', [])
+  const cacheKey = makeCacheKey('search-preload-v3', [])
 
   // Try cache first; if Redis is misconfigured or down, skip cache and hit DB
   let cached: PreloadPayload | null = null
@@ -29,8 +29,8 @@ export async function GET() {
   try {
     // Discovery order: actual popularity by ratingsCount DESC, then averageRating DESC, then name/title. Only entities with at least one rating. Limit 50 each.
     const [actors, movies] = await Promise.all([
-      prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null }>>`
-        SELECT a.id, a.name, a.slug
+      prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>>`
+        SELECT a.id, a.name, a.slug, a."imageUrl"
         FROM "Actor" a
         WHERE (SELECT COUNT(*) FROM "Rating" r WHERE r."actorId" = a.id) > 0
         ORDER BY
@@ -39,8 +39,8 @@ export async function GET() {
           a.name ASC
         LIMIT 50
       `,
-      prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number }>>`
-        SELECT m.id, m.title, m.slug, m.year
+      prisma.$queryRaw<Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>>`
+        SELECT m.id, m.title, m.slug, m.year, m."posterUrl"
         FROM "Movie" m
         WHERE (SELECT COUNT(*) FROM "Rating" r WHERE r."movieId" = m.id) > 0
         ORDER BY

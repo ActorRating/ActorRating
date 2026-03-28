@@ -52,7 +52,18 @@ export async function GET(request: NextRequest) {
     const avg100 = perRating.reduce((s, v) => s + v, 0) / perRating.length
     const avg10 = avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-    const res = NextResponse.json({ avg10, count: ratings.length })
+    const dimensions: Record<string, number | null> = {}
+    for (const field of FIELDS) {
+      const vals = ratings.map((r) => r[field]).filter((v): v is number => typeof v === 'number')
+      if (vals.length === 0) {
+        dimensions[field] = null
+      } else {
+        const dimAvg100 = vals.reduce((s, v) => s + v, 0) / vals.length
+        dimensions[field] = dimAvg100 > 0 ? Number((dimAvg100 / 10).toFixed(1)) : null
+      }
+    }
+
+    const res = NextResponse.json({ avg10, count: ratings.length, dimensions })
     res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
     return res
   } catch (err) {

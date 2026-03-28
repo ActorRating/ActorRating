@@ -70,6 +70,7 @@ export async function GET(
         title: movie.title,
         year: movie.year,
         slug: movie.slug,
+        posterUrl: movie.posterUrl ?? null,
         createdAt: movie.createdAt,
         updatedAt: movie.updatedAt,
       })

@@ -310,7 +310,8 @@ export function RatingForm({
                 src={performance.actor.imageUrl}
                 loading="lazy" 
                 alt={performance.actor.name}
-                className="w-16 h-16 rounded-full object-cover"
+                className="w-16 h-16 rounded-2xl object-cover"
+                style={{ objectPosition: 'top center' }}
               />
             )}
             <div className="text-left">

@@ -24,16 +24,19 @@ const nextConfig = {
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
-    // Allow images from CDN if configured
-    ...(process.env.CDN_BASE_URL && {
-      remotePatterns: [
-        {
-          protocol: 'https',
-          hostname: new URL(process.env.CDN_BASE_URL).hostname,
-        },
-      ],
-    }),
+    minimumCacheTTL: 3600, // 1 hour — TMDB images are stable
+    remotePatterns: [
+      // TMDB actor headshots + movie posters
+      {
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+        pathname: '/t/p/**',
+      },
+      // CDN if configured
+      ...(process.env.CDN_BASE_URL
+        ? [{ protocol: 'https', hostname: new URL(process.env.CDN_BASE_URL).hostname }]
+        : []),
+    ],
   },
   // CDN configuration for static assets (JS, CSS)
   ...(process.env.CDN_BASE_URL && {

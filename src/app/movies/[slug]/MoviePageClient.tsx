@@ -13,6 +13,9 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl, getActorUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { MoviePoster } from '@/components/ui/MoviePoster'
+import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
+import { upgradeActorImageRes } from '@/lib/tmdb'
 import { resolveCharacterDisplay } from '@/lib/character'
 
 interface Rating {
@@ -37,6 +40,7 @@ interface Movie {
   genre?: string
   overview?: string
   tmdbId?: number
+  posterUrl?: string | null
   ratings?: Rating[]
 }
 
@@ -664,6 +668,25 @@ export default function MoviePageClient({
             transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="text-center mb-12"
           >
+            {/* Movie poster */}
+            {movie.posterUrl && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="flex justify-center mb-8"
+              >
+                <div style={{ boxShadow: '0 0 60px rgba(255,215,0,0.12), 0 30px 80px rgba(0,0,0,0.7)' }}>
+                  <MoviePoster
+                    title={movie.title}
+                    posterUrl={movie.posterUrl}
+                    size="hero"
+                    loading="eager"
+                    rounded="rounded-xl"
+                  />
+                </div>
+              </motion.div>
+            )}
             <h1 
               className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 text-white"
               style={{ 
@@ -1192,7 +1215,7 @@ export default function MoviePageClient({
                   >
                     {/* Premium Card - Clean & Cinematic */}
                     <div 
-                      className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
+                      className={`relative h-full flex flex-col rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
                         isHighestRated 
                           ? 'bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 border-[#FFD700]/30 hover:shadow-[0_0_50px_rgba(255,215,0,0.15)]' 
                           : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-transparent hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]'
@@ -1220,9 +1243,19 @@ export default function MoviePageClient({
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
                       </div>
 
-                        {/* Content */}
-                      <div className="relative z-10 flex flex-col h-full">
+                        {/* Content — flex-1 so rate button always stays at bottom */}
+                      <div className="relative z-10 flex flex-col flex-1 p-8 sm:p-10 md:p-12">
                         <div className="flex-1">
+                          {/* Actor headshot — same framed poster style as filmography cards on actor pages */}
+                          <div className="flex justify-center mb-6">
+                            <ActorHeadshot
+                              name={performance.actor.name}
+                              imageUrl={upgradeActorImageRes(performance.actor.imageUrl)}
+                              size="lg"
+                              loading="lazy"
+                            />
+                          </div>
+
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex flex-col items-start gap-2">
@@ -1283,14 +1316,14 @@ export default function MoviePageClient({
                             </div>
                           )}
 
-                          {/* Actor Name - internal link */}
+                          {/* Actor Name */}
                           <div className="mb-4">
                             <Link
                               href={getActorUrl(performance.actor)}
                               prefetch
                               onClick={() => startNavigation()}
                               onMouseEnter={() => router.prefetch(getActorUrl(performance.actor))}
-                              className="inline-flex items-center gap-1.5 text-lg text-white font-semibold tracking-wide underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid focus:outline-none focus:underline transition-colors"
+                              className="inline-flex items-center gap-2 text-lg text-white font-semibold tracking-wide underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid focus:outline-none focus:underline transition-colors"
                             >
                               <span>{performance.actor.name}</span>
                               <ArrowRight className="w-4 h-4 flex-shrink-0" aria-hidden />

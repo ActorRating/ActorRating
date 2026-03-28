@@ -4,7 +4,7 @@ export const revalidate = 300
 
 import React, { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { AlertCircle, Star, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
@@ -12,6 +12,7 @@ import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { Button } from '@/components/ui/Button'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { motion } from 'framer-motion'
 
 interface Performance {
   id: string
@@ -213,29 +214,154 @@ export default function PerformanceDetailPage() {
   // Success message after rating submission
   if (submitted || submittedFromQuery) {
     const SuccessContent = () => (
-      <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 py-12 sm:py-16 lg:py-20">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <CheckCircle className="w-16 h-16 text-green-500" />
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        {/* Ambient gold spotlight */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 40% at 50% 0%, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 45%, transparent 70%)',
+          }}
+        />
+
+        <div className="relative max-w-lg mx-auto px-5 sm:px-8 py-14 sm:py-20 flex flex-col items-center">
+
+          {/* Animated checkmark */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="flex justify-center mb-8"
+          >
+            <div
+              className="rounded-full p-4"
+              style={{
+                background: 'rgba(255,215,0,0.08)',
+                border: '1px solid rgba(255,215,0,0.25)',
+                boxShadow: '0 0 40px rgba(255,215,0,0.18)',
+              }}
+            >
+              <svg
+                className="w-14 h-14 sm:w-16 sm:h-16"
+                viewBox="0 0 64 64"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <motion.circle
+                  cx="32" cy="32" r="30"
+                  stroke="#FFD700"
+                  strokeWidth="2"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.35 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                />
+                <motion.path
+                  d="M18 33 L27 43 L46 23"
+                  stroke="#FFD700"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.45, ease: 'easeOut', delay: 0.25 }}
+                />
+              </svg>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6">Rating Submitted Successfully!</h1>
-            <p className="text-gray-400 mb-12 text-lg">
-              Thank you for rating {performance.actor.name}'s performance in "{performance.movie.title}" as {performance.comment || 'Unknown Character'}.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild variant="premium" size="lg">
-                <Link href="/">
-                  Back to Home
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/search">
-                  Rate Another Performance
-                </Link>
-              </Button>
+          </motion.div>
+
+          {/* Eyebrow */}
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="text-[11px] font-bold tracking-[0.2em] uppercase mb-3"
+            style={{ color: '#a1a1aa' }}
+          >
+            Rating Submitted
+          </motion.p>
+
+          {/* Actor name */}
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="text-2xl sm:text-3xl font-bold text-white mb-2 text-center leading-tight"
+            style={{ fontFamily: 'var(--font-cinzel, var(--font-heading, serif))' }}
+          >
+            {performance.actor.name}
+          </motion.h1>
+
+          {/* Movie + character */}
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.52 }}
+            className="text-sm mb-10 text-center"
+            style={{ color: '#71717a' }}
+          >
+            <span style={{ color: '#a1a1aa' }}>{performance.movie.title}</span>
+            <span style={{ color: '#52525b' }}> · </span>
+            {performance.movie.year}
+            {performance.comment && (
+              <>
+                <span style={{ color: '#52525b' }}> · </span>
+                <span className="italic">{performance.comment}</span>
+              </>
+            )}
+          </motion.p>
+
+          {/* Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="w-full flex flex-col gap-3"
+          >
+            <Button asChild variant="premium" size="lg" className="w-full rounded-full">
+              <Link href="/">Back to Home</Link>
+            </Button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => router.push('/search')}
+                className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98] flex items-center justify-center gap-1.5"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  color: '#a1a1aa',
+                }}
+              >
+                Rate Again
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => router.push(`/actors/${performance.actor.id}`)}
+                className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98]"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  color: '#a1a1aa',
+                }}
+              >
+                More Films
+              </button>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Subtle star flourish */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-10 flex items-center gap-2"
+            style={{ color: '#2a2a2a' }}
+          >
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} className="w-4 h-4 fill-current" />
+            ))}
+          </motion.div>
+
         </div>
       </div>
     )

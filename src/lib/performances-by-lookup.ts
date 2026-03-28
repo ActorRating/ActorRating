@@ -16,7 +16,7 @@ export interface EnrichedPerformance {
   movieId: string
   character: string | null
   actor: { id: string; name: string; imageUrl?: string | null; slug: string | null }
-  movie: { id: string; title: string; year: number; director?: string | null; slug: string | null }
+  movie: { id: string; title: string; year: number; director?: string | null; slug: string | null; posterUrl?: string | null }
   averageRating: number | null
   ratingCount: number
 }
@@ -56,7 +56,7 @@ export async function getPerformancesByLookup(
     }),
     prisma.movie.findMany({
       where: { title: { in: movieTitles } },
-      select: { id: true, title: true, year: true, director: true, slug: true },
+      select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true },
     }),
   ])
 
@@ -81,7 +81,7 @@ export async function getPerformancesByLookup(
     },
     include: {
       actor: { select: { id: true, name: true, imageUrl: true, slug: true } },
-      movie: { select: { id: true, title: true, year: true, director: true, slug: true } },
+      movie: { select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true } },
     },
   })
 

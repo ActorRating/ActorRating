@@ -12,6 +12,8 @@ import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SearchBar } from '@/components/SearchBar'
 import { FaStar } from 'react-icons/fa'
 import { CheckCircle, Star, Users, TrendingUp, X } from 'lucide-react'
+import { MoviePoster } from '@/components/ui/MoviePoster'
+import { ActorAvatar } from '@/components/ui/ActorAvatar'
 import { getLevelProgress } from '@/lib/badges'
 import { OscarBanner } from '@/components/OscarBanner'
 import { buildByLookupUrl } from '@/lib/performances-page-targets'
@@ -77,6 +79,8 @@ interface PerformanceWithRating {
   year: number
   averageRating?: number | null
   ratingCount?: number
+  actorImageUrl?: string | null
+  moviePosterUrl?: string | null
 }
 
 export default function OnboardingRatePage() {
@@ -141,20 +145,20 @@ export default function OnboardingRatePage() {
 
           // Map the fetched data back to our curated list with ratings
           const enriched = CURATED_PERFORMANCES.map(curated => {
-            // Find by matching actor name and movie title (API returns by name, not ID)
             const found = performances.find((p: any) => {
               const pActorName = (p.actor?.name || '').toLowerCase().trim()
               const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
               const curatedActorName = curated.actorName.toLowerCase().trim()
               const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
-
               return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
             })
 
             return {
               ...curated,
               averageRating: found?.averageRating ?? null,
-              ratingCount: found?.ratingCount ?? 0
+              ratingCount: found?.ratingCount ?? 0,
+              actorImageUrl: found?.actor?.imageUrl ?? null,
+              moviePosterUrl: found?.movie?.posterUrl ?? null,
             }
           })
 
@@ -764,54 +768,49 @@ export default function OnboardingRatePage() {
                       {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
-                          {/* Top Row: Rating Badge and Year */}
-                          <div className="flex items-center justify-between mb-6">
-                            {rating ? (
-                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                <span
-                                  className="text-2xl font-bold text-[#FFD700]"
-                                  style={{
-                                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                                    fontVariantNumeric: 'tabular-nums',
-                                  }}
-                                >
-                                  {rating}
-                                </span>
+                          {/* Poster + actor row */}
+                          <div className="flex items-end gap-4 mb-5">
+                            <MoviePoster
+                              title={performance.movieTitle}
+                              posterUrl={(performance as PerformanceWithRating).moviePosterUrl}
+                              size="md"
+                              loading="lazy"
+                            />
+                            <div className="flex-1 min-w-0">
+                              {/* Rating Badge */}
+                              {rating ? (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 mb-3">
+                                  <FaStar className="w-4 h-4 text-[#FFD700]" />
+                                  <span className="text-xl font-bold text-[#FFD700]" style={{ fontVariantNumeric: 'tabular-nums' }}>{rating}</span>
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40 mb-3">
+                                  <FaStar className="w-4 h-4 text-[#666]" />
+                                  <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <ActorAvatar
+                                  name={performance.actorName}
+                                  imageUrl={(performance as PerformanceWithRating).actorImageUrl}
+                                  size="xs"
+                                />
+                                <span className="text-sm font-semibold text-white truncate">{performance.actorName}</span>
                               </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                                <FaStar className="w-5 h-5 text-[#666]" />
-                                <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
-                              </div>
-                            )}
-
-                            {/* Movie Year */}
-                            <div className="text-[#a3a3a3] text-base font-medium">
-                              {performance.year}
                             </div>
+                            <div className="text-[#a3a3a3] text-sm font-medium shrink-0">{performance.year}</div>
                           </div>
 
-                          {/* Actor Name */}
-                          <h3
-                            className="text-xl sm:text-2xl font-bold text-white mb-2"
-                            style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                          >
-                            {performance.actorName}
-                          </h3>
-
                           {/* Movie Title */}
-                          <div className="mb-4">
+                          <div className="mb-2">
                             <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
                               {performance.movieTitle}
                             </span>
                           </div>
 
-                          {/* Character/Quote */}
+                          {/* Character */}
                           <div className="mb-4">
-                            <p className="text-base sm:text-lg text-[#e4e4e7] leading-relaxed italic font-light">
-                              as {character}
-                            </p>
+                            <p className="text-sm text-[#a3a3a3] italic font-light">as {character}</p>
                           </div>
                         </div>
 
@@ -894,54 +893,48 @@ export default function OnboardingRatePage() {
                         {/* Content */}
                         <div className="relative z-10 flex flex-col h-full">
                           <div className="flex-1">
-                            {/* Top Row: Rating Badge and Year */}
-                            <div className="flex items-center justify-between mb-6">
-                              {rating ? (
-                                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                  <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                  <span
-                                    className="text-2xl font-bold text-[#FFD700]"
-                                    style={{
-                                      fontFamily: 'var(--font-geist-sans), sans-serif',
-                                      fontVariantNumeric: 'tabular-nums',
-                                    }}
-                                  >
-                                    {rating}
-                                  </span>
+                            {/* Poster + actor row */}
+                            <div className="flex items-end gap-4 mb-5">
+                              <MoviePoster
+                                title={performance.movieTitle}
+                                posterUrl={(performance as PerformanceWithRating).moviePosterUrl}
+                                size="lg"
+                                loading="lazy"
+                              />
+                              <div className="flex-1 min-w-0">
+                                {rating ? (
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 mb-3">
+                                    <FaStar className="w-4 h-4 text-[#FFD700]" />
+                                    <span className="text-xl font-bold text-[#FFD700]" style={{ fontVariantNumeric: 'tabular-nums' }}>{rating}</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#666]/40 mb-3">
+                                    <FaStar className="w-4 h-4 text-[#666]" />
+                                    <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <ActorAvatar
+                                    name={performance.actorName}
+                                    imageUrl={(performance as PerformanceWithRating).actorImageUrl}
+                                    size="sm"
+                                  />
+                                  <span className="text-sm font-semibold text-white truncate">{performance.actorName}</span>
                                 </div>
-                              ) : (
-                                <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                                  <FaStar className="w-5 h-5 text-[#666]" />
-                                  <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
-                                </div>
-                              )}
-
-                              {/* Movie Year */}
-                              <div className="text-[#a3a3a3] text-base font-medium">
-                                {performance.year}
                               </div>
+                              <div className="text-[#a3a3a3] text-sm font-medium shrink-0">{performance.year}</div>
                             </div>
 
-                            {/* Actor Name */}
-                            <h3
-                              className="text-xl sm:text-2xl font-bold text-white mb-2"
-                              style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                            >
-                              {performance.actorName}
-                            </h3>
-
                             {/* Movie Title */}
-                            <div className="mb-4">
-                              <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
+                            <div className="mb-2">
+                              <span className="text-xl text-[#FFD700] font-semibold tracking-wide">
                                 {performance.movieTitle}
                               </span>
                             </div>
 
-                            {/* Character/Quote */}
+                            {/* Character */}
                             <div className="mb-6">
-                              <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
-                                as {character}
-                              </p>
+                              <p className="text-base text-[#a3a3a3] italic font-light">as {character}</p>
                             </div>
                           </div>
 

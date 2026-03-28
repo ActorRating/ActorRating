@@ -32,6 +32,7 @@ export interface Movie {
   director?: string
   genre?: string
   tmdbId?: number
+  posterUrl?: string | null
   overview?: string
   performances?: Performance[]
   ratings?: Rating[]
@@ -64,6 +65,7 @@ export interface Performance {
     title: string
     year: number
     director?: string
+    posterUrl?: string | null
   }
   createdAt: string
   updatedAt: string
@@ -123,12 +125,14 @@ export interface SearchMovie {
   title: string
   slug?: string | null
   year: number
+  posterUrl?: string | null
 }
 
 export interface SearchActor {
   id: string
   name: string
   slug?: string | null
+  imageUrl?: string | null
 }
 
 export interface NewSearchResult {

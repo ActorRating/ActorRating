@@ -25,7 +25,7 @@ export async function GET(
         screenPresence: true,
         chemistryInteraction: true,
         actor: { select: { id: true, name: true, imageUrl: true } },
-        movie: { select: { id: true, title: true, year: true, director: true } },
+        movie: { select: { id: true, title: true, year: true, director: true, posterUrl: true } },
       },
     })
 

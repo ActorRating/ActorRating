@@ -10,7 +10,8 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { prefetchPerformancesPageData, buildByLookupUrl } from "@/lib/performances-page-targets";
-import { SearchBar } from "@/components/SearchBar";
+import { SearchBar } from "@/components/SearchBar"
+import { ActorAvatar } from "@/components/ui/ActorAvatar";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-4 xs:mb-5 sm:mb-6 md:mb-8 font-light text-center px-4 sm:px-6"
             >
-              A community for movie lovers to rate, compare, and discover the greatest acting performances
+              A place for movie fans. Rate acting. Compare roles. Find great performances.
             </motion.p>
 
             {/* Search bar — same component as Performances page */}
@@ -363,7 +364,7 @@ function OscarBanner() {
                     <span className="hidden sm:inline"> Acting Performances</span>
                     <span className="sm:hidden"> Nominees</span>
                   </h3>
-                  <p className="text-sm text-[#a3a3a3] mt-1">Rate this year&apos;s nominees before the ceremony</p>
+                  <p className="text-sm text-[#a3a3a3] mt-1">Rate this year&apos;s nominees before the show.</p>
                 </div>
               </div>
               <button
@@ -488,21 +489,29 @@ function LeaderboardSection() {
                   </div>
 
                   {/* Actor + Film */}
-                  <div className="min-w-0">
-                    <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-                      <span className="text-sm sm:text-base md:text-lg font-bold text-white leading-tight" style={CINZEL}>
-                        {p.actor}
-                      </span>
-                      <span className="sm:hidden text-xs text-[#444]">· {p.year}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-sm text-[#FFD700] opacity-80 truncate">{p.movie}</span>
-                      {/* Mobile: show rating inline */}
-                      {!isLoading && rating && (
-                        <span className="sm:hidden flex items-center gap-1 text-xs text-[#888]">
-                          <FaStar className="w-2.5 h-2.5 text-[#FFD700]" />{rating}
+                  <div className="min-w-0 flex items-center gap-3">
+                    {/* Actor avatar — data comes from by-lookup API */}
+                    <ActorAvatar
+                      name={p.actor}
+                      imageUrl={perfData?.actor?.imageUrl ?? null}
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+                        <span className="text-sm sm:text-base md:text-lg font-bold text-white leading-tight" style={CINZEL}>
+                          {p.actor}
                         </span>
-                      )}
+                        <span className="sm:hidden text-xs text-[#444]">· {p.year}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-sm text-[#FFD700] opacity-80 truncate">{p.movie}</span>
+                        {/* Mobile: show rating inline */}
+                        {!isLoading && rating && (
+                          <span className="sm:hidden flex items-center gap-1 text-xs text-[#888]">
+                            <FaStar className="w-2.5 h-2.5 text-[#FFD700]" />{rating}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -579,11 +588,11 @@ function LeaderboardSection() {
 // ─── 5 RATING CRITERIA SECTION ────────────────────────────────────────────────
 
 const CRITERIA = [
-  { num: "01", title: "Emotional Range & Depth",      sub: "The full spectrum — grief, joy, rage, tenderness. Sometimes all in one scene." },
-  { num: "02", title: "Character Believability",       sub: "Do you forget you're watching an actor? That's the mark." },
-  { num: "03", title: "Technical Skill & Authenticity", sub: "Voice, physicality, accent, movement. The craft beneath the surface." },
-  { num: "04", title: "Screen Presence & Impact",      sub: "Commanding the frame — even while standing still." },
-  { num: "05", title: "Chemistry & Interaction",       sub: "Great performances elevate everyone around them." },
+  { num: "01", title: "Emotional Range & Depth",      sub: "The whole spread — sad, happy, angry, soft. Sometimes all in one scene." },
+  { num: "02", title: "Character Believability",       sub: "Do you stop thinking \"that's an actor\"? That's a good sign." },
+  { num: "03", title: "Technical Skill & Authenticity", sub: "Voice, body, accent, movement. The skill under the surface." },
+  { num: "04", title: "Screen Presence & Impact",      sub: "They own the screen — even when they barely move." },
+  { num: "05", title: "Chemistry & Interaction",       sub: "Strong work makes everyone else look better too." },
 ];
 
 function RatingCriteriaSection() {
@@ -603,7 +612,7 @@ function RatingCriteriaSection() {
               <span style={GOLD_TEXT}>Dimensions</span>
             </h2>
             <p className="text-sm sm:text-base text-[#555] max-w-xs leading-relaxed sm:text-right">
-              A quick single slider, or go deep.<br className="hidden sm:block" /> Every dimension matters.
+              Use one quick slider. Or dig into all five.<br className="hidden sm:block" /> Each part of the score matters.
             </p>
           </div>
         </div>
@@ -671,9 +680,9 @@ function HowItWorksSection() {
   const { isMobile, prefersReducedMotion } = useDevice();
 
   const steps = [
-    { number: "01", icon: FaSearch,    title: "Find a Performance",   description: "Search 570,000+ actor performances from cinema history — from silent-era icons to this year's Oscar nominees." },
-    { number: "02", icon: FaStar,      title: "Rate in 2 Minutes",    description: "Quick single-slider or break it down across 5 criteria: emotional depth, technical skill, authenticity, impact, and chemistry." },
-    { number: "03", icon: FaChartLine, title: "See the Consensus",    description: "Compare your score to the community average. Discover what the world agrees makes a truly extraordinary performance." },
+    { number: "01", icon: FaSearch,    title: "Find a Performance",   description: "Search 570,000+ acting roles from film history — from early silent stars to this year's Oscar nominees." },
+    { number: "02", icon: FaStar,      title: "Rate in 2 Minutes",    description: "One quick slider, or break it down into 5 parts: emotion, skill, realism, impact, and chemistry." },
+    { number: "03", icon: FaChartLine, title: "See the Consensus",    description: "See how your score lines up with the group average. Find what people worldwide call a stand-out performance." },
   ];
 
   return (
@@ -764,22 +773,22 @@ function FeaturesSection() {
       icon: FaUsers,
       title: "Community-Driven Ratings",
       stat: "Growing community",
-      description: "Every score contributes to the definitive record of cinematic performance. Be part of building something that lasts.",
-      descriptionFull: "Every score contributes to the definitive record of cinematic performance. A community consensus that grows more accurate and trustworthy with every rating submitted.",
+      description: "Every rating helps build the big, lasting record of great screen acting. Help us grow it.",
+      descriptionFull: "Every rating helps build the big, lasting record of great screen acting. More ratings make the picture clearer and fairer.",
     },
     {
       icon: FaFilm,
       title: "570K+ Performances",
       stat: "All of cinema history",
-      description: "The deepest catalog of actor performances on the internet — from silent-era classics to this week's releases.",
-      descriptionFull: "The deepest catalog of actor performances on the internet — from silent-era classics to this week's releases. Every era, every genre, every language of cinema.",
+      description: "A huge list of performances online — from silent classics to new releases this week.",
+      descriptionFull: "A huge list of performances online — from silent classics to new releases this week. Every era, every genre, and many languages of film.",
     },
     {
       icon: FaGlobe,
       title: "5-Dimension Rating System",
       stat: "Oscar-inspired criteria",
-      description: "Go beyond a star rating. Evaluate emotional depth, technical skill, authenticity, cultural impact, and overall excellence.",
-      descriptionFull: "Go beyond a single star. Rate across five Oscar-inspired dimensions — the same qualities the Academy has considered for nearly a century. Surface what makes acting truly great.",
+      description: "Not just stars. Score depth, skill, realism, cultural impact, and overall excellence.",
+      descriptionFull: "Not just stars. Score depth, skill, realism, cultural impact, and overall excellence. Five Oscar-style areas — ideas the Academy has used for almost 100 years.",
     },
   ];
 
@@ -880,8 +889,7 @@ function AboutTeaser() {
             </h2>
             <GoldDivider width={120} />
             <p className="text-base sm:text-lg md:text-xl text-[#a0a0a0] font-light leading-relaxed max-w-2xl mx-auto mb-8 mt-6">
-              Most platforms rate movies. ActorRating rates acting.
-              We exist to separate the craft from the production — celebrating performances that transcend their films.
+              Most sites rate whole movies. ActorRating rates the acting. We separate the performance from the film — and honor work that rises above the rest of the movie.
             </p>
             <Link href="/about">
               <button
@@ -945,7 +953,7 @@ function CommunityCta() {
         </motion.div>
 
         <p className="text-sm sm:text-lg md:text-xl text-[#a0a0a0] font-light leading-relaxed mb-10 max-w-xl mx-auto">
-          Your ratings shape the definitive record of what makes acting great. Start rating — it&apos;s free, forever.
+          Your ratings help define what &quot;great acting&quot; means. Start rating — it&apos;s free, forever.
         </p>
 
         <div className="flex items-center justify-center gap-8 sm:gap-14 mb-12">

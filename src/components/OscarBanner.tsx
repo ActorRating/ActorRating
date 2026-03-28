@@ -52,7 +52,7 @@ export function OscarBanner({ maxWidth = '1280px', buttonMarginLeft = false }: O
                     <span className="sm:hidden">Nominees</span>
                   </h3>
                   <p className="text-xs sm:text-sm md:text-base text-[#d4d4d8]">
-                    Rate this year's nominees
+                    Rate this year&apos;s nominees before the show.
                   </p>
                 </div>
               </div>

@@ -2,9 +2,41 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Star, User, Award, TrendingUp, Eye, Pencil } from 'lucide-react'
+import { ActorAvatar } from '@/components/ui/ActorAvatar'
+import { MoviePoster } from '@/components/ui/MoviePoster'
+import { upgradeActorImageRes } from '@/lib/tmdb'
+
+/** Full-bleed image with fade-in + fallback — used inside the card hero area */
+function ActorAvatarFullBleed({
+  src, alt, fallback, objectPosition = 'center center',
+}: { src?: string | null; alt: string; fallback: React.ReactNode; objectPosition?: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const [errored, setErrored] = useState(false)
+  if (!src || errored) {
+    return <div className="absolute inset-0 flex items-center justify-center">{fallback}</div>
+  }
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse"
+          style={{ background: 'linear-gradient(160deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 100%)' }} />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        style={{ objectPosition }}
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
+      />
+    </>
+  )
+}
 import { Performance } from '@/types'
 import { calculateOverallScore, getScoreLevel, DEFAULT_WEIGHTS } from '@/utils/ratingCalculator'
 import { Button } from '../ui/Button'
@@ -24,8 +56,11 @@ interface PerformanceCardProps {
   performanceType?: 'lead' | 'supporting'
   genres?: string[]
   onClick?: () => void
-  ratingId?: string // For edit functionality
-  showEditButton?: boolean // Show edit button for user's own ratings
+  ratingId?: string
+  showEditButton?: boolean
+  /** 'actor' = show actor headshot (default for movie-page cards)
+   *  'movie' = show movie poster (default for actor-page cards, dashboard) */
+  imageMode?: 'actor' | 'movie'
 }
 
 export function PerformanceCard({
@@ -41,7 +76,8 @@ export function PerformanceCard({
   genres = [],
   onClick,
   ratingId,
-  showEditButton = false
+  showEditButton = false,
+  imageMode = 'movie',
 }: PerformanceCardProps) {
   const router = useRouter()
   const cardRef = React.useRef<HTMLDivElement | null>(null)
@@ -251,6 +287,37 @@ export function PerformanceCard({
 
         {/* Actor Name and Movie Title - Centered */}
         <div className="text-center">
+          {/* Hero image — fixed height, bleeds to card edges */}
+          <div className="mb-5 -mx-5 sm:-mx-6 lg:-mx-7 xl:-mx-8">
+            {imageMode === 'movie' ? (
+              /* Movie poster — fixed height, 2:3 fill */
+              <div className="relative w-full h-56 overflow-hidden">
+                <ActorAvatarFullBleed
+                  src={(performance.movie as any)?.posterUrl}
+                  alt={performance.movie?.title ?? ''}
+                  fallback={<span className="text-4xl" style={{ color: 'rgba(255,255,255,0.12)' }}>🎬</span>}
+                />
+                <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
+              </div>
+            ) : (
+              /* Actor shot — taller fixed height, face + torso visible */
+              <div className="relative w-full h-72 overflow-hidden">
+                <ActorAvatarFullBleed
+                  src={upgradeActorImageRes((performance.actor as any)?.imageUrl)}
+                  alt={performance.actor?.name ?? ''}
+                  fallback={
+                    <span className="text-5xl font-black" style={{ color: 'rgba(255,215,0,0.25)' }}>
+                      {performance.actor?.name?.charAt(0) ?? '?'}
+                    </span>
+                  }
+                  objectPosition="top center"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+                  style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
+              </div>
+            )}
+          </div>
           <h3
             className={`font-bold text-white mb-2 ${titleVariants[variant]} break-words`}
             style={{ fontFamily: 'var(--font-cinzel), serif' }}

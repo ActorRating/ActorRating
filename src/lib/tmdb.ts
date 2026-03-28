@@ -54,6 +54,50 @@ export interface MovieCreditsForIngestion {
   cast: CastMemberForIngestion[];
 }
 
+const TMDB_POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
+
+/**
+ * Upgrade a stored TMDB actor imageUrl to a higher resolution for large display contexts.
+ * Stored images use w185; for full-card / hero display, swap to h632 (portrait, ~422×632).
+ * Safe to call with any URL — non-TMDB or already-upgraded URLs are returned unchanged.
+ */
+export function upgradeActorImageRes(url: string | null | undefined): string | null {
+  if (!url) return null;
+  // TMDB profile sizes we want to upgrade from → to
+  return url
+    .replace('/t/p/w185/', '/t/p/h632/')
+    .replace('/t/p/w92/', '/t/p/h632/')
+    .replace('/t/p/w45/', '/t/p/h632/');
+}
+
+/**
+ * Fetch basic movie details (title, poster_path) from TMDB by numeric movie ID.
+ * Returns null if the request fails or the movie is not found.
+ */
+export async function getMovieDetails(tmdbMovieId: number): Promise<{ posterPath: string | null } | null> {
+  await rateLimitTmdb();
+  if (!API_KEY) return null;
+  try {
+    const url = `${TMDB_BASE_URL}/movie/${tmdbMovieId}?api_key=${API_KEY}&language=en-US`;
+    const response = await axios.get(url, { timeout: 15000 });
+    const { poster_path } = response.data;
+    return { posterPath: typeof poster_path === 'string' ? poster_path : null };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a full TMDB poster URL from a poster_path (e.g. "/abc.jpg").
+ * Returns null if posterPath is falsy.
+ */
+export function buildPosterUrl(posterPath: string | null | undefined): string | null {
+  if (!posterPath) return null;
+  return posterPath.startsWith('/')
+    ? `${TMDB_POSTER_BASE}${posterPath}`
+    : `${TMDB_POSTER_BASE}/${posterPath}`;
+}
+
 export async function searchMovie(title: string): Promise<MovieSearchResult | null> {
   if (!API_KEY) {
     throw new Error('TMDB_API_KEY is not set')

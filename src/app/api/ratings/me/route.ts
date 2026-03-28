@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
             year: true,
             director: true,
             slug: true,
+            posterUrl: true,
           },
         },
       },

@@ -13,6 +13,9 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl, getMovieUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { ActorAvatar } from '@/components/ui/ActorAvatar'
+import { MoviePoster } from '@/components/ui/MoviePoster'
+import { upgradeActorImageRes } from '@/lib/tmdb'
 
 interface Award {
   title?: string
@@ -68,12 +71,44 @@ interface Performance {
     year: number
     director?: string
     slug?: string | null
+    posterUrl?: string | null
   }
 }
 
 type ActorPageClientProps = {
   initialActor?: Actor | null
   initialPerformances?: Performance[]
+}
+
+function HeroActorPhoto({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [loaded, setLoaded] = useState(false)
+  const [errored, setErrored] = useState(false)
+  return (
+    <>
+      {!loaded && !errored && (
+        <div className="absolute inset-0 animate-pulse"
+          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)' }} />
+      )}
+      {(!imageUrl || errored) ? (
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{ background: 'rgba(255,215,0,0.04)' }}>
+          <span className="text-6xl font-black" style={{ color: 'rgba(255,215,0,0.25)' }}>
+            {name.charAt(0)}
+          </span>
+        </div>
+      ) : (
+        <img
+          src={imageUrl}
+          alt={name}
+          loading="eager"
+          decoding="async"
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setErrored(true)}
+        />
+      )}
+    </>
+  )
 }
 
 export default function ActorPageClient({
@@ -155,7 +190,8 @@ export default function ActorPageClient({
       if (hasInitial) {
         // Keep actor payload cacheable to avoid extra function invocations.
         fetch(`/api/actors/${actorId}`, {
-          cache: 'force-cache',
+          // Avoid stale JSON (e.g. missing posterUrl after API/schema changes). force-cache kept old payloads across hard refresh.
+          cache: 'no-store',
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((freshData) => {
@@ -194,7 +230,7 @@ export default function ActorPageClient({
         return
       }
       try {
-        const response = await fetch(`/api/actors/${actorId}`)
+        const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
         if (response.status === 410) {
           setIs410(true)
           setLoading(false)
@@ -688,6 +724,30 @@ export default function ActorPageClient({
             transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="text-center mb-12"
           >
+            {/* Actor headshot */}
+            {actor.imageUrl && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="flex justify-center mb-6"
+              >
+                {/* Portrait crop at 2:3 — matches TMDB photo shape, no aggressive squaring */}
+                <div
+                  className="relative overflow-hidden rounded-2xl"
+                  style={{
+                    width: 'clamp(140px, 30vw, 220px)',
+                    aspectRatio: '2/3',
+                    boxShadow: '0 0 60px rgba(255,215,0,0.22), 0 30px 80px rgba(0,0,0,0.7)',
+                  }}
+                >
+                  <HeroActorPhoto
+                    imageUrl={upgradeActorImageRes(actor.imageUrl)}
+                    name={actor.name}
+                  />
+                </div>
+              </motion.div>
+            )}
             <h1 
               className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 text-white"
               style={{ 
@@ -1395,6 +1455,16 @@ export default function ActorPageClient({
                         {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
+                          {/* Movie Poster — shown at top of card */}
+                          <div className="flex justify-center mb-6">
+                            <MoviePoster
+                              title={performance.movie.title}
+                              posterUrl={(performance.movie as any).posterUrl}
+                              size="lg"
+                              loading="lazy"
+                            />
+                          </div>
+
                           {/* Top Row: Rating Badge and Year */}
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex flex-col items-start gap-2">
