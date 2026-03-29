@@ -624,10 +624,10 @@ export default function DashboardClient({
                         }}
                         averageRating={parseFloat(calculateAverage(rating))}
                         variant="default"
-                        className="h-full min-h-[380px] md:min-h-0"
+                        className="h-full"
                         ratingId={rating.id}
                         showEditButton={true}
-                        imageMode="movie"
+                        imageMode="split"
                       />
                     </motion.div>
                   ))}

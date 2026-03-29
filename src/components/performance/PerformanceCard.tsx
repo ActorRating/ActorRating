@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Star, User, Award, TrendingUp, Eye, Pencil } from 'lucide-react'
 import { ActorAvatar } from '@/components/ui/ActorAvatar'
+import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { MoviePoster } from '@/components/ui/MoviePoster'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 
@@ -58,9 +59,8 @@ interface PerformanceCardProps {
   onClick?: () => void
   ratingId?: string
   showEditButton?: boolean
-  /** 'actor' = show actor headshot (default for movie-page cards)
-   *  'movie' = show movie poster (default for actor-page cards, dashboard) */
-  imageMode?: 'actor' | 'movie'
+  /** 'actor' = full-bleed actor | 'movie' = full-bleed poster | 'split' = side-by-side headshot + poster (performances-style) */
+  imageMode?: 'actor' | 'movie' | 'split'
 }
 
 export function PerformanceCard({
@@ -287,37 +287,52 @@ export function PerformanceCard({
 
         {/* Actor Name and Movie Title - Centered */}
         <div className="text-center">
-          {/* Hero image — fixed height, bleeds to card edges */}
-          <div className="mb-5 -mx-5 sm:-mx-6 lg:-mx-7 xl:-mx-8">
-            {imageMode === 'movie' ? (
-              /* Movie poster — fixed height, 2:3 fill */
-              <div className="relative w-full h-56 overflow-hidden">
-                <ActorAvatarFullBleed
-                  src={(performance.movie as any)?.posterUrl}
-                  alt={performance.movie?.title ?? ''}
-                  fallback={<span className="text-4xl" style={{ color: 'rgba(255,255,255,0.12)' }}>🎬</span>}
-                />
-                <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
-              </div>
-            ) : (
-              /* Actor shot — taller fixed height, face + torso visible */
-              <div className="relative w-full h-72 overflow-hidden">
-                <ActorAvatarFullBleed
-                  src={upgradeActorImageRes((performance.actor as any)?.imageUrl)}
-                  alt={performance.actor?.name ?? ''}
-                  fallback={
-                    <span className="text-5xl font-black" style={{ color: 'rgba(255,215,0,0.25)' }}>
-                      {performance.actor?.name?.charAt(0) ?? '?'}
-                    </span>
-                  }
-                  objectPosition="top center"
-                />
-                <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
-                  style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
-              </div>
-            )}
-          </div>
+          {/* Hero image: full-bleed single, or split headshot + poster (performances page style) */}
+          {imageMode === 'split' ? (
+            <div className="mb-5 flex justify-center items-end gap-4 sm:gap-5">
+              <ActorHeadshot
+                name={performance.actor?.name ?? ''}
+                imageUrl={upgradeActorImageRes((performance.actor as any)?.imageUrl)}
+                size="lg"
+                loading="lazy"
+              />
+              <MoviePoster
+                title={performance.movie?.title ?? ''}
+                posterUrl={(performance.movie as any)?.posterUrl}
+                size="lg"
+                loading="lazy"
+              />
+            </div>
+          ) : (
+            <div className="mb-5 -mx-5 sm:-mx-6 lg:-mx-7 xl:-mx-8">
+              {imageMode === 'movie' ? (
+                <div className="relative w-full h-56 overflow-hidden">
+                  <ActorAvatarFullBleed
+                    src={(performance.movie as any)?.posterUrl}
+                    alt={performance.movie?.title ?? ''}
+                    fallback={<span className="text-4xl" style={{ color: 'rgba(255,255,255,0.12)' }}>🎬</span>}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+                    style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
+                </div>
+              ) : (
+                <div className="relative w-full h-72 overflow-hidden">
+                  <ActorAvatarFullBleed
+                    src={upgradeActorImageRes((performance.actor as any)?.imageUrl)}
+                    alt={performance.actor?.name ?? ''}
+                    fallback={
+                      <span className="text-5xl font-black" style={{ color: 'rgba(255,215,0,0.25)' }}>
+                        {performance.actor?.name?.charAt(0) ?? '?'}
+                      </span>
+                    }
+                    objectPosition="top center"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+                    style={{ background: 'linear-gradient(to bottom, transparent, rgba(15,15,15,0.9))' }} />
+                </div>
+              )}
+            </div>
+          )}
           <h3
             className={`font-bold text-white mb-2 ${titleVariants[variant]} break-words`}
             style={{ fontFamily: 'var(--font-cinzel), serif' }}
