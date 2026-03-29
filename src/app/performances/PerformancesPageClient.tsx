@@ -12,17 +12,9 @@ import { SearchBar } from "@/components/SearchBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS, buildByLookupUrl } from "@/lib/performances-page-targets"
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup"
-
-interface PerformanceData {
-  id: string
-  actorId: string
-  movieId: string
-  character: string | null
-  actor: { name: string; imageUrl?: string; slug?: string | null }
-  movie: { title: string; year: number; slug?: string | null }
-  averageRating?: number | null
-  ratingCount?: number
-}
+import { ActorHeadshot } from "@/components/ui/ActorHeadshot"
+import { MoviePoster } from "@/components/ui/MoviePoster"
+import { upgradeActorImageRes } from "@/lib/tmdb"
 
 interface PerformancesPageClientProps {
   initialRecent?: EnrichedPerformance[]
@@ -35,8 +27,8 @@ export function PerformancesPageClient({
 }: PerformancesPageClientProps) {
   const user = useUser()
   const hasInitialData = initialRecent.length > 0 || initialIconic.length > 0
-  const [recentPerformances, setRecentPerformances] = useState<PerformanceData[]>(initialRecent as PerformanceData[])
-  const [iconicPerformances, setIconicPerformances] = useState<PerformanceData[]>(initialIconic as PerformanceData[])
+  const [recentPerformances, setRecentPerformances] = useState<EnrichedPerformance[]>(initialRecent)
+  const [iconicPerformances, setIconicPerformances] = useState<EnrichedPerformance[]>(initialIconic)
   const [loading, setLoading] = useState(!hasInitialData)
   const [activeRecentCard, setActiveRecentCard] = useState(0)
   const [activeIconicCard, setActiveIconicCard] = useState(0)
@@ -102,11 +94,11 @@ export function PerformancesPageClient({
 
         const data = await response.json()
         const recent = RECENT_PERFORMANCE_TARGETS.map((target) =>
-          data.performances?.find((p: PerformanceData) => p.actor?.name === target.actor && p.movie?.title === target.movie)
-        ).filter((p: PerformanceData | undefined): p is PerformanceData => p !== undefined)
+          data.performances?.find((p: EnrichedPerformance) => p.actor?.name === target.actor && p.movie?.title === target.movie)
+        ).filter((p: EnrichedPerformance | undefined): p is EnrichedPerformance => p !== undefined)
         const iconic = ICONIC_PERFORMANCE_TARGETS.map((target) =>
-          data.performances?.find((p: PerformanceData) => p.actor?.name === target.actor && p.movie?.title === target.movie)
-        ).filter((p: PerformanceData | undefined): p is PerformanceData => p !== undefined)
+          data.performances?.find((p: EnrichedPerformance) => p.actor?.name === target.actor && p.movie?.title === target.movie)
+        ).filter((p: EnrichedPerformance | undefined): p is EnrichedPerformance => p !== undefined)
 
         if (!cancelled) {
           setRecentPerformances(recent)
@@ -224,7 +216,7 @@ export function PerformancesPageClient({
 
         <div className="w-full relative" style={{ maxWidth: "1280px", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
           <div className="text-center mb-8 sm:mb-10 px-4 sm:px-0">
-            <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-5">
+            <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-white mb-5">
               570K+ Performances · 208K+ Actors
             </p>
             <h1
@@ -415,7 +407,7 @@ export function PerformancesPageClient({
   )
 }
 
-function LandingPageCard({ performance, index }: { performance: PerformanceData; index: number }) {
+function LandingPageCard({ performance, index }: { performance: EnrichedPerformance; index: number }) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
   const rateUrl =
@@ -462,6 +454,20 @@ function LandingPageCard({ performance, index }: { performance: PerformanceData;
         </div>
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex-1">
+            <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
+              <ActorHeadshot
+                name={performance.actor.name}
+                imageUrl={upgradeActorImageRes(performance.actor.imageUrl)}
+                size="lg"
+                loading="lazy"
+              />
+              <MoviePoster
+                title={performance.movie.title}
+                posterUrl={performance.movie.posterUrl}
+                size="lg"
+                loading="lazy"
+              />
+            </div>
             <div className="flex items-center justify-between mb-6">
               {rating ? (
                 <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">

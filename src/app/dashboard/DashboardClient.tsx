@@ -12,6 +12,8 @@ import { Star, TrendingUp, Film, ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 import { PerformanceCard } from "@/components/performance/PerformanceCard"
+import { ActorHeadshot } from "@/components/ui/ActorHeadshot"
+import { upgradeActorImageRes } from "@/lib/tmdb"
 import { FeaturedPerformancesCarousel } from "@/components/dashboard/FeaturedPerformancesCarousel"
 import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
@@ -446,11 +448,6 @@ export default function DashboardClient({
                       return false
                     })
                     
-                    // Debug log
-                    if (!apiActor && !isLoadingData) {
-                      console.log(`No match found for ${actor.name}. Available actors:`, popularActors.map(a => a.name))
-                    }
-                    
                     return (
                       <motion.div
                         key={actor.id}
@@ -478,6 +475,14 @@ export default function DashboardClient({
 
                             {/* Content */}
                             <div className="relative z-10 flex flex-col h-full">
+                              <div className="flex justify-center mb-5">
+                                <ActorHeadshot
+                                  name={actor.name}
+                                  imageUrl={upgradeActorImageRes(apiActor?.imageUrl)}
+                                  size="lg"
+                                  loading="lazy"
+                                />
+                              </div>
                               {/* Actor Name */}
                               <div className="mb-6">
                                 <h3 className="font-bold text-white text-xl sm:text-2xl mb-3 transition-colors duration-200">
@@ -601,7 +606,11 @@ export default function DashboardClient({
                             name: rating.actor.name,
                             imageUrl: rating.actor.imageUrl ?? undefined,
                           },
-                          movie: { ...rating.movie, director: rating.movie.director ?? undefined },
+                          movie: {
+                            ...rating.movie,
+                            director: rating.movie.director ?? undefined,
+                            posterUrl: rating.movie.posterUrl ?? undefined,
+                          },
                           userId: user?.id || '',
                           emotionalRangeDepth: rating.emotionalRangeDepth,
                           characterBelievability: rating.characterBelievability,

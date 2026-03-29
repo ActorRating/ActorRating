@@ -27,7 +27,14 @@ export type DashboardRating = {
   comment: string | null
   createdAt: string
   actor: { id: string; name: string; slug: string | null; imageUrl: string | null }
-  movie: { id: string; title: string; year: number; director: string | null; slug: string | null }
+  movie: {
+    id: string
+    title: string
+    year: number
+    director: string | null
+    slug: string | null
+    posterUrl: string | null
+  }
 }
 
 export type DashboardActor = {
@@ -51,7 +58,7 @@ export async function getDashboardData(userId: string): Promise<{
           select: { id: true, name: true, imageUrl: true, slug: true },
         },
         movie: {
-          select: { id: true, title: true, year: true, director: true, slug: true },
+          select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true },
         },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -64,7 +71,7 @@ export async function getDashboardData(userId: string): Promise<{
     ...r,
     createdAt: r.createdAt.toISOString(),
     actor: { ...r.actor, imageUrl: r.actor.imageUrl ?? null },
-    movie: r.movie,
+    movie: { ...r.movie, posterUrl: r.movie.posterUrl ?? null },
   }))
 
   return { ratings: serializedRatings, popularActors }

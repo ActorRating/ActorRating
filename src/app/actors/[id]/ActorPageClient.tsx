@@ -13,7 +13,6 @@ import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
 import { getRateUrl, getMovieUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-import { ActorAvatar } from '@/components/ui/ActorAvatar'
 import { MoviePoster } from '@/components/ui/MoviePoster'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 
@@ -108,6 +107,34 @@ function HeroActorPhoto({ imageUrl, name }: { imageUrl?: string | null; name: st
         />
       )}
     </>
+  )
+}
+
+/** Small tile on movie poster — container sizes to image aspect ratio (max bounds only). */
+function FilmographyPosterBadge({ name, imageUrl }: { name: string; imageUrl?: string | null }) {
+  const [failed, setFailed] = useState(false)
+  const src = upgradeActorImageRes(imageUrl)
+  const showImg = Boolean(src) && !failed
+  return (
+    <div
+      className="inline-flex flex-shrink-0 overflow-hidden rounded-xl ring-2 ring-[#262626] bg-[#161616] shadow-[0_10px_28px_rgba(0,0,0,0.75)]"
+      aria-hidden
+    >
+      {showImg ? (
+        <img
+          src={src!}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="block h-auto w-auto max-h-14 max-w-[3.75rem] object-contain"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="flex h-10 min-w-10 items-center justify-center px-2 bg-[#161616]">
+          <span className="text-sm font-bold text-[#FFD700]/75">{name.charAt(0)}</span>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -1455,14 +1482,17 @@ export default function ActorPageClient({
                         {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
-                          {/* Movie Poster — shown at top of card */}
-                          <div className="flex justify-center mb-6">
+                          {/* Movie poster + actor badge: bottom-right, minimal overlap with poster */}
+                          <div className="relative flex justify-center mb-6 w-fit max-w-full mx-auto overflow-visible">
                             <MoviePoster
                               title={performance.movie.title}
                               posterUrl={(performance.movie as any).posterUrl}
                               size="lg"
                               loading="lazy"
                             />
+                            <div className="absolute -bottom-3 -right-3 z-10 pointer-events-none">
+                              <FilmographyPosterBadge name={actor.name} imageUrl={actor.imageUrl} />
+                            </div>
                           </div>
 
                           {/* Top Row: Rating Badge and Year */}

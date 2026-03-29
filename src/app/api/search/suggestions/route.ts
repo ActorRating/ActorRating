@@ -11,10 +11,10 @@ export const runtime = "edge"
  * Without it, prefix search works but similarity fallback fails → incomplete results.
  */
 
-/** Response shape for SearchBar: actors and movies. */
+/** Response shape for SearchBar: actors and movies (images for dropdown thumbnails). */
 export type SuggestionsResponse = {
-  actors: Array<{ id: string; name: string; slug: string | null }>
-  movies: Array<{ id: string; title: string; slug: string | null; year: number }>
+  actors: Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
+  movies: Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>
 }
 
 const CACHE_TTL = 60
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
     if (memEntry) searchCache.delete(normalized)
 
-    const cacheKey = makeCacheKey("search-suggestions-v6", [normalized])
+    const cacheKey = makeCacheKey("search-suggestions-v7-images", [normalized])
     const cached = await cacheGet<SuggestionsResponse>(cacheKey)
     if (cached) {
       searchCache.set(normalized, { data: cached, expires: now + MEMORY_CACHE_TTL_MS })
@@ -95,18 +95,19 @@ export async function GET(request: NextRequest) {
     const actorsStart = Date.now()
     const { data: actorPrefixRows = [] } = await supabase
       .from("Actor")
-      .select("id,name,slug")
+      .select("id,name,slug,imageUrl")
       .ilike("name", prefixPattern)
       .order("name", { ascending: true })
       .limit(LIMIT_ACTORS)
 
     const actorList = Array.isArray(actorPrefixRows) ? actorPrefixRows : []
-    let actors: Array<{ id: string; name: string; slug: string | null }>
+    let actors: Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
     if (!useSimilarity || actorList.length >= PREFIX_RETURN_THRESHOLD) {
       actors = actorList.slice(0, LIMIT_ACTORS).map((r) => ({
         id: r.id,
         name: r.name,
         slug: r.slug ?? null,
+        imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
       }))
     } else {
       const { data: similarityRows = [] } = await supabase.rpc("search_actors_similarity", {
@@ -114,11 +115,21 @@ export async function GET(request: NextRequest) {
       })
       const simList = Array.isArray(similarityRows) ? similarityRows : []
       const seen = new Set(actorList.map((r) => r.id))
-      const combined = actorList.map((r) => ({ id: r.id, name: r.name, slug: r.slug ?? null }))
+      const combined = actorList.map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug ?? null,
+        imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
+      }))
       for (const r of simList) {
         if (!seen.has(r.id)) {
           seen.add(r.id)
-          combined.push({ id: r.id, name: r.name, slug: r.slug ?? null })
+          combined.push({
+            id: r.id,
+            name: r.name,
+            slug: r.slug ?? null,
+            imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
+          })
         }
       }
       actors = combined.slice(0, LIMIT_ACTORS)
@@ -129,19 +140,26 @@ export async function GET(request: NextRequest) {
     const moviesStart = Date.now()
     const { data: moviePrefixRows = [] } = await supabase
       .from("Movie")
-      .select("id,title,slug,year")
+      .select("id,title,slug,year,posterUrl")
       .ilike("title", prefixPattern)
       .order("title", { ascending: true })
       .limit(LIMIT_MOVIES)
 
     const movieList = Array.isArray(moviePrefixRows) ? moviePrefixRows : []
-    let movies: Array<{ id: string; title: string; slug: string | null; year: number }>
+    let movies: Array<{
+      id: string
+      title: string
+      slug: string | null
+      year: number
+      posterUrl: string | null
+    }>
     if (!useSimilarity || movieList.length >= PREFIX_RETURN_THRESHOLD) {
       movies = movieList.slice(0, LIMIT_MOVIES).map((r) => ({
         id: r.id,
         title: r.title,
         slug: r.slug ?? null,
         year: Number(r.year) ?? 0,
+        posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
       }))
     } else {
       const { data: similarityRows = [] } = await supabase.rpc("search_movies_similarity", {
@@ -154,6 +172,7 @@ export async function GET(request: NextRequest) {
         title: r.title,
         slug: r.slug ?? null,
         year: Number(r.year) ?? 0,
+        posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
       }))
       for (const r of simList) {
         if (!seen.has(r.id)) {
@@ -163,10 +182,25 @@ export async function GET(request: NextRequest) {
             title: r.title,
             slug: r.slug ?? null,
             year: Number(r.year) ?? 0,
+            posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
           })
         }
       }
       movies = combined.slice(0, LIMIT_MOVIES)
+    }
+
+    // Similarity RPC rows may omit poster/image — hydrate from DB in one batch each
+    const actorIdsMissing = actors.filter((a) => !a.imageUrl).map((a) => a.id)
+    if (actorIdsMissing.length > 0) {
+      const { data: imgRows = [] } = await supabase.from("Actor").select("id, imageUrl").in("id", actorIdsMissing)
+      const map = new Map((imgRows as { id: string; imageUrl: string | null }[]).map((row) => [row.id, row.imageUrl]))
+      actors = actors.map((a) => (a.imageUrl ? a : { ...a, imageUrl: map.get(a.id) ?? null }))
+    }
+    const movieIdsMissing = movies.filter((m) => !m.posterUrl).map((m) => m.id)
+    if (movieIdsMissing.length > 0) {
+      const { data: posterRows = [] } = await supabase.from("Movie").select("id, posterUrl").in("id", movieIdsMissing)
+      const map = new Map((posterRows as { id: string; posterUrl: string | null }[]).map((row) => [row.id, row.posterUrl]))
+      movies = movies.map((m) => (m.posterUrl ? m : { ...m, posterUrl: map.get(m.id) ?? null }))
     }
     const moviesMs = Date.now() - moviesStart
 

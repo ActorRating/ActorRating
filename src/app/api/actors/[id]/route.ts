@@ -76,7 +76,7 @@ export async function GET(
         createdAt,
         updatedAt,
         movie:Movie(id, title, year, director, tmdbId, slug, posterUrl),
-        actor:Actor(id, name, slug)
+        actor:Actor(id, name, slug, imageUrl)
       `)
       .eq('actorId', actor.id)
       .order('updatedAt', { ascending: false })
