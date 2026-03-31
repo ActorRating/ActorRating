@@ -614,6 +614,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   )
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [hasAnimatedOnce, setHasAnimatedOnce] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [progressData, setProgressData] = useState<{
     ratingCount: number
     progress: number
@@ -1250,6 +1251,243 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           alert('Failed to copy image URL. Please try again.')
         })
       }
+    }
+  }
+
+  // Load an image via our same-origin proxy so canvas drawing is never CORS-tainted
+  const loadImage = (src: string): Promise<HTMLImageElement | null> =>
+    new Promise((resolve) => {
+      const proxied = `/api/proxy-image?url=${encodeURIComponent(src)}`
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null)
+      img.src = proxied
+    })
+
+  // Draw actor photo (or gold initial fallback) as a portrait rectangle with rounded corners
+  const drawPortraitPhoto = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement | null,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    initial: string
+  ) => {
+    const radius = Math.min(w, h) * 0.16
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.lineTo(x + w - radius, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+    ctx.lineTo(x + w, y + h - radius)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+    ctx.lineTo(x + radius, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+    ctx.lineTo(x, y + radius)
+    ctx.quadraticCurveTo(x, y, x + radius, y)
+    ctx.closePath()
+    ctx.clip()
+
+    if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      // Cover the rect fully (like CSS background-size: cover) so there are no empty side gaps
+      const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight)
+      const dw = img.naturalWidth * scale
+      const dh = img.naturalHeight * scale
+      const dx = x + (w - dw) / 2
+      const dy = y + (h - dh) / 2
+      ctx.drawImage(img, dx, dy, dw, dh)
+    } else {
+      const g = ctx.createLinearGradient(x, y, x + w, y + h)
+      g.addColorStop(0, '#FFE55C')
+      g.addColorStop(1, '#FFA500')
+      ctx.fillStyle = g
+      ctx.fillRect(x, y, w, h)
+      ctx.fillStyle = '#000'
+      const fontSize = Math.min(w, h) * 0.4
+      ctx.font = `bold ${fontSize}px Georgia, serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(initial, x + w / 2, y + h / 2)
+    }
+    ctx.restore()
+
+    // Gold border, slightly inset so it hugs the image
+    ctx.save()
+    ctx.beginPath()
+    const inset = 3
+    const ix = x + inset
+    const iy = y + inset
+    const iw = w - inset * 2
+    const ih = h - inset * 2
+    const r2 = Math.max(radius - inset, 4)
+    ctx.moveTo(ix + r2, iy)
+    ctx.lineTo(ix + iw - r2, iy)
+    ctx.quadraticCurveTo(ix + iw, iy, ix + iw, iy + r2)
+    ctx.lineTo(ix + iw, iy + ih - r2)
+    ctx.quadraticCurveTo(ix + iw, iy + ih, ix + iw - r2, iy + ih)
+    ctx.lineTo(ix + r2, iy + ih)
+    ctx.quadraticCurveTo(ix, iy + ih, ix, iy + ih - r2)
+    ctx.lineTo(ix, iy + r2)
+    ctx.quadraticCurveTo(ix, iy, ix + r2, iy)
+    ctx.closePath()
+    ctx.strokeStyle = 'rgba(255,215,0,0.5)'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  // Render a 1080×1350 PNG using canvas — includes real actor/movie images
+  const shareAsImage = async (forDownload = false) => {
+    if (finalScore === null) return
+    setIsGeneratingImage(true)
+    try {
+      const W = 1080, H = 1350
+      const canvas = document.createElement('canvas')
+      canvas.width = W
+      canvas.height = H
+      const ctx = canvas.getContext('2d')!
+
+      // ── 1. Black base ──────────────────────────────────────────────────
+      ctx.fillStyle = '#000'
+      ctx.fillRect(0, 0, W, H)
+
+      // ── 2. Movie poster — blurred + darkened background ────────────────
+      if (performance.movie.posterUrl) {
+        const posterImg = await loadImage(performance.movie.posterUrl)
+        if (posterImg) {
+          ctx.save()
+          // blur + darken via filter (Chrome/Firefox/Safari 16+)
+          ctx.filter = 'blur(28px) brightness(0.22) saturate(0.55)'
+          const scale = Math.max(W / posterImg.naturalWidth, H / posterImg.naturalHeight)
+          const dw = posterImg.naturalWidth * scale * 1.12
+          const dh = posterImg.naturalHeight * scale * 1.12
+          ctx.drawImage(posterImg, (W - dw) / 2, (H - dh) / 2, dw, dh)
+          ctx.restore()
+          ctx.filter = 'none'
+        }
+      }
+
+      // ── 3. Dark overlay ────────────────────────────────────────────────
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'
+      ctx.fillRect(0, 0, W, H)
+
+      // ── 4. Gold radial spotlight ───────────────────────────────────────
+      const spot = ctx.createRadialGradient(W * 0.75, H * 0.28, 0, W * 0.75, H * 0.28, W * 0.75)
+      spot.addColorStop(0, 'rgba(255,215,0,0.13)')
+      spot.addColorStop(1, 'rgba(255,215,0,0)')
+      ctx.fillStyle = spot
+      ctx.fillRect(0, 0, W, H)
+
+      // ── 5. Actor photo (portrait, with tight aspect) ───────────────────
+      const actorPortraitW = 360
+      const actorPortraitH = 540
+      const actorPortraitX = (W - actorPortraitW) / 2
+      const actorPortraitY = 170
+      const actorSrc = performance.actor.imageUrl
+        ? (upgradeActorImageRes(performance.actor.imageUrl) ?? performance.actor.imageUrl)
+        : ''
+      const actorImg = actorSrc ? await loadImage(actorSrc) : null
+      drawPortraitPhoto(
+        ctx,
+        actorImg,
+        actorPortraitX,
+        actorPortraitY,
+        actorPortraitW,
+        actorPortraitH,
+        performance.actor.name.charAt(0)
+      )
+
+      // ── 6. "MY RATING" eyebrow ─────────────────────────────────────────
+      ctx.fillStyle = 'rgba(255,215,0,0.65)'
+      ctx.font = '600 30px Arial, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'alphabetic'
+      ctx.fillText('MY RATING', W / 2, actorPortraitY + actorPortraitH + 60)
+
+      // ── 7. Actor name ──────────────────────────────────────────────────
+      ctx.fillStyle = '#fff'
+      ctx.font = 'bold 90px Georgia, "Times New Roman", serif'
+      ctx.textAlign = 'center'
+      // Shrink font if name is long
+      const nameFontSize = performance.actor.name.length > 18 ? 68 : performance.actor.name.length > 14 ? 80 : 90
+      ctx.font = `bold ${nameFontSize}px Georgia, "Times New Roman", serif`
+      ctx.fillText(performance.actor.name, W / 2, actorPortraitY + actorPortraitH + 140)
+
+      // ── 8. Movie title + year ──────────────────────────────────────────
+      ctx.fillStyle = '#a1a1aa'
+      ctx.font = '500 44px Arial, sans-serif'
+      const movieLabel = `${performance.movie.title} · ${performance.movie.year}`
+      const truncatedMovie = movieLabel.length > 34 ? performance.movie.title.substring(0, 28) + `... · ${performance.movie.year}` : movieLabel
+      ctx.fillText(truncatedMovie, W / 2, actorPortraitY + actorPortraitH + 210)
+
+      // ── 9. Gold divider ────────────────────────────────────────────────
+      const makeDivider = (x: number, y: number, w: number) => {
+        const g = ctx.createLinearGradient(x, y, x + w, y)
+        g.addColorStop(0, 'rgba(255,215,0,0)')
+        g.addColorStop(0.2, 'rgba(255,215,0,0.7)')
+        g.addColorStop(0.5, 'rgba(255,215,0,1)')
+        g.addColorStop(0.8, 'rgba(255,215,0,0.7)')
+        g.addColorStop(1, 'rgba(255,215,0,0)')
+        ctx.fillStyle = g
+        ctx.fillRect(x, y, w, 2)
+      }
+      makeDivider(160, actorPortraitY + actorPortraitH + 248, W - 320)
+
+      // ── 10. Big score ──────────────────────────────────────────────────
+      const scoreGrad = ctx.createLinearGradient(W / 2 - 220, 0, W / 2 + 220, 0)
+      scoreGrad.addColorStop(0, '#FFE55C')
+      scoreGrad.addColorStop(0.4, '#FFD700')
+      scoreGrad.addColorStop(0.85, '#FFA500')
+      scoreGrad.addColorStop(1, '#FF8C00')
+
+      ctx.fillStyle = scoreGrad
+      ctx.font = `bold 230px Arial, sans-serif`
+      ctx.textAlign = 'center'
+      ctx.fillText(`${finalScore}`, W / 2 - 55, actorPortraitY + actorPortraitH + 510)
+
+      ctx.fillStyle = 'rgba(255,215,0,0.38)'
+      ctx.font = 'bold 85px Arial, sans-serif'
+      ctx.fillText('/10', W / 2 + 178, actorPortraitY + actorPortraitH + 498)
+
+      // ── 11. Quality label ──────────────────────────────────────────────
+      const quality = finalScore >= 9 ? 'MASTERPIECE' : finalScore >= 8 ? 'EXCELLENT' : finalScore >= 7 ? 'VERY GOOD' : finalScore >= 6 ? 'GOOD' : finalScore >= 4 ? 'AVERAGE' : 'BELOW AVERAGE'
+      ctx.fillStyle = 'rgba(255,255,255,0.38)'
+      ctx.font = '600 36px Arial, sans-serif'
+      ctx.fillText(quality, W / 2, actorPortraitY + actorPortraitH + 580)
+
+      // ── 12. Second divider ─────────────────────────────────────────────
+      makeDivider(280, actorPortraitY + actorPortraitH + 625, W - 560)
+
+      // ── 13. Branding ───────────────────────────────────────────────────
+      ctx.fillStyle = 'rgba(255,215,0,0.38)'
+      ctx.font = '500 32px Georgia, serif'
+      ctx.fillText('actorrating.com', W / 2, H - 90)
+
+      // ── Export ─────────────────────────────────────────────────────────
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+      })
+
+      const filename = `${performance.actor.name.toLowerCase().replace(/\s+/g, '-')}-rating.png`
+      const file = new File([blob], filename, { type: 'image/png' })
+
+      if (!forDownload && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${performance.actor.name} · ${performance.movie.title}`, text: shareText })
+        trackShareRating('native')
+      } else {
+        const objectUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objectUrl
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(objectUrl)
+      }
+    } catch {
+      handleShare()
+    } finally {
+      setIsGeneratingImage(false)
     }
   }
 
@@ -2364,7 +2602,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </button>
                 </div>
               )}
-              {/* Discover another actor — always show on success (buttons with actor names) */}
+              {/* Discover another actor — always curated list, with real images */}
               {!nextPerfLoading && (
                 <div className="mt-4 sm:mt-6">
                   <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2 sm:mb-3 text-center">
@@ -2372,18 +2610,51 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </p>
                   <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                     {[
-                      { name: 'Robert De Niro', slug: 'robert-de-niro' },
-                      { name: 'Christian Bale', slug: 'christian-bale' },
-                      { name: 'Cillian Murphy', slug: 'cillian-murphy' },
-                      { name: 'Leonardo DiCaprio', slug: 'leonardo-dicaprio' },
+                      {
+                        name: 'Robert De Niro',
+                        slug: 'robert-de-niro',
+                        imageUrl: 'https://image.tmdb.org/t/p/w300/A9Sz5Po2gWz5saMmoEdfM5Ajw8W.jpg',
+                      },
+                      {
+                        name: 'Christian Bale',
+                        slug: 'christian-bale',
+                        imageUrl: 'https://image.tmdb.org/t/p/w300/qCpZn2e3dimwbryLnqxZuI88PTi.jpg',
+                      },
+                      {
+                        name: 'Cillian Murphy',
+                        slug: 'cillian-murphy',
+                        imageUrl: 'https://image.tmdb.org/t/p/w300/lyUyVARQKhGxaxy0FbPJCQRpiaW.jpg',
+                      },
+                      {
+                        name: 'Leonardo DiCaprio',
+                        slug: 'leonardo-dicaprio',
+                        imageUrl: 'https://image.tmdb.org/t/p/w300/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg',
+                      },
                     ].map((actor) => (
                       <button
                         key={actor.slug}
                         type="button"
-                        onClick={() => router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-white border border-white/20 hover:bg-white/10 hover:border-white/30 transition-colors"
+                        onClick={() =>
+                          router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))
+                        }
+                        className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 sm:pl-2 sm:pr-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-white border border-white/15 hover:bg-white/10 hover:border-white/30 transition-colors"
                       >
-                        {actor.name}
+                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden flex items-center justify-center bg-[#111] border border-white/10">
+                          {actor.imageUrl ? (
+                            <img
+                              src={actor.imageUrl}
+                              alt={actor.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-semibold" style={{ color: '#FFD700' }}>
+                              {actor.name.charAt(0)}
+                            </span>
+                          )}
+                        </span>
+                        <span className="max-w-[120px] sm:max-w-[160px] truncate">{actor.name}</span>
                       </button>
                     ))}
                   </div>
@@ -2442,34 +2713,278 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             )}
 
-            {/* ── Secondary actions ─────────────────────────────────────────────── */}
-            <div
-              className="flex items-center justify-between gap-3 pt-3"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-            >
+            {/* ── Share your rating ─────────────────────────────────────────── */}
+            {finalScore !== null && (
+              <div className="space-y-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <p
+                  className="text-[10px] font-bold tracking-widest uppercase text-center pt-2"
+                  style={{ color: '#3f3f46' }}
+                >
+                  Share your rating
+                </p>
+
+                {/* Visual share card — movie poster bg + actor photo + score */}
+                <div
+                  className="relative w-full overflow-hidden cursor-pointer group/share"
+                  style={{
+                    borderRadius: '1rem',
+                    border: '1px solid rgba(255,215,0,0.15)',
+                    aspectRatio: '1200 / 630',
+                    background: '#0a0a0a',
+                  }}
+                  onClick={handleShare}
+                >
+                  {/* Movie poster — blurred, darkened background */}
+                  {performance.movie.posterUrl ? (
+                    <img
+                      src={performance.movie.posterUrl}
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{
+                        filter: 'blur(18px) brightness(0.22) saturate(0.6)',
+                        transform: 'scale(1.12)',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(255,215,0,0.08) 0%, transparent 65%)' }}
+                    />
+                  )}
+
+                  {/* Dark vignette overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%)' }}
+                  />
+
+                  {/* Gold spotlight accent */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(255,215,0,0.1) 0%, transparent 65%)' }}
+                  />
+
+                  {/* Card content */}
+                  <div className="relative z-10 flex items-center h-full px-5 sm:px-7 gap-4 sm:gap-6">
+
+                    {/* Actor photo */}
+                    <div className="shrink-0">
+                      {performance.actor.imageUrl ? (
+                        <img
+                          src={upgradeActorImageRes(performance.actor.imageUrl!) ?? undefined}
+                          alt={performance.actor.name}
+                          className="rounded-full object-cover object-top"
+                          style={{
+                            width: 'clamp(52px, 12vw, 80px)',
+                            height: 'clamp(52px, 12vw, 80px)',
+                            border: '2px solid rgba(255,215,0,0.45)',
+                            boxShadow: '0 0 24px rgba(255,215,0,0.18)',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="rounded-full flex items-center justify-center font-bold text-black text-lg"
+                          style={{
+                            width: 'clamp(52px, 12vw, 80px)',
+                            height: 'clamp(52px, 12vw, 80px)',
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                          }}
+                        >
+                          {performance.actor.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase mb-0.5"
+                        style={{ color: '#FFD700', opacity: 0.75 }}
+                      >
+                        My rating
+                      </p>
+                      <h3
+                        className="text-white font-bold leading-tight truncate"
+                        style={{
+                          fontFamily: 'var(--font-heading, "Playfair Display", serif)',
+                          fontSize: 'clamp(14px, 3.5vw, 22px)',
+                        }}
+                      >
+                        {performance.actor.name}
+                      </h3>
+                      <p
+                        className="truncate"
+                        style={{ color: '#a1a1aa', fontSize: 'clamp(10px, 2.5vw, 13px)' }}
+                      >
+                        {performance.movie.title}
+                        <span style={{ color: '#52525b' }}> · </span>
+                        {performance.movie.year}
+                      </p>
+
+                      {/* Score */}
+                      <div className="flex items-baseline gap-1 mt-1.5 sm:mt-2">
+                        <span
+                          className="font-black tabular-nums leading-none"
+                          style={{
+                            fontSize: 'clamp(2rem, 8vw, 3.5rem)',
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {finalScore}
+                        </span>
+                        <span
+                          className="font-semibold"
+                          style={{ color: 'rgba(255,215,0,0.4)', fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}
+                        >
+                          /10
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Branding — bottom right */}
+                    <div className="shrink-0 self-end pb-1 text-right hidden sm:block">
+                      <p
+                        className="text-[10px] font-semibold"
+                        style={{ color: 'rgba(255,215,0,0.35)', letterSpacing: '0.05em' }}
+                      >
+                        actorrating.com
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tap-to-share overlay */}
+                  <div
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/share:opacity-100 transition-opacity duration-200"
+                    style={{ background: 'rgba(0,0,0,0.55)' }}
+                  >
+                    <div
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-black"
+                      style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)' }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share this rating
+                    </div>
+                  </div>
+                </div>
+
+                {/* Share buttons — 2×2 grid, colorful round icons on mobile, pills with labels on desktop */}
+                <div className="grid grid-cols-4 sm:grid-cols-2 gap-3 sm:gap-3 justify-items-center sm:justify-items-stretch">
+
+                  {/* X / Twitter */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(
+                        `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+                        '_blank'
+                      )
+                      trackShareRating('twitter')
+                    }}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
+                    style={{
+                      background: '#000000',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span className="hidden sm:inline">Post on X</span>
+                  </button>
+
+                  {/* Instagram — native file share on mobile, download on desktop */}
+                  <button
+                    type="button"
+                    onClick={() => shareAsImage(false)}
+                    disabled={isGeneratingImage}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: isGeneratingImage
+                        ? 'rgba(255,255,255,0.03)'
+                        : 'linear-gradient(135deg, #f58529 0%, #dd2a7b 40%, #8134af 70%, #515bd4 100%)',
+                      border: 'none',
+                      color: isGeneratingImage ? '#52525b' : '#e4e4e7',
+                    }}
+                  >
+                    {isGeneratingImage ? (
+                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                    )}
+                    <span className="hidden sm:inline">Instagram</span>
+                  </button>
+
+                  {/* WhatsApp */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(
+                        `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
+                        '_blank'
+                      )
+                      trackShareRating('native')
+                    }}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95"
+                    style={{
+                      background: '#25D366',
+                      border: 'none',
+                      color: '#020817',
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0" style={{ color: '#ffffff' }}>
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    <span className="hidden sm:inline">WhatsApp</span>
+                  </button>
+
+                  {/* Download image */}
+                  <button
+                    type="button"
+                    onClick={() => shareAsImage(true)}
+                    disabled={isGeneratingImage}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      border: 'none',
+                      color: '#000000',
+                    }}
+                  >
+                    {isGeneratingImage ? (
+                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current shrink-0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                      </svg>
+                    )}
+                    <span className="hidden sm:inline">Download</span>
+                  </button>
+
+                </div>
+              </div>
+            )}
+
+            {/* ── Back to filmography ────────────────────────────────────────── */}
+            <div className="pb-2 text-center">
               <button
                 type="button"
                 onClick={handleBackToFilmography}
                 className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-                style={{ color: '#52525b' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#a1a1aa')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#52525b')}
+                style={{ color: '#3f3f46' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#71717a')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#3f3f46')}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                Filmography
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 hover:bg-white/8 active:scale-95"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  color: '#a1a1aa',
-                }}
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                Share
+                Back to filmography
               </button>
             </div>
             </motion.div>
