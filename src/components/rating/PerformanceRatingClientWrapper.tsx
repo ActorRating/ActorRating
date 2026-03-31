@@ -2120,21 +2120,37 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             <div className="grid grid-cols-2 gap-3">
               <Link
                 href={getActorUrl(performance.actor)}
-                className="flex flex-col gap-1 rounded-xl px-4 py-4 transition-colors hover:bg-white/5 active:scale-[0.98]"
+                className="flex flex-row items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-white/5 active:scale-[0.98]"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
-                <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: '#52525b' }}>Actor</span>
-                <span className="text-sm font-semibold text-white leading-tight line-clamp-2">{performance.actor.name}</span>
-                <span className="text-[11px] mt-0.5" style={{ color: '#FFD700', opacity: 0.7 }}>View profile →</span>
+                <ActorHeadshot
+                  name={performance.actor.name}
+                  imageUrl={performance.actor.imageUrl}
+                  size="sm"
+                  loading="lazy"
+                />
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: '#52525b' }}>Actor</span>
+                  <span className="text-sm font-semibold text-white leading-tight line-clamp-2">{performance.actor.name}</span>
+                  <span className="text-[11px] mt-0.5" style={{ color: '#FFD700', opacity: 0.7 }}>View profile →</span>
+                </div>
               </Link>
               <Link
                 href={getMovieUrl(performance.movie)}
-                className="flex flex-col gap-1 rounded-xl px-4 py-4 transition-colors hover:bg-white/5 active:scale-[0.98]"
+                className="flex flex-row items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-white/5 active:scale-[0.98]"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
-                <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: '#52525b' }}>Movie</span>
-                <span className="text-sm font-semibold text-white leading-tight line-clamp-2">{performance.movie.title}</span>
-                <span className="text-[11px] mt-0.5" style={{ color: '#FFD700', opacity: 0.7 }}>View cast →</span>
+                <MoviePoster
+                  title={performance.movie.title}
+                  posterUrl={performance.movie.posterUrl}
+                  size="sm"
+                  loading="lazy"
+                />
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-[10px] font-bold tracking-[0.18em] uppercase" style={{ color: '#52525b' }}>Movie</span>
+                  <span className="text-sm font-semibold text-white leading-tight line-clamp-2">{performance.movie.title}</span>
+                  <span className="text-[11px] mt-0.5" style={{ color: '#FFD700', opacity: 0.7 }}>View cast →</span>
+                </div>
               </Link>
             </div>
 
@@ -2272,104 +2288,286 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1], delay: 0.2 }}
               className="mt-4 sm:mt-6 space-y-4 sm:space-y-6 px-1 sm:px-0"
             >
-            {/* ── Context header: who + what was rated ─────────────────────────── */}
-            <div className="text-center pt-2 pb-3">
+            {/* ── Rating saved label + feedback ─────────────────────────────── */}
+            <div className="text-center pt-2 space-y-2">
               <p
-                className="text-xs font-bold tracking-[0.22em] uppercase mb-4"
-                style={{ color: '#FFD700', opacity: 0.7 }}
+                className="text-base sm:text-lg font-bold tracking-[0.18em] uppercase"
+                style={{ color: '#FFD700' }}
               >
                 Rating Saved
               </p>
-              <h2
-                className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-3 leading-tight"
-                style={{ fontFamily: 'var(--font-heading, "Playfair Display", serif)' }}
-              >
-                {performance.actor.name}
-              </h2>
-              <p className="text-base sm:text-lg" style={{ color: '#71717a' }}>
-                <span style={{ color: '#a1a1aa' }}>{performance.movie.title}</span>
-                <span style={{ color: '#3f3f46' }}> · </span>
-                {performance.movie.year}
-                {performance.comment && (
-                  <>
-                    <span style={{ color: '#3f3f46' }}> · </span>
-                    <span className="italic">{performance.comment}</span>
-                  </>
-                )}
-              </p>
+              {successHeadline && (
+                <p
+                  className="text-xl sm:text-2xl font-semibold italic leading-snug"
+                  style={{ color: 'rgba(255,255,255,0.9)' }}
+                >
+                  &ldquo;{successHeadline}&rdquo;
+                </p>
+              )}
             </div>
 
-            {/* ── Score verdict card ────────────────────────────────────────────── */}
-            <div
-              className="overflow-hidden"
-              style={{
-                background: 'linear-gradient(160deg, rgba(255,215,0,0.07) 0%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.01) 100%)',
-                border: '1px solid rgba(255,215,0,0.18)',
-                borderRadius: '1.25rem',
-              }}
-            >
-              {/* Large score hero */}
-              <div className="flex flex-col items-center pt-7 pb-4 px-6">
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span
-                    className="text-7xl sm:text-8xl font-black tabular-nums leading-none"
+            {/* ── Share your rating ─────────────────────────────────────────── */}
+            {finalScore !== null && (
+              <div className="space-y-3">
+                <p
+                  className="text-[10px] font-bold tracking-widest uppercase text-center"
+                  style={{ color: '#3f3f46' }}
+                >
+                  Share your rating
+                </p>
+
+                {/* Visual share card — movie poster bg + actor photo + score */}
+                <div
+                  className="relative w-full overflow-hidden cursor-pointer group/share"
+                  style={{
+                    borderRadius: '1rem',
+                    border: '1px solid rgba(255,215,0,0.15)',
+                    aspectRatio: '16 / 9',
+                    background: '#0a0a0a',
+                  }}
+                  onClick={handleShare}
+                >
+                  {/* Movie poster — blurred, darkened background */}
+                  {performance.movie.posterUrl ? (
+                    <img
+                      src={performance.movie.posterUrl}
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      style={{
+                        filter: 'blur(18px) brightness(0.22) saturate(0.6)',
+                        transform: 'scale(1.12)',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(255,215,0,0.08) 0%, transparent 65%)' }}
+                    />
+                  )}
+
+                  {/* Dark vignette overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%)' }}
+                  />
+
+                  {/* Gold spotlight accent */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(255,215,0,0.1) 0%, transparent 65%)' }}
+                  />
+
+                  {/* Card content */}
+                  <div className="relative z-10 flex items-center h-full px-4 sm:px-6 gap-4 sm:gap-5">
+
+                    {/* Actor photo — portrait rectangle */}
+                    <div
+                      className="shrink-0 overflow-hidden"
+                      style={{
+                        width: 'clamp(72px, 20vw, 100px)',
+                        height: 'clamp(108px, 30vw, 150px)',
+                        borderRadius: '0.75rem',
+                        border: '1.5px solid rgba(255,215,0,0.35)',
+                        boxShadow: '0 0 24px rgba(255,215,0,0.18)',
+                        background: 'rgba(255,215,0,0.06)',
+                      }}
+                    >
+                      {performance.actor.imageUrl ? (
+                        <img
+                          src={upgradeActorImageRes(performance.actor.imageUrl!) ?? undefined}
+                          alt={performance.actor.name}
+                          className="w-full h-full object-cover"
+                          style={{ objectPosition: 'top center' }}
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center font-bold text-black text-2xl"
+                          style={{
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                          }}
+                        >
+                          {performance.actor.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Text */}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-1"
+                        style={{ color: '#FFD700', opacity: 0.75 }}
+                      >
+                        My rating
+                      </p>
+                      <h3
+                        className="text-white font-bold leading-tight truncate"
+                        style={{
+                          fontFamily: 'var(--font-heading, "Playfair Display", serif)',
+                          fontSize: 'clamp(16px, 5vw, 26px)',
+                        }}
+                      >
+                        {performance.actor.name}
+                      </h3>
+                      <p
+                        className="truncate mt-0.5"
+                        style={{ color: '#a1a1aa', fontSize: 'clamp(11px, 3vw, 14px)' }}
+                      >
+                        {performance.movie.title}
+                        <span style={{ color: '#52525b' }}> · </span>
+                        {performance.movie.year}
+                      </p>
+
+                      {/* Score */}
+                      <div className="flex items-baseline gap-1 mt-2 sm:mt-3">
+                        <span
+                          className="font-black tabular-nums leading-none"
+                          style={{
+                            fontSize: 'clamp(2.75rem, 13vw, 5rem)',
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          }}
+                        >
+                          {finalScore}
+                        </span>
+                        <span
+                          className="font-semibold"
+                          style={{ color: 'rgba(255,215,0,0.4)', fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)' }}
+                        >
+                          /10
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Branding — bottom right */}
+                    <div className="shrink-0 self-end pb-2 text-right hidden sm:block">
+                      <p
+                        className="text-[11px] font-semibold"
+                        style={{ color: 'rgba(255,215,0,0.35)', letterSpacing: '0.05em' }}
+                      >
+                        actorrating.com
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tap-to-share overlay */}
+                  <div
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/share:opacity-100 transition-opacity duration-200"
+                    style={{ background: 'rgba(0,0,0,0.55)' }}
+                  >
+                    <div
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-black"
+                      style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)' }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share this rating
+                    </div>
+                  </div>
+                </div>
+
+                {/* Share buttons — 2×2 grid, colorful round icons on mobile, pills with labels on desktop */}
+                <div className="grid grid-cols-4 sm:grid-cols-2 gap-3 sm:gap-3 justify-items-center sm:justify-items-stretch">
+
+                  {/* X / Twitter */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(
+                        `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+                        '_blank'
+                      )
+                      trackShareRating('twitter')
+                    }}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      filter: 'drop-shadow(0 0 24px rgba(255,215,0,0.25))',
+                      background: '#000000',
+                      border: '1px solid rgba(255,255,255,0.15)',
                     }}
                   >
-                    {finalScore}
-                  </span>
-                  <span
-                    className="text-xl font-semibold self-end mb-2.5"
-                    style={{ color: '#FFD700', opacity: 0.4 }}
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    <span className="hidden sm:inline">Post on X</span>
+                  </button>
+
+                  {/* Instagram — native file share on mobile, download on desktop */}
+                  <button
+                    type="button"
+                    onClick={() => shareAsImage(false)}
+                    disabled={isGeneratingImage}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: isGeneratingImage
+                        ? 'rgba(255,255,255,0.03)'
+                        : 'linear-gradient(135deg, #f58529 0%, #dd2a7b 40%, #8134af 70%, #515bd4 100%)',
+                      border: 'none',
+                      color: isGeneratingImage ? '#52525b' : '#e4e4e7',
+                    }}
                   >
-                    /10
-                  </span>
+                    {isGeneratingImage ? (
+                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                    )}
+                    <span className="hidden sm:inline">Instagram</span>
+                  </button>
+
+                  {/* WhatsApp */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(
+                        `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
+                        '_blank'
+                      )
+                      trackShareRating('native')
+                    }}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95"
+                    style={{
+                      background: '#25D366',
+                      border: 'none',
+                      color: '#020817',
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0" style={{ color: '#ffffff' }}>
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    <span className="hidden sm:inline">WhatsApp</span>
+                  </button>
+
+                  {/* Download image */}
+                  <button
+                    type="button"
+                    onClick={() => shareAsImage(true)}
+                    disabled={isGeneratingImage}
+                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      border: 'none',
+                      color: '#000000',
+                    }}
+                  >
+                    {isGeneratingImage ? (
+                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current shrink-0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                      </svg>
+                    )}
+                    <span className="hidden sm:inline">Download</span>
+                  </button>
+
                 </div>
-                <p
-                  className="text-[11px] font-bold tracking-[0.18em] uppercase"
-                  style={{ color: '#a1a1aa' }}
-                >
-                  {finalScore >= 9 ? 'Masterpiece' : finalScore >= 8 ? 'Excellent' : finalScore >= 7 ? 'Very Good' : finalScore >= 6 ? 'Good' : finalScore >= 4 ? 'Average' : 'Below Average'}
-                </p>
               </div>
-
-              {/* Community comparison — subdued row */}
-              {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
-                <div
-                  className="mx-5 mb-5 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
-                >
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold tracking-widest uppercase mb-0.5" style={{ color: '#52525b' }}>Community</p>
-                    <div className="flex items-baseline gap-0.5">
-                      <span className="text-xl font-black tabular-nums text-white">{communityAvg10}</span>
-                      <span className="text-xs font-semibold" style={{ color: '#52525b' }}>/10</span>
-                    </div>
-                    <p className="text-[10px] mt-0.5" style={{ color: '#3f3f46' }}>{communityRatingCount} {communityRatingCount === 1 ? 'rating' : 'ratings'}</p>
-                  </div>
-                  {successHeadline && (
-                    <p className="text-xs leading-relaxed text-right flex-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                      {successHeadline}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* No community yet — subtle "first critic" note */}
-              {(communityAvg10 == null || communityRatingCount == null || communityRatingCount === 0) && successHeadline && (
-                <p
-                  className="text-center text-xs px-6 pb-5"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}
-                >
-                  {successHeadline}
-                </p>
-              )}
-            </div>
+            )}
 
             {/* ── Actor completion: X / Y performances rated (prominent) ─────────── */}
             {actorProgress != null && (
@@ -2613,7 +2811,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       {
                         name: 'Robert De Niro',
                         slug: 'robert-de-niro',
-                        imageUrl: 'https://image.tmdb.org/t/p/w300/A9Sz5Po2gWz5saMmoEdfM5Ajw8W.jpg',
+                        imageUrl: 'https://image.tmdb.org/t/p/w300/cT8htcckIuyI1Lqwt1CvD02ynTh.jpg',
                       },
                       {
                         name: 'Christian Bale',
@@ -2645,6 +2843,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                               src={actor.imageUrl}
                               alt={actor.name}
                               className="w-full h-full object-cover"
+                              style={{ objectPosition: 'top center' }}
                               loading="lazy"
                               decoding="async"
                             />
@@ -2710,266 +2909,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 <p className="text-xs text-[#52525b] text-right tabular-nums">
                   {progressData.ratingCount} {progressData.ratingCount === 1 ? 'rating' : 'ratings'} · {Math.round(progressData.progress)}% to next level
                 </p>
-              </div>
-            )}
-
-            {/* ── Share your rating ─────────────────────────────────────────── */}
-            {finalScore !== null && (
-              <div className="space-y-3 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <p
-                  className="text-[10px] font-bold tracking-widest uppercase text-center pt-2"
-                  style={{ color: '#3f3f46' }}
-                >
-                  Share your rating
-                </p>
-
-                {/* Visual share card — movie poster bg + actor photo + score */}
-                <div
-                  className="relative w-full overflow-hidden cursor-pointer group/share"
-                  style={{
-                    borderRadius: '1rem',
-                    border: '1px solid rgba(255,215,0,0.15)',
-                    aspectRatio: '1200 / 630',
-                    background: '#0a0a0a',
-                  }}
-                  onClick={handleShare}
-                >
-                  {/* Movie poster — blurred, darkened background */}
-                  {performance.movie.posterUrl ? (
-                    <img
-                      src={performance.movie.posterUrl}
-                      alt=""
-                      aria-hidden
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{
-                        filter: 'blur(18px) brightness(0.22) saturate(0.6)',
-                        transform: 'scale(1.12)',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(255,215,0,0.08) 0%, transparent 65%)' }}
-                    />
-                  )}
-
-                  {/* Dark vignette overlay */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%)' }}
-                  />
-
-                  {/* Gold spotlight accent */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(255,215,0,0.1) 0%, transparent 65%)' }}
-                  />
-
-                  {/* Card content */}
-                  <div className="relative z-10 flex items-center h-full px-5 sm:px-7 gap-4 sm:gap-6">
-
-                    {/* Actor photo */}
-                    <div className="shrink-0">
-                      {performance.actor.imageUrl ? (
-                        <img
-                          src={upgradeActorImageRes(performance.actor.imageUrl!) ?? undefined}
-                          alt={performance.actor.name}
-                          className="rounded-full object-cover object-top"
-                          style={{
-                            width: 'clamp(52px, 12vw, 80px)',
-                            height: 'clamp(52px, 12vw, 80px)',
-                            border: '2px solid rgba(255,215,0,0.45)',
-                            boxShadow: '0 0 24px rgba(255,215,0,0.18)',
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="rounded-full flex items-center justify-center font-bold text-black text-lg"
-                          style={{
-                            width: 'clamp(52px, 12vw, 80px)',
-                            height: 'clamp(52px, 12vw, 80px)',
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                          }}
-                        >
-                          {performance.actor.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Text */}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase mb-0.5"
-                        style={{ color: '#FFD700', opacity: 0.75 }}
-                      >
-                        My rating
-                      </p>
-                      <h3
-                        className="text-white font-bold leading-tight truncate"
-                        style={{
-                          fontFamily: 'var(--font-heading, "Playfair Display", serif)',
-                          fontSize: 'clamp(14px, 3.5vw, 22px)',
-                        }}
-                      >
-                        {performance.actor.name}
-                      </h3>
-                      <p
-                        className="truncate"
-                        style={{ color: '#a1a1aa', fontSize: 'clamp(10px, 2.5vw, 13px)' }}
-                      >
-                        {performance.movie.title}
-                        <span style={{ color: '#52525b' }}> · </span>
-                        {performance.movie.year}
-                      </p>
-
-                      {/* Score */}
-                      <div className="flex items-baseline gap-1 mt-1.5 sm:mt-2">
-                        <span
-                          className="font-black tabular-nums leading-none"
-                          style={{
-                            fontSize: 'clamp(2rem, 8vw, 3.5rem)',
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          }}
-                        >
-                          {finalScore}
-                        </span>
-                        <span
-                          className="font-semibold"
-                          style={{ color: 'rgba(255,215,0,0.4)', fontSize: 'clamp(0.75rem, 2vw, 1rem)' }}
-                        >
-                          /10
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Branding — bottom right */}
-                    <div className="shrink-0 self-end pb-1 text-right hidden sm:block">
-                      <p
-                        className="text-[10px] font-semibold"
-                        style={{ color: 'rgba(255,215,0,0.35)', letterSpacing: '0.05em' }}
-                      >
-                        actorrating.com
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tap-to-share overlay */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/share:opacity-100 transition-opacity duration-200"
-                    style={{ background: 'rgba(0,0,0,0.55)' }}
-                  >
-                    <div
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-black"
-                      style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)' }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      Share this rating
-                    </div>
-                  </div>
-                </div>
-
-                {/* Share buttons — 2×2 grid, colorful round icons on mobile, pills with labels on desktop */}
-                <div className="grid grid-cols-4 sm:grid-cols-2 gap-3 sm:gap-3 justify-items-center sm:justify-items-stretch">
-
-                  {/* X / Twitter */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.open(
-                        `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-                        '_blank'
-                      )
-                      trackShareRating('twitter')
-                    }}
-                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-95"
-                    style={{
-                      background: '#000000',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                    <span className="hidden sm:inline">Post on X</span>
-                  </button>
-
-                  {/* Instagram — native file share on mobile, download on desktop */}
-                  <button
-                    type="button"
-                    onClick={() => shareAsImage(false)}
-                    disabled={isGeneratingImage}
-                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
-                    style={{
-                      background: isGeneratingImage
-                        ? 'rgba(255,255,255,0.03)'
-                        : 'linear-gradient(135deg, #f58529 0%, #dd2a7b 40%, #8134af 70%, #515bd4 100%)',
-                      border: 'none',
-                      color: isGeneratingImage ? '#52525b' : '#e4e4e7',
-                    }}
-                  >
-                    {isGeneratingImage ? (
-                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                      </svg>
-                    )}
-                    <span className="hidden sm:inline">Instagram</span>
-                  </button>
-
-                  {/* WhatsApp */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.open(
-                        `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`,
-                        '_blank'
-                      )
-                      trackShareRating('native')
-                    }}
-                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95"
-                    style={{
-                      background: '#25D366',
-                      border: 'none',
-                      color: '#020817',
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0" style={{ color: '#ffffff' }}>
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    <span className="hidden sm:inline">WhatsApp</span>
-                  </button>
-
-                  {/* Download image */}
-                  <button
-                    type="button"
-                    onClick={() => shareAsImage(true)}
-                    disabled={isGeneratingImage}
-                    className="inline-flex items-center justify-center sm:justify-center gap-0 sm:gap-2 h-12 w-12 sm:w-auto sm:px-4 sm:py-3 rounded-full sm:rounded-2xl text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50"
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                      border: 'none',
-                      color: '#000000',
-                    }}
-                  >
-                    {isGeneratingImage ? (
-                      <svg className="w-4 h-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current shrink-0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                      </svg>
-                    )}
-                    <span className="hidden sm:inline">Download</span>
-                  </button>
-
-                </div>
               </div>
             )}
 
