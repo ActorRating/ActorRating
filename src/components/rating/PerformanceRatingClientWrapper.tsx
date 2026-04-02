@@ -683,13 +683,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     return () => clearTimeout(t)
   }, [submitPhase, successOverlayFaded])
 
-  // When overlay fades, scroll to carousel so next rating options are immediately visible
+  // When overlay fades, scroll to top so the success state starts at the top of the viewport
   useEffect(() => {
     if (submitPhase !== 'success' || !successOverlayFaded) return
-    const el = carouselSectionRef.current
-    if (el && typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
       const t = setTimeout(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       }, 100)
       return () => clearTimeout(t)
     }
@@ -2452,9 +2451,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </div>
                   </div>
 
-                  {/* Tap-to-share overlay */}
+                  {/* Tap-to-share overlay: hover on mobile-width; always visible md+ (desktop) */}
                   <div
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/share:opacity-100 transition-opacity duration-200"
+                    className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200 group-hover/share:opacity-100 md:opacity-100"
                     style={{ background: 'rgba(0,0,0,0.55)' }}
                   >
                     <div
