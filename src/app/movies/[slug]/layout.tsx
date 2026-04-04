@@ -57,17 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       notFound();
     }
 
-    // Index if ≥1 rated performance OR ≥5 total performances (actor–movie pairs in Performance table)
-    const [ratedPerformances, performanceCount] = await Promise.all([
-      prisma.rating.findMany({
-        where: { movieId: movie.id },
-        select: { actorId: true },
-        distinct: ["actorId"],
-      }),
-      prisma.performance.count({ where: { movieId: movie.id } }),
+    // Index if the title has any Performance or Rating row (same bar as sitemap / actor pages).
+    const [hasPerf, hasRating] = await Promise.all([
+      prisma.performance.findFirst({ where: { movieId: movie.id }, select: { id: true } }),
+      prisma.rating.findFirst({ where: { movieId: movie.id }, select: { id: true } }),
     ]);
-    const ratedCount = ratedPerformances.length;
-    const isIndexable = ratedCount >= 1 || performanceCount >= 5;
+    const isIndexable = !!(hasPerf || hasRating);
     const robots = isIndexable ? undefined : { index: false as const, follow: true as const };
 
     const yearPart = movie.year ? ` (${movie.year})` : "";

@@ -78,30 +78,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
-  // Performance pages: noindex until ≥1 rating (indexing is a reward for engagement).
-  // Use cached count to avoid a second Prisma call in the same request as the layout body (pool contention).
-  let ratingCount = 0
-  try {
-    const getCount = () =>
-      prisma.rating.count({ where: { actorId: actor.id, movieId: movie.id } })
-    ratingCount = await unstable_cache(getCount, [`rate:count:${actor.id}:${movie.id}`], {
-      revalidate: 86400,
-    })()
-  } catch (err) {
-    console.error('Rate layout generateMetadata rating count failed:', err)
-    // On pool timeout or DB error, allow index so the page still renders and crawlers aren't blocked
-  }
-  const robots = ratingCount === 0
-    ? { index: false as const, follow: true as const }
-    : undefined
-
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
   const canonical = `${baseUrl}/rate/${movieSlug}/${actorSlug}`
 
   return {
     title,
     description,
-    robots,
     alternates: { canonical },
     openGraph: {
       title,

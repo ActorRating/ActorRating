@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { getDistinctRatePagePairCount } from '@/lib/sitemap-rate-pairs'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
 const MAX_URLS_PER_SITEMAP = 10000
@@ -11,12 +11,7 @@ const MAX_URLS_PER_SITEMAP = 10000
  */
 export async function GET(request: NextRequest) {
   try {
-    // Count rate pages with ≥1 rating (sitemap includes only these)
-    const ratedPairsCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
-      SELECT COUNT(DISTINCT ("actorId" || '-' || "movieId"))::bigint as count
-      FROM "Rating"
-    `
-    const performanceCount = Number(ratedPairsCount[0]?.count || 0)
+    const performanceCount = await getDistinctRatePagePairCount()
 
     // Calculate how many performance sitemaps we need (0 if no rated pages)
     const performanceSitemapCount = Math.ceil(performanceCount / MAX_URLS_PER_SITEMAP)

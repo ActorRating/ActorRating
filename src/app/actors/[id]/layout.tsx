@@ -28,19 +28,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
 
-    // Index if ≥1 rated performance (engagement) OR ≥5 performances (first lever: expand indexable actors)
-    const [ratedPerformances, performanceCount] = await Promise.all([
-      prisma.rating.findMany({
-        where: { actorId: actor.id },
-        select: { movieId: true },
-        distinct: ["movieId"],
+    // Index if there is any rateable credit on a non-featurette film (Performance or Rating row).
+    const [hasPerf, hasRating] = await Promise.all([
+      prisma.performance.findFirst({
+        where: { actorId: actor.id, movie: { isFeaturette: false } },
+        select: { id: true },
       }),
-      prisma.performance.count({
-        where: { actorId: actor.id, movie: { is: { isFeaturette: false } } },
+      prisma.rating.findFirst({
+        where: { actorId: actor.id, movie: { isFeaturette: false } },
+        select: { id: true },
       }),
     ]);
-    const ratedCount = ratedPerformances.length;
-    const shouldIndex = ratedCount >= 1 || performanceCount >= 5;
+    const shouldIndex = !!(hasPerf || hasRating);
     const robots = shouldIndex ? undefined : { index: false as const, follow: true as const };
 
     const title = `How Good Is ${actor.name}? Performances Ranked & Rated`;

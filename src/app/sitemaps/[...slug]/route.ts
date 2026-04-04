@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdultContentMovie, isAdultContentSlug } from '@/lib/adult-content-filter'
 import { isJunkMovieSlug, isAllowedMovieSlug } from '@/lib/junk-movie-slugs'
+import { getDistinctRatePagePairsPage } from '@/lib/sitemap-rate-pairs'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
 const MAX_URLS_PER_SITEMAP = 10000
@@ -100,21 +101,15 @@ function generateStaticSitemap(): NextResponse {
 }
 
 async function generateActorsSitemap(): Promise<NextResponse> {
-  // Include actors with ≥1 rated performance OR ≥5 performances (matches layout indexability)
-  const [actorIdsWithRatings, actorIdsWithFivePlusPerformances] = await Promise.all([
-    prisma.rating.findMany({ select: { actorId: true }, distinct: ['actorId'] }),
-    prisma.$queryRaw<Array<{ actorId: string }>>`
-      SELECT p."actorId" FROM "Performance" p
-      INNER JOIN "Movie" m ON p."movieId" = m.id
-      WHERE m."isFeaturette" = false
-      GROUP BY p."actorId" HAVING COUNT(*) >= 5
-    `,
-  ])
-  const idsSet = new Set<string>([
-    ...actorIdsWithRatings.map((r) => r.actorId),
-    ...actorIdsWithFivePlusPerformances.map((r) => r.actorId),
-  ])
-  const ids = Array.from(idsSet)
+  // Any actor with ≥1 Performance or Rating on a non-featurette film (matches layout).
+  const idRows = await prisma.$queryRaw<Array<{ actorId: string }>>`
+    SELECT DISTINCT p."actorId" FROM "Performance" p
+    INNER JOIN "Movie" m ON m.id = p."movieId" AND NOT m."isFeaturette"
+    UNION
+    SELECT DISTINCT r."actorId" FROM "Rating" r
+    INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+  `
+  const ids = [...new Set(idRows.map((r) => r.actorId))]
   if (ids.length === 0) {
     const xml = generateSitemapXml([])
     return new NextResponse(xml, {
@@ -148,30 +143,14 @@ async function generateActorsSitemap(): Promise<NextResponse> {
 }
 
 async function generateMoviesSitemap(): Promise<NextResponse> {
-  // Include movies with ≥1 rated performance OR ≥5 total performances (Performance table)
-  const [movieIdsWithRatings, movieIdsWithFivePlusPerformances] = await Promise.all([
-    prisma.$queryRaw<Array<{ movieId: string }>>`
-      SELECT r."movieId"
-      FROM "Rating" r
-      INNER JOIN "Movie" m ON r."movieId" = m.id
-      WHERE m."isFeaturette" = false
-      GROUP BY r."movieId"
-      HAVING COUNT(DISTINCT r."actorId") >= 1
-    `,
-    prisma.$queryRaw<Array<{ movieId: string }>>`
-      SELECT p."movieId"
-      FROM "Performance" p
-      INNER JOIN "Movie" m ON p."movieId" = m.id
-      WHERE m."isFeaturette" = false
-      GROUP BY p."movieId"
-      HAVING COUNT(*) >= 5
-    `,
-  ])
-  const idsSet = new Set<string>([
-    ...movieIdsWithRatings.map((r) => r.movieId),
-    ...movieIdsWithFivePlusPerformances.map((r) => r.movieId),
-  ])
-  const ids = Array.from(idsSet)
+  const idRows = await prisma.$queryRaw<Array<{ movieId: string }>>`
+    SELECT DISTINCT p."movieId" FROM "Performance" p
+    INNER JOIN "Movie" m ON m.id = p."movieId" AND NOT m."isFeaturette"
+    UNION
+    SELECT DISTINCT r."movieId" FROM "Rating" r
+    INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+  `
+  const ids = [...new Set(idRows.map((r) => r.movieId))]
   if (ids.length === 0) {
     const xml = generateSitemapXml([])
     return new NextResponse(xml, {
@@ -225,24 +204,11 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
     return new NextResponse('Invalid page number', { status: 400 })
   }
 
-  const skip = (pageNum - 1) * MAX_URLS_PER_SITEMAP
+  // Distinct (actor, movie) with any Performance or Rating on a non-featurette film; disjoint pages.
+  const pairRows = await getDistinctRatePagePairsPage(pageNum, MAX_URLS_PER_SITEMAP)
 
-  // Only include rate pages that have ≥1 rating (indexing is a reward for engagement)
-  // Use DB-level pagination so we don't materialize all rated pairs for every page.
-  const ratedPairs = await prisma.rating.groupBy({
-    by: ['actorId', 'movieId'],
-    _max: { updatedAt: true },
-    orderBy: {
-      _max: {
-        updatedAt: 'desc',
-      },
-    },
-    skip,
-    take: MAX_URLS_PER_SITEMAP * 3,
-  })
-
-  const actorIds = [...new Set(ratedPairs.map((p) => p.actorId))]
-  const movieIds = [...new Set(ratedPairs.map((p) => p.movieId))]
+  const actorIds = [...new Set(pairRows.map((p) => p.actorId))]
+  const movieIds = [...new Set(pairRows.map((p) => p.movieId))]
 
   const [actors, movies] = await Promise.all([
     prisma.actor.findMany({
@@ -259,15 +225,15 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
   const movieMap = new Map(movies.map((m) => [m.id, m]))
 
   const combinations: Array<{ url: string; lastModified: Date }> = []
-  for (const p of ratedPairs) {
+  for (const p of pairRows) {
     const actor = actorMap.get(p.actorId)
     const movie = movieMap.get(p.movieId)
-    if (!actor || !movie || !p._max.updatedAt || movie.isFeaturette) continue
+    if (!actor || !movie || movie.isFeaturette) continue
     const movieSlug = movie.slug ?? movie.id
     if (isAllowedMovieSlug(movieSlug)) {
       combinations.push({
         url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
-        lastModified: p._max.updatedAt,
+        lastModified: p.maxUpd,
       })
       continue
     }
@@ -275,12 +241,11 @@ async function generatePerformancesSitemap(pageNum: number): Promise<NextRespons
     if (isAdultContentMovie({ title: movie.title, genre: movie.genre, overview: movie.overview })) continue
     combinations.push({
       url: `${BASE_URL}/rate/${movie.slug || movie.id}/${actor.slug || actor.id}`,
-      lastModified: p._max.updatedAt,
+      lastModified: p.maxUpd,
     })
   }
 
-  // We already ordered by updatedAt DESC at the DB level.
-  const urlsForPage = combinations.slice(0, MAX_URLS_PER_SITEMAP)
+  const urlsForPage = combinations
 
   // If this page ends up with no URLs (e.g. index overestimated due to filters),
   // return an empty but valid sitemap instead of 404 to avoid GSC errors.
