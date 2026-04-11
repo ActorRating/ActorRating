@@ -29,7 +29,10 @@ export type RatePagePairRow = {
   maxUpd: Date
 }
 
-/** Non-overlapping pages: each page takes the next chunk of merged pairs (newest first). */
+/** Non-overlapping pages: each page takes the next chunk of merged pairs.
+ *  Sorted by (actorId, movieId) — both are primary keys so the sort is stable,
+ *  cheap, and consistent across requests. maxUpd is carried along for lastmod.
+ */
 export async function getDistinctRatePagePairsPage(
   pageNum: number,
   chunkSize: number
@@ -52,7 +55,7 @@ export async function getDistinctRatePagePairsPage(
     )
     SELECT "actorId", "movieId", "maxUpd"
     FROM merged
-    ORDER BY "maxUpd" DESC
+    ORDER BY "actorId", "movieId"
     LIMIT ${chunkSize}
     OFFSET ${skip}
   `

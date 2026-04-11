@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
+import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
+import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -36,7 +38,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  let initialLeaderboardPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
+  try {
+    initialLeaderboardPerformances = await getPerformancesByLookup(homeLeaderboardLookupTargets());
+  } catch {
+    /* DB/API unavailable during build or deploy — client LeaderboardSection still fetches */
+  }
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
@@ -134,7 +142,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
       <LandingLayout>
-        <HomePageClient />
+        <HomePageClient initialLeaderboardPerformances={initialLeaderboardPerformances} />
         <HomeSeoLinkSections />
       </LandingLayout>
     </>

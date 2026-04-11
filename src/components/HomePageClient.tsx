@@ -9,7 +9,13 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { prefetchPerformancesPageData, buildByLookupUrl } from "@/lib/performances-page-targets";
+import {
+  prefetchPerformancesPageData,
+  buildByLookupUrl,
+  HOME_LEADERBOARD_ROWS,
+} from "@/lib/performances-page-targets";
+import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
+import { upgradeActorImageRes } from "@/lib/tmdb";
 import { SearchBar } from "@/components/SearchBar"
 import { ActorAvatar } from "@/components/ui/ActorAvatar";
 
@@ -34,13 +40,7 @@ const CARD_SHADOW = `
 
 const CARD_BG = 'linear-gradient(135deg, rgba(26,26,26,0.95) 0%, rgba(15,15,15,0.95) 50%, rgba(0,0,0,0.95) 100%)';
 
-const PERFORMANCES = [
-  { actor: "Cillian Murphy",  movie: "Oppenheimer",     year: "2023" },
-  { actor: "Heath Ledger",    movie: "The Dark Knight", year: "2008" },
-  { actor: "Joaquin Phoenix", movie: "Joker",           year: "2019" },
-  { actor: "Margot Robbie",   movie: "Barbie",          year: "2023" },
-  { actor: "Cate Blanchett",  movie: "TÁR",            year: "2022" },
-];
+const PERFORMANCES = HOME_LEADERBOARD_ROWS.map((r) => ({ ...r }));
 
 // ─── Device hook ─────────────────────────────────────────────────────────────
 
@@ -384,11 +384,24 @@ function OscarBanner() {
   );
 }
 
+function performancesMapFromEnriched(perfs: EnrichedPerformance[] | undefined): Map<string, EnrichedPerformance> {
+  const map = new Map<string, EnrichedPerformance>();
+  if (!perfs?.length) return map;
+  for (const p of perfs) {
+    if (p.actor?.name && p.movie?.title) {
+      map.set(`${p.actor.name}:${p.movie.title}`, p);
+    }
+  }
+  return map;
+}
+
 // ─── LEADERBOARD — sorted by actual rating, always-visible Rate buttons ───────
 
-function LeaderboardSection() {
+function LeaderboardSection({ initialPerformances }: { initialPerformances?: EnrichedPerformance[] }) {
   const { isMobile, prefersReducedMotion } = useDevice();
-  const [performancesData, setPerformancesData] = useState<Map<string, any>>(new Map());
+  const [performancesData, setPerformancesData] = useState<Map<string, EnrichedPerformance>>(() =>
+    performancesMapFromEnriched(initialPerformances)
+  );
   const [isLoading, setIsLoading] = useState(true);
   // Start with original order; reorder once ratings arrive
   const [sortedPerfs, setSortedPerfs] = useState(PERFORMANCES);
@@ -400,8 +413,8 @@ function LeaderboardSection() {
         const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
         if (!res.ok) return;
         const data = await res.json();
-        const map = new Map<string, any>();
-        data.performances?.forEach?.((p: any) => {
+        const map = new Map<string, EnrichedPerformance>();
+        data.performances?.forEach?.((p: EnrichedPerformance) => {
           if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
         });
         setPerformancesData(map);
@@ -445,9 +458,11 @@ function LeaderboardSection() {
           {sortedPerfs.map((p, displayIndex) => {
             const key = `${p.actor}:${p.movie}`;
             const perfData = performancesData.get(key);
-            const rating = perfData?.averageRating > 0 && perfData?.ratingCount > 0
-              ? (perfData.averageRating / 10).toFixed(1) : null;
-            const count = perfData?.ratingCount ?? 0;
+            const avg = perfData?.averageRating;
+            const cnt = perfData?.ratingCount ?? 0;
+            const rating =
+              avg != null && avg > 0 && cnt > 0 ? (avg / 10).toFixed(1) : null;
+            const count = cnt;
 
             let href = '/performances';
             if (perfData?.actor && perfData?.movie) {
@@ -489,12 +504,13 @@ function LeaderboardSection() {
                   </div>
 
                   {/* Actor + Film */}
-                  <div className="min-w-0 flex items-center gap-3">
+                  <div className="min-w-0 flex items-center gap-4 sm:gap-5">
                     {/* Actor avatar — data comes from by-lookup API */}
                     <ActorAvatar
                       name={p.actor}
-                      imageUrl={perfData?.actor?.imageUrl ?? null}
-                      size="sm"
+                      imageUrl={upgradeActorImageRes(perfData?.actor?.imageUrl)}
+                      size="lg"
+                      className="w-14 h-14 rounded-2xl sm:w-20 sm:h-20"
                     />
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
@@ -1000,7 +1016,11 @@ function CommunityCta() {
 
 // ─── ROOT ──────────────────────────────────────────────────────────────────────
 
-export default function HomePageClient() {
+export default function HomePageClient({
+  initialLeaderboardPerformances = [],
+}: {
+  initialLeaderboardPerformances?: EnrichedPerformance[];
+}) {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.scrollY > 0) {
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1012,7 +1032,7 @@ export default function HomePageClient() {
       <HeroSection />
       <StatsStrip />
       <OscarBanner />
-      <LeaderboardSection />
+      <LeaderboardSection initialPerformances={initialLeaderboardPerformances} />
       <RatingCriteriaSection />
       <HowItWorksSection />
       <FeaturesSection />

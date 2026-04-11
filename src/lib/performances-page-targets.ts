@@ -18,6 +18,19 @@ export const ICONIC_PERFORMANCE_TARGETS = [
   { actor: "Anthony Hopkins", movie: "The Silence of the Lambs" },
 ]
 
+/** Landing home "Top Rated" leaderboard — single source for lookup + display year. */
+export const HOME_LEADERBOARD_ROWS = [
+  { actor: "Cillian Murphy", movie: "Oppenheimer", year: "2023" },
+  { actor: "Heath Ledger", movie: "The Dark Knight", year: "2008" },
+  { actor: "Joaquin Phoenix", movie: "Joker", year: "2019" },
+  { actor: "Margot Robbie", movie: "Barbie", year: "2023" },
+  { actor: "Cate Blanchett", movie: "TÁR", year: "2022" },
+] as const
+
+export function homeLeaderboardLookupTargets(): { actor: string; movie: string }[] {
+  return HOME_LEADERBOARD_ROWS.map(({ actor, movie }) => ({ actor, movie }))
+}
+
 type LookupTarget = { actor: string; movie: string }
 
 export function buildByLookupUrl(targets: LookupTarget[]): string {

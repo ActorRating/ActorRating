@@ -44,3 +44,6 @@ next-env.d.ts
 backfill-posters.log
 
 /src/generated/prisma
+
+# generated sitemaps (built fresh on each deploy, not committed)
+/public/sitemaps/

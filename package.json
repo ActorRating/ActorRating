@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && next build",
+    "vercel-build": "npx tsx scripts/generate-sitemaps.ts && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed.ts",
@@ -27,7 +27,8 @@
     "remove-adult-content:yes": "tsx scripts/remove-adult-content.ts --yes",
     "list-subtle-adult-movies": "tsx scripts/list-subtle-adult-movies.ts",
     "remove-adult-performers": "tsx scripts/remove-adult-performers.ts",
-    "remove-adult-performers:yes": "tsx scripts/remove-adult-performers.ts --yes"
+    "remove-adult-performers:yes": "tsx scripts/remove-adult-performers.ts --yes",
+    "generate:sitemaps": "tsx scripts/generate-sitemaps.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",
