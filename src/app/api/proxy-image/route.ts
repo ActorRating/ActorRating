@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from 'next/server'
 
 const ALLOWED_HOSTS = ['image.tmdb.org', 'images.tmdb.org', 'upload.wikimedia.org', 'm.media-amazon.com']

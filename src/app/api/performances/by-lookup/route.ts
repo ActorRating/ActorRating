@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // app/api/performances/by-lookup/route.ts
 
 import { NextRequest, NextResponse } from "next/server"

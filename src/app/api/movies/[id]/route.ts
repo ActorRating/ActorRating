@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
-import supabaseServer from "@/lib/supabaseServer"
+import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter"
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
 
@@ -18,7 +20,7 @@ export async function GET(
     }
     
     // Try to fetch by slug first, then fallback to ID
-    let { data: movie, error: movieError } = await supabaseServer
+    let { data: movie, error: movieError } = await getSupabaseServiceRoleClient()
       .from('Movie')
       .select('*')
       .eq('slug', id)
@@ -26,7 +28,7 @@ export async function GET(
 
     // If not found by slug, try by ID (backwards compatibility)
     if (movieError || !movie) {
-      const { data: movieById, error: idError } = await supabaseServer
+      const { data: movieById, error: idError } = await getSupabaseServiceRoleClient()
         .from('Movie')
         .select('*')
         .eq('id', id)
@@ -80,7 +82,7 @@ export async function GET(
 
     // Fetch performances and ratings in parallel for better performance
     const [performancesResult, ratingsResult] = await Promise.all([
-      supabaseServer
+      getSupabaseServiceRoleClient()
         .from('Performance')
         .select(`
           id,
@@ -97,7 +99,7 @@ export async function GET(
         .eq('movieId', movie.id)
         .order('updatedAt', { ascending: false })
         .limit(200),
-      supabaseServer
+      getSupabaseServiceRoleClient()
         .from('Rating')
         .select(`
           userId,
@@ -163,7 +165,7 @@ export async function GET(
     // Only fetch actor details if there are actors with ratings but no performances
     let ratedActors: any[] = []
     if (actorsNeedingFetch.length > 0) {
-      const { data } = await supabaseServer
+      const { data } = await getSupabaseServiceRoleClient()
         .from('Actor')
         .select('id, name, slug, imageUrl')
         .in('id', actorsNeedingFetch)

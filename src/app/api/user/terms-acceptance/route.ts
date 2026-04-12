@@ -1,23 +1,12 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
+import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            // No need to set cookies in API routes
-          },
-        },
-      }
-    )
+    const supabase = createSupabaseServerClientFromRequest(request)
     
     const { data: { session } } = await supabase.auth.getSession()
     
@@ -45,20 +34,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            // No need to set cookies in API routes
-          },
-        },
-      }
-    )
+    const supabase = createSupabaseServerClientFromRequest(request)
     
     const { data: { session } } = await supabase.auth.getSession()
     

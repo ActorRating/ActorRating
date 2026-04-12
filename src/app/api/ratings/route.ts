@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
+
 // src/app/api/ratings/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
+import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { nanoid } from "nanoid"
@@ -47,20 +49,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       )
     }
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll() {
-            return
-          },
-        },
-      }
-    )
+    const supabase = createSupabaseServerClientFromRequest(request)
 
     // Get user (more reliable than getSession for API routes)
     const { data: { user }, error: userError } = await supabase.auth.getUser()

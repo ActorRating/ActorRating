@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
 import { Button } from "@/components/ui/Button"
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 import { getAuthCallbackUrl } from "@/lib/auth"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
@@ -33,7 +33,7 @@ export function LoginButton({
 
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: getAuthCallbackUrl() }
       })

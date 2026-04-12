@@ -1,6 +1,8 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import supabaseServer from "@/lib/supabaseServer"
+import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
 // Removed NextAuth imports - using Supabase Auth
 
 export async function GET(
@@ -63,7 +65,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = supabaseServer
+    const supabase = getSupabaseServiceRoleClient()
     
     const { data: { user }, error } = await supabase.auth.getUser()
     
@@ -163,7 +165,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = supabaseServer
+    const supabase = getSupabaseServiceRoleClient()
     
     const { data: { user }, error } = await supabase.auth.getUser()
     

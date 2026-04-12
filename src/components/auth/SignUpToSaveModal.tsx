@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import supabase from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { getAuthCallbackUrl } from '@/lib/auth'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
@@ -80,7 +80,7 @@ export function SignUpToSaveModal({
     }))
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: getAuthCallbackUrl(),

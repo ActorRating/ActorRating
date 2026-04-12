@@ -3,7 +3,7 @@
 import { useUser } from "@/components/providers/SessionProvider"
 import { handleLogoutWithRedirect, getAuthCallbackUrl } from "@/lib/auth"
 import { Button } from "@/components/ui/Button"
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 
 export function AuthButton() {
   const user = useUser()
@@ -30,7 +30,7 @@ export function AuthButton() {
 
   return (
     <Button onClick={async () => {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: getAuthCallbackUrl()

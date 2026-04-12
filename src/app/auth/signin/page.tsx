@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense, useRef } from "react"
 import { useUser, useSession } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { LoginButton } from "@/components/auth/LoginButton"
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 import { validateEmail, validatePassword } from "@/lib/validation"
 import { motion } from "framer-motion"
 import { fadeInUp, fadeIn } from "@/lib/animations"
@@ -195,7 +195,7 @@ function SignInContent() {
 
     try {
       // Supabase email/password sign-in
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await getSupabaseClient().auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       })
@@ -229,7 +229,7 @@ function SignInContent() {
       const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`
       console.log('Redirect URL:', redirectUrl)
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,

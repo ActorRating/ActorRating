@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
-import supabaseServer from "@/lib/supabaseServer"
+import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
 import { resolveCharacterDisplay } from "@/lib/character"
 import { getMovieCredits } from "@/lib/tmdb"
 
@@ -18,7 +20,7 @@ export async function GET(
     }
 
     // Try to fetch by slug first, then fallback to ID
-    let { data: actor, error: actorError } = await supabaseServer
+    let { data: actor, error: actorError } = await getSupabaseServiceRoleClient()
       .from('Actor')
       .select('*')
       .eq('slug', id)
@@ -26,7 +28,7 @@ export async function GET(
 
     // If not found by slug, try by ID
     if (actorError || !actor) {
-      const { data: actorById, error: idError } = await supabaseServer
+      const { data: actorById, error: idError } = await getSupabaseServiceRoleClient()
         .from('Actor')
         .select('*')
         .eq('id', id)
@@ -64,7 +66,7 @@ export async function GET(
     }
 
     // Fetch performances for this actor
-    const { data: performances, error: performancesError } = await supabaseServer
+    const { data: performances, error: performancesError } = await getSupabaseServiceRoleClient()
       .from('Performance')
       .select(`
         id,
@@ -87,7 +89,7 @@ export async function GET(
     }
 
     // Fetch ratings for this actor
-    const { data: ratings, error: ratingsError } = await supabaseServer
+    const { data: ratings, error: ratingsError } = await getSupabaseServiceRoleClient()
       .from('Rating')
       .select(`
         userId,
@@ -144,7 +146,7 @@ export async function GET(
     const ratedMovieIds = new Set(ratings?.map(r => r.movieId) || [])
 
     // Fetch movie details for rated movies that might not have performances
-    const { data: ratedMovies } = await supabaseServer
+    const { data: ratedMovies } = await getSupabaseServiceRoleClient()
       .from('Movie')
       .select('id, title, year, director, slug, posterUrl')
       .in('id', Array.from(ratedMovieIds))

@@ -1,9 +1,7 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useUser } from "@/components/providers/SessionProvider"
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
@@ -28,7 +26,7 @@ export default function DeleteAccountPage() {
     setIsLoading(true)
     try {
       // Sign out from Supabase first
-      await supabase.auth.signOut()
+      await getSupabaseClient().auth.signOut()
       
       // Then call the delete API
       const response = await fetch("/api/user/delete", {

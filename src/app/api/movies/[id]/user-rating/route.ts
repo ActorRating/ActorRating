@@ -1,6 +1,8 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
+import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 
 export async function GET(
   request: NextRequest,
@@ -9,21 +11,7 @@ export async function GET(
   console.log("=== MOVIE USER RATING API CALLED ===")
   
   try {
-    // Simple Supabase client setup
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll() {
-            // No-op for API routes
-          },
-        },
-      }
-    )
+    const supabase = createSupabaseServerClientFromRequest(request)
     
     // Get user (more reliable than getSession for API routes)
     const { data: { user }, error: userError } = await supabase.auth.getUser()

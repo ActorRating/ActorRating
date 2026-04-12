@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { User, Session } from "@supabase/supabase-js"
 import { useRouter, usePathname } from "next/navigation"
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 import { isDevMode, getDevSession } from "@/lib/devAuth"
 
 interface SessionContextType {
@@ -60,7 +60,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           return
         }
         
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const { data: { session }, error } = await getSupabaseClient().auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error)
@@ -103,7 +103,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes (skip in dev mode)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = getSupabaseClient().auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
       
       // Skip auth state changes in dev mode

@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation'
-import supabase from './supabaseClient'
+import { getSupabaseClient } from './supabaseClient'
 
 /**
  * Returns the auth callback URL for OAuth redirects.
@@ -19,7 +19,7 @@ export function getAuthCallbackUrl(): string {
 export async function handleLogout(router?: ReturnType<typeof useRouter>) {
   try {
     // Sign out from Supabase
-    const { error } = await supabase.auth.signOut()
+    const { error } = await getSupabaseClient().auth.signOut()
     
     if (error) {
       console.error('Logout error:', error)
@@ -46,7 +46,7 @@ export async function handleLogout(router?: ReturnType<typeof useRouter>) {
  */
 export async function handleLogoutWithRedirect() {
   try {
-    await supabase.auth.signOut()
+    await getSupabaseClient().auth.signOut()
     localStorage.removeItem('pendingRating')
     
     // Wait a moment for the session to clear

@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
-import supabaseServer from "@/lib/supabaseServer"
+import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
 import bcrypt from "bcrypt"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = supabaseServer
+    const supabase = getSupabaseServiceRoleClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 

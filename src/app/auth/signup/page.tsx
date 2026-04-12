@@ -1,6 +1,6 @@
 "use client"
 
-import supabase from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"
 import { useEffect, useState, useRef } from "react"
@@ -220,7 +220,7 @@ export default function SignUp() {
 
     try {
       // Direct Supabase signup
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabaseClient().auth.signUp({
         email: formData.email,
         password: formData.password,
       })
@@ -236,7 +236,7 @@ export default function SignUp() {
       }
 
       // Immediately sign in after successful signup
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await getSupabaseClient().auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       })
@@ -303,7 +303,7 @@ export default function SignUp() {
     setIsGoogleLoading(true)
     try {
       const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback`
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl

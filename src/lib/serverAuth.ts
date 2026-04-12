@@ -7,6 +7,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { getSupabasePublicEnv } from '@/lib/supabaseEnv'
 import { isDevMode, getDevUser } from '@/lib/devAuth'
 
 export type ServerUser = {
@@ -22,20 +23,17 @@ export async function getServerUser(): Promise<ServerUser | null> {
       if (dev) return dev as ServerUser
     }
     const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll() {
-            // No-op in Server Components; middleware handles cookie updates
-          },
+    const { url, anonKey } = getSupabasePublicEnv()
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    )
+        setAll() {
+          // No-op in Server Components; middleware handles cookie updates
+        },
+      },
+    })
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error || !user) return null
     return user as ServerUser

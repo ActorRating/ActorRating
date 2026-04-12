@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { LogOut } from 'lucide-react'
-import supabase from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 interface LogoutButtonProps {
@@ -31,7 +31,7 @@ export function LogoutButton({
     setIsLoading(true)
     try {
       // Sign out from Supabase
-      const { error } = await supabase.auth.signOut()
+      const { error } = await getSupabaseClient().auth.signOut()
       
       if (error) {
         console.error('Logout error:', error)

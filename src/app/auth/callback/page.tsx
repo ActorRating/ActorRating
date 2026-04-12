@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import supabase from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { trackSignUp } from '@/lib/analytics'
 
@@ -37,7 +37,7 @@ export default function AuthCallback() {
         if (error) {
           console.error('OAuth error:', { error, error_description })
           // Don't show error immediately, try to get session first
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session } } = await getSupabaseClient().auth.getSession()
           if (session) {
             console.log('✅ Found existing session despite OAuth error')
             // Check if there's a pending rating to submit
@@ -58,7 +58,7 @@ export default function AuthCallback() {
         if (code) {
           console.log('🔑 Exchanging code for session...')
           // Exchange the code for a session
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          const { data, error: exchangeError } = await getSupabaseClient().auth.exchangeCodeForSession(code)
           
           if (exchangeError) {
             console.error('Code exchange error:', exchangeError)
@@ -69,7 +69,7 @@ export default function AuthCallback() {
               console.log('🔍 PKCE error detected, checking for existing session...')
               
               // Try to get existing session before showing error
-              const { data: { session } } = await supabase.auth.getSession()
+              const { data: { session } } = await getSupabaseClient().auth.getSession()
               if (session) {
                 console.log('✅ Found existing session despite PKCE error')
                 // Check if there's a pending rating to submit
@@ -84,7 +84,7 @@ export default function AuthCallback() {
               }
               
               // Clear any stale auth state and redirect to sign-in
-              await supabase.auth.signOut()
+              await getSupabaseClient().auth.signOut()
               console.log('🧹 Cleared auth state, redirecting to sign-in')
               router.push('/auth/signin?error=pkce')
               return
@@ -126,7 +126,7 @@ export default function AuthCallback() {
 
         // If no code, check current session
         console.log('🔍 Checking current session...')
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await getSupabaseClient().auth.getSession()
         
         if (sessionError) {
           console.error('Session error:', sessionError)
@@ -172,7 +172,7 @@ export default function AuthCallback() {
         console.error('Unexpected error during auth callback:', err)
         // Try to get session before showing error
         try {
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session } } = await getSupabaseClient().auth.getSession()
           if (session) {
             console.log('✅ Found session despite callback error')
             // Check if there's a pending rating to submit

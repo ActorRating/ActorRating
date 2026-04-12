@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/providers/SessionProvider'
 import { CheckCircle } from 'lucide-react'
-import supabase from '@/lib/supabaseClient'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function SignupSuccessPage() {
@@ -37,7 +37,7 @@ export default function SignupSuccessPage() {
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         // Verify session is still valid
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await getSupabaseClient().auth.getSession()
         if (!session) {
           setError('Session expired. Please try signing in again.')
           setIsSubmittingRating(false)

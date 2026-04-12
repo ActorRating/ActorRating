@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { checkRateLimit } from "@/lib/rateLimit"

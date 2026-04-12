@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
 import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
 
@@ -28,13 +30,6 @@ const PREFIX_RETURN_THRESHOLD = 5
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 90
 const ipRateWindow = new Map<string, { count: number; resetAt: number }>()
-
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error("Missing Supabase env for suggestions")
-  return createClient(url, key)
-}
 
 export async function GET(request: NextRequest) {
   const routeStart = Date.now()
@@ -87,7 +82,7 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    const supabase = getSupabase()
+    const supabase = getSupabaseServiceRoleClient()
     const prefixPattern = normalized + "%"
     const useSimilarity = normalized.length >= 3
 
