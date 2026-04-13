@@ -6,16 +6,12 @@
  */
 
 import { NextResponse } from 'next/server'
-import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { toIsoDate } from '@/lib/dateUtils'
 import RatePageClient from './RatePageClient'
 import RatePageFallback from './RatePageFallback'
 
-export const dynamic = 'force-static' // override dynamic inference from root (SessionProvider)
-export const revalidate = 86400 // 24h ISR — prevent massive write cycles from crawlers
-
-const RATE_PAGE_CACHE_REVALIDATE = 86400
+export const dynamic = 'force-dynamic'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
   if (!value) return ''
@@ -104,11 +100,7 @@ export default async function RatePage({
 
   let resolved: Awaited<ReturnType<typeof resolveRatePageData>> | null = null
   try {
-    resolved = await unstable_cache(
-      () => resolveRatePageData(movieSlug, actorSlug),
-      [`rate-page:${movieSlug}:${actorSlug}`],
-      { revalidate: RATE_PAGE_CACHE_REVALIDATE }
-    )()
+    resolved = await resolveRatePageData(movieSlug, actorSlug)
   } catch (err) {
     console.error(
       `Rate page data failed [${movieSlug}/${actorSlug}]:`,

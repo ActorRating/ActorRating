@@ -13,6 +13,7 @@ interface ConfettiParticle {
   id: number
   x: number
   y: number
+  endY: number
   size: number
   color: string
   velocity: { x: number; y: number }
@@ -41,11 +42,14 @@ export function Confetti({ active, duration = 3000, particleCount = 50 }: Confet
 
     // Create initial particles
     const newParticles: ConfettiParticle[] = []
+    const w = typeof window !== 'undefined' ? window.innerWidth : 1200
+    const h = typeof window !== 'undefined' ? window.innerHeight : 800
     for (let i = 0; i < particleCount; i++) {
       newParticles.push({
         id: i,
-        x: Math.random() * window.innerWidth,
+        x: Math.random() * w,
         y: -20,
+        endY: h + 50,
         size: Math.random() * 8 + 4,
         color: colors[Math.floor(Math.random() * colors.length)],
         velocity: {
@@ -81,7 +85,7 @@ export function Confetti({ active, duration = 3000, particleCount = 50 }: Confet
             }}
             animate={{
               x: particle.x + particle.velocity.x * 100,
-              y: window.innerHeight + 50,
+              y: particle.endY,
               rotate: particle.rotation + particle.rotationSpeed * 100,
               scale: [0, 1, 1, 0],
             }}

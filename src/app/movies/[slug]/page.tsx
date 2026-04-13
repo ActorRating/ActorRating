@@ -3,10 +3,10 @@
  * Prefetch movie data on the server for faster first paint.
  */
 
+export const dynamic = 'force-dynamic'
+
 import { withIsoDates } from '@/lib/dateUtils'
 import MoviePageClient from './MoviePageClient'
-
-export const revalidate = 21600
 
 function buildMovieJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')

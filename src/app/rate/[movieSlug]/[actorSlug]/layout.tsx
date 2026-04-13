@@ -1,10 +1,7 @@
-import { Metadata } from "next"
-import { unstable_cache } from "next/cache"
-import { prisma } from "@/lib/prisma"
+export const dynamic = "force-dynamic"
 
-// Override dynamic inference from root (SessionProvider) so ISR can cache
-export const dynamic = 'force-static'
-export const revalidate = 86400
+import { Metadata } from "next"
+import { prisma } from "@/lib/prisma"
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -35,14 +32,14 @@ async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
     
     const [actorResponse, movieResponse] = await Promise.all([
       fetch(`${baseUrl}/api/actors/${actorSlug}`, {
-        next: { revalidate: 86400 },
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'omit', // ISR: never send cookies — keeps page static
+        credentials: 'omit',
       }),
       fetch(`${baseUrl}/api/movies/${movieSlug}`, {
-        next: { revalidate: 86400 },
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'omit', // ISR: never send cookies — keeps page static
+        credentials: 'omit',
       }),
     ])
 
@@ -108,27 +105,20 @@ export default async function RateLayout({ params, children }: Props) {
     return <>{children}</>
   }
 
-  // Aggregate stats for schema — cached 5 min so metadata doesn't burn CPU per crawl
   let ratingAgg: Awaited<ReturnType<typeof prisma.rating.aggregate>> | null = null
   if (data?.actor?.id && data?.movie?.id) {
     try {
-      const getRatingAggregate = (actorId: string, movieId: string) =>
-        prisma.rating.aggregate({
-          where: { actorId, movieId },
-          _count: { _all: true },
-          _avg: {
-            emotionalRangeDepth: true,
-            characterBelievability: true,
-            technicalSkill: true,
-            screenPresence: true,
-            chemistryInteraction: true,
-          },
-        })
-      ratingAgg = await unstable_cache(
-        () => getRatingAggregate(data.actor.id, data.movie.id),
-        [`rate:agg:${data.actor.id}:${data.movie.id}`],
-        { revalidate: 86400 }
-      )()
+      ratingAgg = await prisma.rating.aggregate({
+        where: { actorId: data.actor.id, movieId: data.movie.id },
+        _count: { _all: true },
+        _avg: {
+          emotionalRangeDepth: true,
+          characterBelievability: true,
+          technicalSkill: true,
+          screenPresence: true,
+          chemistryInteraction: true,
+        },
+      })
     } catch (err) {
       console.error('Rate layout aggregate failed:', err)
     }

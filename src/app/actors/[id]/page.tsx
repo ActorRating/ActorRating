@@ -3,10 +3,10 @@
  * Prefetch actor data on the server for faster first paint.
  */
 
+export const dynamic = 'force-dynamic'
+
 import { withIsoDates } from '@/lib/dateUtils'
 import ActorPageClient from './ActorPageClient'
-
-export const revalidate = 21600
 
 function buildActorJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')

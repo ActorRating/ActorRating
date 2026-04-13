@@ -1,12 +1,7 @@
-import { unstable_cache } from 'next/cache'
-import { prisma } from '@/lib/prisma'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ShareButton } from './ShareButton'
-import { SuccessShare } from './successShare'
+export const dynamic = 'force-dynamic'
 
-// Cache share page and metadata for 6h — lowers ISR churn from crawlers
-export const revalidate = 21600
+import { prisma } from '@/lib/prisma'
+import { ShareButton } from './ShareButton'
 
 async function getDataUncached(slug: string) {
   const rating = await prisma.rating.findFirst({
@@ -26,17 +21,9 @@ async function getDataUncached(slug: string) {
   return { rating, ogUrl, feedUrl, storyUrl }
 }
 
-function getData(slug: string) {
-  return unstable_cache(
-    () => getDataUncached(slug),
-    [`r:share:${slug}`],
-    { revalidate: 21600 }
-  )
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const data = await getData(slug)()
+  const data = await getDataUncached(slug)
   if (!data) return {}
   const { rating } = data
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
@@ -59,12 +46,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function RatingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const data = await getData(slug)()
+  const data = await getDataUncached(slug)
   if (!data) return <div className="p-6">Rating not found</div>
-  const { rating, ogUrl, feedUrl, storyUrl } = data
-  const xText = `ActorRating: ${rating.actor.name} in ${rating.movie.title} — ${Math.round(rating.shareScore ?? rating.weightedScore)}/100`
+  const { rating } = data
   const pageUrl = `${process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'}/r/${slug}`
-  const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xText)}&url=${encodeURIComponent(pageUrl)}`
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">

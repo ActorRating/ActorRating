@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import { getSupabaseClient } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"

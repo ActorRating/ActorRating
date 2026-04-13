@@ -9,7 +9,8 @@ export default function RouteChangeScroll() {
 
   // Always load pages at the top and disable browser scroll restoration
   useEffect(() => {
-    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+    if (typeof window === "undefined") return
+    if ("scrollRestoration" in window.history) {
       try {
         window.history.scrollRestoration = "manual"
       } catch {}
@@ -19,6 +20,7 @@ export default function RouteChangeScroll() {
 
   // On route or query change, scroll to top
   useEffect(() => {
+    if (typeof window === "undefined") return
     window.scrollTo({ top: 0, left: 0, behavior: "auto" })
   }, [pathname, searchParams])
 

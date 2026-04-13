@@ -1,21 +1,12 @@
-import { unstable_cache } from "next/cache"
+export const dynamic = "force-dynamic";
+
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup"
 import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
 import { PerformancesPageClient } from "./PerformancesPageClient"
 
-const CACHE_KEY = "performances-page"
-const REVALIDATE_SECONDS = 300
-
-// ISR 5 min — aligns with unstable_cache revalidate; reduces invocations
-export const revalidate = 300
-
 export default async function PerformancesPage() {
   const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
-  const performances = await unstable_cache(
-    () => getPerformancesByLookup(allTargets),
-    [CACHE_KEY],
-    { revalidate: REVALIDATE_SECONDS }
-  )()
+  const performances = await getPerformancesByLookup(allTargets)
 
   const initialRecent = RECENT_PERFORMANCE_TARGETS.map((target) =>
     performances.find((p) => p.actor.name === target.actor && p.movie.title === target.movie)

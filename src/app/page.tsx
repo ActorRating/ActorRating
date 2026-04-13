@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // src/app/page.tsx (Server Component)
 import { Metadata } from "next";
 import { LandingLayout } from "@/components/layout";

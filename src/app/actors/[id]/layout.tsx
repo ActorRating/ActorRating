@@ -1,8 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-
-// Cache actor metadata for 6 hours — reduce ISR writes from crawlers
-export const revalidate = 21600;
 
 type Props = {
   params: Promise<{ id: string }>;

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // Server Component: content is rendered on the server for fast first paint.
 // Only HomeLayout (navbar/footer) is client-side.
 import { HomeLayout } from "@/components/layout";
