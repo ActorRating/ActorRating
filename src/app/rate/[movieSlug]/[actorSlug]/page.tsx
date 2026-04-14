@@ -5,7 +5,6 @@
  * Uses Prisma first; on failure (e.g. DB unavailable), falls back to internal APIs (Supabase).
  */
 
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { toIsoDate } from '@/lib/dateUtils'
 import RatePageClient from './RatePageClient'
@@ -95,7 +94,7 @@ export default async function RatePage({
     console.log('[ISR] Rate page render', `/rate/${movieSlug}/${actorSlug}`)
   }
   if (!movieSlug || !actorSlug) {
-    return new NextResponse(null, { status: 410 })
+    return <RatePageFallback />
   }
 
   let resolved: Awaited<ReturnType<typeof resolveRatePageData>> | null = null
@@ -120,7 +119,7 @@ export default async function RatePage({
   }
 
   if (!resolved) {
-    return new NextResponse(null, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } })
+    return <RatePageFallback />
   }
 
   const { movieRow, actorRow } = resolved

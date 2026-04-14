@@ -23,7 +23,7 @@ if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgre
 // For serverless (Vercel), use the pooler URL with pgbouncer=true so Prisma does NOT use
 // prepared statements. Otherwise you get: "prepared statement already exists",
 // "bind message supplies X parameters but prepared statement requires Y", "prepared statement does not exist".
-// Supabase: use pooler (e.g. port 6543) with ?pgbouncer=true. Neon/Vercel Postgres: same.
+// For any managed/self-hosted Postgres pooler, use the pooled URL with ?pgbouncer=true.
 let connectionUrl = databaseUrl
 
 const hasParams = databaseUrl.includes('?')

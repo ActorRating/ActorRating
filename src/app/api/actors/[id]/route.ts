@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
+import { prisma } from "@/lib/prisma"
 import { resolveCharacterDisplay } from "@/lib/character"
 import { getMovieCredits } from "@/lib/tmdb"
 
@@ -20,30 +20,12 @@ export async function GET(
     }
 
     // Try to fetch by slug first, then fallback to ID
-    let { data: actor, error: actorError } = await getSupabaseServiceRoleClient()
-      .from('Actor')
-      .select('*')
-      .eq('slug', id)
-      .single()
-
-    // If not found by slug, try by ID
-    if (actorError || !actor) {
-      const { data: actorById, error: idError } = await getSupabaseServiceRoleClient()
-        .from('Actor')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (idError || !actorById) {
-        console.error("❌ Actor fetch error:", idError || actorError)
-        return NextResponse.json({ error: "Actor not found" }, { status: 410 })
-      }
-      actor = actorById
-      actorError = null
+    let actor = await prisma.actor.findFirst({ where: { slug: id } })
+    if (!actor) {
+      actor = await prisma.actor.findUnique({ where: { id } })
     }
-
-    if (actorError) {
-      console.error("❌ Actor fetch error:", actorError)
+    if (!actor) {
+      console.error("❌ Actor fetch error: actor not found", id)
       return NextResponse.json({ error: "Actor not found" }, { status: 410 })
     }
 
@@ -65,50 +47,42 @@ export async function GET(
       return res
     }
 
-    // Fetch performances for this actor
-    const { data: performances, error: performancesError } = await getSupabaseServiceRoleClient()
-      .from('Performance')
-      .select(`
-        id,
-        userId,
-        actorId,
-        movieId,
-        comment,
-        character,
-        createdAt,
-        updatedAt,
-        movie:Movie(id, title, year, director, tmdbId, slug, posterUrl),
-        actor:Actor(id, name, slug, imageUrl)
-      `)
-      .eq('actorId', actor.id)
-      .order('updatedAt', { ascending: false })
-      .limit(200)
-
-    if (performancesError) {
-      console.error("❌ Performances fetch error:", performancesError)
-    }
-
-    // Fetch ratings for this actor
-    const { data: ratings, error: ratingsError } = await getSupabaseServiceRoleClient()
-      .from('Rating')
-      .select(`
-        userId,
-        movieId,
-        roleName,
-        weightedScore,
-        emotionalRangeDepth,
-        characterBelievability,
-        technicalSkill,
-        screenPresence,
-        chemistryInteraction
-      `)
-      .eq('actorId', actor.id)
-      .order('createdAt', { ascending: false })
-      .limit(1000)
-
-    if (ratingsError) {
-      console.error("❌ Ratings fetch error:", ratingsError)
-    }
+    const [performances, ratings] = await Promise.all([
+      prisma.performance.findMany({
+        where: { actorId: actor.id },
+        select: {
+          id: true,
+          userId: true,
+          actorId: true,
+          movieId: true,
+          comment: true,
+          character: true,
+          createdAt: true,
+          updatedAt: true,
+          movie: { select: { id: true, title: true, year: true, director: true, tmdbId: true, slug: true, posterUrl: true } },
+          actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 200,
+      }),
+      prisma.rating.findMany({
+        where: { actorId: actor.id },
+        select: {
+          userId: true,
+          movieId: true,
+          roleName: true,
+          weightedScore: true,
+          emotionalRangeDepth: true,
+          characterBelievability: true,
+          technicalSkill: true,
+          screenPresence: true,
+          chemistryInteraction: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1000,
+      }),
+    ])
 
     // Aggregate ratings by movie; compute averaged criteria so community score is accurate
     const ratingsByMovie = new Map<string, any[]>()
@@ -143,13 +117,15 @@ export async function GET(
     })
 
     // Get all unique movies that have ratings
-    const ratedMovieIds = new Set(ratings?.map(r => r.movieId) || [])
+    const ratedMovieIds = new Set(ratings.map(r => r.movieId))
 
     // Fetch movie details for rated movies that might not have performances
-    const { data: ratedMovies } = await getSupabaseServiceRoleClient()
-      .from('Movie')
-      .select('id, title, year, director, slug, posterUrl')
-      .in('id', Array.from(ratedMovieIds))
+    const ratedMovies = ratedMovieIds.size > 0
+      ? await prisma.movie.findMany({
+          where: { id: { in: Array.from(ratedMovieIds) } },
+          select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true },
+        })
+      : []
 
     // Per-movie set of userIds who have rated (so we prefer a performance that has ratings)
     const userIdsWhoRatedByMovie = new Map<string, Set<string>>()
@@ -161,8 +137,7 @@ export async function GET(
     // Prefer the performance that has ratings (userId in ratings for this movie), then system, then latest.
     const performanceMap = new Map<string, any>()
     const SYSTEM_USER_ID = "uuid-from-auth-users"
-    if (performances) {
-      performances.forEach(perf => {
+    performances.forEach(perf => {
         const existing = performanceMap.get(perf.movieId)
         const ratedUserIds = userIdsWhoRatedByMovie.get(perf.movieId)
         const perfHasRating = ratedUserIds?.has(perf.userId)
@@ -183,7 +158,6 @@ export async function GET(
           performanceMap.set(perf.movieId, perf)
         }
       })
-    }
 
     const uniquePerformances = Array.from(performanceMap.values())
 
@@ -209,56 +183,54 @@ export async function GET(
     })
 
     // Add performances for movies that have ratings but no performance entry
-    if (ratedMovies) {
-      ratedMovies.forEach(movie => {
-        if (!performanceMap.has(movie.id)) {
-          // Get the first rating for this movie to use as default
-          const movieRatings = ratingsByMovie.get(movie.id) || []
-          if (movieRatings.length > 0) {
-            const firstRating = movieRatings[0]
-            // Calculate average rating for this movie across all users
-            const avgRating = {
-              emotionalRangeDepth: Math.round(movieRatings.reduce((sum, r) => sum + (r.emotionalRangeDepth || 0), 0) / movieRatings.length),
-              characterBelievability: Math.round(movieRatings.reduce((sum, r) => sum + (r.characterBelievability || 0), 0) / movieRatings.length),
-              technicalSkill: Math.round(movieRatings.reduce((sum, r) => sum + (r.technicalSkill || 0), 0) / movieRatings.length),
-              screenPresence: Math.round(movieRatings.reduce((sum, r) => sum + (r.screenPresence || 0), 0) / movieRatings.length),
-              chemistryInteraction: Math.round(movieRatings.reduce((sum, r) => sum + (r.chemistryInteraction || 0), 0) / movieRatings.length),
-            }
-
-            // Synthetic performance entry: match shape expected by frontend (movie/actor as single objects)
-            const syntheticPerf = {
-              id: `rating-${movie.id}`,
-              userId: firstRating.userId,
-              actorId: actor.id,
-              movieId: movie.id,
-              comment: null,
-              character: firstRating.roleName || null,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              movie,
-              actor: { id: actor.id, name: actor.name, slug: actor.slug },
-              roleName: firstRating.roleName || null,
-              emotionalRangeDepth: avgRating.emotionalRangeDepth,
-              characterBelievability: avgRating.characterBelievability,
-              technicalSkill: avgRating.technicalSkill,
-              screenPresence: avgRating.screenPresence,
-              chemistryInteraction: avgRating.chemistryInteraction,
-              user: {
-                name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
-                email: `user@example.com`
-              }
-            }
-            enrichedPerformances.push(syntheticPerf as unknown as (typeof enrichedPerformances)[number])
+    ratedMovies.forEach(movie => {
+      if (!performanceMap.has(movie.id)) {
+        // Get the first rating for this movie to use as default
+        const movieRatings = ratingsByMovie.get(movie.id) || []
+        if (movieRatings.length > 0) {
+          const firstRating = movieRatings[0]
+          // Calculate average rating for this movie across all users
+          const avgRating = {
+            emotionalRangeDepth: Math.round(movieRatings.reduce((sum, r) => sum + (r.emotionalRangeDepth || 0), 0) / movieRatings.length),
+            characterBelievability: Math.round(movieRatings.reduce((sum, r) => sum + (r.characterBelievability || 0), 0) / movieRatings.length),
+            technicalSkill: Math.round(movieRatings.reduce((sum, r) => sum + (r.technicalSkill || 0), 0) / movieRatings.length),
+            screenPresence: Math.round(movieRatings.reduce((sum, r) => sum + (r.screenPresence || 0), 0) / movieRatings.length),
+            chemistryInteraction: Math.round(movieRatings.reduce((sum, r) => sum + (r.chemistryInteraction || 0), 0) / movieRatings.length),
           }
+
+          // Synthetic performance entry: match shape expected by frontend (movie/actor as single objects)
+          const syntheticPerf = {
+            id: `rating-${movie.id}`,
+            userId: firstRating.userId,
+            actorId: actor.id,
+            movieId: movie.id,
+            comment: null,
+            character: firstRating.roleName || null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            movie,
+            actor: { id: actor.id, name: actor.name, slug: actor.slug },
+            roleName: firstRating.roleName || null,
+            emotionalRangeDepth: avgRating.emotionalRangeDepth,
+            characterBelievability: avgRating.characterBelievability,
+            technicalSkill: avgRating.technicalSkill,
+            screenPresence: avgRating.screenPresence,
+            chemistryInteraction: avgRating.chemistryInteraction,
+            user: {
+              name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
+              email: `user@example.com`
+            }
+          }
+          enrichedPerformances.push(syntheticPerf as unknown as (typeof enrichedPerformances)[number])
         }
-      })
-    }
+      }
+    })
 
     // Combine the data
     const actorData = {
       ...actor,
       performances: enrichedPerformances,
-      ratings: ratings || []
+      ratings
     }
 
     if (!isProd) {

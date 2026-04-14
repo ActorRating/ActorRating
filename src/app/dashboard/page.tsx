@@ -21,9 +21,8 @@ function DashboardDataUnavailable({ digest }: { digest?: string }) {
         </h1>
         <p className="text-sm text-muted-foreground">
           We couldn’t connect to the database. This usually means <strong>DATABASE_URL</strong> in your
-          deployment doesn’t match your Supabase Postgres. In Supabase Dashboard → Settings → Database, use
-          the <strong>Connection pooling</strong> string (Transaction mode, port <strong>6543</strong>) and
-          set it as <strong>DATABASE_URL</strong> in Vercel.
+          deployment is missing or points to the wrong PostgreSQL instance. Set <strong>DATABASE_URL</strong>
+          to your Prisma-managed PostgreSQL connection string and redeploy.
         </p>
         {digest ? (
           <p className="text-xs text-muted-foreground font-mono">Ref: {digest}</p>

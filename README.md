@@ -97,7 +97,6 @@ A minimalist, premium platform for rating actors' performances in specific movie
    # Supabase Auth (required)
    NEXT_PUBLIC_SUPABASE_URL="your_supabase_project_url"
    NEXT_PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
-   SUPABASE_SERVICE_ROLE_KEY="your_supabase_service_role_key"
 
    # Optional: Redis caching
    UPSTASH_REDIS_REST_URL="your_redis_url"
@@ -292,7 +291,7 @@ curl -X POST 'http://localhost:3000/api/generate-share' \
 
 ## Supabase Auth Deployment Notes
 
-- Set Vercel envs: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- Set Vercel envs: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - In Supabase dashboard: enable Google provider and set Google client ID/secret.
 - In Google Cloud Console: set Authorized redirect URI to the Supabase callback URL: `https://<supabase-project-ref>.supabase.co/auth/v1/callback`.
 - Redeploy.

@@ -293,7 +293,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
         msg.includes('p1001') || msg.includes('p1002') || msg.includes('p1017') || msg.includes('connection')
       if (isDbConnectionError) {
         return NextResponse.json(
-          { error: "Database temporarily unavailable. Check server logs and DATABASE_URL (use same Postgres as Supabase, pooler port 6543).", code: "DATABASE_UNAVAILABLE" },
+          { error: "Database temporarily unavailable. Check server logs and DATABASE_URL.", code: "DATABASE_UNAVAILABLE" },
           { status: 503 }
         )
       }
@@ -304,7 +304,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       {
         error: "Internal server error",
         debug: errMessage,
-        hint: "Check Vercel function logs for 'RATING API ERROR' and ensure DATABASE_URL points to the same Postgres as Supabase (pooler port 6543).",
+        hint: "Check Vercel function logs for 'RATING API ERROR' and ensure DATABASE_URL points to your Prisma PostgreSQL database.",
       },
       { status: 500 }
     )

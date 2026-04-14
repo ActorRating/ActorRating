@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
-import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
+import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 
 type AggregatedPair = {
   actorId: string
@@ -214,9 +214,9 @@ function pairKey(p: { actorId: string; movieId: string }): string {
   return `${p.actorId}::${p.movieId}`
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseServiceRoleClient()
+    const supabase = createSupabaseServerClientFromRequest(request)
     const { data: { session } } = await supabase.auth.getSession()
     const currentUserId = session?.user?.id || null
 

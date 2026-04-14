@@ -1,17 +1,12 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
+import { Prisma } from "@prisma/client"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
 import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
+import { prisma } from "@/lib/prisma"
 
-export const runtime = "edge"
-
-/**
- * Requires Supabase RPCs: search_actors_similarity(term), search_movies_similarity(term).
- * Run the SQL in docs/SUGGESTIONS_RPC_MANUAL_MIGRATION.md in Supabase SQL Editor before testing.
- * Without it, prefix search works but similarity fallback fails → incomplete results.
- */
+export const runtime = "nodejs"
 
 /** Response shape for SearchBar: actors and movies (images for dropdown thumbnails). */
 export type SuggestionsResponse = {
@@ -82,18 +77,17 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    const supabase = getSupabaseServiceRoleClient()
     const prefixPattern = normalized + "%"
     const useSimilarity = normalized.length >= 3
 
-    // --- Actors: prefix-first via Supabase; similarity via RPC if needed ---
+    // --- Actors: prefix-first via Prisma; similarity via Postgres trigram if needed ---
     const actorsStart = Date.now()
-    const { data: actorPrefixRows = [] } = await supabase
-      .from("Actor")
-      .select("id,name,slug,imageUrl")
-      .ilike("name", prefixPattern)
-      .order("name", { ascending: true })
-      .limit(LIMIT_ACTORS)
+    const actorPrefixRows = await prisma.actor.findMany({
+      where: { name: { startsWith: normalized, mode: "insensitive" } },
+      select: { id: true, name: true, slug: true, imageUrl: true },
+      orderBy: { name: "asc" },
+      take: LIMIT_ACTORS,
+    })
 
     const actorList = Array.isArray(actorPrefixRows) ? actorPrefixRows : []
     let actors: Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
@@ -105,9 +99,17 @@ export async function GET(request: NextRequest) {
         imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
       }))
     } else {
-      const { data: similarityRows = [] } = await supabase.rpc("search_actors_similarity", {
-        term: normalized,
-      })
+      // Requires PostgreSQL pg_trgm extension for similarity(...).
+      // Fallback behavior if pg_trgm is unavailable: catch block returns prefix-only matches.
+      const similarityRows = await prisma.$queryRaw<
+        Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
+      >(Prisma.sql`
+        SELECT id, name, slug, "imageUrl"
+        FROM "Actor"
+        WHERE similarity(lower(name), ${normalized}) > 0.12
+        ORDER BY similarity(lower(name), ${normalized}) DESC, name ASC
+        LIMIT ${LIMIT_ACTORS}
+      `)
       const simList = Array.isArray(similarityRows) ? similarityRows : []
       const seen = new Set(actorList.map((r) => r.id))
       const combined = actorList.map((r) => ({
@@ -131,14 +133,14 @@ export async function GET(request: NextRequest) {
     }
     const actorsMs = Date.now() - actorsStart
 
-    // --- Movies: prefix-first via Supabase; similarity via RPC if needed ---
+    // --- Movies: prefix-first via Prisma; similarity via Postgres trigram if needed ---
     const moviesStart = Date.now()
-    const { data: moviePrefixRows = [] } = await supabase
-      .from("Movie")
-      .select("id,title,slug,year,posterUrl")
-      .ilike("title", prefixPattern)
-      .order("title", { ascending: true })
-      .limit(LIMIT_MOVIES)
+    const moviePrefixRows = await prisma.movie.findMany({
+      where: { title: { startsWith: normalized, mode: "insensitive" } },
+      select: { id: true, title: true, slug: true, year: true, posterUrl: true },
+      orderBy: { title: "asc" },
+      take: LIMIT_MOVIES,
+    })
 
     const movieList = Array.isArray(moviePrefixRows) ? moviePrefixRows : []
     let movies: Array<{
@@ -157,9 +159,17 @@ export async function GET(request: NextRequest) {
         posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
       }))
     } else {
-      const { data: similarityRows = [] } = await supabase.rpc("search_movies_similarity", {
-        term: normalized,
-      })
+      // Requires PostgreSQL pg_trgm extension for similarity(...).
+      // Fallback behavior if pg_trgm is unavailable: catch block returns prefix-only matches.
+      const similarityRows = await prisma.$queryRaw<
+        Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>
+      >(Prisma.sql`
+        SELECT id, title, slug, year, "posterUrl"
+        FROM "Movie"
+        WHERE similarity(lower(title), ${normalized}) > 0.12
+        ORDER BY similarity(lower(title), ${normalized}) DESC, title ASC
+        LIMIT ${LIMIT_MOVIES}
+      `)
       const simList = Array.isArray(similarityRows) ? similarityRows : []
       const seen = new Set(movieList.map((r) => r.id))
       const combined = movieList.map((r) => ({
@@ -184,17 +194,23 @@ export async function GET(request: NextRequest) {
       movies = combined.slice(0, LIMIT_MOVIES)
     }
 
-    // Similarity RPC rows may omit poster/image — hydrate from DB in one batch each
+    // Similarity rows may omit poster/image — hydrate from DB in one batch each
     const actorIdsMissing = actors.filter((a) => !a.imageUrl).map((a) => a.id)
     if (actorIdsMissing.length > 0) {
-      const { data: imgRows = [] } = await supabase.from("Actor").select("id, imageUrl").in("id", actorIdsMissing)
-      const map = new Map((imgRows as { id: string; imageUrl: string | null }[]).map((row) => [row.id, row.imageUrl]))
+      const imgRows = await prisma.actor.findMany({
+        where: { id: { in: actorIdsMissing } },
+        select: { id: true, imageUrl: true },
+      })
+      const map = new Map(imgRows.map((row) => [row.id, row.imageUrl]))
       actors = actors.map((a) => (a.imageUrl ? a : { ...a, imageUrl: map.get(a.id) ?? null }))
     }
     const movieIdsMissing = movies.filter((m) => !m.posterUrl).map((m) => m.id)
     if (movieIdsMissing.length > 0) {
-      const { data: posterRows = [] } = await supabase.from("Movie").select("id, posterUrl").in("id", movieIdsMissing)
-      const map = new Map((posterRows as { id: string; posterUrl: string | null }[]).map((row) => [row.id, row.posterUrl]))
+      const posterRows = await prisma.movie.findMany({
+        where: { id: { in: movieIdsMissing } },
+        select: { id: true, posterUrl: true },
+      })
+      const map = new Map(posterRows.map((row) => [row.id, row.posterUrl]))
       movies = movies.map((m) => (m.posterUrl ? m : { ...m, posterUrl: map.get(m.id) ?? null }))
     }
     const moviesMs = Date.now() - moviesStart
@@ -218,6 +234,32 @@ export async function GET(request: NextRequest) {
     return res
   } catch (error) {
     console.error("Search suggestions failed:", error)
+    const errMsg = error instanceof Error ? error.message.toLowerCase() : ""
+    const isTrgmMissing = errMsg.includes("similarity(") || errMsg.includes("pg_trgm")
+    if (isTrgmMissing) {
+      try {
+        const q = request.nextUrl.searchParams.get("q")?.trim().toLowerCase()
+        if (q && q.length >= 2) {
+          const [actors, movies] = await Promise.all([
+            prisma.actor.findMany({
+              where: { name: { startsWith: q, mode: "insensitive" } },
+              select: { id: true, name: true, slug: true, imageUrl: true },
+              orderBy: { name: "asc" },
+              take: LIMIT_ACTORS,
+            }),
+            prisma.movie.findMany({
+              where: { title: { startsWith: q, mode: "insensitive" } },
+              select: { id: true, title: true, slug: true, year: true, posterUrl: true },
+              orderBy: { title: "asc" },
+              take: LIMIT_MOVIES,
+            }),
+          ])
+          return NextResponse.json({ actors, movies } as SuggestionsResponse)
+        }
+      } catch (fallbackError) {
+        console.error("Search suggestions pg_trgm fallback failed:", fallbackError)
+      }
+    }
     return NextResponse.json(
       { actors: [], movies: [] } as SuggestionsResponse,
       { status: 200 }

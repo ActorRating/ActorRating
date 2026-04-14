@@ -1,12 +1,12 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
+import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 import { prisma } from "@/lib/prisma"
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = getSupabaseServiceRoleClient()
+    const supabase = createSupabaseServerClientFromRequest(request)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

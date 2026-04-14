@@ -50,6 +50,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Suggestions: weighted score (exact 100 + prefix 50 + word_start 25 + similarity*10), MIN_SIMILARITY 0.15. Limit 8.
+    // Requires PostgreSQL pg_trgm extension for similarity(...).
+    // If pg_trgm is missing, catch block falls back to prefix/contains queries without similarity.
     const normalizedTerm = searchTerm.toLowerCase()
     const MIN_SIMILARITY = 0.15
     if (suggestions) {
@@ -106,6 +108,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Full search: same weighted score (exact 100 + prefix 50 + word_start 25 + similarity*10), MIN_SIMILARITY 0.15. Limit 10.
+    // Requires PostgreSQL pg_trgm extension for similarity(...).
     const [actors, movies] = await Promise.all([
       prisma.$queryRaw<Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>>`
         SELECT sub.id, sub.name, sub.slug, sub."imageUrl"
@@ -162,6 +165,34 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error performing search:", error)
+    const errMsg = error instanceof Error ? error.message.toLowerCase() : ""
+    const isTrgmMissing = errMsg.includes("similarity(") || errMsg.includes("pg_trgm")
+    if (isTrgmMissing) {
+      try {
+        const { searchParams } = new URL(request.url)
+        const query = searchParams.get("q")?.trim()
+        if (!query || query.length < 1) return NextResponse.json({ actors: [], movies: [] })
+        const suggestions = searchParams.get("suggestions") === "true"
+        const take = suggestions ? 8 : 10
+        const [actors, movies] = await Promise.all([
+          prisma.actor.findMany({
+            where: { name: { contains: query, mode: "insensitive" } },
+            select: { id: true, name: true, slug: true, imageUrl: true },
+            orderBy: { name: "asc" },
+            take,
+          }),
+          prisma.movie.findMany({
+            where: { title: { contains: query, mode: "insensitive" } },
+            select: { id: true, title: true, slug: true, year: true, posterUrl: true },
+            orderBy: [{ year: "desc" }, { title: "asc" }],
+            take,
+          }),
+        ])
+        return NextResponse.json({ actors, movies })
+      } catch (fallbackError) {
+        console.error("Search pg_trgm fallback failed:", fallbackError)
+      }
+    }
     return NextResponse.json(
       { error: "Failed to perform search" },
       { status: 500 }

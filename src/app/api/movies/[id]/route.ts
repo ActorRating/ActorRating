@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServiceRoleClient } from "@/lib/supabaseServer"
+import { prisma } from "@/lib/prisma"
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter"
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
 
@@ -20,30 +20,12 @@ export async function GET(
     }
     
     // Try to fetch by slug first, then fallback to ID
-    let { data: movie, error: movieError } = await getSupabaseServiceRoleClient()
-      .from('Movie')
-      .select('*')
-      .eq('slug', id)
-      .single()
-
-    // If not found by slug, try by ID (backwards compatibility)
-    if (movieError || !movie) {
-      const { data: movieById, error: idError } = await getSupabaseServiceRoleClient()
-        .from('Movie')
-        .select('*')
-        .eq('id', id)
-        .single()
-      
-      if (idError || !movieById) {
-        console.error("❌ Movie fetch error:", idError || movieError)
-        return NextResponse.json({ error: "Movie not found" }, { status: 410 })
-      }
-      movie = movieById
-      movieError = null
+    let movie = await prisma.movie.findFirst({ where: { slug: id } })
+    if (!movie) {
+      movie = await prisma.movie.findUnique({ where: { id } })
     }
-
-    if (movieError) {
-      console.error("❌ Movie fetch error:", movieError)
+    if (!movie) {
+      console.error("❌ Movie fetch error: movie not found", id)
       return NextResponse.json({ error: "Movie not found" }, { status: 410 })
     }
 
@@ -81,62 +63,50 @@ export async function GET(
     }
 
     // Fetch performances and ratings in parallel for better performance
-    const [performancesResult, ratingsResult] = await Promise.all([
-      getSupabaseServiceRoleClient()
-        .from('Performance')
-        .select(`
-          id,
-          userId,
-          actorId,
-          movieId,
-          comment,
-          character,
-          createdAt,
-          updatedAt,
-          movie:Movie(id, title, year, director, tmdbId, slug),
-          actor:Actor(id, name, slug, imageUrl)
-        `)
-        .eq('movieId', movie.id)
-        .order('updatedAt', { ascending: false })
-        .limit(200),
-      getSupabaseServiceRoleClient()
-        .from('Rating')
-        .select(`
-          userId,
-          actorId,
-          movieId,
-          roleName,
-          weightedScore,
-          emotionalRangeDepth,
-          characterBelievability,
-          technicalSkill,
-          screenPresence,
-          chemistryInteraction
-        `)
-        .eq('movieId', movie.id)
-        .order('createdAt', { ascending: false })
-        .limit(1000)
+    const [performances, ratings] = await Promise.all([
+      prisma.performance.findMany({
+        where: { movieId: movie.id },
+        select: {
+          id: true,
+          userId: true,
+          actorId: true,
+          movieId: true,
+          comment: true,
+          character: true,
+          createdAt: true,
+          updatedAt: true,
+          movie: { select: { id: true, title: true, year: true, director: true, tmdbId: true, slug: true } },
+          actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 200,
+      }),
+      prisma.rating.findMany({
+        where: { movieId: movie.id },
+        select: {
+          userId: true,
+          actorId: true,
+          movieId: true,
+          roleName: true,
+          weightedScore: true,
+          emotionalRangeDepth: true,
+          characterBelievability: true,
+          technicalSkill: true,
+          screenPresence: true,
+          chemistryInteraction: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1000,
+      })
     ])
-
-    const { data: performances, error: performancesError } = performancesResult
-    const { data: ratings, error: ratingsError } = ratingsResult
-
-    if (performancesError) {
-      console.error("❌ Performances fetch error:", performancesError)
-    }
-
-    if (ratingsError) {
-      console.error("❌ Ratings fetch error:", ratingsError)
-    }
 
     // Aggregate ratings per actor; compute averaged criteria so community score is accurate.
     const ratingsByActor = new Map<string, any[]>()
-    if (ratings) {
-      ratings.forEach(rating => {
-        if (!ratingsByActor.has(rating.actorId)) ratingsByActor.set(rating.actorId, [])
-        ratingsByActor.get(rating.actorId)!.push(rating)
-      })
-    }
+    ratings.forEach(rating => {
+      if (!ratingsByActor.has(rating.actorId)) ratingsByActor.set(rating.actorId, [])
+      ratingsByActor.get(rating.actorId)!.push(rating)
+    })
 
     // Build ratingMap with averaged criteria values per actor (fixes score discrepancy
     // — without this, enrichedPerformances used only the first rating's individual values).
@@ -158,23 +128,22 @@ export async function GET(
     })
 
     // Get all unique actors that have ratings but no performance entry
-    const ratedActorIds = new Set(ratings?.map(r => r.actorId) || [])
-    const performanceActorIds = new Set(performances?.map(p => p.actorId) || [])
+    const ratedActorIds = new Set(ratings.map(r => r.actorId))
+    const performanceActorIds = new Set(performances.map(p => p.actorId))
     const actorsNeedingFetch = Array.from(ratedActorIds).filter(id => !performanceActorIds.has(id))
     
     // Only fetch actor details if there are actors with ratings but no performances
     let ratedActors: any[] = []
     if (actorsNeedingFetch.length > 0) {
-      const { data } = await getSupabaseServiceRoleClient()
-        .from('Actor')
-        .select('id, name, slug, imageUrl')
-        .in('id', actorsNeedingFetch)
-      ratedActors = data || []
+      ratedActors = await prisma.actor.findMany({
+        where: { id: { in: actorsNeedingFetch } },
+        select: { id: true, name: true, slug: true, imageUrl: true },
+      })
     }
     
     // One performance per actor: DB can return multiple rows per actor (system + per-user). Prefer one with rating, then latest.
     const byActor = new Map<string, any>()
-    ;(performances || []).forEach(perf => {
+    performances.forEach(perf => {
       const aid = perf.actorId
       const hasRating = ratingMap.has(`${aid}:${perf.movieId}`)
       const existing = byActor.get(aid)
@@ -270,7 +239,7 @@ export async function GET(
     const movieData = {
       ...movie,
       performances: enrichedPerformances,
-      ratings: ratings || []
+      ratings
     }
 
     if (!isProd) {

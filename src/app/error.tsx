@@ -30,7 +30,7 @@ export default function RootError({
           We couldn’t load this page. Please try again.
           {process.env.NODE_ENV === "development" && error?.digest ? ` (Ref: ${error.digest})` : null}
           {process.env.NODE_ENV === "production" && error?.digest ? (
-            <span className="block mt-2 text-xs">Ref: {error.digest}. If you run this site: set DATABASE_URL to your Supabase Postgres connection string (pooler port 6543).</span>
+            <span className="block mt-2 text-xs">Ref: {error.digest}. Verify DATABASE_URL points to your Prisma PostgreSQL database.</span>
           ) : null}
         </p>
         <div className="flex items-center justify-center gap-2">
