@@ -117,6 +117,24 @@ Created comprehensive load test (`load-test.js`) covering:
 - `RECAPTCHA_SECRET_KEY`: Server-side validation
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: OAuth
 
+### Coolify Deterministic Deploy Order
+
+Use this exact command order so schema and app code never drift:
+
+```bash
+npm install
+npm run db:deploy
+npm run build
+npm run start
+```
+
+Notes:
+
+- `db:deploy` runs `prisma migrate deploy` and only applies committed migrations.
+- `build` runs `prisma generate` before `next build`.
+- `start` now has a prestart guard that only validates `DATABASE_URL` before boot.
+- Optional single command for deploy phase: `npm run build:deploy` (runs migrate, then build).
+
 ### Monitoring Recommendations
 
 - Monitor response times (target: p95 < 1000ms)
