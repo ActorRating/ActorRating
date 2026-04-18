@@ -203,7 +203,7 @@ export function Header({
             {user ? (
               <UserMenu />
             ) : (
-              <Link href="/auth/signup">
+              <Link href="/auth/register">
                 <Button variant="outline" size="sm">
                   Sign Up
                 </Button>

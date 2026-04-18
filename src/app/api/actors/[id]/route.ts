@@ -1,9 +1,18 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { resolveCharacterDisplay } from "@/lib/character"
-import { getMovieCredits } from "@/lib/tmdb"
+
+const actorApiMovieSelect = {
+  id: true,
+  title: true,
+  year: true,
+  director: true,
+  tmdbId: true,
+  slug: true,
+  posterUrl: true,
+} as Prisma.MovieSelect
 
 export async function GET(
   request: NextRequest,
@@ -59,7 +68,7 @@ export async function GET(
           character: true,
           createdAt: true,
           updatedAt: true,
-          movie: { select: { id: true, title: true, year: true, director: true, tmdbId: true, slug: true, posterUrl: true } },
+          movie: { select: actorApiMovieSelect },
           actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
         },
         orderBy: { updatedAt: "desc" },
@@ -123,7 +132,7 @@ export async function GET(
     const ratedMovies = ratedMovieIds.size > 0
       ? await prisma.movie.findMany({
           where: { id: { in: Array.from(ratedMovieIds) } },
-          select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true },
+          select: actorApiMovieSelect,
         })
       : []
 

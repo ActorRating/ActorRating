@@ -192,7 +192,7 @@ export function HomeNavbar() {
                     >
                       Sign In
                     </Link>
-                    <Link href="/auth/signup">
+                    <Link href="/auth/register">
                       <button
                         className="px-5 py-2 rounded-full text-sm font-bold text-black hover:scale-105 transition-transform duration-200 min-h-[40px]"
                         style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
@@ -294,7 +294,7 @@ export function HomeNavbar() {
                       className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-[#a3a3a3] bg-[#111] border border-white/5">
                       Sign In
                     </Link>
-                    <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)} className="flex-1">
+                    <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)} className="flex-1">
                       <button
                         className="w-full px-4 py-3 rounded-xl text-sm font-bold text-black"
                         style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}

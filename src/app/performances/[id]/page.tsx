@@ -114,7 +114,7 @@ export default function PerformanceDetailPage() {
       localStorage.setItem('pendingRating', JSON.stringify(ratingDataToStore))
       
       // Redirect to signup page
-      router.push('/auth/signup')
+      router.push('/auth/register')
       return
     }
 

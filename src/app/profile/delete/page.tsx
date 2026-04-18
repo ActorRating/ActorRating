@@ -126,9 +126,8 @@ export default function DeleteAccountPage() {
                   KVKK Veri Silme Hakkı
                 </h3>
                 <p className="text-sm text-gray-700 mb-3">
-                  KVKK'nın 11. maddesi uyarınca, kişisel verilerinizin silinmesini
-                  talep etme hakkına sahipsiniz. Bu işlem, verilerinizin tamamen
-                  ve geri döndürülemez şekilde silinmesini sağlar.
+                  KVKK&apos;nın 11. maddesi uyarınca, kişisel verilerinizin silinmesini talep etme hakkına
+                  sahipsiniz. Bu işlem, verilerinizin tamamen ve geri döndürülemez şekilde silinmesini sağlar.
                 </p>
                 <p className="text-sm text-gray-700">
                   Hesap silme işlemi 30 gün içinde tamamlanacaktır. Bu süre
@@ -149,7 +148,7 @@ export default function DeleteAccountPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Onay için "SİL" yazın
+                      Onay için &quot;SİL&quot; yazın
                     </label>
                     <input
                       type="text"

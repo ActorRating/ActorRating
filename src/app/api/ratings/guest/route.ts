@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Rating data prepared for signup",
       ratingData,
-      redirectTo: "/auth/signup"
+      redirectTo: "/auth/register"
     })
 
   } catch (error) {

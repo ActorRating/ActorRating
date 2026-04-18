@@ -1,8 +1,13 @@
 import NextAuth from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
+import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
 import { prisma } from "@/lib/prisma"
+import { GoogleOnlyCredentialsSignin } from "@/lib/authErrors"
+
+const googleConfigured =
+  Boolean(process.env.GOOGLE_CLIENT_ID?.trim()) && Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim())
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -15,6 +20,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/auth/signin",
   },
   providers: [
+    ...(googleConfigured
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
     Credentials({
       id: "credentials",
       name: "Email and password",
@@ -32,10 +46,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !rawPassword) return null
 
         const user = await prisma.user.findUnique({ where: { email } })
-        if (!user?.password) return null
+        if (!user) return null
 
         const stored = user.password
-        const looksBcrypt = stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")
+        if (!stored || !stored.trim()) {
+          throw new GoogleOnlyCredentialsSignin()
+        }
+
+        const looksBcrypt =
+          stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")
         if (!looksBcrypt) return null
 
         const ok = await bcrypt.compare(rawPassword, stored)
@@ -51,6 +70,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn() {
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id

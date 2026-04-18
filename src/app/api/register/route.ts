@@ -27,8 +27,20 @@ export async function POST(request: NextRequest) {
 
     const email = emailRaw.toLowerCase()
 
-    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, password: true },
+    })
     if (existing) {
+      if (!existing.password) {
+        return NextResponse.json(
+          {
+            error: "This email is already registered with Google. Sign in with Google instead.",
+            code: "google_only",
+          },
+          { status: 409 },
+        )
+      }
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 })
     }
 

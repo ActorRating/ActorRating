@@ -7,6 +7,14 @@ function authSecret() {
 }
 
 export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname
+  if (path === "/auth/login" || path.startsWith("/auth/login/")) {
+    return NextResponse.redirect(new URL("/auth/signin", req.url))
+  }
+  if (path === "/auth/signup" || path.startsWith("/auth/signup/")) {
+    return NextResponse.redirect(new URL("/auth/register", req.url))
+  }
+
   const secret = authSecret()
   const token =
     secret &&
@@ -33,8 +41,6 @@ export async function middleware(req: NextRequest) {
   if (
     userId &&
     (req.nextUrl.pathname.startsWith("/auth/signin") ||
-      req.nextUrl.pathname.startsWith("/auth/signup") ||
-      req.nextUrl.pathname.startsWith("/auth/login") ||
       req.nextUrl.pathname.startsWith("/auth/register"))
   ) {
     return NextResponse.redirect(new URL("/dashboard", req.url))

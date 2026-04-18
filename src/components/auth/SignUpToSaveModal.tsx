@@ -89,7 +89,7 @@ export function SignUpToSaveModal({
 
   const handleCreateAccount = () => {
     persistPendingRating()
-    router.push("/auth/signup")
+    router.push("/auth/register")
   }
 
   const handleSignIn = () => {

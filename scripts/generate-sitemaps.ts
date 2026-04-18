@@ -100,7 +100,7 @@ function generateStatic(): void {
     { url: BASE_URL,                     lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
     { url: `${BASE_URL}/about`,          lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/auth/signin`,    lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE_URL}/auth/signup`,    lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/auth/register`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/privacy-policy`, lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
     { url: `${BASE_URL}/oscars-2026`,    lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
   ]

@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE:
+      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? "1" : "",
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -74,7 +78,7 @@ const nextConfig = {
       "media-src 'self' blob: data:",
 
       // XHR/fetch/WebSocket: GA + reCAPTCHA + Formspree + Vercel telemetry + S3
-      "connect-src 'self' https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://*.amazonaws.com",
+      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://*.amazonaws.com",
 
       "worker-src 'self'",
     ].join('; ')

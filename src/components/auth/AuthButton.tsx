@@ -27,7 +27,7 @@ export function AuthButton() {
   }
 
   return (
-    <Button type="button" onClick={() => router.push("/auth/signup")}>
+    <Button type="button" onClick={() => router.push("/auth/register")}>
       Sign Up
     </Button>
   )

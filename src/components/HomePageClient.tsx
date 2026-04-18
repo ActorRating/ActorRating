@@ -989,7 +989,7 @@ function CommunityCta() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/auth/signup">
+          <Link href="/auth/register">
             <button
               className="px-8 sm:px-12 py-4 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]"
               style={{ background: GOLD }}
