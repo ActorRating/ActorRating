@@ -1,20 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 import { prisma } from "@/lib/prisma"
+import { getAuthenticatedUserId } from "@/lib/authUser"
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Get export history (placeholder for now)
@@ -30,37 +24,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get all app data tied to user id
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    })
+    if (!dbUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const [ratings, performances] = await Promise.all([
       prisma.rating.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         include: { actor: true, movie: true },
       }),
       prisma.performance.findMany({
-      where: { userId: session.user.id, movie: { is: { isFeaturette: false } } },
+        where: { userId, movie: { is: { isFeaturette: false } } },
         include: { actor: true, movie: true },
       }),
     ])
 
-    // Prepare export data
     const exportData = {
       exportDate: new Date().toISOString(),
       user: {
-        id: session.user.id,
-        email: session.user.email,
+        id: dbUser.id,
+        email: dbUser.email,
       },
       ratings: ratings.map(rating => ({
         id: rating.id,

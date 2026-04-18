@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { makeCacheKey } from "@/lib/cache"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
+import { getAuthenticatedUserId } from "@/lib/authUser"
 
 export async function GET(
   request: NextRequest,
@@ -54,18 +53,20 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     const { id } = await params
+
+    const owned = await prisma.rating.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    })
+    if (!owned) {
+      return NextResponse.json({ error: "Rating not found" }, { status: 404 })
+    }
     const body = await request.json()
     const { 
       emotionalRangeDepth,
@@ -150,23 +151,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     const { id } = await params
-    await prisma.rating.delete({
-      where: {
-        id: id,
-      },
+    const deleted = await prisma.rating.deleteMany({
+      where: { id, userId },
     })
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Rating not found" }, { status: 404 })
+    }
 
     return NextResponse.json({ message: "Rating deleted successfully" })
   } catch (error) {

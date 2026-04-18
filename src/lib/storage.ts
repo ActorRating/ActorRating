@@ -3,8 +3,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 
 /**
- * Thin storage abstraction over AWS S3 with optional Supabase support.
- * Default is S3. Set SUPABASE_URL and SUPABASE_ANON_KEY to implement later.
+ * Storage uploads: AWS S3 in production, or `public/` on disk when `STORAGE_PROVIDER=local`.
  */
 export interface UploadParams {
   key: string

@@ -6,12 +6,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/providers/SessionProvider'
 import { CheckCircle } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabaseClient'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
-  const { user, isInitialized } = useSession()
+  const { user, isInitialized, loading } = useSession()
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,15 +33,7 @@ export default function SignupSuccessPage() {
         setIsSubmittingRating(true)
         
         // Wait a bit for the session to be fully established on the server
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // Verify session is still valid
-        const { data: { session } } = await getSupabaseClient().auth.getSession()
-        if (!session) {
-          setError('Session expired. Please try signing in again.')
-          setIsSubmittingRating(false)
-          return
-        }
+        await new Promise(resolve => setTimeout(resolve, 500))
 
         try {
           const ratingData = JSON.parse(pendingRating)
@@ -128,7 +119,7 @@ export default function SignupSuccessPage() {
     handlePendingRating()
   }, [user, isInitialized, router])
 
-  if (!isInitialized || user === undefined || isSubmittingRating) {
+  if (!isInitialized || loading || isSubmittingRating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <BouncingBallsLoader 

@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Prevent Supabase from being bundled into server chunks (avoids ENOENT vendor-chunks)
-  serverExternalPackages: ['@supabase/supabase-js', '@supabase/ssr'],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -69,17 +67,16 @@ const nextConfig = {
       // Fonts: self/data + Google Fonts
       "font-src 'self' data: https://fonts.gstatic.com",
 
-      // Images: blob: for generated previews; self/data + TMDB + storage
-      "img-src 'self' data: blob: https://image.tmdb.org https://www.actorrating.com https://*.supabase.co https://*.amazonaws.com",
+      // Images: blob: for generated previews; self/data + TMDB + S3/CDN
+      "img-src 'self' data: blob: https://image.tmdb.org https://www.actorrating.com https://*.amazonaws.com",
 
       // Video/audio previews if ever used
       "media-src 'self' blob: data:",
 
-      // XHR/fetch/WebSocket: Supabase + GA + reCAPTCHA + Formspree + Vercel telemetry
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://*.amazonaws.com",
+      // XHR/fetch/WebSocket: GA + reCAPTCHA + Formspree + Vercel telemetry + S3
+      "connect-src 'self' https://www.google.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://*.amazonaws.com",
 
-      // Supabase realtime (worker) uses realtime.supabase.com by default
-      "worker-src 'self' https://realtime.supabase.com https://*.supabase.co",
+      "worker-src 'self'",
     ].join('; ')
 
     return [

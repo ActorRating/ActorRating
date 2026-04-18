@@ -2,35 +2,16 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
+import { getAuthenticatedUserId } from "@/lib/authUser"
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log("=== MOVIE USER RATING API CALLED ===")
   
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    // Get user (more reliable than getSession for API routes)
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    console.log("Movie user rating - Auth status:", { 
-      hasUser: !!user, 
-      userId: user?.id,
-      error: userError?.message 
-    })
-    
-    // Development bypass for localhost only
-    let userId = user?.id
-    if (!userId && process.env.NODE_ENV === 'development') {
-      const host = request.headers.get('host')
-      if (host?.includes('localhost') || host?.includes('127.0.0.1')) {
-        userId = `dev-user-${Date.now()}`
-        console.log("🚧 Development bypass activated for localhost:", userId)
-      }
-    }
+    const userId = await getAuthenticatedUserId()
     
     if (!userId) {
       return NextResponse.json(

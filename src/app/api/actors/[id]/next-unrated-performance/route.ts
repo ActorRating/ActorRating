@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSupabaseServerClientFromRequest } from '@/lib/supabaseRequestClient'
+import { getAuthenticatedUserId } from '@/lib/authUser'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -18,9 +18,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.id) {
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -43,7 +42,7 @@ export async function GET(
     const ratedMovieIds = new Set(
       (
         await prisma.rating.findMany({
-          where: { actorId, userId: user.id },
+          where: { actorId, userId },
           select: { movieId: true }
         })
       ).map((r) => r.movieId)

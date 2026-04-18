@@ -111,8 +111,8 @@ async function main() {
 
     // 2. Get default user
     console.log('\n👤 Setting up default user...');
-    // NEW (Supabase-managed user id hardcoded from auth.users table)
-    const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+    // Replace with a real `User.id` from your database (see Prisma `User` model).
+    const DEFAULT_USER_ID = "uuid-from-auth-users";
     let defaultUserId = DEFAULT_USER_ID;
     console.log(`✅ Using hardcoded user ID: ${defaultUserId}`);
 

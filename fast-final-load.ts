@@ -68,8 +68,8 @@ async function main() {
     console.log('⚡ FINAL FAST LOAD - Getting ALL 18,133 performances NOW!\n');
 
     // 1. Get default user
-    // NEW (Supabase-managed user id hardcoded from auth.users table)
-    const DEFAULT_USER_ID = "uuid-from-auth-users"; // grab one from Supabase
+    // Replace with a real `User.id` from your database (see Prisma `User` model).
+    const DEFAULT_USER_ID = "uuid-from-auth-users";
     let defaultUserId = DEFAULT_USER_ID;
 
     // 2. Parse performance data (file should already exist)

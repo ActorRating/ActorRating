@@ -2,8 +2,8 @@
 
 export const dynamic = "force-dynamic"
 
-import { useUser } from "@/components/providers/SessionProvider"
-import { getSupabaseClient } from "@/lib/supabaseClient"
+import { useSession } from "@/components/providers/SessionProvider"
+import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
@@ -12,8 +12,8 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 export default function DeleteAccountPage() {
-  const user = useUser()
-  const isLoadingUser = user === undefined
+  const { user, loading: sessionLoading } = useSession()
+  const isLoadingUser = sessionLoading
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [confirmation, setConfirmation] = useState("")
@@ -27,10 +27,6 @@ export default function DeleteAccountPage() {
 
     setIsLoading(true)
     try {
-      // Sign out from Supabase first
-      await getSupabaseClient().auth.signOut()
-      
-      // Then call the delete API
       const response = await fetch("/api/user/delete", {
         method: "DELETE",
         headers: {
@@ -39,7 +35,7 @@ export default function DeleteAccountPage() {
       })
 
       if (response.ok) {
-        window.location.href = "/"
+        await signOut({ callbackUrl: "/", redirect: true })
       } else {
         const errorData = await response.json()
         alert(`Hesap silme hatası: ${errorData.error || "Bilinmeyen hata"}`)

@@ -1,25 +1,25 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
 import { prisma } from "@/lib/prisma"
-// Removed NextAuth imports - using Supabase Auth
+import { getAuthenticatedUserId } from "@/lib/authUser"
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Return Supabase user basic info; app data tied to user.id is fetched via other routes
-    return NextResponse.json({ user: { id: user.id, email: user.email } })
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } })
   } catch (error) {
     console.error("Profile GET error:", error)
     return NextResponse.json(
@@ -31,24 +31,22 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { } = body
+    await request.json()
 
-    // Validate input
-    // No editable fields in simplified profile
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-    return NextResponse.json({ success: true, user: { id: user.id, email: user.email } })
+    return NextResponse.json({ success: true, user: { id: user.id, email: user.email, name: user.name } })
   } catch (error) {
     console.error("Profile PUT error:", error)
     return NextResponse.json(

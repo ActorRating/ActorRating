@@ -4,7 +4,9 @@ import { Geist, Geist_Mono, Playfair_Display, Cormorant_Garamond } from "next/fo
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { buildDevNextAuthSession, isDevMode } from "@/lib/devAuth";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import { NavigationProgressProvider } from "@/components/providers/NavigationProgressProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
@@ -120,11 +122,13 @@ export const viewport = {
   viewportFit: "cover", // CRITICAL: Allows content to extend into safe areas on iOS
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = isDevMode ? buildDevNextAuthSession() : await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -151,7 +155,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {/* App Providers */}
-        <SessionProvider>
+        <SessionProvider session={session}>
           <CookieConsentProvider>
             <NavigationProgressProvider>
             <Suspense fallback={null}>

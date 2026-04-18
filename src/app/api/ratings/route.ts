@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 // src/app/api/ratings/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
+import { getAuthenticatedUserId } from "@/lib/authUser"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { nanoid } from "nanoid"
@@ -41,34 +41,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
   try {
     console.log("=== RATING API CALLED ===", { method: isUpdate ? 'PUT' : 'POST' })
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.error("Missing Supabase env: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY")
-      return NextResponse.json(
-        { error: "Server misconfiguration: Supabase env vars not set", code: "MISSING_SUPABASE_ENV" },
-        { status: 503 }
-      )
-    }
-
-    const supabase = createSupabaseServerClientFromRequest(request)
-
-    // Get user (more reliable than getSession for API routes)
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    console.log("Rating API - Auth status:", { 
-      hasUser: !!user, 
-      userId: user?.id,
-      error: userError?.message 
-    })
-
-    let userId = user?.id
-    // Development bypass
-    if (!userId && process.env.NODE_ENV === 'development') {
-      const host = request.headers.get('host')
-      if (host?.includes('localhost') || host?.includes('127.0.0.1')) {
-        userId = `dev-user-${Date.now()}`
-        console.log("🚧 Development bypass activated:", userId)
-      }
-    }
+    const userId = await getAuthenticatedUserId()
 
     if (!userId) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
@@ -92,7 +65,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       return NextResponse.json({ error: "Actor ID and Movie ID must be strings" }, { status: 400 })
     }
 
-    // Ensure userId is stored as TEXT (from Supabase Auth UUID, stored as string)
+    // Ensure userId is stored as TEXT (Prisma User id / legacy ids)
     if (typeof userId !== 'string') {
       return NextResponse.json({ error: "User ID must be a string" }, { status: 400 })
     }
@@ -243,7 +216,7 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
           rating = await prisma.rating.create({
             data: { 
               id: ratingId,
-              userId: String(userId), // Ensure TEXT format (UUID from Supabase stored as TEXT)
+              userId: String(userId),
               actorId: String(actorId), // Ensure TEXT format
               movieId: String(movieId), // Ensure TEXT format
               emotionalRangeDepth, 

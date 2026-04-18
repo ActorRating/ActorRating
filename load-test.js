@@ -153,7 +153,7 @@ export default function () {
     password: 'testpass123',
   };
 
-  // Test a different endpoint since signup is now handled by Supabase
+  // Exercise search instead of signup during load (signup hits auth + DB).
   const signupResponse = http.get(`${BASE_URL}/api/search?q=test`);
 
   // Signup should either succeed, fail validation, or be rate limited

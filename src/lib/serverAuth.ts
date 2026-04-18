@@ -1,53 +1,44 @@
 /**
- * Server-side auth for use in Server Components (e.g. dashboard, profile).
- * Uses cookies() from next/headers and Supabase createServerClient.
- * Do not import this from client components or pages/ — use server-only.
+ * Server-side auth for Server Components (e.g. dashboard, profile).
+ * Do not import from client components.
  */
 
-import 'server-only'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
-import { getSupabasePublicEnv } from '@/lib/supabaseEnv'
-import { isDevMode, getDevUser } from '@/lib/devAuth'
+import "server-only"
+import { auth } from "@/auth"
+import { getDevUser, isDevMode } from "@/lib/devAuth"
 
 export type ServerUser = {
   id: string
-  email?: string
-  user_metadata?: { name?: string }
+  email?: string | null
+  name?: string | null
 }
 
 export async function getServerUser(): Promise<ServerUser | null> {
   try {
     if (isDevMode) {
       const dev = getDevUser()
-      if (dev) return dev as ServerUser
+      if (dev) {
+        return {
+          id: dev.id,
+          email: dev.email,
+          name: dev.user_metadata?.name ?? null,
+        }
+      }
     }
-    const cookieStore = await cookies()
-    const { url, anonKey } = getSupabasePublicEnv()
-    const supabase = createServerClient(url, anonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll() {
-          // No-op in Server Components; middleware handles cookie updates
-        },
-      },
-    })
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) return null
-    return user as ServerUser
+    const session = await auth()
+    const u = session?.user
+    if (!u?.id) return null
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+    }
   } catch {
-    // Avoid leaking errors in production; invalid/malformed cookies or Supabase failures
     return null
   }
 }
 
 export async function getServerUserId(): Promise<string | null> {
-  try {
-    const user = await getServerUser()
-    return user?.id ?? null
-  } catch {
-    return null
-  }
+  const user = await getServerUser()
+  return user?.id ?? null
 }

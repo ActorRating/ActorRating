@@ -2,8 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createSupabaseServerClientFromRequest } from "@/lib/supabaseRequestClient"
-// Removed NextAuth imports - using Supabase Auth
+import { getAuthenticatedUserId } from "@/lib/authUser"
 
 export async function GET(
   request: NextRequest,
@@ -65,27 +64,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     const { id } = await params
     const existing = await prisma.performance.findUnique({
       where: { id },
-      select: { movieId: true },
+      select: { movieId: true, userId: true },
     })
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Performance not found" },
-        { status: 404 }
-      )
+    if (!existing || existing.userId !== userId) {
+      return NextResponse.json({ error: "Performance not found" }, { status: 404 })
     }
     const movieMeta = await prisma.movie.findUnique({
       where: { id: existing.movieId },
@@ -165,27 +155,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createSupabaseServerClientFromRequest(request)
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     const { id } = await params
     const existing = await prisma.performance.findUnique({
       where: { id },
-      select: { movieId: true },
+      select: { movieId: true, userId: true },
     })
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Performance not found" },
-        { status: 404 }
-      )
+    if (!existing || existing.userId !== userId) {
+      return NextResponse.json({ error: "Performance not found" }, { status: 404 })
     }
     const movieMeta = await prisma.movie.findUnique({
       where: { id: existing.movieId },
@@ -199,9 +180,7 @@ export async function DELETE(
     }
 
     await prisma.performance.delete({
-      where: {
-        id: id,
-      },
+      where: { id },
     })
 
     return NextResponse.json({ message: "Performance deleted successfully" })

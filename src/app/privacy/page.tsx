@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           list: [
             "Google (for authentication via Google Sign-In) - See Google's Privacy Policy: https://policies.google.com/privacy",
             "Vercel (for hosting and infrastructure) - See Vercel's Privacy Policy: https://vercel.com/legal/privacy-policy",
-            "Supabase (for database and backend services) - See Supabase's Privacy Policy: https://supabase.com/privacy",
+            "PostgreSQL (self-hosted database) and application servers — processed under this policy and our hosting providers' terms.",
             "Legal authorities (when required by law or to protect our rights)",
             "Service providers (for technical support and maintenance, bound by confidentiality agreements)"
           ]
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
           list: [
             "Google (Google Sign-In ile kimlik doğrulama için) - Google Gizlilik Politikası: https://policies.google.com/privacy",
             "Vercel (barındırma ve altyapı için) - Vercel Gizlilik Politikası: https://vercel.com/legal/privacy-policy",
-            "Supabase (veritabanı ve backend hizmetleri için) - Supabase Gizlilik Politikası: https://supabase.com/privacy",
+            "PostgreSQL (barındırılan veritabanı) ve uygulama sunucuları — bu politika ve barındırma sağlayıcılarının koşulları kapsamında işlenir.",
             "Yasal makamlar (yasa gereği gerekli olduğunda veya haklarımızı korumak için)",
             "Hizmet sağlayıcıları (teknik destek ve bakım için, gizlilik anlaşmalarıyla bağlı)"
           ]

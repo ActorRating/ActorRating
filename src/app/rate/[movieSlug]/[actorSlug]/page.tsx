@@ -2,7 +2,7 @@
  * Slug-based rate page: /rate/[movieSlug]/[actorSlug]
  * Returns 410 Gone if movie or actor no longer exists (e.g. removed adult content).
  * Fetches movie + actor on the server so the client can render immediately (no loading spinner).
- * Uses Prisma first; on failure (e.g. DB unavailable), falls back to internal APIs (Supabase).
+ * Uses Prisma first; on failure (e.g. DB unavailable), falls back to internal HTTP APIs.
  */
 
 import { prisma } from '@/lib/prisma'
@@ -18,7 +18,7 @@ function toIsoDateSafe(value: string | Date | undefined): string {
   return value.toISOString?.() ?? ''
 }
 
-/** Resolve movie + actor via internal APIs (Supabase). Used when Prisma fails. */
+/** Resolve movie + actor via internal APIs. Used when Prisma fails. */
 async function resolveRatePageDataViaApi(movieSlug: string, actorSlug: string) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   const [actorRes, movieRes] = await Promise.all([
@@ -105,7 +105,7 @@ export default async function RatePage({
       `Rate page data failed [${movieSlug}/${actorSlug}]:`,
       err instanceof Error ? err.message : String(err)
     )
-    // Fallback: fetch from internal APIs (Supabase) when Prisma fails (e.g. DB unavailable or wrong DATABASE_URL)
+    // Fallback: fetch from internal APIs when Prisma fails (e.g. DB unavailable or wrong DATABASE_URL)
     const apiResolved = await resolveRatePageDataViaApi(movieSlug, actorSlug)
     if (apiResolved) {
       return (
