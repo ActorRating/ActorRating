@@ -1,0 +1,29 @@
+# Dependencies & build output
+node_modules
+.next
+out
+dist
+
+# Git & IDE
+.git
+.gitignore
+.cursor
+*.md
+
+# Local env (set secrets in Coolify)
+.env
+.env.*
+!.env.example
+
+# Tests & tooling
+coverage
+**/*.test.ts
+**/*.test.tsx
+**/__tests__
+jest.config.*
+.lighthouserc.json
+
+# Misc
+*.log
+npm-debug.log*
+.DS_Store
