@@ -2,9 +2,9 @@
 
 export const dynamic = "force-dynamic"
 
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { motion } from "framer-motion"
@@ -17,6 +17,8 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const { status: sessionStatus } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -29,6 +31,12 @@ export default function RegisterPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (sessionStatus === "authenticated") {
+      router.replace("/dashboard")
+    }
+  }, [sessionStatus, router])
 
   useEffect(() => {
     if (!searchParams) return
