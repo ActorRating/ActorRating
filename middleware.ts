@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { getToken } from "next-auth/jwt"
 
-function authSecret() {
-  return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+/**
+ * Database sessions use an opaque cookie, not a JWT — `getToken` always returns null.
+ * Resolve the signed-in user by hitting the session route (runs with Prisma on the server).
+ */
+async function getSessionUserId(req: NextRequest): Promise<string | null> {
+  const sessionUrl = new URL("/api/auth/session", req.nextUrl.origin)
+  const res = await fetch(sessionUrl, {
+    headers: { cookie: req.headers.get("cookie") ?? "" },
+    cache: "no-store",
+  })
+  if (!res.ok) {
+    return null
+  }
+  try {
+    const data = (await res.json()) as { user?: { id?: string } } | null
+    return data?.user?.id ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function middleware(req: NextRequest) {
@@ -15,16 +31,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/auth/register", req.url))
   }
 
-  const secret = authSecret()
-  const token =
-    secret &&
-    (await getToken({
-      req,
-      secret,
-      secureCookie: process.env.NODE_ENV === "production",
-    }))
-
-  const userId = (token?.sub as string | undefined) ?? null
+  const userId = await getSessionUserId(req)
 
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === "true" && process.env.NODE_ENV === "development"
 

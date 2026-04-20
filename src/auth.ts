@@ -64,24 +64,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-      const redirectTarget = `${baseUrl}/dashboard`
-      console.info("[auth][redirect]", { requestedUrl: url, baseUrl, redirectTarget })
-      return redirectTarget
+      // Must allow same-origin / relative URLs so email/OAuth callbacks complete.
+      // Only fall back to dashboard for unknown external URLs.
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+      try {
+        const target = new URL(url)
+        if (target.origin === baseUrl) {
+          return url
+        }
+      } catch {
+        // ignore invalid url
+      }
+      return `${baseUrl}/dashboard`
     },
     async session({ session, user }) {
       if (session.user && user?.id) {
         session.user.id = user.id
       }
       return session
-    },
-  },
-  events: {
-    async createSession({ session }) {
-      console.info("[auth][createSession]", {
-        sessionToken: session.sessionToken?.slice(0, 8),
-        userId: session.userId,
-        expires: session.expires,
-      })
     },
   },
 })
