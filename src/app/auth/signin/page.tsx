@@ -92,7 +92,7 @@ function SignInContent() {
       const normalizedEmail = email.trim().toLowerCase()
       const result = await signIn("email", {
         email: normalizedEmail,
-        callbackUrl: "/auth/signin-success",
+        callbackUrl: "/dashboard",
         redirect: false,
       })
       if (result?.error) {

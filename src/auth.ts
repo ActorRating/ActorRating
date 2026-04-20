@@ -29,6 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "database",
     maxAge: 30 * 24 * 60 * 60,
   },
+  cookies: {
+    sessionToken: {
+      name: isProduction ? "__Secure-authjs.session-token" : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProduction,
+      },
+    },
+  },
   pages: {
     signIn: "/auth/signin",
   },
@@ -52,11 +63,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      const redirectTarget = `${baseUrl}/dashboard`
+      console.info("[auth][redirect]", { requestedUrl: url, baseUrl, redirectTarget })
+      return redirectTarget
+    },
     async session({ session, user }) {
       if (session.user && user?.id) {
         session.user.id = user.id
       }
       return session
+    },
+  },
+  events: {
+    async createSession({ session }) {
+      console.info("[auth][createSession]", {
+        sessionToken: session.sessionToken?.slice(0, 8),
+        userId: session.userId,
+        expires: session.expires,
+      })
     },
   },
 })
