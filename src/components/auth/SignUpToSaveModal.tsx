@@ -87,9 +87,9 @@ export function SignUpToSaveModal({
     }
   }, [isOpen])
 
-  const handleCreateAccount = () => {
+  const handleContinueWithEmail = () => {
     persistPendingRating()
-    router.push("/auth/register")
+    router.push("/auth/signin")
   }
 
   const handleSignIn = () => {
@@ -268,14 +268,14 @@ export function SignUpToSaveModal({
 
               <button
                 type="button"
-                onClick={handleCreateAccount}
+                onClick={handleContinueWithEmail}
                 className="w-full py-4 px-6 rounded-2xl text-black font-semibold flex items-center justify-center gap-3 transition-all duration-300 relative overflow-hidden group mb-4 sm:mb-5"
                 style={{
                   background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
                   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
                 }}
               >
-                <span>Create free account</span>
+                <span>Continue with email</span>
               </button>
 
               {/* Already have account */}

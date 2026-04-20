@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Rating data prepared for signup",
+      message: "Rating data prepared for sign-in",
       ratingData,
-      redirectTo: "/auth/register"
+      redirectTo: "/auth/signin"
     })
 
   } catch (error) {

@@ -506,7 +506,7 @@ function RatePageContent() {
           </div>
         )}
 
-        {/* Sign Up Modal */}
+        {/* Auth Modal */}
         {showSignUpModal && pendingRatingData && actor && movie && (
           <SignUpToSaveModal
             isOpen={showSignUpModal}

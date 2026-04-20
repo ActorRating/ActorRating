@@ -20,7 +20,7 @@ export type AuthLayoutProps = {
 }
 
 /**
- * Shared shell for /auth/signin and /auth/register — matches sign-in page layout and styling.
+ * Shared shell for auth pages.
  */
 export function AuthLayout({
   heroTitle,
@@ -33,7 +33,7 @@ export function AuthLayout({
   const mobileSub = heroSubtitleMobile ?? heroSubtitle
 
   return (
-    <div className="min-h-screen bg-black lg:bg-gradient-to-br lg:from-black lg:via-black lg:to-[#D4AF37]/15 flex relative overflow-hidden">
+    <div className="min-h-[100svh] bg-black lg:bg-gradient-to-br lg:from-black lg:via-black lg:to-[#D4AF37]/15 flex relative overflow-x-hidden">
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 relative">
         <Link
           href="/"
@@ -58,9 +58,9 @@ export function AuthLayout({
         </motion.div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-8 relative -mt-4 sm:-mt-6 lg:mt-0">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-8 relative pt-[max(env(safe-area-inset-top),0.5rem)] sm:pt-6 lg:pt-0">
         <div className="w-full max-w-md">
-          <div className="lg:hidden mb-6">
+          <div className="lg:hidden mb-3">
             <Link
               href="/"
               className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
@@ -70,13 +70,13 @@ export function AuthLayout({
           </div>
 
           <motion.div
-            className="lg:hidden text-center mb-8"
+            className="lg:hidden text-center mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex justify-center mb-4">
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+            <div className="flex justify-center mb-2">
+              <div className="relative w-16 h-16 sm:w-24 sm:h-24">
                 <Image
                   src="/logo_navbar.png"
                   alt="ActorRating Logo"
@@ -88,16 +88,16 @@ export function AuthLayout({
               </div>
             </div>
             <h1
-              className="text-3xl font-bold text-white mb-2"
+              className="text-2xl sm:text-3xl font-bold text-white mb-1"
               style={{ fontFamily: "var(--font-cinzel), serif" }}
             >
               {heroTitle}
             </h1>
-            <p className="text-gray-400 text-sm">{mobileSub}</p>
+            <p className="text-gray-400 text-xs sm:text-sm">{mobileSub}</p>
           </motion.div>
 
           <motion.div
-            className="relative p-8 sm:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
+            className="relative p-5 sm:p-10 rounded-[1.5rem] sm:rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}

@@ -7,14 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// NextAuth / Auth.js user (email + password). Linked to ratings and performances via `userId`.
+/// NextAuth / Auth.js user (magic-link email auth). Linked to ratings and performances via `userId`.
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  password      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]

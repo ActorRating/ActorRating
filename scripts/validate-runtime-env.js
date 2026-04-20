@@ -48,12 +48,23 @@ if (!authUrl) {
 }
 
 if (process.env.NODE_ENV === "production") {
-  const gid = (process.env.GOOGLE_CLIENT_ID || "").trim()
-  const gsec = (process.env.GOOGLE_CLIENT_SECRET || "").trim()
-  if (!gid || !gsec) {
+  const emailServer = (process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER || "").trim()
+  const emailFrom = (process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM || "").trim()
+  if (!emailServer || !emailFrom) {
     fail(
-      "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required in production when Google sign-in is enabled.",
+      "AUTH_EMAIL_SERVER (or EMAIL_SERVER) and AUTH_EMAIL_FROM (or EMAIL_FROM) are required for magic-link email auth in production.",
     )
+  }
+
+  const googleEnabled = (process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE || "").trim() === "1"
+  if (googleEnabled) {
+    const gid = (process.env.GOOGLE_CLIENT_ID || "").trim()
+    const gsec = (process.env.GOOGLE_CLIENT_SECRET || "").trim()
+    if (!gid || !gsec) {
+      fail(
+        "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required when NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE=1.",
+      )
+    }
   }
 }
 

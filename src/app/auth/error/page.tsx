@@ -36,7 +36,7 @@ function AuthErrorContent() {
       case "EmailSignin":
         return "E-posta giriş hatası. Lütfen tekrar deneyin."
       case "CredentialsSignin":
-        return "Kimlik bilgileri hatası. Lütfen bilgilerinizi kontrol edin."
+        return "Bu proje artık sadece magic link ile giriş destekliyor."
       case "SessionRequired":
         return "Oturum gerekli. Lütfen giriş yapın."
       case "Default":

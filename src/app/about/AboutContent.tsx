@@ -527,11 +527,11 @@ export function AboutContent() {
                   </button>
                 </Link>
                 <Link
-                  href="/auth/register"
+                  href="/auth/signin"
                   className="px-8 sm:px-10 py-4 sm:py-5 rounded-full text-sm sm:text-base font-semibold text-[#888] hover:text-white transition-all duration-200"
                   style={{ border: "1px solid rgba(255,255,255,0.1)" }}
                 >
-                  Create Free Account
+                  Continue with Email
                 </Link>
               </div>
             </div>

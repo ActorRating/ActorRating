@@ -4,8 +4,8 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 /**
- * Legacy OAuth callback path. Authentication is email/password only;
- * this page sends users home to avoid dead ends from old bookmarks.
+ * Legacy callback path kept for old bookmarks.
+ * Authentication now uses magic-link email only.
  */
 export default function AuthCallbackPage() {
   const router = useRouter()
