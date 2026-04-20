@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "vercel-build": "npx tsx scripts/generate-sitemaps.ts && prisma generate && next build",
     "db:deploy": "prisma migrate deploy",
+    "db:migrate-supabase-users": "tsx scripts/migrate-supabase-users.ts",
     "build:deploy": "npm run db:deploy && npm run build",
     "check:runtime-env": "node -r dotenv/config scripts/validate-runtime-env.js",
     "prestart": "npm run check:runtime-env",
