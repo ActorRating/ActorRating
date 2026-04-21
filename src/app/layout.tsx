@@ -4,7 +4,6 @@ import { Geist, Geist_Mono, Playfair_Display, Cormorant_Garamond } from "next/fo
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-import { auth } from "@/auth";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { buildDevNextAuthSession, isDevMode } from "@/lib/devAuth";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
@@ -12,8 +11,6 @@ import { NavigationProgressProvider } from "@/components/providers/NavigationPro
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
-
-export const dynamic = "force-dynamic";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -128,7 +125,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = isDevMode ? buildDevNextAuthSession() : await auth();
+  const session = isDevMode ? buildDevNextAuthSession() : null;
 
   return (
     <html lang="en" suppressHydrationWarning>

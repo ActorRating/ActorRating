@@ -3,7 +3,7 @@
  * Prefetch movie data on the server for faster first paint.
  */
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 import { withIsoDates } from '@/lib/dateUtils'
 import MoviePageClient from './MoviePageClient'

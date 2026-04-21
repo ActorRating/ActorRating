@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 // src/app/page.tsx (Server Component)
 import { Metadata } from "next";

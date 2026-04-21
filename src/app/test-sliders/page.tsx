@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic"
-
 import { SliderDemo } from '@/components/rating/SliderDemo'
 
 export default function TestSlidersPage() {
