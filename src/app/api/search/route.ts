@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
           }),
           prisma.movie.findMany({
             where: { title: { contains: query, mode: "insensitive" } },
-            select: { id: true, title: true, slug: true, year: true, posterUrl: true },
+            select: { id: true, title: true, slug: true, year: true },
             orderBy: [{ year: "desc" }, { title: "asc" }],
             take,
           }),

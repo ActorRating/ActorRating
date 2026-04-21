@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useSession } from "@/components/providers/SessionProvider"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"

@@ -7,8 +7,6 @@ import { getPerformancesByLookup } from "@/lib/performances-by-lookup"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
 
-export const revalidate = 300
-
 function parseTargets(raw: unknown) {
   if (!Array.isArray(raw) || raw.length === 0) return null
   return raw

@@ -1,7 +1,5 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useUser } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
 import { useState } from "react"

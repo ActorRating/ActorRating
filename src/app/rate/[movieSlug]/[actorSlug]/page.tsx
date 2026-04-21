@@ -10,8 +10,6 @@ import { toIsoDate } from '@/lib/dateUtils'
 import RatePageClient from './RatePageClient'
 import RatePageFallback from './RatePageFallback'
 
-export const dynamic = 'force-dynamic'
-
 function toIsoDateSafe(value: string | Date | undefined): string {
   if (!value) return ''
   if (typeof value === 'string') return value
