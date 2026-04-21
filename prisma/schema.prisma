@@ -10,8 +10,9 @@ datasource db {
 /// NextAuth / Auth.js user (magic-link email auth). Linked to ratings and performances via `userId`.
 model User {
   id            String    @id @default(cuid())
-  name          String?
+  name          String    @default("")
   username      String    @unique
+  onboardingCompleted Boolean @default(false)
   email         String    @unique
   emailVerified DateTime?
   image         String?

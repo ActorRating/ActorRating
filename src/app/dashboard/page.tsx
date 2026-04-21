@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getServerUserId } from '@/lib/serverAuth'
 import { getDashboardData } from '@/lib/dashboardData'
+import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
 
@@ -45,6 +47,17 @@ export default async function DashboardPage() {
   if (!userId) {
     redirect('/auth/signin')
   }
+
+  const userRows = await prisma.$queryRaw<Array<{ username: string | null }>>(Prisma.sql`
+    SELECT "username"
+    FROM "User"
+    WHERE id = ${userId}
+    LIMIT 1
+  `)
+  if (!userRows[0]?.username) {
+    redirect('/onboarding')
+  }
+
   let ratings: Awaited<ReturnType<typeof getDashboardData>>['ratings']
   let popularActors: Awaited<ReturnType<typeof getDashboardData>>['popularActors']
   try {

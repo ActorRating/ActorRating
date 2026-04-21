@@ -12,6 +12,7 @@ import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
 type UpdateProfileBody = {
   name?: string
   username?: string
+  onboardingCompleted?: boolean
 }
 
 export async function PUT(request: NextRequest) {
@@ -34,6 +35,7 @@ export async function PUT(request: NextRequest) {
     const body = (await request.json()) as UpdateProfileBody
     const name = (body.name ?? "").trim()
     const username = normalizeUsername(body.username ?? "")
+    const onboardingCompleted = body.onboardingCompleted === true
 
     if (!name) {
       return NextResponse.json({ error: "Please choose a different name" }, { status: 400 })
@@ -47,12 +49,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid username" }, { status: 400 })
     }
 
-    let updatedUser: { id: string; email: string; name: string | null; username: string }
+    let updatedUser: { id: string; email: string; name: string; username: string; onboardingCompleted: boolean }
     try {
       updatedUser = await prisma.user.update({
         where: { id: userId },
-        data: { name, username },
-        select: { id: true, email: true, name: true, username: true },
+        data: { name, username, onboardingCompleted },
+        select: { id: true, email: true, name: true, username: true, onboardingCompleted: true },
       })
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

@@ -74,7 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (url.includes("/auth/callback") || url.includes("/api/auth")) {
         return url
       }
-      return `${baseUrl}/dashboard`
+      return `${baseUrl}/post-auth`
     },
     async signIn({ user }) {
       if (user?.email && isDisposableEmail(user.email)) {

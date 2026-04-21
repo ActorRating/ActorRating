@@ -135,7 +135,7 @@ export default function OnboardingRatePage() {
         }))
 
         const response = await fetch(buildByLookupUrl(lookupData), {
-          cache: "force-cache",
+          cache: "no-store",
         })
 
         if (response.ok) {
@@ -320,7 +320,7 @@ export default function OnboardingRatePage() {
         try {
           const communityRes = await fetch(
             buildByLookupUrl([{ actor: actor.name, movie: movie.title }]),
-            { cache: "force-cache" }
+            { cache: "no-store" }
           )
           if (communityRes.ok) {
             const communityDataRes = await communityRes.json()

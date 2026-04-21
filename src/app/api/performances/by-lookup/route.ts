@@ -12,9 +12,23 @@ function parseTargets(raw: unknown) {
   return raw
 }
 
+function isTrustedSameOriginRequest(request: NextRequest): boolean {
+  const fetchSite = request.headers.get("sec-fetch-site")
+  if (fetchSite === "same-origin") return true
+
+  const referer = request.headers.get("referer")
+  if (!referer) return false
+
+  try {
+    return new URL(referer).origin === request.nextUrl.origin
+  } catch {
+    return false
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
-    if (isLikelyAbusiveBot(request)) {
+    if (isLikelyAbusiveBot(request) && !isTrustedSameOriginRequest(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     const clientIp = getClientIp(request)
@@ -46,7 +60,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (isLikelyAbusiveBot(request)) {
+    if (isLikelyAbusiveBot(request) && !isTrustedSameOriginRequest(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     const clientIp = getClientIp(request)

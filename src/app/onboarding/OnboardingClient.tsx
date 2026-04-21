@@ -23,6 +23,7 @@ export default function OnboardingClient() {
   const [name, setName] = useState("")
   const [username, setUsername] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
   const [inlineError, setInlineError] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
 
@@ -40,8 +41,11 @@ export default function OnboardingClient() {
     if (!name && fallbackName) {
       setName(fallbackName)
     }
-    if (!username && emailLocal) {
-      setUsername(buildSuggestedUsername(emailLocal))
+    if (!username) {
+      const seed = user.name?.trim() || emailLocal
+      if (seed) {
+        setUsername(buildSuggestedUsername(seed))
+      }
     }
   }, [isLoadingUser, user, router, name, username])
 
@@ -88,6 +92,7 @@ export default function OnboardingClient() {
         body: JSON.stringify({
           name: name.trim(),
           username: normalizedUsername,
+          onboardingCompleted: true,
         }),
       })
 
@@ -96,17 +101,10 @@ export default function OnboardingClient() {
         return
       }
 
-      const onboardingRes = await fetch("/api/user/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboardingCompleted: true }),
-      })
-
-      if (!onboardingRes.ok) {
-        throw new Error("Failed to complete onboarding")
-      }
-
-      router.push("/dashboard")
+      setIsSaved(true)
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 650)
     } catch (error) {
       console.error("Onboarding submit error:", error)
       setInlineError("Please choose a different name")
@@ -163,9 +161,15 @@ export default function OnboardingClient() {
             {usernameStatus === "taken" ? <p className="mt-1 text-xs text-red-400">✗ taken</p> : null}
             {usernameStatus === "invalid" ? <p className="mt-1 text-xs text-yellow-400">⚠ invalid format</p> : null}
             {usernameStatus === "checking" ? <p className="mt-1 text-xs text-muted-foreground">Checking availability...</p> : null}
+            {normalizedUsername ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Profile URL: <span className="text-foreground">/u/{normalizedUsername}</span>
+              </p>
+            ) : null}
           </div>
 
           {inlineError ? <p className="text-sm text-red-400">{inlineError}</p> : null}
+          {isSaved ? <p className="text-sm text-green-400">Your profile is ready.</p> : null}
 
           <Button onClick={handleSubmit} disabled={!isValid || isSubmitting} className="w-full">
             {isSubmitting ? "Saving..." : "Continue"}
