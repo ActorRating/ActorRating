@@ -59,9 +59,6 @@ export function Footer() {
               <Link href="/performances?sort=top" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Top Rated
               </Link>
-              <Link href="/oscars-2026" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
-                Oscars 2026
-              </Link>
               <Link href="/search" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Search
               </Link>

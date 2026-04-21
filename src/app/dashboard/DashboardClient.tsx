@@ -18,7 +18,6 @@ import { FeaturedPerformancesCarousel } from "@/components/dashboard/FeaturedPer
 import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
-import { OscarBanner } from "@/components/OscarBanner"
 import type { DashboardRating, DashboardActor } from "@/lib/dashboardData"
 
 interface Actor {
@@ -368,16 +367,6 @@ export default function DashboardClient({
             </motion.div>
           </nav>
           </header>
-
-          {/* Oscar 2026 Banner */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mb-8"
-          >
-            <OscarBanner maxWidth="1024px" />
-          </motion.div>
 
           {/* Brief Loading State on Navigation - Subtle glitch effect */}
           {showBriefLoading && (

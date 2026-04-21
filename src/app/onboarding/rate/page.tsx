@@ -15,9 +15,8 @@ import { SearchBar } from '@/components/SearchBar'
 import { FaStar } from 'react-icons/fa'
 import { CheckCircle, Star, Users, TrendingUp, X } from 'lucide-react'
 import { MoviePoster } from '@/components/ui/MoviePoster'
-import { ActorAvatar } from '@/components/ui/ActorAvatar'
+import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { getLevelProgress } from '@/lib/badges'
-import { OscarBanner } from '@/components/OscarBanner'
 import { buildByLookupUrl } from '@/lib/performances-page-targets'
 
 // Curated performances for first rating
@@ -650,7 +649,7 @@ export default function OnboardingRatePage() {
     <AuthGuard>
       <SignedInLayout>
         <div className="min-h-screen bg-black">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="w-full max-w-[1280px] mx-auto px-4 py-16 sm:py-20">
             {/* Welcome Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -721,121 +720,21 @@ export default function OnboardingRatePage() {
               </p>
             </motion.div>
 
-            {/* Oscar 2026 Banner */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-12"
-            >
-              <OscarBanner buttonMarginLeft={true} />
-            </motion.div>
-
             {/* Desktop: Grid layout */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+            <div className="hidden lg:grid lg:grid-cols-3 gap-6 w-full items-stretch">
               {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
-                const character = performance.character || "—"
-                const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
-                // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
-                const rating = hasRating && performance.averageRating != null
-                  ? (performance.averageRating / 10).toFixed(1)
-                  : null
-
                 return (
                   <motion.div
                     key={`${performance.actorId}-${performance.movieId}`}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className="flex h-full"
+                    className="flex h-full w-full max-w-md mx-auto"
                   >
-                    {/* Premium Card - Clean & Cinematic - Matching performances page */}
-                    <div
-                      className="relative w-full h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] flex flex-col"
-                      style={{
-                        boxShadow: `
-                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                      `,
-                      }}
-                    >
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex-1">
-                          {/* Poster + actor row */}
-                          <div className="flex items-end gap-4 mb-5">
-                            <MoviePoster
-                              title={performance.movieTitle}
-                              posterUrl={(performance as PerformanceWithRating).moviePosterUrl}
-                              size="md"
-                              loading="lazy"
-                            />
-                            <div className="flex-1 min-w-0">
-                              {/* Rating Badge */}
-                              {rating ? (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 mb-3">
-                                  <FaStar className="w-4 h-4 text-[#FFD700]" />
-                                  <span className="text-xl font-bold text-[#FFD700]" style={{ fontVariantNumeric: 'tabular-nums' }}>{rating}</span>
-                                </div>
-                              ) : (
-                                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40 mb-3">
-                                  <FaStar className="w-4 h-4 text-[#666]" />
-                                  <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2">
-                                <ActorAvatar
-                                  name={performance.actorName}
-                                  imageUrl={(performance as PerformanceWithRating).actorImageUrl}
-                                  size="xs"
-                                />
-                                <span className="text-sm font-semibold text-white truncate">{performance.actorName}</span>
-                              </div>
-                            </div>
-                            <div className="text-[#a3a3a3] text-sm font-medium shrink-0">{performance.year}</div>
-                          </div>
-
-                          {/* Movie Title */}
-                          <div className="mb-2">
-                            <span className="text-lg text-[#FFD700] font-semibold tracking-wide">
-                              {performance.movieTitle}
-                            </span>
-                          </div>
-
-                          {/* Character */}
-                          <div className="mb-4">
-                            <p className="text-sm text-[#a3a3a3] italic font-light">as {character}</p>
-                          </div>
-                        </div>
-
-                        {/* Rate Button */}
-                        <div className="mt-auto pt-3">
-                          <button
-                            onClick={() => handlePerformanceSelect(performance)}
-                            className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
-                            style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                            }}
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              Rate
-                              <FaStar className="w-4 h-4" />
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Decorative accent */}
-                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                    </div>
+                    <OnboardingPerformanceCard
+                      performance={performance}
+                      onRate={() => handlePerformanceSelect(performance)}
+                    />
                   </motion.div>
                 )
               })}
@@ -849,13 +748,6 @@ export default function OnboardingRatePage() {
                 className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)]"
               >
                 {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((performance, index) => {
-                  const character = performance.character || "—"
-                  const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
-                  // Convert from 0-100 scale to 0-10 scale (ratings are stored as 0-100)
-                  const rating = hasRating && performance.averageRating != null
-                    ? (performance.averageRating / 10).toFixed(1)
-                    : null
-
                   return (
                     <div
                       key={`${performance.actorId}-${performance.movieId}`}
@@ -874,92 +766,10 @@ export default function OnboardingRatePage() {
                         }
                       }}
                     >
-                      {/* Premium Card - Clean & Cinematic - Matching performances page */}
-                      <div
-                        className="relative p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                        style={{
-                          boxShadow: `
-                          0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                          0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                          0 0 0 1px rgba(255, 255, 255, 0.05),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                        `,
-                        }}
-                      >
-                        {/* Glow effect */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                        </div>
-
-                        {/* Content */}
-                        <div className="relative z-10 flex flex-col h-full">
-                          <div className="flex-1">
-                            {/* Poster + actor row */}
-                            <div className="flex items-end gap-4 mb-5">
-                              <MoviePoster
-                                title={performance.movieTitle}
-                                posterUrl={(performance as PerformanceWithRating).moviePosterUrl}
-                                size="lg"
-                                loading="lazy"
-                              />
-                              <div className="flex-1 min-w-0">
-                                {rating ? (
-                                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40 mb-3">
-                                    <FaStar className="w-4 h-4 text-[#FFD700]" />
-                                    <span className="text-xl font-bold text-[#FFD700]" style={{ fontVariantNumeric: 'tabular-nums' }}>{rating}</span>
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#666]/40 mb-3">
-                                    <FaStar className="w-4 h-4 text-[#666]" />
-                                    <span className="text-xl font-bold text-[#a3a3a3]">N/A</span>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <ActorAvatar
-                                    name={performance.actorName}
-                                    imageUrl={(performance as PerformanceWithRating).actorImageUrl}
-                                    size="sm"
-                                  />
-                                  <span className="text-sm font-semibold text-white truncate">{performance.actorName}</span>
-                                </div>
-                              </div>
-                              <div className="text-[#a3a3a3] text-sm font-medium shrink-0">{performance.year}</div>
-                            </div>
-
-                            {/* Movie Title */}
-                            <div className="mb-2">
-                              <span className="text-xl text-[#FFD700] font-semibold tracking-wide">
-                                {performance.movieTitle}
-                              </span>
-                            </div>
-
-                            {/* Character */}
-                            <div className="mb-6">
-                              <p className="text-base text-[#a3a3a3] italic font-light">as {character}</p>
-                            </div>
-                          </div>
-
-                          {/* Rate Button */}
-                          <div className="mt-auto pt-4">
-                            <button
-                              onClick={() => handlePerformanceSelect(performance)}
-                              className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-500 hover:scale-105"
-                              style={{
-                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                              }}
-                            >
-                              <span className="flex items-center justify-center gap-2">
-                                Rate
-                                <FaStar className="w-4 h-4" />
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Decorative accent */}
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                      </div>
+                      <OnboardingPerformanceCard
+                        performance={performance}
+                        onRate={() => handlePerformanceSelect(performance)}
+                      />
                     </div>
                   )
                 })}
@@ -1025,5 +835,75 @@ export default function OnboardingRatePage() {
         </div>
       </SignedInLayout>
     </AuthGuard>
+  )
+}
+
+function OnboardingPerformanceCard({
+  performance,
+  onRate,
+}: {
+  performance: PerformanceWithRating
+  onRate: () => void
+}) {
+  const hasRating = performance.ratingCount && performance.ratingCount > 0 && performance.averageRating != null && performance.averageRating > 0
+  const rating = hasRating && performance.averageRating != null ? (performance.averageRating / 10).toFixed(1) : null
+  const character = performance.character || "—"
+
+  return (
+    <div className="group relative h-full">
+      <div
+        className="relative h-full min-h-[620px] sm:min-h-[640px] p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+        style={{ boxShadow: "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)" }}
+      >
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex-1">
+            <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
+              <ActorHeadshot
+                name={performance.actorName}
+                imageUrl={performance.actorImageUrl}
+                size="lg"
+                loading="lazy"
+              />
+              <MoviePoster
+                title={performance.movieTitle}
+                posterUrl={performance.moviePosterUrl}
+                size="lg"
+                loading="lazy"
+              />
+            </div>
+            <div className="flex items-center justify-between mb-6">
+              {rating ? (
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                  <FaStar className="w-6 h-6 text-[#FFD700]" />
+                  <span className="text-3xl font-bold text-[#FFD700]" style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontVariantNumeric: "tabular-nums" }}>{rating}</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                  <FaStar className="w-6 h-6 text-[#666]" />
+                  <span className="text-3xl font-bold text-[#a3a3a3]">N/A</span>
+                </div>
+              )}
+              <div className="text-[#a3a3a3] text-base font-medium">{performance.year}</div>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>{performance.actorName}</h3>
+            <div className="mb-4">
+              <span className="text-lg text-[#FFD700] font-semibold tracking-wide">{performance.movieTitle}</span>
+            </div>
+            <div className="mb-6">
+              <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">as {character}</p>
+            </div>
+          </div>
+          <div className="mt-auto pt-4">
+            <button onClick={onRate} className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation" style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)" }}>
+              <span className="flex items-center justify-center gap-2">Rate <FaStar className="w-5 h-5" /></span>
+            </button>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+      </div>
+    </div>
   )
 }

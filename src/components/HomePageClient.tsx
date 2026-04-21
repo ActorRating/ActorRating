@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import {
-  FaStar, FaSearch, FaArrowRight, FaTrophy,
+  FaStar, FaSearch, FaArrowRight,
   FaUsers, FaChartLine, FaFilm, FaGlobe,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -282,7 +282,6 @@ function HeroSection() {
             >
               {[
                 { label: 'Browse Performances', href: '/performances' },
-                { label: 'Oscar 2026 Nominees', href: '/oscars-2026' },
                 { label: 'About ActorRating', href: '/about' },
               ].map((link) => (
                 <Link
@@ -331,54 +330,6 @@ function StatsStrip() {
             <span className="text-[10px] sm:text-xs text-[#555] font-medium tracking-[0.15em] uppercase">{s.label}</span>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── OSCAR BANNER ─────────────────────────────────────────────────────────────
-
-function OscarBanner() {
-  return (
-    <div className="relative z-10 bg-black py-10 sm:py-14 md:py-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <Link href="/oscars-2026" className="block group">
-          <div
-            className="relative p-7 sm:p-10 md:p-12 rounded-[2rem] overflow-hidden transition-all duration-300 group-hover:shadow-[0_0_60px_rgba(255,215,0,0.15)]"
-            style={{ background: CARD_BG, boxShadow: CARD_SHADOW }}
-          >
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem]">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full rounded-full blur-3xl"
-                style={{ background: 'radial-gradient(circle, rgba(255,215,0,0.12) 0%, transparent 70%)' }} />
-            </div>
-            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-5">
-              <div className="flex items-center gap-4 sm:gap-6">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(255,215,0,0.1)', border: '2px solid rgba(255,215,0,0.3)', boxShadow: '0 0 30px rgba(255,215,0,0.15)' }}>
-                  <FaTrophy className="w-7 h-7 text-[#FFD700]" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFD700] opacity-60 mb-1">Oscars Season 2026</p>
-                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white" style={CINZEL}>
-                    <span style={GOLD_TEXT}>Oscar 2026</span>
-                    <span className="hidden sm:inline"> Acting Performances</span>
-                    <span className="sm:hidden"> Nominees</span>
-                  </h3>
-                  <p className="text-sm text-[#a3a3a3] mt-1">Rate this year&apos;s nominees before the show.</p>
-                </div>
-              </div>
-              <button
-                className="flex-shrink-0 flex items-center gap-3 px-7 sm:px-9 py-3.5 sm:py-4 rounded-full text-black text-sm sm:text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-[0_0_24px_rgba(255,215,0,0.35)]"
-                style={{ background: GOLD }}
-                onClick={(e) => { e.preventDefault(); window.location.href = '/oscars-2026'; }}
-              >
-                Rate Nominees
-                <FaArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-[#FFD700]/6 to-transparent rounded-tl-[80px] pointer-events-none" />
-          </div>
-        </Link>
       </div>
     </div>
   );
@@ -1031,7 +982,6 @@ export default function HomePageClient({
     <>
       <HeroSection />
       <StatsStrip />
-      <OscarBanner />
       <LeaderboardSection initialPerformances={initialLeaderboardPerformances} />
       <RatingCriteriaSection />
       <HowItWorksSection />
