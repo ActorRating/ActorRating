@@ -19,7 +19,9 @@ const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 function SignInContent() {
   const router = useRouter()
   const { status: sessionStatus } = useSession()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cooldownRemaining, setCooldownRemaining] = useState(0)
+  const [hasSentLink, setHasSentLink] = useState(false)
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
@@ -39,6 +41,14 @@ function SignInContent() {
   }, [sessionStatus, router])
 
   useEffect(() => {
+    if (cooldownRemaining <= 0) return
+    const interval = window.setInterval(() => {
+      setCooldownRemaining((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => window.clearInterval(interval)
+  }, [cooldownRemaining])
+
+  useEffect(() => {
     if (!searchParams) return
 
     const error = searchParams.get("error")
@@ -54,6 +64,10 @@ function SignInContent() {
 
     if (error === "Verification") {
       setApiError("This login link is invalid or expired. Request a new one.")
+    } else if (error?.includes("RATE_LIMIT")) {
+      setApiError("Too many requests, try again later.")
+    } else if (error?.includes("DISPOSABLE_EMAIL")) {
+      setApiError("Please use a valid email provider.")
     } else if (error === "EmailSignin") {
       setApiError("Unable to send magic link. Please try again.")
     } else {
@@ -81,6 +95,7 @@ function SignInContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSubmitting || cooldownRemaining > 0) return
 
     const emailValidation = validateEmail(email.trim())
     const newErrors: Record<string, string> = {}
@@ -93,7 +108,7 @@ function SignInContent() {
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
     setApiError("")
 
     try {
@@ -104,15 +119,23 @@ function SignInContent() {
         redirect: false,
       })
       if (result?.error) {
-        setApiError("Unable to send magic link. Please try again.")
+        if (result.error.includes("RATE_LIMIT")) {
+          setApiError("Too many requests, try again later.")
+        } else if (result.error.includes("DISPOSABLE_EMAIL")) {
+          setApiError("Please use a valid email provider.")
+        } else {
+          setApiError("Unable to send magic link. Please try again.")
+        }
         return
       }
       setSuccessMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`)
+      setHasSentLink(true)
+      setCooldownRemaining(60)
     } catch (error) {
       console.error("Signin error:", error)
       setApiError("Unable to send magic link. Please try again.")
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -120,17 +143,6 @@ function SignInContent() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <BouncingBallsLoader size="md" color="#FFD700" />
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-        <BouncingBallsLoader size="lg" color="#FFD700" showText={true} text="Signing you in..." />
-        <p className="text-sm text-muted-foreground mt-4 text-center">
-          Please wait while we establish your session.
-        </p>
       </div>
     )
   }
@@ -206,7 +218,7 @@ function SignInContent() {
                 onFocus={() => setFocusedField("email")}
                 onBlur={() => setFocusedField(null)}
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
                 autoComplete="email"
                 className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 sm:pt-5 sm:pb-2 bg-black/50 border rounded-xl text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                   email ? "has-value" : ""
@@ -237,7 +249,7 @@ function SignInContent() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting || cooldownRemaining > 0}
             className="w-full group px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-black text-base sm:text-lg font-bold tracking-wide sm:tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
@@ -253,14 +265,18 @@ function SignInContent() {
               e.currentTarget.style.transform = "scale(1)"
             }}
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <span className="flex items-center justify-center gap-2 sm:gap-3 whitespace-nowrap">
                 <BouncingBallsLoader size="sm" color="#000000" className="mb-0" />
                 Sending link...
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2 sm:gap-3 whitespace-nowrap group">
-                Email me a magic link
+                {cooldownRemaining > 0
+                  ? `Check your email (${cooldownRemaining}s)`
+                  : hasSentLink
+                    ? "Resend link"
+                    : "Email me a magic link"}
                 <FaEnvelope className="w-5 h-5 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
               </span>
             )}

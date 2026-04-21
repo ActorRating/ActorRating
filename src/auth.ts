@@ -4,6 +4,7 @@ import EmailProvider from "next-auth/providers/email"
 import GoogleProvider from "next-auth/providers/google"
 import { prisma } from "@/lib/prisma"
 import { sendMagicLinkEmail } from "@/lib/magicLinkEmail"
+import { getRequestIp, isDisposableEmail, validateMagicLinkRequest } from "@/lib/authGuards"
 import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
@@ -58,26 +59,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       server: resolvedEmailServer!,
       maxAge: 15 * 60,
       async sendVerificationRequest(params) {
+        const email = params.identifier.trim().toLowerCase()
+        const ip = getRequestIp(params.request)
+        const guard = validateMagicLinkRequest({ email, ip })
+        if (!guard.allowed) {
+          throw new Error(guard.code)
+        }
         await sendMagicLinkEmail(params)
       },
     }),
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // Must allow same-origin / relative URLs so email/OAuth callbacks complete.
-      // Only fall back to dashboard for unknown external URLs.
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`
-      }
-      try {
-        const target = new URL(url)
-        if (target.origin === baseUrl) {
-          return url
-        }
-      } catch {
-        // ignore invalid url
+      if (url.includes("/auth/callback") || url.includes("/api/auth")) {
+        return url
       }
       return `${baseUrl}/dashboard`
+    },
+    async signIn({ user }) {
+      if (user?.email && isDisposableEmail(user.email)) {
+        throw new Error("DISPOSABLE_EMAIL")
+      }
+      return true
     },
     async session({ session, user }) {
       if (session.user && user?.id) {
