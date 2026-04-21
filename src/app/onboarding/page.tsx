@@ -1,21 +1,19 @@
 import { redirect } from "next/navigation"
 import OnboardingClient from "./OnboardingClient"
-import { getServerUserId } from "@/lib/serverAuth"
-import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
+import { resolveUser } from "@/lib/auth/resolveUser"
 
 export const dynamic = "force-dynamic"
 
 export default async function OnboardingPage() {
-  const userId = await getServerUserId()
-  if (!userId) {
+  const session = await auth()
+  const result = await resolveUser(session)
+
+  if (result.status === "unauthenticated") {
     redirect("/auth/signin")
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { onboardingCompleted: true },
-  })
-  if (user?.onboardingCompleted) {
+  if (result.status === "authenticated") {
     redirect("/dashboard")
   }
 

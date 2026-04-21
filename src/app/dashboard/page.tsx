@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getServerUserId } from '@/lib/serverAuth'
 import { getDashboardData } from '@/lib/dashboardData'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { auth } from '@/auth'
+import { resolveUser } from '@/lib/auth/resolveUser'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
 
@@ -43,25 +42,20 @@ function DashboardDataUnavailable({ digest }: { digest?: string }) {
 }
 
 export default async function DashboardPage() {
-  const userId = await getServerUserId()
-  if (!userId) {
+  const session = await auth()
+  const result = await resolveUser(session)
+
+  if (result.status === "unauthenticated") {
     redirect('/auth/signin')
   }
-
-  const userRows = await prisma.$queryRaw<Array<{ username: string | null }>>(Prisma.sql`
-    SELECT "username"
-    FROM "User"
-    WHERE id = ${userId}
-    LIMIT 1
-  `)
-  if (!userRows[0]?.username) {
+  if (result.status === "no_user" || result.status === "needs_onboarding") {
     redirect('/onboarding')
   }
 
   let ratings: Awaited<ReturnType<typeof getDashboardData>>['ratings']
   let popularActors: Awaited<ReturnType<typeof getDashboardData>>['popularActors']
   try {
-    const data = await getDashboardData(userId)
+    const data = await getDashboardData(result.user.id)
     ratings = data.ratings
     popularActors = data.popularActors
   } catch (err) {

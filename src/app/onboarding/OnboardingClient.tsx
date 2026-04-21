@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
-import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
+import { CheckCircle2, Sparkles, UserRound } from "lucide-react"
 
 type UsernameStatus = "idle" | "invalid" | "checking" | "available" | "taken"
 
@@ -17,7 +17,6 @@ function buildSuggestedUsername(seed: string): string {
 
 export default function OnboardingClient() {
   const user = useUser()
-  const isLoadingUser = user === undefined
   const router = useRouter()
 
   const [name, setName] = useState("")
@@ -30,11 +29,7 @@ export default function OnboardingClient() {
   const normalizedUsername = useMemo(() => normalizeUsername(username), [username])
 
   useEffect(() => {
-    if (isLoadingUser) return
-    if (!user) {
-      router.push("/auth/signin")
-      return
-    }
+    if (!user) return
 
     const emailLocal = user.email?.split("@")[0] || ""
     const fallbackName = user.name?.trim() || emailLocal || ""
@@ -47,7 +42,7 @@ export default function OnboardingClient() {
         setUsername(buildSuggestedUsername(seed))
       }
     }
-  }, [isLoadingUser, user, router, name, username])
+  }, [user, name, username])
 
   useEffect(() => {
     if (!normalizedUsername) {
@@ -113,67 +108,87 @@ export default function OnboardingClient() {
     }
   }
 
-  if (isLoadingUser) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <BouncingBallsLoader size="lg" color="#FFD700" showText text="Loading..." />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
-          Welcome to ActorRating
-        </h2>
-        <p className="mt-2 text-center text-sm text-muted-foreground">Set up your public profile.</p>
-      </div>
+    <div className="min-h-screen bg-black px-4 py-12 sm:py-16">
+      <div className="mx-auto w-full max-w-xl">
+        <div
+          className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#121212]/95 to-black/95 p-6 sm:p-8"
+          style={{
+            boxShadow:
+              "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          <div className="pointer-events-none absolute -right-14 -top-12 h-56 w-56 rounded-full bg-[#FFD700]/10 blur-3xl" />
+          <div className="relative z-10 mb-6 text-center sm:mb-8">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 px-3 py-1 text-xs text-[#FFE082]">
+              <Sparkles className="h-3.5 w-3.5" />
+              Public profile setup
+            </div>
+            <h2
+              className="text-3xl font-bold text-white sm:text-4xl"
+              style={{ fontFamily: "var(--font-cinzel), serif" }}
+            >
+              Create Your Identity
+            </h2>
+            <p className="mt-2 text-sm text-[#a1a1aa] sm:text-base">
+              Choose how your ratings appear publicly on ActorRating.
+            </p>
+          </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-secondary py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-border space-y-4">
+          <div className="space-y-5">
           <div>
-            <label className="block text-sm mb-2 text-foreground">Display name</label>
+            <label className="mb-2 block text-sm text-[#d4d4d8]">Display name</label>
             <input
               value={name}
               onChange={(e) => {
                 setName(e.target.value)
                 setInlineError("")
               }}
-              className="w-full h-11 rounded-md border border-border bg-background px-3 text-foreground"
+              className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="Your name"
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-2 text-foreground">Username</label>
+            <label className="mb-2 block text-sm text-[#d4d4d8]">Username</label>
             <input
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value)
                 setInlineError("")
               }}
-              className="w-full h-11 rounded-md border border-border bg-background px-3 text-foreground"
+              className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="username"
             />
-            <p className="mt-1 text-xs text-muted-foreground">3-20 chars, lowercase letters, numbers, underscore</p>
-            {usernameStatus === "available" ? <p className="mt-1 text-xs text-green-400">✓ available</p> : null}
-            {usernameStatus === "taken" ? <p className="mt-1 text-xs text-red-400">✗ taken</p> : null}
-            {usernameStatus === "invalid" ? <p className="mt-1 text-xs text-yellow-400">⚠ invalid format</p> : null}
-            {usernameStatus === "checking" ? <p className="mt-1 text-xs text-muted-foreground">Checking availability...</p> : null}
+            <p className="mt-1 text-xs text-[#71717a]">3-20 chars, lowercase letters, numbers, underscore</p>
+            {usernameStatus === "available" ? <p className="mt-1 text-xs text-emerald-400">Available</p> : null}
+            {usernameStatus === "taken" ? <p className="mt-1 text-xs text-rose-400">Already taken</p> : null}
+            {usernameStatus === "invalid" ? <p className="mt-1 text-xs text-amber-400">Invalid format</p> : null}
+            {usernameStatus === "checking" ? <p className="mt-1 text-xs text-[#71717a]">Checking availability...</p> : null}
             {normalizedUsername ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Profile URL: <span className="text-foreground">/u/{normalizedUsername}</span>
-              </p>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#d4d4d8]">
+                <UserRound className="h-3.5 w-3.5" />
+                <span>/u/{normalizedUsername}</span>
+              </div>
             ) : null}
           </div>
 
-          {inlineError ? <p className="text-sm text-red-400">{inlineError}</p> : null}
-          {isSaved ? <p className="text-sm text-green-400">Your profile is ready.</p> : null}
+            {inlineError ? <p className="text-sm text-rose-400">{inlineError}</p> : null}
+            {isSaved ? (
+              <p className="inline-flex items-center gap-2 text-sm text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Your profile is ready.
+              </p>
+            ) : null}
 
-          <Button onClick={handleSubmit} disabled={!isValid || isSubmitting} className="w-full">
+            <Button
+              onClick={handleSubmit}
+              disabled={!isValid || isSubmitting}
+              className="h-12 w-full rounded-full text-base font-semibold"
+            >
             {isSubmitting ? "Saving..." : "Continue"}
-          </Button>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
