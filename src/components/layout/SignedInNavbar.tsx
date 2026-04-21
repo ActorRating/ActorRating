@@ -1,7 +1,7 @@
 "use client"
 
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
-import { useUser } from '@/components/providers/SessionProvider'
+import { useSession, useUser } from '@/components/providers/SessionProvider'
 import { Button } from '../ui/Button'
 import { usePathname, useRouter } from 'next/navigation'
 import { Logo } from '../ui/Logo'
@@ -12,6 +12,7 @@ const KEY_ROUTES = ['/dashboard', '/search', '/profile', '/rate'] as const
 
 export function SignedInNavbar() {
   const user = useUser()
+  const { loading, isInitialized } = useSession()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -49,6 +50,25 @@ export function SignedInNavbar() {
     )
   }
 
+  if (!isInitialized || loading) {
+    return (
+      <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Logo />
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button disabled size="sm" noMotion>
+                Loading...
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
   if (!user) {
     return null
   }
@@ -59,7 +79,7 @@ export function SignedInNavbar() {
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <Logo href="/dashboard" />
+              <Logo href="/post-auth" />
           </div>
 
           {/* Navigation Links */}

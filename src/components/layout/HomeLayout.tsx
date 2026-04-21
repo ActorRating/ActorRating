@@ -5,7 +5,7 @@ import { SignedInNavbar } from './SignedInNavbar'
 import { Footer } from './Footer'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
-import { useUser } from '@/components/providers/SessionProvider'
+import { useSession, useUser } from '@/components/providers/SessionProvider'
 import { useEffect, useState } from 'react'
 
 interface HomeLayoutProps {
@@ -15,6 +15,7 @@ interface HomeLayoutProps {
 
 export function HomeLayout({ children, transparentBackground = false }: HomeLayoutProps) {
   const user = useUser()
+  const { loading, isInitialized } = useSession()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   return (
@@ -24,7 +25,7 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
     >
       {/* Navbar switches based on auth status for consistency across pages */}
       <div style={{ position: 'relative', zIndex: 999, background: 'transparent', width: '100%' }}>
-        {!mounted ? <HomeNavbar /> : (user ? <SignedInNavbar /> : <HomeNavbar />)}
+        {!mounted || !isInitialized || loading ? <SignedInNavbar /> : (user ? <SignedInNavbar /> : <HomeNavbar />)}
       </div>
 
       {/* Main content */}

@@ -82,6 +82,15 @@ interface PerformanceWithRating {
   moviePosterUrl?: string | null
 }
 
+function normalizeKey(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 export default function OnboardingRatePage() {
   const router = useRouter()
   const user = useUser()
@@ -145,10 +154,16 @@ export default function OnboardingRatePage() {
           // Map the fetched data back to our curated list with ratings
           const enriched = CURATED_PERFORMANCES.map(curated => {
             const found = performances.find((p: any) => {
-              const pActorName = (p.actor?.name || '').toLowerCase().trim()
-              const pMovieTitle = (p.movie?.title || '').toLowerCase().trim()
-              const curatedActorName = curated.actorName.toLowerCase().trim()
-              const curatedMovieTitle = curated.movieTitle.toLowerCase().trim()
+              const pActorSlug = (p.actor?.slug || '').toLowerCase().trim()
+              const pMovieSlug = (p.movie?.slug || '').toLowerCase().trim()
+              if (pActorSlug && pMovieSlug) {
+                return pActorSlug === curated.actorId && pMovieSlug === curated.movieId
+              }
+
+              const pActorName = normalizeKey(p.actor?.name || '')
+              const pMovieTitle = normalizeKey(p.movie?.title || '')
+              const curatedActorName = normalizeKey(curated.actorName)
+              const curatedMovieTitle = normalizeKey(curated.movieTitle)
               return pActorName === curatedActorName && pMovieTitle === curatedMovieTitle
             })
 
@@ -368,7 +383,7 @@ export default function OnboardingRatePage() {
 
   if (loading && !selectedPerformance) {
     return (
-      <AuthGuard>
+      <AuthGuard requireAuth>
         <SignedInLayout>
           <div className="min-h-screen bg-black flex items-center justify-center">
             <BouncingBallsLoader
@@ -400,10 +415,11 @@ export default function OnboardingRatePage() {
   }
 
   const userScore = calculateUserScore()
+  const welcomeName = user?.name?.trim() || user?.email?.split('@')[0] || 'there'
 
   if (showFirstRatingSuccess) {
     return (
-      <AuthGuard>
+      <AuthGuard requireAuth>
         <SignedInLayout>
           <div className="min-h-screen bg-black flex items-center justify-center px-4 py-8">
             <motion.div
@@ -586,7 +602,7 @@ export default function OnboardingRatePage() {
   // Show rating form when performance is selected
   if (selectedPerformance && actor && movie) {
     return (
-      <AuthGuard>
+      <AuthGuard requireAuth>
         <SignedInLayout>
           <div className="min-h-screen bg-black">
             <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
@@ -644,7 +660,7 @@ export default function OnboardingRatePage() {
 
   // Show performance selection - Desktop: Grid, Mobile: Carousel
   return (
-    <AuthGuard>
+    <AuthGuard requireAuth>
       <SignedInLayout>
         <div className="min-h-screen bg-black">
           <div className="w-full max-w-[1280px] mx-auto px-4 py-16 sm:py-20">
@@ -663,18 +679,16 @@ export default function OnboardingRatePage() {
                 }}
               >
                 <span className="text-white">Welcome, </span>
-                {user?.email && (
-                  <span
-                    style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    {user.email.split('@')[0]}!
-                  </span>
-                )}
+                <span
+                  style={{
+                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  {welcomeName}!
+                </span>
               </h1>
               <p className="text-lg sm:text-xl text-[#a3a3a3] font-light mb-8">
                 Choose a performance you've seen to rate

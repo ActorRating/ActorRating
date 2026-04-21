@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useUser } from '@/components/providers/SessionProvider'
+import { useSession, useUser } from '@/components/providers/SessionProvider'
 import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { Home } from 'lucide-react'
@@ -10,7 +10,9 @@ import { useState, useEffect } from 'react'
 
 export function SearchNavbar() {
   const user = useUser()
+  const { loading, isInitialized } = useSession()
   const navKey = `${user?.id || 'anon'}`
+  const homeHref = user ? "/post-auth" : "/"
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
@@ -38,12 +40,12 @@ export function SearchNavbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Logo href="/" textClassName="text-foreground" />
+            <Logo href={homeHref} textClassName="text-foreground" />
           </div>
 
           {/* Center - Home Button */}
           <div className="flex items-center">
-            <Link href="/" prefetch={false} className="group">
+            <Link href={homeHref} prefetch={false} className="group">
               <button
                 className="relative px-4 py-2 rounded-xl border border-transparent bg-[#1a1a1a] backdrop-blur-xl overflow-hidden transition-all duration-300 hover:border-[#FFD700]/20 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]"
                 style={{
@@ -65,7 +67,7 @@ export function SearchNavbar() {
 
           {/* Right - keep stable width */}
           <div className="flex items-center gap-2 min-w-[120px] justify-end text-foreground text-white opacity-100 relative z-10 pointer-events-auto mix-blend-normal pr-0">
-            {!mounted ? (
+            {!mounted || !isInitialized || loading ? (
               <div className="flex items-center gap-2" aria-busy>
                 <div className="h-8 w-20 rounded-md bg-muted animate-pulse" />
               </div>

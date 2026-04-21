@@ -87,6 +87,7 @@ export default function DashboardClient({
   const [popularActors, setPopularActors] = useState<Actor[]>(initialPopularActors ?? [])
   const [visibleRatingsCount, setVisibleRatingsCount] = useState(6)
   const prevPathnameRef = useRef<string | null>(null)
+  const welcomeName = user?.name?.trim() || user?.email?.split('@')[0] || 'there'
 
   const fetchUserData = async () => {
     try {
@@ -301,7 +302,7 @@ export default function DashboardClient({
                     filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
                   }}
                 >
-                  Home
+                  {welcomeName}
                 </span>
               </h1>
               
