@@ -30,7 +30,8 @@ export async function GET(
         'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
       },
     })
-  } catch {
+  } catch (error) {
+    console.warn(`[sitemaps] Sitemap file not found or unreadable: ${filePath}`, error)
     return new NextResponse('Sitemap not found', { status: 404 })
   }
 }

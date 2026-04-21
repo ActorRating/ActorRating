@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "npx tsx scripts/generate-sitemaps.ts && prisma generate && next build",
     "vercel-build": "npx tsx scripts/generate-sitemaps.ts && prisma generate && next build",
     "db:deploy": "prisma migrate deploy",
     "build:deploy": "npm run db:deploy && npm run build",

@@ -27,6 +27,7 @@ function sitemapEntry(loc: string, lastmod: string): string {
 }
 
 export async function GET() {
+  const manifestPath = path.join(process.cwd(), 'public', 'sitemaps', '_manifest.json')
   let manifest: Manifest = {
     generatedAt: new Date().toISOString(),
     actorSitemapCount: 0,
@@ -35,10 +36,12 @@ export async function GET() {
   }
 
   try {
-    const manifestPath = path.join(process.cwd(), 'public', 'sitemaps', '_manifest.json')
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as Manifest
-  } catch {
-    // Manifest not found — sitemaps not generated yet.
+  } catch (error) {
+    console.warn(
+      `[sitemap.xml] Manifest missing or unreadable at ${manifestPath}. Falling back to static sitemap only.`,
+      error
+    )
   }
 
   const today = new Date().toISOString().split('T')[0]
