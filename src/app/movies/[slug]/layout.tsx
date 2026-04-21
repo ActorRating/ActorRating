@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
     const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://www.actorrating.com";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
     const canonical = `${baseUrl}/movies/${movie.slug ?? movie.id}`;
 
     return {

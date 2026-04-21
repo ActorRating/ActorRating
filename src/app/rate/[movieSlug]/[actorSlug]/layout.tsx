@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://www.actorrating.com'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
   const canonical = `${baseUrl}/rate/${movieSlug}/${actorSlug}`
 
   return {
@@ -131,7 +131,7 @@ export default async function RateLayout({ params, children }: Props) {
   // JSON-LD only when ≥1 rating (no schema for 0 ratings — indexing is a reward for engagement).
   // Google rich results: use Movie + aggregateRating ONLY. Do NOT use Review/itemReviewed — that
   // makes Google interpret "you rated a review" and triggers the warning. Person is optional, no rating on Person.
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.actorrating.com"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://actorrating.com"
   const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${movieSlug}/${actorSlug}`
   const jsonLd =
     data && ratingCount >= 1 && avg10 != null

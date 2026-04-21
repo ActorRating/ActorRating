@@ -6,7 +6,7 @@
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "actorrating.com" }],
-      "destination": "https://www.actorrating.com/$1",
+      "destination": "https://actorrating.com/$1",
       "permanent": true
     }
   ],

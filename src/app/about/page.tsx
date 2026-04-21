@@ -9,13 +9,13 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
   name: "About ActorRating",
-  url: "https://www.actorrating.com/about",
+  url: "https://actorrating.com/about",
   description:
     "ActorRating: 570K+ performances, 208K+ actors. Rate with a quick slider or 5 criteria. We evaluate acting performances, not overall films.",
   publisher: {
     "@type": "Organization",
     name: "ActorRating",
-    url: "https://www.actorrating.com",
+    url: "https://actorrating.com",
   },
 };
 

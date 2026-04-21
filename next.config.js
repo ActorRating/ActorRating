@@ -72,7 +72,7 @@ const nextConfig = {
       "font-src 'self' data: https://fonts.gstatic.com",
 
       // Images: blob: for generated previews; self/data + TMDB + S3/CDN
-      "img-src 'self' data: blob: https://image.tmdb.org https://www.actorrating.com https://*.amazonaws.com",
+      "img-src 'self' data: blob: https://image.tmdb.org https://actorrating.com https://*.amazonaws.com",
 
       // Video/audio previews if ever used
       "media-src 'self' blob: data:",

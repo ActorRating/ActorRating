@@ -44,6 +44,7 @@ const cormorantGaramond = Cormorant_Garamond({
 
 // ✅ Enhanced SEO Metadata
 export const metadata: Metadata = {
+  metadataBase: new URL("https://actorrating.com"),
   title: "ActorRating — Acting Performance Ratings & Reviews",
   description:
     "Rate and analyze 570K+ acting performances across 208K+ actors. Quick single-slider or 5-criteria ratings. Community-driven, growing daily.",
@@ -79,11 +80,11 @@ export const metadata: Metadata = {
     title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
       "Community-driven platform to rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Discover and rank the best acting performances.",
-    url: "https://www.actorrating.com",
+    url: "https://actorrating.com",
     siteName: "ActorRating",
     images: [
       {
-        url: "https://www.actorrating.com/logo.png",
+        url: "https://actorrating.com/logo.png",
         width: 1200,
         height: 630,
         alt: "ActorRating Logo",
@@ -97,7 +98,7 @@ export const metadata: Metadata = {
     title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
       "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Join the community.",
-    images: ["https://www.actorrating.com/logo.png"],
+    images: ["https://actorrating.com/logo.png"],
     creator: "@ActorRating",
   },
   other: {
@@ -108,7 +109,7 @@ export const metadata: Metadata = {
   },
   // Preconnect hints to reduce render-blocking (Next.js will add these to head)
   alternates: {
-    canonical: "https://www.actorrating.com",
+    canonical: "https://actorrating.com",
   },
 };
 

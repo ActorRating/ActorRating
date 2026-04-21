@@ -20,7 +20,7 @@ import { isJunkMovieSlug, isAllowedMovieSlug } from '../src/lib/junk-movie-slugs
 import * as fs from 'fs'
 import * as path from 'path'
 
-const BASE_URL = 'https://www.actorrating.com'
+const BASE_URL = 'https://actorrating.com'
 const CHUNK_SIZE = 10_000
 const OUT_DIR = path.join(__dirname, '..', 'public', 'sitemaps')
 

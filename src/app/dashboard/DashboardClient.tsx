@@ -174,12 +174,12 @@ export default function DashboardClient({
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: "Dashboard - ActorRating",
-    url: "https://www.actorrating.com/dashboard",
+    url: "https://actorrating.com/dashboard",
     description: "Your personal dashboard for rating and tracking acting performances",
     isPartOf: {
       "@type": "WebSite",
       name: "ActorRating",
-      url: "https://www.actorrating.com"
+      url: "https://actorrating.com"
     }
   };
 

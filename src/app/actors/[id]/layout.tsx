@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ogTitle = `How Good Is ${actor.name}? Performances Ranked`;
     const ogDescription = `Rate ${actor.name}'s performances and see how the community ranks their most iconic and controversial roles.`;
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://www.actorrating.com";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
     const canonicalPath = `/actors/${actor.slug || actor.id}`;
     const canonical = `${baseUrl}${canonicalPath}`;
 
