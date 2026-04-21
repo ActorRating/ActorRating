@@ -142,6 +142,12 @@ export function Header({
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            <Link href={user ? "/profile" : "/auth/signin"}>
+              <Button variant="outline" size="sm">
+                Profile
+              </Button>
+            </Link>
+
             {/* Theme Switcher */}
             <div className="relative" ref={userMenuRef}>
               <button
