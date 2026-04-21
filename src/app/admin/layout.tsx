@@ -1,5 +1,7 @@
 import { MainLayout } from "@/components/layout"
 
+export const dynamic = "force-dynamic"
+
 export default function AdminLayout({
   children,
 }: {
