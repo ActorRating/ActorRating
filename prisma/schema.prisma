@@ -13,6 +13,8 @@ model User {
   name          String    @default("")
   username      String    @unique
   onboardingCompleted Boolean @default(false)
+  status        UserStatus @default(NEW)
+  onboardingStartedAt DateTime?
   email         String    @unique
   emailVerified DateTime?
   image         String?
@@ -276,4 +278,10 @@ enum PerformanceTier {
   LEAD
   SUPPORTING
   MINOR
+}
+
+enum UserStatus {
+  NEW
+  ONBOARDING
+  ACTIVE
 }

@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { signIn, useSession } from "next-auth/react"
+import { signIn, signOut, useSession } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { motion } from "framer-motion"
@@ -11,6 +11,7 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
+import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/auth/clientAuthLock"
 
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -34,7 +35,7 @@ function SignInContent() {
 
   useEffect(() => {
     if (sessionStatus === "authenticated") {
-      router.replace("/dashboard")
+      router.replace("/post-auth")
     }
   }, [sessionStatus, router])
 
@@ -62,6 +63,8 @@ function SignInContent() {
 
     if (error === "Verification") {
       setApiError("This login link is invalid or expired. Request a new one.")
+    } else if (error === "ACCOUNT_PROVIDER_MISMATCH") {
+      setApiError("You're trying to sign in with a different method than the one originally used for this account. Please use your original sign-in method.")
     } else if (error?.includes("RATE_LIMIT")) {
       setApiError("Too many requests, try again later.")
     } else if (error?.includes("DISPOSABLE_EMAIL")) {
@@ -110,17 +113,31 @@ function SignInContent() {
     setApiError("")
 
     try {
+      if (!acquireAuthLock("email-signin")) {
+        const seconds = Math.ceil(authLockRemainingMs() / 1000)
+        setApiError(`Another sign-in attempt is in progress. Please wait ${seconds}s and try again.`)
+        return
+      }
       const normalizedEmail = email.trim().toLowerCase()
+      try {
+        // Ensure magic-link requests start from a clean auth state.
+        await signOut({ redirect: false })
+      } catch (err) {
+        console.warn("[auth][email] pre-signout failed", err)
+      }
       const result = await signIn("email", {
         email: normalizedEmail,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/post-auth",
         redirect: false,
       })
       if (result?.error) {
+        releaseAuthLock()
         if (result.error.includes("RATE_LIMIT")) {
           setApiError("Too many requests, try again later.")
         } else if (result.error.includes("DISPOSABLE_EMAIL")) {
           setApiError("Please use a valid email provider.")
+        } else if (result.error.includes("ACCOUNT_PROVIDER_MISMATCH")) {
+          setApiError("You're trying to sign in with a different method than the one originally used for this account. Please use your original sign-in method.")
         } else {
           setApiError("Unable to send magic link. Please try again.")
         }
@@ -129,9 +146,11 @@ function SignInContent() {
       setSuccessMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`)
       setHasSentLink(true)
       setCooldownRemaining(60)
+      setTimeout(() => releaseAuthLock(), 15_000)
     } catch (error) {
       console.error("Signin error:", error)
       setApiError("Unable to send magic link. Please try again.")
+      releaseAuthLock()
     } finally {
       setIsSubmitting(false)
     }

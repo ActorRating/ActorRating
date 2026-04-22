@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { signIn, signOut } from "next-auth/react"
 import { FcGoogle } from "react-icons/fc"
+import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/auth/clientAuthLock"
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -16,8 +17,25 @@ export function GoogleSignInButton() {
       type="button"
       disabled={busy}
       onClick={() => {
+        if (!acquireAuthLock("google-signin")) {
+          const seconds = Math.ceil(authLockRemainingMs() / 1000)
+          console.warn(`[auth] Google auth blocked: another auth flow in progress (${seconds}s)`)
+          return
+        }
         setBusy(true)
-        void signIn("google", { callbackUrl: "/auth/signin-success" })
+        void (async () => {
+          try {
+            // Ensure we start every provider auth flow with a clean session.
+            await signOut({ redirect: false })
+          } catch (err) {
+            console.warn("[auth][google] pre-signout failed", err)
+          }
+          await signIn("google", { callbackUrl: "/post-auth" })
+          setTimeout(() => releaseAuthLock(), 15_000)
+        })().catch(() => {
+          releaseAuthLock()
+          setBusy(false)
+        })()
       }}
       className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-full border border-white/15 bg-white/[0.07] text-white text-sm sm:text-base font-semibold tracking-wide hover:border-[#FFD700]/45 hover:bg-[#FFD700]/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
     >

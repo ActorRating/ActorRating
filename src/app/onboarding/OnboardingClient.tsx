@@ -22,9 +22,11 @@ export default function OnboardingClient() {
   const [name, setName] = useState("")
   const [username, setUsername] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isStarting, setIsStarting] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [inlineError, setInlineError] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
+  const [hasStartedOnboarding, setHasStartedOnboarding] = useState(false)
 
   const normalizedUsername = useMemo(() => normalizeUsername(username), [username])
 
@@ -45,6 +47,11 @@ export default function OnboardingClient() {
   }, [user, name, username])
 
   useEffect(() => {
+    if (!hasStartedOnboarding) {
+      setUsernameStatus("idle")
+      return
+    }
+
     if (!normalizedUsername) {
       setUsernameStatus("idle")
       return
@@ -68,14 +75,34 @@ export default function OnboardingClient() {
     }, 350)
 
     return () => clearTimeout(timeout)
-  }, [normalizedUsername])
+  }, [normalizedUsername, hasStartedOnboarding])
 
   const isValid = useMemo(() => {
     return name.trim().length > 0 && usernameStatus === "available"
   }, [name, usernameStatus])
 
+  const ensureOnboardingStarted = async () => {
+    if (hasStartedOnboarding) return true
+    try {
+      setIsStarting(true)
+      const res = await fetch("/api/onboarding/start", { method: "POST" })
+      if (!res.ok) {
+        setInlineError("Unable to start setup. Please refresh and try again.")
+        return false
+      }
+      setHasStartedOnboarding(true)
+      return true
+    } catch (error) {
+      console.error("Onboarding start error:", error)
+      setInlineError("Unable to start setup. Please refresh and try again.")
+      return false
+    } finally {
+      setIsStarting(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!isValid) return
+    if (!hasStartedOnboarding || !isValid) return
 
     setInlineError("")
     setIsSubmitting(true)
@@ -87,7 +114,6 @@ export default function OnboardingClient() {
         body: JSON.stringify({
           name: name.trim(),
           username: normalizedUsername,
-          onboardingCompleted: true,
         }),
       })
 
@@ -96,9 +122,17 @@ export default function OnboardingClient() {
         return
       }
 
+      const completeRes = await fetch("/api/onboarding/complete", {
+        method: "POST",
+      })
+      if (!completeRes.ok) {
+        setInlineError("Unable to complete setup. Please try again.")
+        return
+      }
+
       setIsSaved(true)
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push("/post-auth")
       }, 650)
     } catch (error) {
       console.error("Onboarding submit error:", error)
@@ -144,6 +178,7 @@ export default function OnboardingClient() {
                 setName(e.target.value)
                 setInlineError("")
               }}
+              disabled={!hasStartedOnboarding}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="Your name"
             />
@@ -157,6 +192,7 @@ export default function OnboardingClient() {
                 setUsername(e.target.value)
                 setInlineError("")
               }}
+              disabled={!hasStartedOnboarding}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="username"
             />
@@ -181,13 +217,31 @@ export default function OnboardingClient() {
               </p>
             ) : null}
 
-            <Button
-              onClick={handleSubmit}
-              disabled={!isValid || isSubmitting}
-              className="h-12 w-full rounded-full text-base font-semibold"
-            >
-            {isSubmitting ? "Saving..." : "Continue"}
-            </Button>
+            {!hasStartedOnboarding ? (
+              <Button
+                onClick={ensureOnboardingStarted}
+                disabled={isStarting}
+                className="h-12 w-full rounded-full text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                style={{
+                  background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+                  boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
+                }}
+              >
+                {isStarting ? "Starting..." : "Start Setup"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={!isValid || isSubmitting}
+                className="h-12 w-full rounded-full text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                style={{
+                  background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+                  boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
+                }}
+              >
+                {isSubmitting ? "Saving..." : "Complete Setup"}
+              </Button>
+            )}
           </div>
         </div>
       </div>

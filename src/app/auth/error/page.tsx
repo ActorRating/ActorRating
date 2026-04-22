@@ -13,6 +13,8 @@ function AuthErrorContent() {
 
   const getErrorMessage = (errorCode: string | null) => {
     switch (errorCode) {
+      case "ACCOUNT_PROVIDER_MISMATCH":
+        return "You're trying to sign in with a different method than the one originally used for this account. Please use your original sign-in method."
       case "Configuration":
         return "Sunucu yapılandırma hatası. Lütfen daha sonra tekrar deneyin."
       case "AccessDenied":
@@ -69,14 +71,20 @@ function AuthErrorContent() {
             <div className="space-y-4">
               <Link href="/auth/signin">
                 <Button className="w-full">
-                  Tekrar Dene
+                  Try again
+                </Button>
+              </Link>
+
+              <Link href="/auth/signin" className="block">
+                <Button variant="outline" className="w-full">
+                  Try another sign-in method
                 </Button>
               </Link>
 
               <Link href="/">
                 <Button variant="outline" className="w-full">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Ana Sayfaya Dön
+                  Go back
                 </Button>
               </Link>
             </div>

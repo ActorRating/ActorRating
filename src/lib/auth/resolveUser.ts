@@ -1,50 +1,40 @@
 import "server-only"
-import { cache } from "react"
 import type { Session } from "next-auth"
 import { prisma } from "@/lib/prisma"
+import type { UserStatus } from "@prisma/client"
 
 type ResolvedAuthUser = {
   id: string
   email: string
   username: string | null
   onboardingCompleted: boolean
+  status: UserStatus
+  onboardingStartedAt: Date | null
 }
 
 export type ResolvedUserResult =
   | { status: "unauthenticated" }
-  | { status: "no_user"; session: Session }
+  | { status: "no_user" }
   | { status: "needs_onboarding"; user: ResolvedAuthUser }
   | { status: "authenticated"; user: ResolvedAuthUser }
 
-const resolveUserByEmail = cache(async (email: string): Promise<ResolvedUserResult> => {
-  const user = await prisma.$queryRaw<Array<ResolvedAuthUser>>`
-    SELECT id, email, "username", "onboardingCompleted"
-    FROM "User"
-    WHERE email = ${email}
-    LIMIT 1
-  `
-
-  const resolved = user[0]
-  if (!resolved) {
-    return { status: "no_user", session: { user: { email } } as Session }
-  }
-
-  if (!resolved.username || !resolved.onboardingCompleted) {
-    return { status: "needs_onboarding", user: resolved }
-  }
-
-  return { status: "authenticated", user: resolved }
-})
-
 export async function resolveUser(session: Session | null): Promise<ResolvedUserResult> {
-  const email = session?.user?.email
-  if (!email) {
+  const sessionUserId = session?.user?.id
+  if (!sessionUserId) {
     return { status: "unauthenticated" }
   }
 
-  const result = await resolveUserByEmail(email)
-  if (result.status === "no_user") {
-    return { status: "no_user", session }
+  const byId = await prisma.user.findUnique({
+    where: { id: sessionUserId },
+    select: { id: true, email: true, username: true, onboardingCompleted: true, status: true, onboardingStartedAt: true },
+  })
+  if (!byId) {
+    return { status: "no_user" }
   }
-  return result
+
+  // ONBOARDING is a resumable state by design and should never become terminal.
+  if (byId.status === "NEW" || byId.status === "ONBOARDING") {
+    return { status: "needs_onboarding", user: byId }
+  }
+  return { status: "authenticated", user: byId }
 }
