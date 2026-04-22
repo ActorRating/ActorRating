@@ -10,6 +10,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Required for Docker / Coolify: produce `.next/standalone` and run `node server.js`
+  // there instead of `next start`, so the same traced server handles cookies and auth.
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   compiler: {
