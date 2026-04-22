@@ -52,7 +52,9 @@ export const authOptions: NextAuthConfig = {
           GoogleProvider({
             clientId: googleClientId,
             clientSecret: googleClientSecret,
-            allowDangerousEmailAccountLinking: false,
+            // Required for OAuth when a User with the same email already exists (e.g. magic link first).
+            // signIn does not throw on provider differences; the adapter must be allowed to attach the OAuth account.
+            allowDangerousEmailAccountLinking: true,
           }),
         ]
       : []),
@@ -82,13 +84,21 @@ export const authOptions: NextAuthConfig = {
       return `${canonical}/post-auth`
     },
     async signIn({ user, account, profile }) {
+      // Policy-only rejection (never use provider mismatch to block; that breaks OAuth callback + session cookie).
       if (user?.email && isDisposableEmail(user.email)) {
         throw new Error("DISPOSABLE_EMAIL")
       }
 
       const provider = account?.provider
       const providerAccountId = account?.providerAccountId
-      if (!provider || !providerAccountId) return true
+      const email = user?.email?.toLowerCase().trim() ?? null
+
+      if (!provider || !providerAccountId) {
+        if (authDebug) {
+          console.log("[auth][signIn] allow: no provider account yet", { provider, email, hasProfile: !!profile })
+        }
+        return true
+      }
 
       const linkedAccount = await prisma.account.findUnique({
         where: { provider_providerAccountId: { provider, providerAccountId } },
@@ -96,32 +106,43 @@ export const authOptions: NextAuthConfig = {
       })
       if (linkedAccount) {
         if (authDebug) {
-          console.log("[auth][signIn] linked account hit", { provider, providerAccountId, userId: linkedAccount.userId })
+          console.log("[auth][signIn] allow: account already linked", {
+            provider,
+            providerAccountId,
+            userId: linkedAccount.userId,
+            email,
+          })
         }
         return true
       }
 
-      // Prevent implicit cross-provider linking by email unless account already linked.
-      const email = user?.email?.toLowerCase().trim()
       if (email) {
         const emailOwner = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, accounts: { select: { provider: true } } },
+          select: { id: true, accounts: { select: { provider: true, providerAccountId: true } } },
         })
-        if (!emailOwner) {
-          return true
+        if (emailOwner) {
+          const hasSameProvider = emailOwner.accounts.some((a) => a.provider === provider)
+          if (authDebug) {
+            console.warn("[auth][signIn] user exists for email — allowing (no block)", {
+              email,
+              provider,
+              userId: emailOwner.id,
+              hasSameProvider,
+              existingAccounts: emailOwner.accounts,
+            })
+          } else {
+            console.warn("[auth][signIn] user exists; allowing", { provider, userId: emailOwner.id, hasSameProvider })
+          }
+        } else if (authDebug) {
+          console.log("[auth][signIn] no user for email; new sign-up path", { email, provider })
         }
-        if (emailOwner.accounts.some((a) => a.provider === provider)) {
-          return true
-        }
-        if (authDebug) {
-          console.warn("[auth][signIn] provider mismatch for:", email)
-        }
-        return true
+      } else if (authDebug) {
+        console.log("[auth][signIn] no email on user; allow", { provider, providerAccountId, hasProfile: !!profile })
       }
 
       if (authDebug) {
-        console.log("[auth][signIn] success", { provider, email: user?.email, hasProfile: !!profile })
+        console.log("[auth][signIn] allow", { provider, email, hasProfile: !!profile })
       }
       return true
     },
