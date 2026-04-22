@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
 import { CheckCircle2, Sparkles, UserRound } from "lucide-react"
 
-type UsernameStatus = "idle" | "invalid" | "checking" | "available" | "taken"
+type UsernameStatus = "idle" | "checking" | "available" | "taken"
 
 function buildSuggestedUsername(seed: string): string {
   const cleaned = seed.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").slice(0, 20)
@@ -27,8 +27,14 @@ export default function OnboardingClient() {
   const [inlineError, setInlineError] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [hasStartedOnboarding, setHasStartedOnboarding] = useState(false)
+  const usernameCheckAbortRef = useRef<AbortController | null>(null)
+  const usernameAvailabilityCacheRef = useRef<Map<string, boolean>>(new Map())
+  const usernameInFlightRef = useRef<Map<string, AbortController>>(new Map())
 
-  const normalizedUsername = useMemo(() => normalizeUsername(username), [username])
+  const normalizedUsername = useMemo(() => {
+    const normalizedInput = username.toLowerCase().trim().replace(/\s{2,}/g, " ")
+    return normalizeUsername(normalizedInput)
+  }, [username])
 
   useEffect(() => {
     if (!user) return
@@ -47,35 +53,58 @@ export default function OnboardingClient() {
   }, [user, name, username])
 
   useEffect(() => {
-    if (!hasStartedOnboarding) {
-      setUsernameStatus("idle")
-      return
-    }
-
     if (!normalizedUsername) {
       setUsernameStatus("idle")
       return
     }
 
     if (!isValidUsername(normalizedUsername)) {
-      setUsernameStatus("invalid")
+      setUsernameStatus("taken")
       return
     }
 
+    const cached = usernameAvailabilityCacheRef.current.get(normalizedUsername)
+    if (typeof cached === "boolean") {
+      setUsernameStatus(cached ? "available" : "taken")
+      return
+    }
+
+    usernameCheckAbortRef.current?.abort()
+    const controller = new AbortController()
+    usernameCheckAbortRef.current = controller
     setUsernameStatus("checking")
     const timeout = setTimeout(async () => {
+      const activeController = usernameInFlightRef.current.get(normalizedUsername)
+      if (activeController) {
+        setUsernameStatus("checking")
+        return
+      }
+
+      usernameInFlightRef.current.set(normalizedUsername, controller)
       try {
-        const res = await fetch(`/api/user/check-username?username=${encodeURIComponent(normalizedUsername)}`)
+        const res = await fetch(`/api/user/check-username?username=${encodeURIComponent(normalizedUsername)}`, {
+          signal: controller.signal,
+        })
         const data = await res.json()
-        setUsernameStatus(data?.available ? "available" : "taken")
+        const isAvailable = Boolean(data?.available)
+        usernameAvailabilityCacheRef.current.set(normalizedUsername, isAvailable)
+        setUsernameStatus(isAvailable ? "available" : "taken")
       } catch (error) {
+        if ((error as Error).name === "AbortError") return
         console.error("Username availability check error:", error)
         setUsernameStatus("taken")
+      } finally {
+        if (usernameInFlightRef.current.get(normalizedUsername) === controller) {
+          usernameInFlightRef.current.delete(normalizedUsername)
+        }
       }
-    }, 350)
+    }, 400)
 
-    return () => clearTimeout(timeout)
-  }, [normalizedUsername, hasStartedOnboarding])
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
+  }, [normalizedUsername])
 
   const isValid = useMemo(() => {
     return name.trim().length > 0 && usernameStatus === "available"
@@ -143,15 +172,14 @@ export default function OnboardingClient() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6 sm:py-8">
-      <div className="w-full max-w-xl">
-        <div
-          className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#121212]/95 to-black/95 p-6 sm:p-8"
-          style={{
-            boxShadow:
-              "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-          }}
-        >
+    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+      <div
+        className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#121212]/95 to-black/95 p-6 sm:p-8"
+        style={{
+          boxShadow:
+            "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
+        }}
+      >
           <div className="pointer-events-none absolute -right-14 -top-12 h-56 w-56 rounded-full bg-[#FFD700]/10 blur-3xl" />
           <div className="relative z-10 mb-6 text-center sm:mb-8">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 px-3 py-1 text-xs text-[#FFE082]">
@@ -170,6 +198,15 @@ export default function OnboardingClient() {
           </div>
 
           <div className="space-y-5">
+          <input
+            type="text"
+            name="fake_username_autofill"
+            autoComplete="username"
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{ display: "none" }}
+            readOnly
+          />
           <div>
             <label className="mb-2 block text-sm text-[#d4d4d8]">Display name</label>
             <input
@@ -178,6 +215,10 @@ export default function OnboardingClient() {
                 setName(e.target.value)
                 setInlineError("")
               }}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="Your name"
             />
@@ -191,13 +232,17 @@ export default function OnboardingClient() {
                 setUsername(e.target.value)
                 setInlineError("")
               }}
+              name="profile_identity_key"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="username"
             />
             <p className="mt-1 text-xs text-[#71717a]">3-20 chars, lowercase letters, numbers, underscore</p>
             {usernameStatus === "available" ? <p className="mt-1 text-xs text-emerald-400">Available</p> : null}
             {usernameStatus === "taken" ? <p className="mt-1 text-xs text-rose-400">Already taken</p> : null}
-            {usernameStatus === "invalid" ? <p className="mt-1 text-xs text-amber-400">Invalid format</p> : null}
             {usernameStatus === "checking" ? <p className="mt-1 text-xs text-[#71717a]">Checking availability...</p> : null}
             {normalizedUsername ? (
               <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#d4d4d8]">
@@ -216,17 +261,19 @@ export default function OnboardingClient() {
             ) : null}
 
             {!hasStartedOnboarding ? (
-              <Button
-                onClick={ensureOnboardingStarted}
-                disabled={isStarting}
-                className="mx-auto h-14 min-w-[220px] rounded-full px-10 text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
-                style={{
-                  background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
-                  boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
-                }}
-              >
-                {isStarting ? "Starting..." : "Start Setup"}
-              </Button>
+              <div className="flex w-full justify-center">
+                <Button
+                  onClick={ensureOnboardingStarted}
+                  disabled={isStarting}
+                  className="h-14 min-w-[340px] max-w-full rounded-full px-12 text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                  style={{
+                    background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+                    boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
+                  }}
+                >
+                  {isStarting ? "Starting..." : "Start Setup"}
+                </Button>
+              </div>
             ) : (
               <Button
                 onClick={handleSubmit}
@@ -241,7 +288,6 @@ export default function OnboardingClient() {
               </Button>
             )}
           </div>
-        </div>
       </div>
     </div>
   )

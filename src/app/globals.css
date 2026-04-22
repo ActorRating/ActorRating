@@ -541,6 +541,10 @@ select:focus-visible {
   outline: none;
 }
 
+input:-webkit-autofill {
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Special focus states for buttons */
 button:focus-visible,
 a:focus-visible {
