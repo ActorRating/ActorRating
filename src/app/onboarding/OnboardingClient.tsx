@@ -6,7 +6,7 @@ import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
 import { containsBadWord } from "@/lib/validation/sanitizeName"
-import { CheckCircle2, Sparkles, UserRound } from "lucide-react"
+import { Sparkles, UserRound } from "lucide-react"
 
 type UsernameStatus = "idle" | "invalid" | "checking" | "available" | "taken"
 
@@ -24,7 +24,6 @@ export default function OnboardingClient() {
   const [username, setUsername] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
   const [inlineError, setInlineError] = useState("")
   const [usernameError, setUsernameError] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
@@ -37,6 +36,16 @@ export default function OnboardingClient() {
     const normalizedInput = username.toLowerCase().trim().replace(/\s{2,}/g, " ")
     return normalizeUsername(normalizedInput)
   }, [username])
+
+  const normalizedUsernameForBannedCheck = useMemo(() => {
+    return normalizedUsername
+      .replace(/@/g, "a")
+      .replace(/4/g, "a")
+      .replace(/\$/g, "s")
+      .replace(/0/g, "o")
+      .replace(/1/g, "i")
+      .replace(/[^a-z0-9]/g, "")
+  }, [normalizedUsername])
 
   useEffect(() => {
     if (!user) return
@@ -69,7 +78,8 @@ export default function OnboardingClient() {
       return
     }
 
-    if (containsBadWord(normalizedUsername)) {
+    const bannedWordPattern = /\b(ass|fuck|shit|bitch|asshole|bastard|cunt|dick|pussy|nigger|nigga|faggot|retard|whore|slut|kike|chink|spic|twat)\b/
+    if (containsBadWord(normalizedUsernameForBannedCheck) || bannedWordPattern.test(normalizedUsernameForBannedCheck)) {
       setUsernameStatus("invalid")
       setUsernameError("This username is not allowed")
       return
@@ -116,7 +126,7 @@ export default function OnboardingClient() {
       clearTimeout(timeout)
       controller.abort()
     }
-  }, [normalizedUsername])
+  }, [normalizedUsername, normalizedUsernameForBannedCheck])
 
   const isValid = useMemo(() => {
     return name.trim().length > 0 && usernameStatus === "available"
@@ -124,6 +134,7 @@ export default function OnboardingClient() {
 
   const ensureOnboardingStarted = async () => {
     if (hasStartedOnboarding) return true
+    setInlineError("")
     try {
       setIsStarting(true)
       const res = await fetch("/api/onboarding/start", { method: "POST" })
@@ -131,6 +142,7 @@ export default function OnboardingClient() {
         setInlineError("Unable to start setup. Please refresh and try again.")
         return false
       }
+      router.refresh()
       setHasStartedOnboarding(true)
       return true
     } catch (error) {
@@ -171,10 +183,8 @@ export default function OnboardingClient() {
         return
       }
 
-      setIsSaved(true)
-      setTimeout(() => {
-        router.push("/post-auth")
-      }, 650)
+      router.refresh()
+      router.push("/post-auth")
     } catch (error) {
       console.error("Onboarding submit error:", error)
       setInlineError("Please choose a different name")
@@ -214,13 +224,10 @@ export default function OnboardingClient() {
             type="text"
             name="username"
             autoComplete="username"
-            style={{ display: "none" }}
-          />
-          <input
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            style={{ display: "none" }}
+            tabIndex={-1}
+            aria-hidden="true"
+            style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+            readOnly
           />
           <div>
             <label className="mb-2 block text-sm text-[#d4d4d8]">Display name</label>
@@ -248,8 +255,8 @@ export default function OnboardingClient() {
                 setInlineError("")
                 setUsernameError("")
               }}
-              name="user_handle_field"
-              autoComplete="new-password"
+              name="user_handle"
+              autoComplete="off"
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}
@@ -272,19 +279,12 @@ export default function OnboardingClient() {
           </div>
 
             {inlineError ? <p className="text-sm text-rose-400">{inlineError}</p> : null}
-            {isSaved ? (
-              <p className="inline-flex items-center gap-2 text-sm text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" />
-                Your profile is ready.
-              </p>
-            ) : null}
-
             {!hasStartedOnboarding ? (
-              <div className="flex w-full justify-center">
+              <div className="flex justify-center">
                 <Button
                   onClick={ensureOnboardingStarted}
                   disabled={isStarting}
-                  className="h-14 min-w-[340px] max-w-full rounded-full px-12 text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                  className="h-14 min-w-[340px] px-14 rounded-full font-bold text-black transition hover:scale-[1.02] disabled:hover:scale-100"
                   style={{
                     background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
                     boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
