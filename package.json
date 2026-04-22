@@ -10,7 +10,7 @@
     "build:deploy": "npm run db:deploy && npm run build",
     "check:runtime-env": "node -r dotenv/config scripts/validate-runtime-env.js",
     "prestart": "npm run check:runtime-env",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed.ts",
     "db:migrate": "prisma migrate dev --name init",

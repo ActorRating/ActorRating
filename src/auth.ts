@@ -76,7 +76,7 @@ export const authOptions: NextAuthConfig = {
       const canonical = "https://actorrating.com"
       const isRelative = url.startsWith("/")
       const isCanonicalAbsolute = url.startsWith(canonical)
-      if (!isRelative && !isCanonicalAbsolute) {
+      if (authDebug && !isRelative && !isCanonicalAbsolute) {
         console.warn("[auth][redirect] blocked non-canonical callbackUrl:", url)
       }
       return `${canonical}/post-auth`
@@ -108,16 +108,16 @@ export const authOptions: NextAuthConfig = {
           where: { email },
           select: { id: true, accounts: { select: { provider: true } } },
         })
-        if (emailOwner && !emailOwner.accounts.some((a) => a.provider === provider)) {
-          if (authDebug) {
-            console.warn("[auth][signIn] blocked cross-provider auto-link attempt", {
-              email,
-              provider,
-              existingProviders: emailOwner.accounts.map((a) => a.provider),
-            })
-          }
-          throw new Error("ACCOUNT_PROVIDER_MISMATCH")
+        if (!emailOwner) {
+          return true
         }
+        if (emailOwner.accounts.some((a) => a.provider === provider)) {
+          return true
+        }
+        if (authDebug) {
+          console.warn("[auth][signIn] provider mismatch for:", email)
+        }
+        return true
       }
 
       if (authDebug) {
@@ -128,6 +128,7 @@ export const authOptions: NextAuthConfig = {
     async jwt({ token, user, account }) {
       if (user?.id) {
         token.userId = user.id
+        token.name = user.name ?? "User"
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { status: true },
@@ -144,7 +145,10 @@ export const authOptions: NextAuthConfig = {
           token.authProvider &&
           token.authProviderAccountId
         ) {
-          throw new Error("AUTH_TOKEN_IDENTITY_SWITCH")
+          if (authDebug) {
+            console.warn("[auth][jwt] identity switch detected, resetting token identity")
+          }
+          token.userId = user.id
         }
         token.authProvider = account.provider
         token.authProviderAccountId = account.providerAccountId
@@ -162,6 +166,7 @@ export const authOptions: NextAuthConfig = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.userId as string) || session.user.id
+        session.user.name = session.user.name ?? (token.name as string) ?? "User"
         session.user.status = token.userStatus as "NEW" | "ONBOARDING" | "ACTIVE" | undefined
       }
       if (authDebug) {

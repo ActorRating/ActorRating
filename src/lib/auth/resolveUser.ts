@@ -14,7 +14,6 @@ type ResolvedAuthUser = {
 
 export type ResolvedUserResult =
   | { status: "unauthenticated" }
-  | { status: "no_user" }
   | { status: "needs_onboarding"; user: ResolvedAuthUser }
   | { status: "authenticated"; user: ResolvedAuthUser }
 
@@ -29,7 +28,7 @@ export async function resolveUser(session: Session | null): Promise<ResolvedUser
     select: { id: true, email: true, username: true, onboardingCompleted: true, status: true, onboardingStartedAt: true },
   })
   if (!byId) {
-    return { status: "no_user" }
+    return { status: "unauthenticated" }
   }
 
   // ONBOARDING is a resumable state by design and should never become terminal.
