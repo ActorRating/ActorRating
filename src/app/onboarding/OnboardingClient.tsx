@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
+import { containsBadWord } from "@/lib/validation/sanitizeName"
 import { CheckCircle2, Sparkles, UserRound } from "lucide-react"
 
-type UsernameStatus = "idle" | "checking" | "available" | "taken"
+type UsernameStatus = "idle" | "invalid" | "checking" | "available" | "taken"
 
 function buildSuggestedUsername(seed: string): string {
   const cleaned = seed.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").slice(0, 20)
@@ -25,6 +26,7 @@ export default function OnboardingClient() {
   const [isStarting, setIsStarting] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [inlineError, setInlineError] = useState("")
+  const [usernameError, setUsernameError] = useState("")
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
   const [hasStartedOnboarding, setHasStartedOnboarding] = useState(false)
   const usernameCheckAbortRef = useRef<AbortController | null>(null)
@@ -53,23 +55,33 @@ export default function OnboardingClient() {
   }, [user, name, username])
 
   useEffect(() => {
+    usernameCheckAbortRef.current?.abort()
+
     if (!normalizedUsername) {
       setUsernameStatus("idle")
+      setUsernameError("")
       return
     }
 
     if (!isValidUsername(normalizedUsername)) {
-      setUsernameStatus("taken")
+      setUsernameStatus("invalid")
+      setUsernameError("Invalid format")
       return
     }
 
+    if (containsBadWord(normalizedUsername)) {
+      setUsernameStatus("invalid")
+      setUsernameError("This username is not allowed")
+      return
+    }
+
+    setUsernameError("")
     const cached = usernameAvailabilityCacheRef.current.get(normalizedUsername)
     if (typeof cached === "boolean") {
       setUsernameStatus(cached ? "available" : "taken")
       return
     }
 
-    usernameCheckAbortRef.current?.abort()
     const controller = new AbortController()
     usernameCheckAbortRef.current = controller
     setUsernameStatus("checking")
@@ -200,12 +212,15 @@ export default function OnboardingClient() {
           <div className="space-y-5">
           <input
             type="text"
-            name="fake_username_autofill"
+            name="username"
             autoComplete="username"
-            tabIndex={-1}
-            aria-hidden="true"
             style={{ display: "none" }}
-            readOnly
+          />
+          <input
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            style={{ display: "none" }}
           />
           <div>
             <label className="mb-2 block text-sm text-[#d4d4d8]">Display name</label>
@@ -231,8 +246,9 @@ export default function OnboardingClient() {
               onChange={(e) => {
                 setUsername(e.target.value)
                 setInlineError("")
+                setUsernameError("")
               }}
-              name="profile_identity_key"
+              name="user_handle_field"
               autoComplete="new-password"
               autoCorrect="off"
               autoCapitalize="none"
@@ -243,6 +259,9 @@ export default function OnboardingClient() {
             <p className="mt-1 text-xs text-[#71717a]">3-20 chars, lowercase letters, numbers, underscore</p>
             {usernameStatus === "available" ? <p className="mt-1 text-xs text-emerald-400">Available</p> : null}
             {usernameStatus === "taken" ? <p className="mt-1 text-xs text-rose-400">Already taken</p> : null}
+            {usernameStatus === "invalid" && usernameError ? (
+              <p className="mt-1 text-xs text-amber-400">{usernameError}</p>
+            ) : null}
             {usernameStatus === "checking" ? <p className="mt-1 text-xs text-[#71717a]">Checking availability...</p> : null}
             {normalizedUsername ? (
               <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#d4d4d8]">
