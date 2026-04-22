@@ -18,6 +18,7 @@ WORKDIR /app
 # Install OS deps only if you add native modules later; keep image minimal
 
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
 
 # ------------ Build application + standalone bundle ------------
