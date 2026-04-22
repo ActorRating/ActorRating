@@ -143,8 +143,8 @@ export default function OnboardingClient() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-4 py-12 sm:py-16">
-      <div className="mx-auto w-full max-w-xl">
+    <div className="flex min-h-screen items-center justify-center bg-black px-4 py-6 sm:py-8">
+      <div className="w-full max-w-xl">
         <div
           className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#121212]/95 to-black/95 p-6 sm:p-8"
           style={{
@@ -178,7 +178,6 @@ export default function OnboardingClient() {
                 setName(e.target.value)
                 setInlineError("")
               }}
-              disabled={!hasStartedOnboarding}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="Your name"
             />
@@ -192,7 +191,6 @@ export default function OnboardingClient() {
                 setUsername(e.target.value)
                 setInlineError("")
               }}
-              disabled={!hasStartedOnboarding}
               className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
               placeholder="username"
             />
@@ -221,7 +219,7 @@ export default function OnboardingClient() {
               <Button
                 onClick={ensureOnboardingStarted}
                 disabled={isStarting}
-                className="h-12 w-full rounded-full text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                className="mx-auto h-14 min-w-[220px] rounded-full px-10 text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
                 style={{
                   background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
                   boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
