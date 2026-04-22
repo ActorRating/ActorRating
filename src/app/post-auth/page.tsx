@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic"
 
 export default async function PostAuthPage() {
   const session = await auth()
+  console.log("SESSION:", session)
   const result = await resolveUser(session)
 
   if (result.status === "unauthenticated") {

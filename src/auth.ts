@@ -1,4 +1,5 @@
 import NextAuth from "next-auth"
+import type { NextAuthConfig } from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import EmailProvider from "next-auth/providers/email"
 import GoogleProvider from "next-auth/providers/google"
@@ -23,7 +24,7 @@ if (isProduction && (!resolvedEmailServer || !resolvedEmailFrom)) {
   )
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthConfig = {
   trustHost: true,
   adapter: PrismaAdapter(prisma),
   session: {
@@ -32,12 +33,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   cookies: {
     sessionToken: {
-      name: isProduction ? "__Secure-authjs.session-token" : "authjs.session-token",
+      name: "__Secure-next-auth.session-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: isProduction,
+        secure: true,
       },
     },
   },
@@ -70,11 +71,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      if (url.includes("/auth/callback") || url.includes("/api/auth")) {
-        return url
-      }
-      return `${baseUrl}/post-auth`
+    async redirect() {
+      return "https://actorrating.com/post-auth"
     },
     async signIn({ user }) {
       if (user?.email && isDisposableEmail(user.email)) {
@@ -89,4 +87,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session
     },
   },
-})
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions)
