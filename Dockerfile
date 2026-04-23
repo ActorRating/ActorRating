@@ -56,6 +56,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Public files (favicon, etc.) — not included inside standalone
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Prisma schema + migrations (needed by Prisma client at runtime for schema introspection)
+COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
 
