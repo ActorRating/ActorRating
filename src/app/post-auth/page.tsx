@@ -13,7 +13,7 @@ export default async function PostAuthPage() {
   if (result.status === "unauthenticated") {
     redirect("/auth/signin")
   }
-  if (result.status === "needs_onboarding") {
+  if (result.needsOnboarding) {
     redirect("/onboarding")
   }
 

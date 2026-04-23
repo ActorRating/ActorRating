@@ -13,13 +13,13 @@ export default async function OnboardingPage() {
     redirect("/auth/signin")
   }
 
-  if (result.status === "authenticated") {
+  if (result.status === "authenticated" && !result.needsOnboarding) {
     redirect("/dashboard")
   }
 
   // ONBOARDING is always resumable. If a user started setup and left midway,
   // this page must remain accessible for continuation.
-  if (result.status === "needs_onboarding" && result.user.status === "ONBOARDING" && result.user.onboardingStartedAt) {
+  if (result.needsOnboarding && result.user.status === "ONBOARDING" && result.user.onboardingStartedAt) {
     return <OnboardingClient />
   }
 

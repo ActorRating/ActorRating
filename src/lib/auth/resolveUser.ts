@@ -5,7 +5,8 @@ import type { UserStatus } from "@prisma/client"
 
 type ResolvedAuthUser = {
   id: string
-  email: string
+  email: string | null
+  name?: string
   username: string | null
   onboardingCompleted: boolean
   status: UserStatus
@@ -14,10 +15,10 @@ type ResolvedAuthUser = {
 
 export type ResolvedUserResult =
   | { status: "unauthenticated" }
-  | { status: "needs_onboarding"; user: ResolvedAuthUser }
-  | { status: "authenticated"; user: ResolvedAuthUser }
+  | { status: "authenticated"; user: ResolvedAuthUser; needsOnboarding: boolean }
 
 export async function resolveUser(session: Session | null): Promise<ResolvedUserResult> {
+  console.log("SESSION:", session)
   const sessionUserId = session?.user?.id
   if (!sessionUserId) {
     return { status: "unauthenticated" }
@@ -25,15 +26,30 @@ export async function resolveUser(session: Session | null): Promise<ResolvedUser
 
   const byId = await prisma.user.findUnique({
     where: { id: sessionUserId },
-    select: { id: true, email: true, username: true, onboardingCompleted: true, status: true, onboardingStartedAt: true },
+    select: { id: true, email: true, name: true, username: true, onboardingCompleted: true, status: true, onboardingStartedAt: true },
   })
   if (!byId) {
-    return { status: "unauthenticated" }
+    const fallbackUser: ResolvedAuthUser = {
+      id: sessionUserId,
+      email: session?.user?.email ?? null,
+      name: session?.user?.name ?? "User",
+      username: null,
+      onboardingCompleted: false,
+      status: "ONBOARDING",
+      onboardingStartedAt: null,
+    }
+    console.log("RESOLVED USER:", fallbackUser)
+    return {
+      status: "authenticated",
+      user: fallbackUser,
+      needsOnboarding: true,
+    }
   }
 
-  // ONBOARDING is a resumable state by design and should never become terminal.
-  if (byId.status === "NEW" || byId.status === "ONBOARDING") {
-    return { status: "needs_onboarding", user: byId }
+  console.log("RESOLVED USER:", byId)
+  return {
+    status: "authenticated",
+    user: byId,
+    needsOnboarding: byId.status === "NEW" || byId.status === "ONBOARDING",
   }
-  return { status: "authenticated", user: byId }
 }
