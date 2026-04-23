@@ -1,67 +1,58 @@
 "use client"
 
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
 
 /**
- * Post-authentication routing gate (client component).
+ * Post-authentication routing gate.
  *
- * Why client? The previous server-component version called auth() synchronously
- * on the first render. After an OAuth/magic-link callback the session cookie may
- * not yet be committed in the redirect request, so auth() returned null and the
- * page looped back to /auth/signin.
+ * Intentionally does NOT use useSession() for routing decisions.
  *
- * useSession() waits for next-auth to actually fetch /api/auth/session and confirm
- * the cookie is readable before we make any routing decision.
+ * Why: the layout's SessionProvider initialises NextAuth with session={null}
+ * (no SSR session in production). NextAuth treats null as "unauthenticated"
+ * on the very first render — before it has had a chance to fetch
+ * /api/auth/session and confirm the real cookie. Any code that checks
+ * status === "unauthenticated" and redirects to /auth/signin therefore fires
+ * immediately after an OAuth callback, before the session is hydrated, causing
+ * an infinite /post-auth ↔ /auth/signin loop.
  *
- * Additional guard: NEXT_PUBLIC_DEV_MODE=true pre-populates a fake dev session in
- * SessionProvider. We explicitly wait for the real /api/auth/session response (the
- * second status change after the initial "authenticated" from the fake session) so
- * that the server-side route decision always uses a verified, cookie-backed session.
+ * The correct approach: call /api/auth/post-auth-route directly. That route
+ * handler calls auth() server-side, which reads the cookie from the *request*
+ * headers. The cookie IS present in these headers — it was set by the OAuth
+ * callback response and the browser included it in this page request and in
+ * the subsequent fetch. No client-side session hydration is needed.
  */
 export default function PostAuthPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
-  const didRedirect = useRef(false)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
-    if (status === "loading") return
-    if (didRedirect.current) return
+    if (hasFetched.current) return
+    hasFetched.current = true
 
-    if (status === "unauthenticated") {
-      didRedirect.current = true
-      router.replace("/auth/signin")
-      return
+    const decide = (attempt = 1) => {
+      fetch("/api/auth/post-auth-route", { credentials: "same-origin" })
+        .then((res) => {
+          if (!res.ok) throw new Error(`post-auth-route returned ${res.status}`)
+          return res.json()
+        })
+        .then((data: { redirect: string }) => {
+          router.replace(data.redirect)
+        })
+        .catch((err) => {
+          console.error(`[post-auth] attempt ${attempt} failed:`, err)
+          if (attempt < 3) {
+            // Exponential back-off: 1 s, 2 s, then give up
+            setTimeout(() => decide(attempt + 1), attempt * 1000)
+          } else {
+            // After 3 failures fall back to sign-in; user can re-authenticate
+            router.replace("/auth/signin")
+          }
+        })
     }
 
-    // status === "authenticated" — ask the server for the routing decision.
-    // This deferred fetch ensures the session cookie has been committed and is
-    // readable by the server before resolveUser runs.
-    didRedirect.current = true
-    fetch("/api/auth/post-auth-route", { credentials: "same-origin" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`post-auth-route ${res.status}`)
-        return res.json()
-      })
-      .then((data: { redirect: string }) => {
-        router.replace(data.redirect)
-      })
-      .catch((err) => {
-        console.error("[post-auth] route decision failed:", err)
-        // Re-allow redirect so we can retry after a short pause.
-        didRedirect.current = false
-        // Wait a beat and retry once — handles transient DB/network hiccups.
-        setTimeout(() => {
-          if (didRedirect.current) return
-          didRedirect.current = true
-          fetch("/api/auth/post-auth-route", { credentials: "same-origin" })
-            .then((r) => r.json())
-            .then((d: { redirect: string }) => router.replace(d.redirect))
-            .catch(() => router.replace("/auth/signin"))
-        }, 1500)
-      })
-  }, [status, session, router])
+    decide()
+  }, [router])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">

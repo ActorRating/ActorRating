@@ -39,8 +39,13 @@ export function SessionProvider({
   children: ReactNode
   session: Session | null
 }) {
+  // Pass `undefined` (not `null`) when there is no known SSR session.
+  // NextAuth treats `null` as a confirmed "no session" (status = "unauthenticated")
+  // which skips the loading phase. `undefined` tells it to fetch /api/auth/session
+  // on mount and go through the proper "loading" → "authenticated/unauthenticated"
+  // transition, preventing premature redirect decisions.
   return (
-    <NextAuthSessionProvider session={session}>
+    <NextAuthSessionProvider session={session ?? undefined}>
       <SessionBridge>{children}</SessionBridge>
     </NextAuthSessionProvider>
   )

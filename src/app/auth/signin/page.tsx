@@ -34,6 +34,10 @@ function SignInContent() {
   }, [])
 
   useEffect(() => {
+    // Do not redirect while the session is still being fetched — this prevents
+    // a false "authenticated" state from the SSR stub triggering a premature
+    // redirect back to /post-auth before the user has actually signed in.
+    if (sessionStatus === "loading") return
     if (sessionStatus === "authenticated") {
       router.replace("/post-auth")
     }
