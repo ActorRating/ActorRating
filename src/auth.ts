@@ -87,14 +87,15 @@ export const authOptions: NextAuthConfig = {
       : []),
   ],
   callbacks: {
-    async redirect({ url }) {
+    async redirect({ url, baseUrl }) {
+      // Use baseUrl (derived from NEXTAUTH_URL) so local dev stays on localhost
+      // and production stays on actorrating.com — never cross-domain.
+      const base = baseUrl.replace(/\/$/, "")
       const canonical = "https://actorrating.com"
-      const isRelative = url.startsWith("/")
-      const isCanonicalAbsolute = url.startsWith(canonical)
-      if (authDebug && !isRelative && !isCanonicalAbsolute) {
-        console.warn("[auth][redirect] blocked non-canonical callbackUrl:", url)
+      if (authDebug && !url.startsWith("/") && !url.startsWith(base) && !url.startsWith(canonical)) {
+        console.warn("[auth][redirect] non-base callbackUrl:", url)
       }
-      return `${canonical}/post-auth`
+      return `${base}/post-auth`
     },
     async signIn({ user, account, profile }) {
       // Policy-only rejection (never use provider mismatch to block; that breaks OAuth callback + session cookie).
