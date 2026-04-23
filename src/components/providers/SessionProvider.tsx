@@ -7,10 +7,16 @@ import {
 } from "next-auth/react"
 import type { Session } from "next-auth"
 
+type AuthStatus = "loading" | "authenticated" | "unauthenticated"
+
 type SessionContextValue = {
   session: Session | null
   user: Session["user"] | null
+  /** Canonical auth status — prefer this over raw boolean checks. */
+  status: AuthStatus
+  /** true while the session is being fetched. Alias of status === "loading". */
   loading: boolean
+  /** true once the session has resolved (authenticated or not). */
   isInitialized: boolean
 }
 
@@ -24,10 +30,11 @@ function SessionBridge({ children }: { children: ReactNode }) {
     () => ({
       session: session ?? null,
       user: session?.user ?? null,
+      status: status as AuthStatus,
       loading,
       isInitialized,
     }),
-    [session, loading, isInitialized]
+    [session, status, loading, isInitialized]
   )
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

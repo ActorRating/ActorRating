@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useSession, useUser } from '@/components/providers/SessionProvider'
+import { useSession } from '@/components/providers/SessionProvider'
 import { handleLogout } from '@/lib/auth'
 import { Logo } from '../ui/Logo'
 import { useState, useEffect, useRef, FormEvent } from 'react'
@@ -22,10 +22,9 @@ const NAV_LINKS: NavLink[] = [
 ]
 
 export function HomeNavbar() {
-  const user = useUser()
-  const { loading, isInitialized } = useSession()
+  const { user, loading, isInitialized } = useSession()
   const router = useRouter()
-  const homeHref = user ? '/post-auth' : '/'
+  const homeHref = user ? '/dashboard' : '/'
   const navKey = `${user?.id || 'anon'}`
   const [mounted, setMounted] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -173,7 +172,7 @@ export function HomeNavbar() {
                   <div className="h-8 w-20 rounded-md bg-[#1a1a1a] animate-pulse" />
                 ) : user ? (
                   <>
-                    <Link href="/post-auth">
+                    <Link href="/dashboard">
                       <button className="px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-[#FFD700] bg-[#111] border border-white/5 hover:border-[#FFD700]/20 transition-all duration-200 min-h-[40px]">
                         Dashboard
                       </button>
@@ -278,7 +277,7 @@ export function HomeNavbar() {
               <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 {user ? (
                   <>
-                    <Link href="/post-auth" onClick={() => setMobileMenuOpen(false)}
+                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}
                       className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-gray-300 bg-[#111] border border-white/5">
                       Dashboard
                     </Link>

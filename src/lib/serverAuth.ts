@@ -27,9 +27,13 @@ export async function getServerUser(): Promise<ServerUser | null> {
     }
     const session = await auth()
     const u = session?.user
-    if (!u?.id) return null
+    // Use email (not id) as the existence check — email is explicitly written to
+    // the JWT token in the jwt callback, making it the reliable identity field.
+    // session.user.id comes from token.sub which is now also explicitly set, but
+    // email remains the canonical source of truth throughout this codebase.
+    if (!u?.email) return null
     return {
-      id: u.id,
+      id: u.id ?? '',
       email: u.email,
       name: u.name,
     }

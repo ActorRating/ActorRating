@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser, useSession } from "@/components/providers/SessionProvider"
+import { useSession } from "@/components/providers/SessionProvider"
 import { useRouter, usePathname } from "next/navigation"
 import React, { useState, useEffect, useRef } from "react"
 import { SignedInLayout } from "@/components/layout"
@@ -76,8 +76,7 @@ export default function DashboardClient({
   initialRatings = null,
   initialPopularActors = null,
 }: DashboardClientProps) {
-  const user = useUser()
-  const { session, loading: sessionLoading, isInitialized } = useSession()
+  const { user, session, loading: sessionLoading, isInitialized } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const hasInitialData = initialRatings != null && initialPopularActors != null
@@ -97,13 +96,7 @@ export default function DashboardClient({
       const ratingsRes = await fetch('/api/ratings/me', { cache: 'no-store' })
       if (ratingsRes.ok) {
         const ratingsData = await ratingsRes.json()
-        setRatings(ratingsData) // Store all ratings
-        
-        // Guardrail: Redirect to onboarding if user has 0 ratings
-        if (Array.isArray(ratingsData) && ratingsData.length === 0) {
-          router.push('/onboarding/rate')
-          return
-        }
+        setRatings(ratingsData)
       }
 
       // Fetch popular actors by specific names - always fresh (no cache)

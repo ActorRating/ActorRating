@@ -2,7 +2,7 @@
 
 import { useSession } from "@/components/providers/SessionProvider"
 import { signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { TriangleAlert, Trash2, ArrowLeft } from "lucide-react"
@@ -10,9 +10,8 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 export default function DeleteAccountPage() {
-  const { user, loading: sessionLoading } = useSession()
-  const isLoadingUser = sessionLoading
-  const router = useRouter()
+  const { user, status } = useSession()
+  const isLoadingUser = status === "loading"
   const [isLoading, setIsLoading] = useState(false)
   const [confirmation, setConfirmation] = useState("")
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -33,7 +32,7 @@ export default function DeleteAccountPage() {
       })
 
       if (response.ok) {
-        await signOut({ callbackUrl: "/", redirect: true })
+        await signOut({ callbackUrl: "/auth/signin", redirect: true })
       } else {
         const errorData = await response.json()
         alert(`Hesap silme hatası: ${errorData.error || "Bilinmeyen hata"}`)
@@ -46,6 +45,9 @@ export default function DeleteAccountPage() {
     }
   }
 
+  // Middleware protects /profile/* — show a spinner while the client session
+  // resolves. If it resolves to unauthenticated (edge-case), show a sign-in
+  // prompt instead of an invisible blank page.
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -59,9 +61,14 @@ export default function DeleteAccountPage() {
     )
   }
 
-  if (!user) {
-    router.push("/auth/signin")
-    return null
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <a href="/auth/signin" className="text-sm text-gray-500 hover:text-gray-900">
+          Session expired — sign in again
+        </a>
+      </div>
+    )
   }
 
   return (

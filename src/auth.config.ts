@@ -10,8 +10,14 @@ import type { NextAuthConfig } from "next-auth"
  * (PrismaAdapter, providers, jwt/session callbacks).
  */
 
-/** Routes that require a valid session. */
-const PROTECTED = ["/dashboard", "/onboarding", "/post-auth"]
+/**
+ * Routes that require a valid session.
+ * Middleware blocks unauthenticated access and redirects to /auth/signin.
+ * Keep this list tight: only pages that are meaningless without a user.
+ * NOTE: /post-auth is intentionally NOT listed — it just server-redirects to
+ * /dashboard, which is already protected here.
+ */
+const PROTECTED = ["/dashboard", "/profile", "/onboarding"]
 
 /** Auth-flow pages that authenticated users should be redirected away from. */
 const AUTH_PAGES = ["/auth/signin", "/auth/register"]

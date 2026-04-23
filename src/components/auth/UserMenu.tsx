@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser } from "@/components/providers/SessionProvider"
+import { useSession } from "@/components/providers/SessionProvider"
 import { LogoutButton } from "@/components/auth/LogoutButton"
 import { useState, useRef, useEffect } from "react"
 import { User, Settings, Shield, Download } from "lucide-react"
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button"
 import { PrefetchLink } from "@/components/ui/PrefetchLink"
 
 export function UserMenu() {
-  const user = useUser()
+  const { user, status } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -23,8 +23,21 @@ export function UserMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  if (!user) {
-    return null
+  // While loading — show a skeleton so the layout doesn't shift.
+  if (status === "loading") {
+    return <div className="h-9 w-24 rounded-full bg-white/5 animate-pulse" />
+  }
+
+  // Not authenticated — show a sign-in link instead of an invisible gap.
+  if (status === "unauthenticated") {
+    return (
+      <PrefetchLink
+        href="/auth/signin"
+        className="px-4 py-2 rounded-full text-sm text-gray-300 hover:text-white transition-colors"
+      >
+        Sign In
+      </PrefetchLink>
+    )
   }
 
 

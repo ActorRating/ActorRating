@@ -1,7 +1,7 @@
 "use client"
 
 import { PrefetchLink } from '@/components/ui/PrefetchLink'
-import { useSession, useUser } from '@/components/providers/SessionProvider'
+import { useSession } from '@/components/providers/SessionProvider'
 import { Button } from '../ui/Button'
 import { usePathname, useRouter } from 'next/navigation'
 import { Logo } from '../ui/Logo'
@@ -11,8 +11,7 @@ import { User, Home, Search } from 'lucide-react'
 const KEY_ROUTES = ['/dashboard', '/search', '/profile', '/rate'] as const
 
 export function SignedInNavbar() {
-  const user = useUser()
-  const { loading, isInitialized } = useSession()
+  const { user, loading, isInitialized } = useSession()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -69,9 +68,28 @@ export function SignedInNavbar() {
     )
   }
 
+  // Session resolved to unauthenticated — show a minimal bar with sign-in link.
+  // This is a rare edge-case (JWT expired while the page is open); the next
+  // navigation will hit middleware and redirect properly.  Never router.push here.
   if (!user) {
-    return null
+    return (
+      <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Logo href="/" />
+            <PrefetchLink href="/auth/signin">
+              <button className="px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-[#FFD700] bg-[#1a1a1a] border border-white/10 transition-colors duration-200 min-h-[40px]">
+                Sign In
+              </button>
+            </PrefetchLink>
+          </div>
+        </div>
+      </nav>
+    )
   }
+
+  // Derive profile href: authenticated → /profile, just in case user is null use signin
+  const profileHref = user ? "/profile" : "/auth/signin"
 
   return (
     <nav className="sticky top-0 z-50 isolate text-foreground" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
@@ -79,7 +97,7 @@ export function SignedInNavbar() {
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex items-center">
-              <Logo href="/post-auth" />
+              <Logo href="/dashboard" />
           </div>
 
           {/* Navigation Links */}
@@ -151,8 +169,8 @@ export function SignedInNavbar() {
               </button>
             </PrefetchLink>
 
-            {/* Profile button */}
-            <PrefetchLink href="/profile" className="group">
+            {/* Profile button — routes based on auth state, never triggers navigation programmatically */}
+            <PrefetchLink href={profileHref} className="group">
               <button
                 className={`
                   relative px-4 py-3 rounded-xl border border-transparent 

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useSession, useUser } from '@/components/providers/SessionProvider'
+import { useSession } from '@/components/providers/SessionProvider'
 import { handleLogout } from '@/lib/auth'
 import { Button } from '../ui/Button'
 import { Home } from 'lucide-react'
@@ -9,10 +9,9 @@ import { Logo } from '../ui/Logo'
 import { useState, useEffect } from 'react'
 
 export function SearchNavbar() {
-  const user = useUser()
-  const { loading, isInitialized } = useSession()
+  const { user, loading, isInitialized } = useSession()
   const navKey = `${user?.id || 'anon'}`
-  const homeHref = user ? "/post-auth" : "/"
+  const homeHref = user ? "/dashboard" : "/"
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)

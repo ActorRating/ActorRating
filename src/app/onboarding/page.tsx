@@ -9,9 +9,13 @@ export default async function OnboardingPage() {
   const session = await auth()
   const result = await resolveUser(session)
 
-  // Authentication is enforced by middleware — no auth-based redirect here.
-  // Only redirect when the user has already completed onboarding (DB state).
-  if (result.status === "authenticated" && !result.needsOnboarding) {
+  // Middleware guards /onboarding — safety valve for any slip-through.
+  if (result.status !== "authenticated") {
+    redirect("/auth/signin")
+  }
+
+  // User has already completed onboarding — no need to be here.
+  if (!result.needsOnboarding) {
     redirect("/dashboard")
   }
 

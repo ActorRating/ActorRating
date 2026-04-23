@@ -157,6 +157,16 @@ export default function OnboardingClient() {
   const handleSubmit = async () => {
     if (!hasStartedOnboarding || !isValid) return
 
+    // Client-side guard: should be caught by isValid, but be explicit
+    if (!name.trim()) {
+      setInlineError("Display name is required")
+      return
+    }
+    if (!normalizedUsername) {
+      setUsernameError("Username is required")
+      return
+    }
+
     setInlineError("")
     setIsSubmitting(true)
 
@@ -171,7 +181,16 @@ export default function OnboardingClient() {
       })
 
       if (!profileRes.ok) {
-        setInlineError("Please choose a different name")
+        const errData = await profileRes.json().catch(() => ({}))
+        const msg = errData?.error ?? "Setup failed. Please try again."
+        // Surface username-specific errors on the username field
+        if (msg.toLowerCase().includes("username")) {
+          setUsernameError(msg)
+          setUsernameStatus("taken")
+        } else {
+          setInlineError(msg)
+        }
+        console.error("[onboarding] update-profile failed:", { status: profileRes.status, error: msg })
         return
       }
 
@@ -179,15 +198,16 @@ export default function OnboardingClient() {
         method: "POST",
       })
       if (!completeRes.ok) {
+        const errData = await completeRes.json().catch(() => ({}))
+        console.error("[onboarding] complete failed:", { status: completeRes.status, error: errData?.error })
         setInlineError("Unable to complete setup. Please try again.")
         return
       }
 
-      router.refresh()
-      router.push("/post-auth")
+      router.push("/dashboard")
     } catch (error) {
-      console.error("Onboarding submit error:", error)
-      setInlineError("Please choose a different name")
+      console.error("[onboarding] submit error:", error)
+      setInlineError("Something went wrong. Please try again.")
     } finally {
       setIsSubmitting(false)
     }

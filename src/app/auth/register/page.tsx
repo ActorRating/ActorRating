@@ -1,8 +1,8 @@
 "use client"
 
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { signIn, useSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { motion } from "framer-motion"
@@ -15,8 +15,6 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { status: sessionStatus } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -30,11 +28,8 @@ export default function RegisterPage() {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    if (sessionStatus === "authenticated") {
-      router.replace("/dashboard")
-    }
-  }, [sessionStatus, router])
+  // No auth-based redirect here — middleware redirects authenticated users away
+  // from /auth/* pages before this component renders (auth.config.ts AUTH_PAGES).
 
   useEffect(() => {
     if (!searchParams) return

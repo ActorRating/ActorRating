@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser } from "@/components/providers/SessionProvider"
+import { useSession } from "@/components/providers/SessionProvider"
 import { handleLogout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
@@ -24,8 +24,8 @@ type ProfileClientProps = {
 }
 
 export default function ProfileClient({ initialProfile = null }: ProfileClientProps) {
-  const user = useUser()
-  const isLoadingUser = user === undefined
+  const { user, status } = useSession()
+  const isLoadingUser = status === "loading"
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(initialProfile == null)
@@ -35,14 +35,15 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    // Wait until the session has fully resolved before acting on it.
+    // Never redirect from here — the server component already guards auth,
+    // and middleware will intercept any future unauthenticated navigation.
     if (isLoadingUser) return
-    if (!user) {
-      router.push("/auth/signin")
-      return
-    }
+    if (!user) return
     if (initialProfile != null) return
     loadProfile()
-  }, [user, isLoadingUser, router, initialProfile])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoadingUser, initialProfile])
 
   const loadProfile = async () => {
     try {
@@ -154,8 +155,18 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
     )
   }
 
-  if (!user) {
-    return null
+  // Middleware guards /profile — this branch should never be reached in normal
+  // flow. Show a minimal sign-in prompt instead of an invisible blank page.
+  if (status === "unauthenticated") {
+    return (
+      <SignedInLayout>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <a href="/auth/signin" className="text-sm text-gray-400 hover:text-white transition-colors">
+            Session expired — sign in again
+          </a>
+        </div>
+      </SignedInLayout>
+    )
   }
 
   return (

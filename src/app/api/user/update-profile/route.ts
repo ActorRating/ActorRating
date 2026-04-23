@@ -39,18 +39,26 @@ export async function PUT(request: NextRequest) {
     const onboardingCompleted = true
 
     if (!name) {
-      return NextResponse.json({ error: "Please choose a different name" }, { status: 400 })
+      console.warn("[update-profile] rejected: empty name", { email: sessionEmail })
+      return NextResponse.json({ error: "Display name is required" }, { status: 400 })
     }
 
     if (containsBadWord(name)) {
-      return NextResponse.json({ error: "Please choose a different name" }, { status: 400 })
+      console.warn("[update-profile] rejected: bad word in name", { email: sessionEmail })
+      return NextResponse.json({ error: "Please choose a different display name" }, { status: 400 })
+    }
+
+    if (!username) {
+      console.warn("[update-profile] rejected: empty username", { email: sessionEmail })
+      return NextResponse.json({ error: "Username is required" }, { status: 400 })
     }
 
     if (!isValidUsername(username) || containsBadWord(username)) {
-      return NextResponse.json({ error: "Invalid username" }, { status: 400 })
+      console.warn("[update-profile] rejected: invalid username", { email: sessionEmail, username })
+      return NextResponse.json({ error: "Invalid username format" }, { status: 400 })
     }
 
-    console.log("ONBOARDING SAVE:", sessionEmail)
+    console.log("[update-profile] saving:", { email: sessionEmail, username })
 
     let updatedUser: { id: string; email: string; name: string | null; username: string; onboardingCompleted: boolean }
     try {
@@ -67,11 +75,13 @@ export async function PUT(request: NextRequest) {
       })
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        console.warn("[update-profile] username conflict:", { email: sessionEmail, username })
         return NextResponse.json({ error: "Username already taken" }, { status: 409 })
       }
       throw error
     }
 
+    console.log("[update-profile] saved successfully:", { email: sessionEmail, userId: updatedUser.id })
     return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {
     console.error("Update profile API error:", error)

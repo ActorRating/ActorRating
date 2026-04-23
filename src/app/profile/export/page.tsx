@@ -1,7 +1,6 @@
 "use client"
 
-import { useUser } from "@/components/providers/SessionProvider"
-import { useRouter } from "next/navigation"
+import { useSession } from "@/components/providers/SessionProvider"
 import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { Download, ArrowLeft, FileText, Clock } from "lucide-react"
@@ -9,9 +8,7 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 
 export default function ExportDataPage() {
-  const user = useUser()
-  const isLoadingUser = user === undefined
-  const router = useRouter()
+  const { user, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [exportHistory, setExportHistory] = useState<any[]>([])
 
@@ -61,7 +58,10 @@ export default function ExportDataPage() {
     }
   }
 
-  if (isLoadingUser) {
+  // Middleware protects /profile/* — show a spinner while the client session
+  // resolves. If it resolves to unauthenticated (edge-case), show a sign-in
+  // prompt instead of an invisible blank page.
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <BouncingBallsLoader 
@@ -74,9 +74,14 @@ export default function ExportDataPage() {
     )
   }
 
-  if (!user) {
-    router.push("/auth/signin")
-    return null
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <a href="/auth/signin" className="text-sm text-gray-500 hover:text-gray-900">
+          Session expired — sign in again
+        </a>
+      </div>
+    )
   }
 
   return (

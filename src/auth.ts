@@ -86,13 +86,15 @@ export const authOptions: NextAuthConfig = {
     // here so a single NextAuth instance stays consistent.
     ...authConfig.callbacks,
     async redirect({ url, baseUrl }) {
-      // Use baseUrl (derived from NEXTAUTH_URL) so local dev stays on localhost
-      // and production stays on actorrating.com — never cross-domain.
       const base = baseUrl.replace(/\/$/, "")
-      const canonical = "https://actorrating.com"
-      if (authDebug && !url.startsWith("/") && !url.startsWith(base) && !url.startsWith(canonical)) {
-        console.warn("[auth][redirect] non-base callbackUrl:", url)
+      // Resolve relative URLs (e.g. callbackUrl: "/auth/signin") to an absolute path.
+      const path = url.startsWith(base) ? url.slice(base.length) : url
+      // Honour explicit auth-page redirects so that signOut({ callbackUrl: "/auth/signin" })
+      // actually lands on the sign-in page instead of being overridden by /post-auth.
+      if (path.startsWith("/auth/")) {
+        return `${base}${path}`
       }
+      // All other sign-in callbacks go through post-auth → dashboard.
       return `${base}/post-auth`
     },
     async signIn({ user, account, profile }) {
@@ -183,6 +185,12 @@ export const authOptions: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
+        // Explicitly carry token.sub → session.user.id so that server components
+        // which call auth() always get a populated user.id (token.sub is the
+        // database user ID set by NextAuth on initial sign-in via PrismaAdapter).
+        if (token.sub) {
+          session.user.id = token.sub
+        }
         // Ensure email is always present — fall back through token then existing value.
         session.user.email =
           (token.email as string | undefined) ?? session.user.email ?? null
@@ -192,6 +200,7 @@ export const authOptions: NextAuthConfig = {
       }
       // Always log — this is the ground truth for "did a session get created".
       console.log("[auth][session] ✓ session created", {
+        sub: token.sub,
         email: session.user?.email,
         hasName: !!session.user?.name,
         provider: token.authProvider,
