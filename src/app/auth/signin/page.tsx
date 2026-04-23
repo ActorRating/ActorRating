@@ -1,8 +1,8 @@
 "use client"
 
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { signIn, signOut, useSession } from "next-auth/react"
+import { signIn, signOut } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { motion } from "framer-motion"
@@ -16,8 +16,6 @@ import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/aut
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
 function SignInContent() {
-  const router = useRouter()
-  const { status: sessionStatus } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
   const [hasSentLink, setHasSentLink] = useState(false)
@@ -33,15 +31,11 @@ function SignInContent() {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    // Do not redirect while the session is still being fetched — this prevents
-    // a false "authenticated" state from the SSR stub triggering a premature
-    // redirect back to /post-auth before the user has actually signed in.
-    if (sessionStatus === "loading") return
-    if (sessionStatus === "authenticated") {
-      router.replace("/post-auth")
-    }
-  }, [sessionStatus, router])
+  // No client-side auth redirect here.
+  // Middleware (src/middleware.ts) redirects authenticated users away from
+  // /auth/signin → /dashboard before this page is ever rendered.
+  // A client-side redirect would race against session hydration timing
+  // and could cause signin ↔ post-auth loops.
 
   useEffect(() => {
     if (cooldownRemaining <= 0) return

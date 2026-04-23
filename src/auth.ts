@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma"
 import { sendMagicLinkEmail } from "@/lib/magicLinkEmail"
 import { getRequestIp, isDisposableEmail, validateMagicLinkRequest } from "@/lib/authGuards"
 import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
+import { authConfig } from "./auth.config"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -36,6 +37,9 @@ function validateAuthEnv(): {
 const runtimeAuthEnv = validateAuthEnv()
 
 export const authOptions: NextAuthConfig = {
+  // Spread the Edge-safe config so pages + authorized callback are shared
+  // between middleware and the full server-side auth instance.
+  ...authConfig,
   trustHost: true,
   adapter: PrismaAdapter(prisma),
   session: {
@@ -46,9 +50,6 @@ export const authOptions: NextAuthConfig = {
   // and Secure flag based on the request protocol. Manual __Secure- overrides
   // break session persistence behind reverse proxies (e.g. Coolify) that
   // terminate TLS before the container.
-  pages: {
-    signIn: "/auth/signin",
-  },
   providers: [
     ...(googleClientId && googleClientSecret
       ? [
@@ -81,6 +82,9 @@ export const authOptions: NextAuthConfig = {
       : []),
   ],
   callbacks: {
+    // authorized is used by the middleware path (auth.config.ts); include it
+    // here so a single NextAuth instance stays consistent.
+    ...authConfig.callbacks,
     async redirect({ url, baseUrl }) {
       // Use baseUrl (derived from NEXTAUTH_URL) so local dev stays on localhost
       // and production stays on actorrating.com — never cross-domain.
