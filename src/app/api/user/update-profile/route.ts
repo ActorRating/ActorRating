@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
+import { auth } from "@/auth"
 import { checkRateLimitScopes } from "@/lib/rateLimit"
 import { getClientIp } from "@/lib/requestProtection"
 import { containsBadWord } from "@/lib/validation/sanitizeName"
@@ -49,11 +50,25 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid username" }, { status: 400 })
     }
 
-    let updatedUser: { id: string; email: string; name: string; username: string; onboardingCompleted: boolean }
+    const session = await auth()
+    const sessionEmail = session?.user?.email?.trim().toLowerCase() ?? null
+    if (!sessionEmail) {
+      return NextResponse.json({ error: "Missing session email" }, { status: 400 })
+    }
+    console.log("ONBOARDING SAVE:", userId)
+
+    let updatedUser: { id: string; email: string; name: string | null; username: string; onboardingCompleted: boolean }
     try {
-      updatedUser = await prisma.user.update({
+      updatedUser = await prisma.user.upsert({
         where: { id: userId },
-        data: { name, username, onboardingCompleted },
+        update: { name, username, onboardingCompleted },
+        create: {
+          id: userId,
+          email: sessionEmail,
+          name,
+          username,
+          onboardingCompleted,
+        },
         select: { id: true, email: true, name: true, username: true, onboardingCompleted: true },
       })
     } catch (error) {

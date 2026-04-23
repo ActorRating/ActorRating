@@ -17,11 +17,5 @@ export default async function OnboardingPage() {
     redirect("/dashboard")
   }
 
-  // ONBOARDING is always resumable. If a user started setup and left midway,
-  // this page must remain accessible for continuation.
-  if (result.needsOnboarding && result.user.status === "ONBOARDING" && result.user.onboardingStartedAt) {
-    return <OnboardingClient />
-  }
-
   return <OnboardingClient />
 }

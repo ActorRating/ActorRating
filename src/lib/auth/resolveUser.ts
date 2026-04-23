@@ -50,6 +50,6 @@ export async function resolveUser(session: Session | null): Promise<ResolvedUser
   return {
     status: "authenticated",
     user: byId,
-    needsOnboarding: byId.status === "NEW" || byId.status === "ONBOARDING",
+    needsOnboarding: !byId.onboardingCompleted,
   }
 }
