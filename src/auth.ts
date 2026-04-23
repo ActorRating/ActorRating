@@ -13,7 +13,8 @@ const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
 const isProduction = process.env.NODE_ENV === "production"
-const authDebug = !isProduction
+// Enable auth debug logs in dev, or when AUTH_DEBUG=true is set in production
+const authDebug = !isProduction || process.env.AUTH_DEBUG === "true"
 
 const fallbackDevServer: SMTPTransport.Options = { jsonTransport: true }
 const resolvedEmailServer = emailServer || (!isProduction ? fallbackDevServer : undefined)
@@ -41,17 +42,10 @@ export const authOptions: NextAuthConfig = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
-  cookies: {
-    sessionToken: {
-      name: "__Secure-next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: true,
-      },
-    },
-  },
+  // Do NOT override cookies — let NextAuth auto-detect the correct cookie name
+  // and Secure flag based on the request protocol. Manual __Secure- overrides
+  // break session persistence behind reverse proxies (e.g. Coolify) that
+  // terminate TLS before the container.
   pages: {
     signIn: "/auth/signin",
   },
@@ -171,28 +165,34 @@ export const authOptions: NextAuthConfig = {
         token.authProvider = account.provider
         token.authProviderAccountId = account.providerAccountId
       }
-      if (authDebug) {
-        console.log("[auth][jwt] token issued", {
+      // Always log on sign-in (when user/account are present) for diagnostics.
+      if (user || account) {
+        console.log("[auth][jwt] ✓ token issued on sign-in", {
           sub: token.sub,
           email: token.email,
           provider: token.authProvider,
-          providerAccountId: token.authProviderAccountId,
         })
+      } else if (authDebug) {
+        console.log("[auth][jwt] token refreshed", { sub: token.sub, email: token.email })
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.email = (token.email as string) || session.user.email || null
-        session.user.name = session.user.name ?? (token.name as string) ?? "User"
+        // Ensure email is always present — fall back through token then existing value.
+        session.user.email =
+          (token.email as string | undefined) ?? session.user.email ?? null
+        // Ensure name is always a string so downstream code never sees undefined.
+        session.user.name =
+          (token.name as string | undefined) ?? session.user.name ?? "User"
       }
-      if (authDebug) {
-        console.log("[auth][session] session materialized", {
-          email: session.user?.email,
-          provider: token.authProvider,
-          providerAccountId: token.authProviderAccountId,
-        })
-      }
+      // Always log — this is the ground truth for "did a session get created".
+      console.log("[auth][session] ✓ session created", {
+        email: session.user?.email,
+        hasName: !!session.user?.name,
+        provider: token.authProvider,
+        exp: session.expires,
+      })
       return session
     },
   },
