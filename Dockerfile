@@ -57,10 +57,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Public files (favicon, etc.) — not included inside standalone
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Copy Prisma schema + migrations and the CLI so `prisma migrate deploy` can run at startup.
+# This ensures every deploy automatically applies pending migrations before traffic is served.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+
 USER nextjs
 
 EXPOSE 3000
 
-# Do NOT use `next start` or `npm start` here: run the standalone `server.js`
-# generated under `.next/standalone` (copied to WORKDIR root above).
-CMD ["node", "server.js"]
+# Run pending DB migrations, then start the standalone Next.js server.
+# `prisma migrate deploy` is idempotent — safe to run on every container start.
+CMD ["sh", "-c", "node node_modules/.bin/prisma migrate deploy && node server.js"]
