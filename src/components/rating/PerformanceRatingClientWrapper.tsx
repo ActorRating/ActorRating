@@ -2315,16 +2315,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   Share your rating
                 </p>
 
-                {/* Visual share card — movie poster bg + actor photo + score */}
+                {/* Visual share card — portrait layout matching the generated share image */}
                 <div
-                  className="relative w-full overflow-hidden cursor-pointer group/share"
+                  className="relative overflow-hidden mx-auto"
                   style={{
                     borderRadius: '1rem',
                     border: '1px solid rgba(255,215,0,0.15)',
-                    aspectRatio: '16 / 9',
+                    aspectRatio: '4 / 5',
                     background: '#0a0a0a',
+                    width: '100%',
+                    maxWidth: '320px',
                   }}
-                  onClick={handleShare}
                 >
                   {/* Movie poster — blurred, darkened background */}
                   {performance.movie.posterUrl ? (
@@ -2341,36 +2342,29 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   ) : (
                     <div
                       className="absolute inset-0"
-                      style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(255,215,0,0.08) 0%, transparent 65%)' }}
+                      style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.08) 0%, transparent 65%)' }}
                     />
                   )}
 
                   {/* Dark vignette overlay */}
                   <div
                     className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 100%)' }}
+                    style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.7) 100%)' }}
                   />
 
                   {/* Gold spotlight accent */}
                   <div
                     className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(255,215,0,0.1) 0%, transparent 65%)' }}
+                    style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 25%, rgba(255,215,0,0.1) 0%, transparent 65%)' }}
                   />
 
-                  {/* Card content */}
-                  <div className="relative z-10 flex items-center h-full px-4 sm:px-6 gap-4 sm:gap-5">
+                  {/* Card content — vertical layout */}
+                  <div className="relative z-10 flex flex-col h-full">
 
-                    {/* Actor photo — portrait rectangle */}
+                    {/* Actor photo — fills upper portion, full width */}
                     <div
-                      className="shrink-0 overflow-hidden"
-                      style={{
-                        width: 'clamp(72px, 20vw, 100px)',
-                        height: 'clamp(108px, 30vw, 150px)',
-                        borderRadius: '0.75rem',
-                        border: '1.5px solid rgba(255,215,0,0.35)',
-                        boxShadow: '0 0 24px rgba(255,215,0,0.18)',
-                        background: 'rgba(255,215,0,0.06)',
-                      }}
+                      className="overflow-hidden"
+                      style={{ flex: '0 0 57%' }}
                     >
                       {performance.actor.imageUrl ? (
                         <img
@@ -2381,7 +2375,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         />
                       ) : (
                         <div
-                          className="w-full h-full flex items-center justify-center font-bold text-black text-2xl"
+                          className="w-full h-full flex items-center justify-center font-bold text-black text-5xl"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           }}
@@ -2391,26 +2385,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       )}
                     </div>
 
-                    {/* Text */}
-                    <div className="flex-1 min-w-0">
+                    {/* Text + score section */}
+                    <div className="flex flex-col items-center justify-center flex-1 px-4 pb-6 text-center">
                       <p
-                        className="text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase mb-1"
+                        className="text-[10px] font-bold tracking-[0.2em] uppercase mb-0.5"
                         style={{ color: '#FFD700', opacity: 0.75 }}
                       >
                         My rating
                       </p>
                       <h3
-                        className="text-white font-bold leading-tight truncate"
+                        className="text-white font-bold leading-tight"
                         style={{
                           fontFamily: 'var(--font-heading, "Playfair Display", serif)',
-                          fontSize: 'clamp(16px, 5vw, 26px)',
+                          fontSize: 'clamp(15px, 5vw, 22px)',
                         }}
                       >
                         {performance.actor.name}
                       </h3>
                       <p
-                        className="truncate mt-0.5"
-                        style={{ color: '#a1a1aa', fontSize: 'clamp(11px, 3vw, 14px)' }}
+                        className="mt-0.5"
+                        style={{ color: '#a1a1aa', fontSize: 'clamp(10px, 3vw, 13px)' }}
                       >
                         {performance.movie.title}
                         <span style={{ color: '#52525b' }}> · </span>
@@ -2418,11 +2412,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </p>
 
                       {/* Score */}
-                      <div className="flex items-baseline gap-1 mt-2 sm:mt-3">
+                      <div className="flex items-baseline gap-1 mt-2">
                         <span
                           className="font-black tabular-nums leading-none"
                           style={{
-                            fontSize: 'clamp(2.75rem, 13vw, 5rem)',
+                            fontSize: 'clamp(2.5rem, 12vw, 3.75rem)',
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -2433,7 +2427,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         </span>
                         <span
                           className="font-semibold"
-                          style={{ color: 'rgba(255,215,0,0.4)', fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)' }}
+                          style={{ color: 'rgba(255,215,0,0.4)', fontSize: 'clamp(0.75rem, 2.5vw, 1.1rem)' }}
                         >
                           /10
                         </span>
@@ -2441,29 +2435,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </div>
 
                     {/* Branding — bottom right */}
-                    <div className="shrink-0 self-end pb-2 text-right hidden sm:block">
-                      <p
-                        className="text-[11px] font-semibold"
-                        style={{ color: 'rgba(255,215,0,0.35)', letterSpacing: '0.05em' }}
-                      >
-                        actorrating.com
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tap-to-share overlay: hover on mobile-width; always visible md+ (desktop) */}
-                  <div
-                    className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200 group-hover/share:opacity-100 md:opacity-100"
-                    style={{ background: 'rgba(0,0,0,0.55)' }}
-                  >
-                    <div
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-black"
-                      style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)' }}
+                    <p
+                      className="absolute bottom-2 right-3 text-[10px] font-semibold"
+                      style={{ color: 'rgba(255,215,0,0.35)', letterSpacing: '0.05em' }}
                     >
-                      <Share2 className="w-4 h-4" />
-                      Share this rating
-                    </div>
+                      actorrating.com
+                    </p>
                   </div>
+                </div>
+
+                {/* Share this rating button — below the card */}
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-black transition-all duration-200 hover:opacity-90 active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
+                    }}
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share this rating
+                  </button>
                 </div>
 
                 {/* Share buttons — 2×2 grid, colorful round icons on mobile, pills with labels on desktop */}

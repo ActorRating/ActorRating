@@ -58,6 +58,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   const [ratingCheckDone, setRatingCheckDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [ratingSubmitted, setRatingSubmitted] = useState(false)
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [pendingRatingData, setPendingRatingData] = useState<{
     emotionalDepth: number
@@ -293,7 +294,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   }
 
   return (
-    <RatePageLayout>
+    <RatePageLayout onBack={ratingSubmitted ? () => router.push('/dashboard') : undefined}>
       {/* Edit Rating label at the very top when editing an existing rating */}
       {userExistingRating && (
         <div className="text-center pt-4 sm:pt-6 pb-1">
@@ -330,7 +331,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         }}
         onSubmit={handleSubmit}
         submitting={submitting}
-        onSuccess={() => {}}
+        onSuccess={() => setRatingSubmitted(true)}
         initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
         communityAvg10={communityAvg10}
         communityRatingCount={communityRatingCount}

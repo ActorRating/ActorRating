@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 
-export function RatePageLayout({ children }: { children: React.ReactNode }) {
+export function RatePageLayout({ children, onBack }: { children: React.ReactNode; onBack?: () => void }) {
   const router = useRouter()
 
   // Hide any navbars on rate pages
@@ -26,7 +26,7 @@ export function RatePageLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-black">
       {/* Back Button - Fixed at top left, icon-only on mobile, works like browser back */}
       <button
-        onClick={() => router.back()}
+        onClick={() => onBack ? onBack() : router.back()}
         className="fixed top-3 left-3 sm:top-4 sm:left-4 z-[100] flex items-center justify-center gap-2 px-3 py-3 sm:px-4 sm:py-2 rounded-full sm:rounded-xl bg-[#1a1a1a]/90 backdrop-blur-sm hover:bg-[#2a2a2a] transition-colors duration-200 w-10 h-10 sm:w-auto sm:h-auto sm:min-h-[48px] touch-manipulation group border border-white/10"
         style={{
           boxShadow: `
