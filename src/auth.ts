@@ -19,11 +19,20 @@ const fallbackDevServer: SMTPTransport.Options = { jsonTransport: true }
 const resolvedEmailServer = emailServer || (!isProduction ? fallbackDevServer : undefined)
 const resolvedEmailFrom = emailFrom || (!isProduction ? "ActorRating Dev <dev@localhost>" : undefined)
 
-if (isProduction && (!resolvedEmailServer || !resolvedEmailFrom)) {
-  throw new Error(
-    "Magic link auth requires AUTH_EMAIL_SERVER/EMAIL_SERVER and AUTH_EMAIL_FROM/EMAIL_FROM in production.",
-  )
+function validateAuthEnv(): {
+  emailServer?: string | SMTPTransport.Options
+  emailFrom?: string
+} {
+  // Build-safe: never throw at import time; only validate when provider is used.
+  if (!resolvedEmailServer || !resolvedEmailFrom) {
+    return {}
+  }
+  return {
+    emailServer: resolvedEmailServer,
+    emailFrom: resolvedEmailFrom,
+  }
 }
+const runtimeAuthEnv = validateAuthEnv()
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
@@ -58,20 +67,24 @@ export const authOptions: NextAuthConfig = {
           }),
         ]
       : []),
-    EmailProvider({
-      from: resolvedEmailFrom!,
-      server: resolvedEmailServer!,
-      maxAge: 15 * 60,
-      async sendVerificationRequest(params) {
-        const email = params.identifier.trim().toLowerCase()
-        const ip = getRequestIp(params.request)
-        const guard = validateMagicLinkRequest({ email, ip })
-        if (!guard.allowed) {
-          throw new Error(guard.code)
-        }
-        await sendMagicLinkEmail(params)
-      },
-    }),
+    ...(runtimeAuthEnv.emailServer && runtimeAuthEnv.emailFrom
+      ? [
+          EmailProvider({
+            from: runtimeAuthEnv.emailFrom!,
+            server: runtimeAuthEnv.emailServer!,
+            maxAge: 15 * 60,
+            async sendVerificationRequest(params) {
+              const email = params.identifier.trim().toLowerCase()
+              const ip = getRequestIp(params.request)
+              const guard = validateMagicLinkRequest({ email, ip })
+              if (!guard.allowed) {
+                throw new Error(guard.code)
+              }
+              await sendMagicLinkEmail(params)
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async redirect({ url }) {
