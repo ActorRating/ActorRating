@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { getAuthenticatedUserId } from "@/lib/authUser"
 import { auth } from "@/auth"
 import { checkRateLimitScopes } from "@/lib/rateLimit"
 import { getClientIp } from "@/lib/requestProtection"
@@ -18,17 +17,18 @@ type UpdateProfileBody = {
 
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId()
-    if (!userId) {
+    const session = await auth()
+    const sessionEmail = session?.user?.email?.trim().toLowerCase()
+    if (!sessionEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const clientIp = getClientIp(request)
-    const limit = await checkRateLimitScopes({ ip: clientIp, action: "profileUpdate", userId })
+    const limit = await checkRateLimitScopes({ ip: clientIp, action: "profileUpdate", userId: sessionEmail })
     if (!limit.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
-    const cooldown = await checkRateLimitScopes({ ip: clientIp, action: "profileUpdateCooldown", userId })
+    const cooldown = await checkRateLimitScopes({ ip: clientIp, action: "profileUpdateCooldown", userId: sessionEmail })
     if (!cooldown.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest) {
     const body = (await request.json()) as UpdateProfileBody
     const name = (body.name ?? "").trim()
     const username = normalizeUsername(body.username ?? "")
-    const onboardingCompleted = body.onboardingCompleted === true
+    const onboardingCompleted = true
 
     if (!name) {
       return NextResponse.json({ error: "Please choose a different name" }, { status: 400 })
@@ -50,20 +50,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid username" }, { status: 400 })
     }
 
-    const session = await auth()
-    const sessionEmail = session?.user?.email?.trim().toLowerCase() ?? null
-    if (!sessionEmail) {
-      return NextResponse.json({ error: "Missing session email" }, { status: 400 })
-    }
-    console.log("ONBOARDING SAVE:", userId)
+    console.log("ONBOARDING SAVE:", sessionEmail)
 
     let updatedUser: { id: string; email: string; name: string | null; username: string; onboardingCompleted: boolean }
     try {
       updatedUser = await prisma.user.upsert({
-        where: { id: userId },
+        where: { email: sessionEmail },
         update: { name, username, onboardingCompleted },
         create: {
-          id: userId,
           email: sessionEmail,
           name,
           username,

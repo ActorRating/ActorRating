@@ -147,37 +147,20 @@ export const authOptions: NextAuthConfig = {
       return true
     },
     async jwt({ token, user, account }) {
-      if (user?.id) {
-        token.userId = user.id
-        token.name = user.name ?? "User"
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { status: true },
-        })
-        if (dbUser?.status) {
-          token.userStatus = dbUser.status
-        }
+      if (user?.email) {
+        token.email = user.email.toLowerCase().trim()
+      }
+      if (user?.name) {
+        token.name = user.name
       }
       if (account?.provider && account?.providerAccountId) {
-        if (
-          token.userId &&
-          user?.id &&
-          token.userId !== user.id &&
-          token.authProvider &&
-          token.authProviderAccountId
-        ) {
-          if (authDebug) {
-            console.warn("[auth][jwt] identity switch detected, resetting token identity")
-          }
-          token.userId = user.id
-        }
         token.authProvider = account.provider
         token.authProviderAccountId = account.providerAccountId
       }
       if (authDebug) {
         console.log("[auth][jwt] token issued", {
           sub: token.sub,
-          userId: token.userId,
+          email: token.email,
           provider: token.authProvider,
           providerAccountId: token.authProviderAccountId,
         })
@@ -186,13 +169,12 @@ export const authOptions: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = (token.userId as string) || session.user.id
+        session.user.email = (token.email as string) || session.user.email || null
         session.user.name = session.user.name ?? (token.name as string) ?? "User"
-        session.user.status = token.userStatus as "NEW" | "ONBOARDING" | "ACTIVE" | undefined
       }
       if (authDebug) {
         console.log("[auth][session] session materialized", {
-          userId: session.user?.id,
+          email: session.user?.email,
           provider: token.authProvider,
           providerAccountId: token.authProviderAccountId,
         })

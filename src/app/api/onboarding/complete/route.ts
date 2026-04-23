@@ -2,19 +2,19 @@ export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getAuthenticatedUserId } from "@/lib/authUser"
+import { auth } from "@/auth"
 
 export async function POST() {
   try {
-    const userId = await getAuthenticatedUserId()
-    if (!userId) {
+    const session = await auth()
+    const email = session?.user?.email?.toLowerCase().trim()
+    if (!email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await prisma.user.update({
-      where: { id: userId },
+    await prisma.user.updateMany({
+      where: { email },
       data: {
-        status: "ACTIVE",
         onboardingCompleted: true,
         onboardingStartedAt: null,
       },
