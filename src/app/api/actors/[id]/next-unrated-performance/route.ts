@@ -51,8 +51,8 @@ export async function GET(
     const performances = await prisma.performance.findMany({
       where: { actorId, movie: { is: { isFeaturette: false } } },
       include: {
-        movie: { select: { id: true, title: true, slug: true, year: true } },
-        actor: { select: { slug: true } }
+        movie: { select: { id: true, title: true, slug: true, year: true, posterUrl: true } },
+        actor: { select: { slug: true, imageUrl: true } }
       },
       orderBy: { movie: { year: 'desc' } }
     })
@@ -66,7 +66,7 @@ export async function GET(
     const userRatedCount = ratedMovieIds.size
 
     seenMovies.clear()
-    const results: { movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number }[] = []
+    const results: { movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number; moviePosterUrl: string | null; actorImageUrl: string | null }[] = []
 
     for (const p of performances) {
       if (results.length >= 6) break
@@ -79,6 +79,8 @@ export async function GET(
         actorSlug: p.actor.slug ?? actorId,
         movieTitle: p.movie.title,
         movieYear: p.movie.year,
+        moviePosterUrl: p.movie.posterUrl ?? null,
+        actorImageUrl: p.actor.imageUrl ?? null,
       })
     }
 

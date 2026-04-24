@@ -784,12 +784,35 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
   const [nextPerfs, setNextPerfs] = useState<{
-    movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number
+    movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number; moviePosterUrl?: string | null; actorImageUrl?: string | null
   }[]>([])
+  const [activeCarouselCard, setActiveCarouselCard] = useState(0)
   const [nextPerfLoading, setNextPerfLoading] = useState(false)
   const [actorProgress, setActorProgress] = useState<{ totalPerformances: number; userRatedCount: number } | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const carouselSectionRef = useRef<HTMLDivElement>(null)
+
+  // Track active carousel card for dot indicators
+  useEffect(() => {
+    const container = carouselRef.current
+    if (!container || nextPerfs.length === 0) return
+    const updateActive = () => {
+      const containerRect = container.getBoundingClientRect()
+      const containerCenter = containerRect.left + containerRect.width / 2
+      const cards = container.querySelectorAll('.carousel-card')
+      let closest = 0
+      let closestDist = Infinity
+      cards.forEach((card, _idx) => {
+        const cardRect = card.getBoundingClientRect()
+        const dist = Math.abs(containerCenter - (cardRect.left + cardRect.width / 2))
+        if (dist < closestDist) { closestDist = dist; closest = _idx }
+      })
+      setActiveCarouselCard(closest)
+    }
+    container.addEventListener('scroll', updateActive, { passive: true })
+    updateActive()
+    return () => container.removeEventListener('scroll', updateActive)
+  }, [nextPerfs.length])
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -2361,22 +2384,31 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   {/* Card content — vertical layout */}
                   <div className="relative z-10 flex flex-col h-full">
 
-                    {/* Actor photo — fills upper portion, full width */}
+                    {/* Actor photo — centered, smaller, fully visible (no crop) */}
                     <div
-                      className="overflow-hidden"
-                      style={{ flex: '0 0 57%' }}
+                      className="flex items-center justify-center"
+                      style={{ flex: '0 0 57%', padding: '16px 16px 4px' }}
                     >
                       {performance.actor.imageUrl ? (
                         <img
                           src={upgradeActorImageRes(performance.actor.imageUrl!) ?? undefined}
                           alt={performance.actor.name}
-                          className="w-full h-full object-cover"
-                          style={{ objectPosition: 'top center' }}
+                          className="rounded-xl"
+                          style={{
+                            height: '100%',
+                            width: 'auto',
+                            maxWidth: '62%',
+                            objectFit: 'contain',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.12)',
+                            border: '1px solid rgba(255,215,0,0.2)',
+                          }}
                         />
                       ) : (
                         <div
-                          className="w-full h-full flex items-center justify-center font-bold text-black text-5xl"
+                          className="flex items-center justify-center font-bold text-black text-4xl rounded-xl"
                           style={{
+                            width: '60%',
+                            aspectRatio: '2/3',
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
                           }}
                         >
@@ -2620,158 +2652,133 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {/* ── Carousel or states ─────────────────────────────────────────── */}
               {nextPerfLoading ? (
                 /* Loading skeleton */
-                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide -mx-1 px-1">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-[85vw] sm:w-[320px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
-                      style={{ minHeight: 280 }}
+                      className="flex-shrink-0 w-[80vw] sm:w-[300px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
+                      style={{ minHeight: 360 }}
                     />
                   ))}
                 </div>
               ) : nextPerfs.length > 0 ? (
-                /* ── Performance Carousel ─────────────────────────────────────── */
-                <div className="relative group/carousel">
-                  {/* Desktop left arrow */}
-                  <button
-                    type="button"
-                    aria-label="Scroll left"
-                    onClick={() => {
-                      if (!carouselRef.current) return
-                      const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
-                      carouselRef.current.scrollBy({ left: -(card ? card.offsetWidth + 16 : 336), behavior: 'smooth' })
-                    }}
-                    className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  <div
-                    ref={carouselRef}
-                    className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 sm:pb-3 snap-x snap-mandatory scrollbar-hide"
-                  >
-                    {nextPerfs.map((p, idx) => (
-                      <div
-                        key={p.movieSlug}
-                        className="carousel-card flex-shrink-0 w-[82vw] sm:w-[300px] snap-center"
-                        style={{ transform: 'translateZ(0)' }}
-                      >
-                        <motion.button
-                          type="button"
-                          onClick={() => handleRateNextPerformance(p)}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.35, delay: idx * 0.07 }}
-                          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-                          whileTap={{ scale: 0.98 }}
-                          className="relative w-full text-left overflow-hidden group"
-                          style={{
-                            minHeight: 260,
-                            borderRadius: '1.5rem',
-                            background: 'linear-gradient(160deg, #1c1c1c 0%, #111 55%, #0a0a0a 100%)',
-                            border: '1px solid rgba(255,255,255,0.09)',
-                            boxShadow: '0 20px 50px -12px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)',
-                          }}
+                /* ── Performance Carousel — LandingPageCard style ──────────────── */
+                <div className="relative">
+                  <div className="relative -mx-4 sm:-mx-0">
+                    <div
+                      ref={carouselRef}
+                      className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-2 sm:pr-2"
+                    >
+                      {nextPerfs.map((p, idx) => (
+                        <div
+                          key={p.movieSlug}
+                          className="carousel-card flex-shrink-0 w-[80vw] sm:w-[300px] snap-center"
+                          style={{ transform: 'translateZ(0)' }}
                         >
-                          {/* Gold border glow on hover */}
-                          <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                            style={{
-                              borderRadius: '1.5rem',
-                              boxShadow: 'inset 0 0 0 1px rgba(255,215,0,0.35), 0 0 40px rgba(255,215,0,0.08)',
-                            }}
-                          />
-
-                          {/* Subtle radial glow top-right */}
-                          <div
-                            className="absolute top-0 right-0 w-40 h-40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                            style={{ background: 'radial-gradient(circle at top right, rgba(255,215,0,0.1) 0%, transparent 70%)' }}
-                          />
-
-                          <div className="relative z-10 flex flex-col h-full p-5 sm:p-6" style={{ minHeight: 260 }}>
-
-                            {/* Top: "unrated" badge + year */}
-                            <div className="flex items-center justify-between mb-5">
-                              <div
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                                style={{
-                                  background: 'rgba(255,215,0,0.08)',
-                                  border: '1px solid rgba(255,215,0,0.2)',
-                                }}
-                              >
-                                <span
-                                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                                  style={{ background: '#FFD700' }}
-                                />
-                                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#FFD700', opacity: 0.85 }}>
-                                  Unrated by you
-                                </span>
-                              </div>
-                              <span className="text-xs font-medium tabular-nums" style={{ color: '#52525b' }}>{p.movieYear}</span>
-                            </div>
-
-                            {/* Score placeholder — curiosity gap */}
-                            <div className="flex items-baseline gap-1 mb-3">
-                              <span
-                                className="text-5xl font-black tabular-nums leading-none"
-                                style={{ color: 'rgba(255,255,255,0.07)' }}
-                              >
-                                ?
-                              </span>
-                              <span
-                                className="text-lg font-bold leading-none mb-1"
-                                style={{ color: 'rgba(255,255,255,0.05)' }}
-                              >
-                                /10
-                              </span>
-                            </div>
-
-                            {/* Movie title */}
-                            <div className="flex-1 mb-5">
-                              <p
-                                className="text-lg sm:text-xl font-bold text-white leading-snug mb-1.5 line-clamp-2"
-                                style={{ fontFamily: 'var(--font-heading, "Playfair Display", serif)' }}
-                              >
-                                {p.movieTitle}
-                              </p>
-                              <p className="text-xs" style={{ color: '#3f3f46' }}>
-                                {performance.actor.name}
-                              </p>
-                            </div>
-
-                            {/* CTA button — hero of the card */}
+                          <div className="group relative h-full">
                             <div
-                              className="w-full py-3.5 rounded-full text-black text-sm font-bold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 group-hover:gap-3"
-                              style={{
-                                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                                boxShadow: '0 4px 20px rgba(255,215,0,0.25)',
-                              }}
+                              className="relative h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] cursor-pointer"
+                              style={{ boxShadow: '0 25px 70px -15px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1)' }}
+                              onClick={() => handleRateNextPerformance(p)}
                             >
-                              <Star className="w-3.5 h-3.5 fill-current shrink-0" />
-                              <span className="sm:hidden">Rate now</span>
-                              <span className="hidden sm:inline">Rate this performance</span>
-                              <ArrowRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
-                            </div>
+                              {/* Hover gold glow */}
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+                              </div>
 
+                              <div className="relative z-10 flex flex-col h-full">
+                                {/* Actor headshot + movie poster side by side */}
+                                <div className="flex justify-center items-end gap-4 mb-5">
+                                  <ActorHeadshot
+                                    name={performance.actor.name}
+                                    imageUrl={upgradeActorImageRes(p.actorImageUrl ?? performance.actor.imageUrl ?? null)}
+                                    size="lg"
+                                    loading="lazy"
+                                  />
+                                  <MoviePoster
+                                    title={p.movieTitle}
+                                    posterUrl={p.moviePosterUrl ?? undefined}
+                                    size="lg"
+                                    loading="lazy"
+                                  />
+                                </div>
+
+                                {/* "Unrated by you" badge + year */}
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                    <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#FFD700]" />
+                                    <span className="text-xs font-bold text-[#FFD700]">Unrated by you</span>
+                                  </div>
+                                  <span className="text-[#a3a3a3] text-sm font-medium">{p.movieYear}</span>
+                                </div>
+
+                                {/* Actor name + movie title */}
+                                <div className="flex-1">
+                                  <h3
+                                    className="text-xl sm:text-2xl font-bold text-white mb-1"
+                                    style={{ fontFamily: 'var(--font-cinzel, serif)' }}
+                                  >
+                                    {performance.actor.name}
+                                  </h3>
+                                  <p className="text-base text-[#FFD700] font-semibold tracking-wide mb-4 line-clamp-2">
+                                    {p.movieTitle}
+                                  </p>
+                                </div>
+
+                                {/* CTA */}
+                                <div className="mt-auto">
+                                  <div
+                                    className="w-full px-6 py-4 rounded-full text-black text-sm font-bold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 group-hover:scale-105"
+                                    style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
+                                  >
+                                    Rate <Star className="w-4 h-4 fill-current" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
+                            </div>
                           </div>
-                        </motion.button>
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Desktop right arrow */}
-                  <button
-                    type="button"
-                    aria-label="Scroll right"
-                    onClick={() => {
-                      if (!carouselRef.current) return
-                      const card = carouselRef.current.querySelector('.carousel-card') as HTMLElement
-                      carouselRef.current.scrollBy({ left: card ? card.offsetWidth + 16 : 336, behavior: 'smooth' })
-                    }}
-                    className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-10 w-9 h-9 rounded-full items-center justify-center bg-[#1a1a1a]/90 border border-white/10 text-[#a1a1aa] hover:text-white hover:border-[#FFD700]/40 transition-all opacity-0 group-hover/carousel:opacity-100 shadow-lg"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  {/* Dot indicators */}
+                  {nextPerfs.length > 1 && (
+                    <div className="relative flex justify-center items-center mt-4">
+                      <div
+                        className="relative rounded-xl backdrop-blur-xl border border-white/5"
+                        style={{ background: 'linear-gradient(135deg, rgba(26,26,26,0.8) 0%, rgba(15,15,15,0.7) 100%)', boxShadow: '0 10px 30px -5px rgba(0,0,0,0.7)', padding: '8px 14px' }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {nextPerfs.map((_, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                const cards = carouselRef.current?.querySelectorAll('.carousel-card')
+                                const target = cards?.[index] as HTMLElement
+                                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                              }}
+                              style={{
+                                width: index === activeCarouselCard ? '20px' : '8px',
+                                height: '8px',
+                                minWidth: '8px',
+                                padding: '0',
+                                border: 'none',
+                                backgroundColor: index === activeCarouselCard ? '#FFD700' : 'rgba(115,115,115,0.4)',
+                                borderRadius: '9999px',
+                                transition: 'all 0.3s',
+                                cursor: 'pointer',
+                              }}
+                              aria-label={`Go to card ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* All performances rated — no carousel, just message + filmography */

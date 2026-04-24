@@ -304,8 +304,8 @@ export default function OnboardingRatePage() {
         chemistryInteraction: ratingData.chemistry,
       }
 
-      // Get reCAPTCHA token
-      const recaptchaToken = await executeRecaptcha('submit_rating')
+      // Skip reCAPTCHA for authenticated users — the API already ignores the token for signed-in users
+      const recaptchaToken = user ? '' : await executeRecaptcha('submit_rating')
 
       const response = await fetch('/api/ratings', {
         method: 'POST',
