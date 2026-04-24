@@ -229,9 +229,10 @@ export function HomeNavbar() {
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
             className="fixed top-16 sm:top-20 left-0 right-0 z-40 lg:hidden"
             style={{
-              background: 'rgba(0,0,0,0.98)',
+              background: 'linear-gradient(to bottom, #000000 0%, #1c1c1c 100%)',
               borderBottom: '1px solid rgba(255,215,0,0.1)',
               backdropFilter: 'blur(16px)',
+              borderRadius: '0 0 28px 28px',
             }}
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">

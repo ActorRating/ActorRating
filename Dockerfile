@@ -34,6 +34,16 @@ COPY . .
 # `npm run build` runs `prisma generate && next build` (see package.json)
 RUN npm run build
 
+# Bundle the sitemap generator into a single Node.js-compatible file so the
+# runner image can execute it with plain `node` (no tsx / full node_modules).
+# @prisma/client is externalised because it already lives in the standalone output.
+RUN ./node_modules/.bin/esbuild scripts/generate-sitemaps.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --outfile=scripts/generate-sitemaps.js
+
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -59,6 +69,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Prisma schema + migrations (needed by Prisma client at runtime for schema introspection)
 COPY --from=builder /app/prisma ./prisma
 
+# Bundled sitemap generator — runs at container start via docker-entrypoint.sh.
+# @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./scripts/generate-sitemaps.js
+
+# Ensure the sitemaps output directory exists and is owned by the app user
+# before we drop privileges (the generator writes here at startup).
+RUN mkdir -p /app/public/sitemaps && chown nextjs:nodejs /app/public/sitemaps
+
+# Entrypoint script: generates sitemaps then execs the Next.js server
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -71,4 +93,4 @@ EXPOSE 3000
 # Run `npx prisma migrate deploy` as a separate pre-deploy step in Coolify
 # (Lifecycle Hook → Before Start), or apply migrations manually via the
 # Supabase SQL editor before deploying a schema change.
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]

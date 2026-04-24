@@ -6,6 +6,7 @@ import { PerformanceSlider } from "./PerformanceSlider"
 import { GiClapperboard, GiHeartWings } from "react-icons/gi"
 import { FaStar, FaHandshake, FaUserSecret } from "react-icons/fa"
 import { useRecaptchaV3 } from "@/components/auth/ReCaptcha"
+import { useUser } from "@/components/providers/SessionProvider"
 import { motion } from "framer-motion"
 import { fadeInUp, getMotionProps, fadeIn } from "@/lib/animations"
 
@@ -43,6 +44,7 @@ export function PerformanceRatingForm({
     chemistryInteraction: 50,
     comment: "",
   })
+  const user = useUser()
   const [isRecaptchaLoading, setIsRecaptchaLoading] = useState(false)
   const { executeRecaptcha } = useRecaptchaV3()
 
@@ -81,8 +83,8 @@ export function PerformanceRatingForm({
     
     setIsRecaptchaLoading(true)
     try {
-      // Execute reCAPTCHA v3
-      const token = await executeRecaptcha("submit_rating")
+      // Skip reCAPTCHA for authenticated users — API already ignores it for signed-in users
+      const token = user ? '' : await executeRecaptcha("submit_rating")
       
       // Include token in the rating data
       const ratingWithToken = {

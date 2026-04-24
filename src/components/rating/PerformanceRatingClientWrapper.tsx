@@ -2387,7 +2387,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     {/* Actor photo — centered, smaller, fully visible (no crop) */}
                     <div
                       className="flex items-center justify-center"
-                      style={{ flex: '0 0 57%', padding: '16px 16px 4px' }}
+                      style={{ flex: '0 0 57%', padding: '16px 16px 0' }}
                     >
                       {performance.actor.imageUrl ? (
                         <img
@@ -2395,10 +2395,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           alt={performance.actor.name}
                           className="rounded-xl"
                           style={{
-                            height: '100%',
+                            maxHeight: 'calc(100% - 16px)',
                             width: 'auto',
-                            maxWidth: '62%',
-                            objectFit: 'contain',
+                            height: 'auto',
                             boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.12)',
                             border: '1px solid rgba(255,215,0,0.2)',
                           }}
@@ -2746,37 +2745,28 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                   {/* Dot indicators */}
                   {nextPerfs.length > 1 && (
-                    <div className="relative flex justify-center items-center mt-4">
-                      <div
-                        className="relative rounded-xl backdrop-blur-xl border border-white/5"
-                        style={{ background: 'linear-gradient(135deg, rgba(26,26,26,0.8) 0%, rgba(15,15,15,0.7) 100%)', boxShadow: '0 10px 30px -5px rgba(0,0,0,0.7)', padding: '8px 14px' }}
-                      >
-                        <div className="flex items-center gap-2">
-                          {nextPerfs.map((_, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => {
-                                const cards = carouselRef.current?.querySelectorAll('.carousel-card')
-                                const target = cards?.[index] as HTMLElement
-                                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                              }}
-                              style={{
-                                width: index === activeCarouselCard ? '20px' : '8px',
-                                height: '8px',
-                                minWidth: '8px',
-                                padding: '0',
-                                border: 'none',
-                                backgroundColor: index === activeCarouselCard ? '#FFD700' : 'rgba(115,115,115,0.4)',
-                                borderRadius: '9999px',
-                                transition: 'all 0.3s',
-                                cursor: 'pointer',
-                              }}
-                              aria-label={`Go to card ${index + 1}`}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                    <div className="flex justify-center items-center mt-4" style={{ gap: '4px' }}>
+                      {nextPerfs.map((_, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            const cards = carouselRef.current?.querySelectorAll('.carousel-card')
+                            const target = cards?.[index] as HTMLElement
+                            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                          }}
+                          style={{ padding: '10px 4px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                          aria-label={`Go to card ${index + 1}`}
+                        >
+                          <div style={{
+                            width: index === activeCarouselCard ? '20px' : '8px',
+                            height: '8px',
+                            backgroundColor: index === activeCarouselCard ? '#FFD700' : 'rgba(115,115,115,0.4)',
+                            borderRadius: '9999px',
+                            transition: 'all 0.3s ease',
+                          }} />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

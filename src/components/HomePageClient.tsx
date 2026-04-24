@@ -18,6 +18,8 @@ import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
 import { SearchBar } from "@/components/SearchBar"
 import { ActorAvatar } from "@/components/ui/ActorAvatar";
+import { ActorHeadshot } from "@/components/ui/ActorHeadshot";
+import { MoviePoster } from "@/components/ui/MoviePoster";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -346,16 +348,25 @@ function performancesMapFromEnriched(perfs: EnrichedPerformance[] | undefined): 
   return map;
 }
 
-// ─── LEADERBOARD — sorted by actual rating, always-visible Rate buttons ───────
+// ─── LEADERBOARD — performances page carousel style ──────────────────────────
 
 function LeaderboardSection({ initialPerformances }: { initialPerformances?: EnrichedPerformance[] }) {
-  const { isMobile, prefersReducedMotion } = useDevice();
+  const router = useRouter();
   const [performancesData, setPerformancesData] = useState<Map<string, EnrichedPerformance>>(() =>
     performancesMapFromEnriched(initialPerformances)
   );
   const [isLoading, setIsLoading] = useState(true);
-  // Start with original order; reorder once ratings arrive
   const [sortedPerfs, setSortedPerfs] = useState(PERFORMANCES);
+  const [activeCard, setActiveCard] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -369,172 +380,168 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
           if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
         });
         setPerformancesData(map);
-
-        // Sort by rating descending (unrated go to bottom)
         const sorted = [...PERFORMANCES].sort((a, b) => {
           const aRating = map.get(`${a.actor}:${a.movie}`)?.averageRating ?? 0;
           const bRating = map.get(`${b.actor}:${b.movie}`)?.averageRating ?? 0;
           return bRating - aRating;
         });
         setSortedPerfs(sorted);
+        // Reset scroll to start after re-sort so snap doesn't jump to the wrong card
+        requestAnimationFrame(() => {
+          if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+        });
       } catch (_) { /* silent */ } finally { setIsLoading(false); }
     })();
   }, []);
 
-  const rankColors = [
-    { bg: 'linear-gradient(135deg, #FFE55C, #FFD700)', color: '#000', shadow: '0 0 16px rgba(255,215,0,0.6)' },
-    { bg: 'linear-gradient(135deg, #e8e8e8, #b0b0b0)', color: '#000', shadow: '0 0 10px rgba(200,200,200,0.4)' },
-    { bg: 'linear-gradient(135deg, #cd9b5a, #9a6b35)', color: '#fff', shadow: '0 0 10px rgba(205,155,90,0.4)' },
-  ];
+  // Ensure scroll starts at position 0 on mount
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+  }, []);
+
+  // Scroll tracking for active dot
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const updateActive = () => {
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.left + containerRect.width / 2;
+      const cards = container.querySelectorAll('.leaderboard-card');
+      let closest = 0, closestDist = Infinity;
+      cards.forEach((card, idx) => {
+        const cardRect = card.getBoundingClientRect();
+        const dist = Math.abs(containerCenter - (cardRect.left + cardRect.width / 2));
+        if (dist < closestDist) { closestDist = dist; closest = idx; }
+      });
+      setActiveCard(closest);
+    };
+    container.addEventListener('scroll', updateActive, { passive: true });
+    updateActive();
+    return () => container.removeEventListener('scroll', updateActive);
+  }, []);
+
+  // Desktop scale/opacity depth effect
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const updateDepth = () => {
+      if (!isDesktop) {
+        container.querySelectorAll('.leaderboard-card').forEach((card) => {
+          const el = card as HTMLElement;
+          el.style.transform = 'scale(1) translateY(0)';
+          el.style.opacity = '1';
+        });
+        return;
+      }
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.left + containerRect.width / 2;
+      container.querySelectorAll('.leaderboard-card').forEach((card) => {
+        const el = card as HTMLElement;
+        const cardRect = el.getBoundingClientRect();
+        const dist = Math.abs(containerCenter - (cardRect.left + cardRect.width / 2));
+        const norm = Math.min(dist / (containerRect.width / 2), 1);
+        el.style.transform = `scale(${1 - norm * 0.08}) translateY(${norm * 10}px)`;
+        el.style.opacity = `${1 - norm * 0.4}`;
+      });
+    };
+    container.addEventListener('scroll', updateDepth, { passive: true });
+    window.addEventListener('resize', updateDepth);
+    updateDepth();
+    return () => {
+      container.removeEventListener('scroll', updateDepth);
+      window.removeEventListener('resize', updateDepth);
+    };
+  }, [isDesktop]);
 
   return (
     <div id="leaderboard" className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
       <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(255,200,0,0.2) 0%, transparent 70%)', filter: isMobile ? 'blur(80px)' : 'blur(150px)' }} />
+        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
-        <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated" />
-
-        {/* Desktop table header */}
-        <div className="hidden sm:grid grid-cols-[48px_1fr_80px_120px_130px] gap-4 items-center px-6 pb-3 mb-1">
-          {['#', 'Performance', 'Year', 'Rating', ''].map((h, i) => (
-            <span key={i} className="text-[10px] font-bold tracking-[0.25em] uppercase text-[#333]"
-              style={{ textAlign: i >= 2 ? 'center' : 'left' }}>{h}</span>
-          ))}
+      <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4">
+          <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated" />
         </div>
 
-        <div className="rounded-[2rem] overflow-hidden" style={{ background: CARD_BG, boxShadow: CARD_SHADOW }}>
-          {sortedPerfs.map((p, displayIndex) => {
-            const key = `${p.actor}:${p.movie}`;
-            const perfData = performancesData.get(key);
-            const avg = perfData?.averageRating;
-            const cnt = perfData?.ratingCount ?? 0;
-            const rating =
-              avg != null && avg > 0 && cnt > 0 ? (avg / 10).toFixed(1) : null;
-            const count = cnt;
-
-            let href = '/performances';
-            if (perfData?.actor && perfData?.movie) {
-              const aSlug = perfData.actor.slug || perfData.actorId;
-              const mSlug = perfData.movie.slug || perfData.movieId;
-              href = `/rate/${mSlug}/${aSlug}`;
-            }
-
-            const rankStyle = rankColors[displayIndex] || null;
-            const isLast = displayIndex === sortedPerfs.length - 1;
-
-            const reduceMotion = isMobile || prefersReducedMotion;
-            return (
-              <motion.div
-                key={`${p.actor}-${p.movie}`}
-                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-                animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
-                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
-                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: displayIndex * 0.04 }}
+        {/* Carousel */}
+        <div className="relative">
+          <div className="relative -mx-4 sm:-mx-0">
+            <div
+              className="overflow-hidden"
+              style={isDesktop ? {
+                maskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)',
+              } : {}}
+            >
+              <div
+                ref={scrollRef}
+                className="flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]"
               >
-                <div
-                  className={`grid grid-cols-[40px_1fr] sm:grid-cols-[48px_1fr_80px_120px_130px] gap-3 sm:gap-4 items-center px-5 sm:px-7 py-5 sm:py-6 transition-all duration-200 ${!isLast ? 'border-b' : ''}`}
-                  style={{ borderColor: 'rgba(255,255,255,0.04)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,215,0,0.04)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  {/* Rank */}
-                  <div className="flex items-center justify-start">
-                    {rankStyle ? (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black"
-                        style={{ background: rankStyle.bg, color: rankStyle.color, boxShadow: rankStyle.shadow }}
-                      >{displayIndex + 1}</div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#444]"
-                        style={{ background: '#111', border: '1px solid rgba(255,255,255,0.06)' }}>{displayIndex + 1}</div>
-                    )}
-                  </div>
+                {sortedPerfs.map((p, index) => {
+                  const key = `${p.actor}:${p.movie}`;
+                  const perfData = performancesData.get(key);
+                  const avg = perfData?.averageRating;
+                  const cnt = perfData?.ratingCount ?? 0;
+                  const rating = avg != null && avg > 0 && cnt > 0 ? (avg / 10).toFixed(1) : null;
+                  const href = perfData?.actor && perfData?.movie
+                    ? `/rate/${perfData.movie.slug || perfData.movieId}/${perfData.actor.slug || perfData.actorId}`
+                    : '/performances';
 
-                  {/* Actor + Film */}
-                  <div className="min-w-0 flex items-center gap-4 sm:gap-5">
-                    {/* Actor avatar — data comes from by-lookup API */}
-                    <ActorAvatar
-                      name={p.actor}
-                      imageUrl={upgradeActorImageRes(perfData?.actor?.imageUrl)}
-                      size="lg"
-                      className="w-14 h-14 rounded-2xl sm:w-20 sm:h-20"
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-                        <span className="text-sm sm:text-base md:text-lg font-bold text-white leading-tight" style={CINZEL}>
-                          {p.actor}
-                        </span>
-                        <span className="sm:hidden text-xs text-[#444]">· {p.year}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-sm text-[#FFD700] opacity-80 truncate">{p.movie}</span>
-                        {/* Mobile: show rating inline */}
-                        {!isLoading && rating && (
-                          <span className="sm:hidden flex items-center gap-1 text-xs text-[#888]">
-                            <FaStar className="w-2.5 h-2.5 text-[#FFD700]" />{rating}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Year */}
-                  <div className="hidden sm:flex justify-center">
-                    <span className="text-sm text-[#444]">{p.year}</span>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="hidden sm:flex flex-col items-center">
-                    {isLoading ? (
-                      <div className="w-12 h-5 rounded bg-[#1a1a1a] animate-pulse" />
-                    ) : rating ? (
-                      <>
-                        <div className="flex items-center gap-1.5">
-                          <FaStar className="w-3.5 h-3.5 text-[#FFD700]" />
-                          <span className="text-base sm:text-lg font-bold text-white">{rating}</span>
-                        </div>
-                        {count > 0 && (
-                          <span className="text-[10px] text-[#444] mt-0.5">{count.toLocaleString()} ratings</span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-sm text-[#333]">No ratings yet</span>
-                    )}
-                  </div>
-
-                  {/* Rate button — ALWAYS VISIBLE */}
-                  <div className="hidden sm:flex justify-end">
-                    <Link href={href}>
-                      <button
-                        className="px-5 py-2 rounded-full text-xs font-bold text-black transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-[0_0_16px_rgba(255,215,0,0.35)]"
-                        style={{ background: GOLD }}
-                        aria-label={`Rate ${p.actor} in ${p.movie}`}
-                      >
-                        Rate Now
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Mobile rate button row */}
-                <div className="sm:hidden px-5 pb-4">
-                  <Link href={href}>
-                    <button
-                      className="w-full py-2.5 rounded-full text-xs font-bold text-black transition-all duration-200 hover:scale-105 active:scale-95"
-                      style={{ background: GOLD }}
-                      aria-label={`Rate ${p.actor} in ${p.movie}`}
+                  return (
+                    <div
+                      key={key}
+                      className="leaderboard-card flex-shrink-0 w-[85vw] sm:w-[70vw] lg:w-[35vw] xl:w-[30vw] lg:max-w-md xl:max-w-md snap-center"
+                      style={{ transform: 'translateZ(0)' }}
+                      onClick={() => {
+                        if (isDesktop) {
+                          const el = scrollRef.current?.querySelectorAll('.leaderboard-card')[index] as HTMLElement;
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                      }}
                     >
-                      Rate This Performance
-                    </button>
-                  </Link>
-                </div>
-              </motion.div>
-            );
-          })}
+                      <LeaderboardCard
+                        actorName={p.actor}
+                        movieTitle={p.movie}
+                        year={p.year}
+                        rating={rating}
+                        isLoading={isLoading}
+                        href={href}
+                        actorImageUrl={upgradeActorImageRes(perfData?.actor?.imageUrl)}
+                        moviePosterUrl={perfData?.movie?.posterUrl}
+                        router={router}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Dot indicators */}
+          <div className="flex justify-center items-center mt-8" style={{ gap: '4px' }}>
+            {sortedPerfs.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  const cards = scrollRef.current?.querySelectorAll('.leaderboard-card');
+                  const target = cards?.[index] as HTMLElement;
+                  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }}
+                style={{ padding: '10px 4px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                aria-label={`Go to card ${index + 1}`}
+              >
+                <div style={{
+                  width: index === activeCard ? '20px' : '8px',
+                  height: '8px',
+                  backgroundColor: index === activeCard ? '#FFD700' : 'rgba(115,115,115,0.4)',
+                  borderRadius: '9999px',
+                  transition: 'all 0.3s ease',
+                }} />
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-10 text-center">
@@ -547,6 +554,63 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
             <FaArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1.5" />
           </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href, actorImageUrl, moviePosterUrl, router }: {
+  actorName: string; movieTitle: string; year: string; rating: string | null;
+  isLoading: boolean; href: string; actorImageUrl?: string | null; moviePosterUrl?: string | null;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const handlePrefetch = () => router.prefetch(href);
+  return (
+    <div className="group relative h-full" onMouseEnter={handlePrefetch}>
+      <div
+        className="relative h-full p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
+        style={{ boxShadow: '0 25px 70px -15px rgba(0,0,0,0.9), 0 15px 40px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1)' }}
+      >
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
+            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" loading="lazy" />
+            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" loading="lazy" />
+          </div>
+          <div className="flex items-center justify-between mb-6">
+            {isLoading ? (
+              <div className="w-20 h-12 rounded-full bg-[#1a1a1a] animate-pulse" />
+            ) : rating ? (
+              <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                <FaStar className="w-5 h-5 text-[#FFD700]" />
+                <span className="text-3xl font-bold text-[#FFD700]" style={{ fontVariantNumeric: 'tabular-nums' }}>{rating}</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                <FaStar className="w-5 h-5 text-[#666]" />
+                <span className="text-3xl font-bold text-[#a3a3a3]">N/A</span>
+              </div>
+            )}
+            <div className="text-[#a3a3a3] text-base font-medium">{year}</div>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={CINZEL}>{actorName}</h3>
+            <p className="text-lg text-[#FFD700] font-semibold tracking-wide mb-4">{movieTitle}</p>
+          </div>
+          <div className="mt-auto pt-4">
+            <Link href={href} prefetch={false} onMouseEnter={handlePrefetch}>
+              <button
+                className="w-full px-6 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation"
+                style={{ background: GOLD }}
+              >
+                <span className="flex items-center justify-center gap-2">Rate <FaStar className="w-5 h-5" /></span>
+              </button>
+            </Link>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
     </div>
   );

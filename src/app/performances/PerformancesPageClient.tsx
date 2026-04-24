@@ -306,28 +306,24 @@ export function PerformancesPageClient({
                       </div>
                     </div>
                   </div>
-                  <div className="relative flex justify-center items-center mt-8 px-4">
-                    <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5" style={{ boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)", padding: "8px 14px" }}>
-                      <div className="relative z-10 flex justify-center items-center" style={{ gap: "8px" }}>
-                        {recentPerformances.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              const container = document.querySelector(".recent-scroll-container")
-                              if (container) {
-                                const cards = container.querySelectorAll(".recent-scroll-container > div")
-                                const targetCard = cards[index] as HTMLElement
-                                if (targetCard) targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
-                              }
-                            }}
-                            style={{ width: index === activeRecentCard ? "20px" : "8px", height: "8px", minWidth: "8px", minHeight: "8px", padding: "8px", border: "none", backgroundColor: index === activeRecentCard ? "#FFD700" : "rgba(115, 115, 115, 0.4)", borderRadius: "9999px", transition: "all 0.3s", cursor: "pointer" }}
-                            onMouseEnter={(e) => { if (index !== activeRecentCard) e.currentTarget.style.backgroundColor = "rgba(115, 115, 115, 0.6)" }}
-                            onMouseLeave={(e) => { if (index !== activeRecentCard) e.currentTarget.style.backgroundColor = "rgba(115, 115, 115, 0.4)" }}
-                            aria-label={`Go to card ${index + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex justify-center items-center mt-8" style={{ gap: "4px" }}>
+                    {recentPerformances.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          const container = document.querySelector(".recent-scroll-container")
+                          if (container) {
+                            const cards = container.querySelectorAll(".recent-scroll-container > div")
+                            const targetCard = cards[index] as HTMLElement
+                            if (targetCard) targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+                          }
+                        }}
+                        style={{ padding: "10px 4px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+                        aria-label={`Go to card ${index + 1}`}
+                      >
+                        <div style={{ width: index === activeRecentCard ? "20px" : "8px", height: "8px", backgroundColor: index === activeRecentCard ? "#FFD700" : "rgba(115, 115, 115, 0.4)", borderRadius: "9999px", transition: "all 0.3s ease" }} />
+                      </button>
+                    ))}
                   </div>
                 </div>
               ) : (
@@ -370,28 +366,24 @@ export function PerformancesPageClient({
                       </div>
                     </div>
                   </div>
-                  <div className="relative flex justify-center items-center mt-8 px-4">
-                    <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5" style={{ boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)", padding: "8px 14px" }}>
-                      <div className="relative z-10 flex justify-center items-center" style={{ gap: "8px" }}>
-                        {iconicPerformances.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              const container = document.querySelector(".iconic-scroll-container")
-                              if (container) {
-                                const cards = container.querySelectorAll(".iconic-scroll-container > div")
-                                const targetCard = cards[index] as HTMLElement
-                                if (targetCard) targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
-                              }
-                            }}
-                            style={{ width: index === activeIconicCard ? "20px" : "8px", height: "8px", minWidth: "8px", minHeight: "8px", padding: "8px", border: "none", backgroundColor: index === activeIconicCard ? "#FFD700" : "rgba(115, 115, 115, 0.4)", borderRadius: "9999px", transition: "all 0.3s", cursor: "pointer" }}
-                            onMouseEnter={(e) => { if (index !== activeIconicCard) e.currentTarget.style.backgroundColor = "rgba(115, 115, 115, 0.6)" }}
-                            onMouseLeave={(e) => { if (index !== activeIconicCard) e.currentTarget.style.backgroundColor = "rgba(115, 115, 115, 0.4)" }}
-                            aria-label={`Go to card ${index + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex justify-center items-center mt-8" style={{ gap: "4px" }}>
+                    {iconicPerformances.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          const container = document.querySelector(".iconic-scroll-container")
+                          if (container) {
+                            const cards = container.querySelectorAll(".iconic-scroll-container > div")
+                            const targetCard = cards[index] as HTMLElement
+                            if (targetCard) targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+                          }
+                        }}
+                        style={{ padding: "10px 4px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+                        aria-label={`Go to card ${index + 1}`}
+                      >
+                        <div style={{ width: index === activeIconicCard ? "20px" : "8px", height: "8px", backgroundColor: index === activeIconicCard ? "#FFD700" : "rgba(115, 115, 115, 0.4)", borderRadius: "9999px", transition: "all 0.3s ease" }} />
+                      </button>
+                    ))}
                   </div>
                 </div>
               ) : loading ? null : (
