@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!movie?.title) {
       return {
-        title: "Movie Not Found - ActorRating",
+        title: "Movie Not Found",
         description: "The requested movie could not be found.",
       };
     }
@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const robots = isIndexable ? undefined : { index: false as const, follow: true as const };
 
     const yearPart = movie.year ? ` (${movie.year})` : "";
-    const title = `Who Gave the Best Performance in ${movie.title}${yearPart}?`;
+    const title = `Best Performances in ${movie.title}${yearPart}`;
     const description = `Vote on the best acting performance in ${movie.title}${yearPart}. See community scores and rate each actor yourself.`;
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
@@ -90,7 +90,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch (err) {
     console.error("Movie layout generateMetadata failed:", err);
     return {
-      title: "ActorRating",
       description: "Rate acting performances.",
     };
   }

@@ -1,6 +1,13 @@
 export const revalidate = 60;
 
+import type { Metadata } from "next"
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup"
+
+export const metadata: Metadata = {
+  title: "All Acting Performances Ranked",
+  description:
+    "Browse all acting performances rated by users. Discover the best performances across movies and actors.",
+}
 import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
 import { PerformancesPageClient } from "./PerformancesPageClient"
 

@@ -39,12 +39,14 @@ const cormorantGaramond = Cormorant_Garamond({
   display: "swap",
 });
 
-// ✅ Enhanced SEO Metadata
 export const metadata: Metadata = {
   metadataBase: new URL("https://actorrating.com"),
-  title: "ActorRating — Acting Performance Ratings & Reviews",
+  title: {
+    default: "ActorRating — Acting Performance Ratings & Reviews",
+    template: "%s | ActorRating",
+  },
   description:
-    "Rate and analyze 570K+ acting performances across 208K+ actors. Quick single-slider or 5-criteria ratings. Community-driven, growing daily.",
+    "Rate and discover acting performances across 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Community-driven, growing daily.",
   keywords: [
     "actor rating",
     "actors rating",

@@ -2387,7 +2387,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     {/* Actor photo — centered, smaller, fully visible (no crop) */}
                     <div
                       className="flex items-center justify-center"
-                      style={{ flex: '0 0 57%', padding: '16px 16px 0' }}
+                      style={{ flex: '0 0 50%', padding: '14px 14px 0' }}
                     >
                       {performance.actor.imageUrl ? (
                         <img
@@ -2395,7 +2395,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           alt={performance.actor.name}
                           className="rounded-xl"
                           style={{
-                            maxHeight: 'calc(100% - 16px)',
+                            maxHeight: 'calc(100% - 14px)',
+                            maxWidth: '58%',
                             width: 'auto',
                             height: 'auto',
                             boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.12)',
@@ -2417,7 +2418,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </div>
 
                     {/* Text + score section */}
-                    <div className="flex flex-col items-center justify-center flex-1 px-4 pb-6 text-center">
+                    <div className="flex flex-col items-center justify-center flex-1 px-4 pb-3 text-center">
                       <p
                         className="text-[10px] font-bold tracking-[0.2em] uppercase mb-0.5"
                         style={{ color: '#FFD700', opacity: 0.75 }}
@@ -2447,7 +2448,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         <span
                           className="font-black tabular-nums leading-none"
                           style={{
-                            fontSize: 'clamp(2.5rem, 12vw, 3.75rem)',
+                            fontSize: 'clamp(2rem, 10vw, 3rem)',
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',

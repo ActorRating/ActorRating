@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!actor?.name) {
       return {
-        title: "Actor Not Found - ActorRating",
+        title: "Actor Not Found",
         description: "The requested actor could not be found.",
       };
     }
@@ -41,9 +41,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const shouldIndex = !!(hasPerf || hasRating);
     const robots = shouldIndex ? undefined : { index: false as const, follow: true as const };
 
-    const title = `How Good Is ${actor.name}? Performances Ranked & Rated`;
+    const title = `${actor.name} Performances Ranked & Rated`;
     const description = `How good is ${actor.name} really? Rate their performances, see community scores, and discover their highest-rated and most debated roles.`;
-    const ogTitle = `How Good Is ${actor.name}? Performances Ranked`;
+    const ogTitle = `${actor.name} Performances Ranked`;
     const ogDescription = `Rate ${actor.name}'s performances and see how the community ranks their most iconic and controversial roles.`;
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
@@ -69,7 +69,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch (err) {
     console.error("Actor layout generateMetadata failed:", err);
     return {
-      title: "ActorRating",
       description: "Rate acting performances.",
     };
   }

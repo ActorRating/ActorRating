@@ -10,7 +10,7 @@ import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
-  title: "ActorRating — Rate Acting Performances Scene by Scene",
+  title: { absolute: "ActorRating — Rate Acting Performances Scene by Scene" },
   description: "Rate 570K+ acting performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Compare performances and see who truly deserved the awards.",
   keywords: [
     "actor rating", "acting performance", "movie ratings", "community-driven ratings",

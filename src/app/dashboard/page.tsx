@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/lib/dashboardData'
@@ -8,6 +9,10 @@ import { Button } from '@/components/ui/Button'
 
 // User-specific data — must remain dynamic
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 /** Shown when dashboard data fails (e.g. Prisma/DB unavailable). Avoids generic error boundary. */
 function DashboardDataUnavailable({ digest }: { digest?: string }) {

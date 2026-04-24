@@ -63,14 +63,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) {
     return {
-      title: 'Performance Not Found - ActorRating',
+      title: 'Performance Not Found',
       description: 'The requested acting performance could not be found.',
     }
   }
 
   const { actor, movie } = data
   const yearPart = movie.year ? ` (${movie.year})` : ''
-  const title = `Was ${actor.name}'s performance in ${movie.title}${yearPart} great?`
+  const title = `Rate ${actor.name} in ${movie.title}${yearPart}`
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'

@@ -24,10 +24,15 @@ async function getDataUncached(slug: string) {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const data = await getDataUncached(slug)
-  if (!data) return {}
+  if (!data) {
+    return {
+      title: "Performance Rating",
+      description: "View acting performance ratings on ActorRating.",
+    }
+  }
   const { rating } = data
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
-  const title = `${rating.actor.name} in ${rating.movie.title} — Rated on ActorRating`
+  const title = `${rating.actor.name} in ${rating.movie.title}`
   const description = `See the full performance breakdown and community rating. Rate it yourself in seconds.`
   const pageUrl = `${base}/r/${slug}`
   const ogDynamicUrl = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`

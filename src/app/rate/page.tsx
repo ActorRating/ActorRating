@@ -223,7 +223,7 @@ function RatePageContent() {
     setSubmitting(true)
     setError(null)
     try {
-      const recaptchaToken = await executeRecaptcha('submit_rating')
+      const recaptchaToken = user ? '' : await executeRecaptcha('submit_rating')
 
       const created: Rating = await ratingsApi.create({
         actorId: actor.id,
@@ -331,7 +331,7 @@ function RatePageContent() {
         hasRecaptcha: true
       })
 
-      const recaptchaToken = await executeRecaptcha('submit_rating')
+      const recaptchaToken = user ? '' : await executeRecaptcha('submit_rating')
 
       let result: Rating
 
