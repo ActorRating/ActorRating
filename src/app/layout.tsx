@@ -20,8 +20,6 @@ const geistSans = Geist({
   display: "swap",
 });
 
-const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -153,13 +151,11 @@ export default async function RootLayout({
             `,
           }}
         />
-        {umamiWebsiteId ? (
-          <Script
-            src="https://cloud.umami.is/script.js"
-            data-website-id={umamiWebsiteId}
-            strategy="afterInteractive"
-          />
-        ) : null}
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="6ceba783-497c-448d-ba13-4ae2ff2872a1"
+          strategy="afterInteractive"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} ${cormorantGaramond.variable} antialiased`}
