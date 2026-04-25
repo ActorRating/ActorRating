@@ -1,7 +1,7 @@
 "use client";
 
 import { PropsWithChildren, useEffect, useMemo, useRef } from "react";
-import createClient, { UsermavenProvider, usePageView } from "@usermaven/nextjs";
+import { createClient, UsermavenProvider, usePageView } from "@usermaven/nextjs";
 import { useSession } from "@/components/providers/SessionProvider";
 import { useCookieConsentContext } from "@/components/providers/CookieConsentProvider";
 
