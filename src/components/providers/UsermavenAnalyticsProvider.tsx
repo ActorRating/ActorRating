@@ -25,6 +25,7 @@ export function UsermavenAnalyticsProvider({ children }: PropsWithChildren) {
 
     return createClient({
       key: USERMAVEN_API_KEY,
+      tracking_host: "https://events.usermaven.com",
     });
   }, []);
 
