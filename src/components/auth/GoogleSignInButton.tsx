@@ -25,6 +25,12 @@ export function GoogleSignInButton() {
         setBusy(true)
         void (async () => {
           try {
+            if (typeof window !== "undefined") {
+              const isRegisterFlow = window.location.pathname === "/auth/register"
+              if (isRegisterFlow) {
+                localStorage.setItem("pending_signup_method", "google")
+              }
+            }
             // Ensure we start every provider auth flow with a clean session.
             await signOut({ redirect: false })
           } catch (err) {

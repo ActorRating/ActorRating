@@ -91,6 +91,9 @@ export default function RegisterPage() {
 
     try {
       const normalizedEmail = email.trim().toLowerCase()
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pending_signup_method", "email")
+      }
       const result = await signIn("email", {
         email: normalizedEmail,
         callbackUrl: "/auth/signup-success",

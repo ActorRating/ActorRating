@@ -8,6 +8,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { buildDevNextAuthSession, isDevMode } from "@/lib/devAuth";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import { NavigationProgressProvider } from "@/components/providers/NavigationProgressProvider";
+import { UsermavenAnalyticsProvider } from "@/components/providers/UsermavenAnalyticsProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
@@ -157,17 +158,19 @@ export default async function RootLayout({
         {/* App Providers */}
         <SessionProvider session={session}>
           <CookieConsentProvider>
-            <NavigationProgressProvider>
-            <Suspense fallback={null}>
-              <RouteChangeScroll />
-            </Suspense>
-            <SearchPreloadTrigger />
-            <ChunkErrorReload />
-            <Suspense fallback={null}>{children}</Suspense>
-            {/* These may show "blocked" in console when ad/privacy blockers are used — that's expected */}
-            <Analytics />
-            <SpeedInsights />
-            </NavigationProgressProvider>
+            <UsermavenAnalyticsProvider>
+              <NavigationProgressProvider>
+                <Suspense fallback={null}>
+                  <RouteChangeScroll />
+                </Suspense>
+                <SearchPreloadTrigger />
+                <ChunkErrorReload />
+                <Suspense fallback={null}>{children}</Suspense>
+                {/* These may show "blocked" in console when ad/privacy blockers are used — that's expected */}
+                <Analytics />
+                <SpeedInsights />
+              </NavigationProgressProvider>
+            </UsermavenAnalyticsProvider>
           </CookieConsentProvider>
         </SessionProvider>
       </body>

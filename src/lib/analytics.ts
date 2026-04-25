@@ -10,6 +10,11 @@ declare global {
   }
 }
 
+type UsermavenEventDetail = {
+  event: string
+  payload?: Record<string, any>
+}
+
 /**
  * Safety check wrapper for gtag calls
  */
@@ -20,6 +25,20 @@ function safeGtag(eventName: string, eventParams?: Record<string, any>) {
 }
 
 /**
+ * Dispatch custom Usermaven track events from one analytics hub.
+ * Usermaven provider listens to this event and forwards it to SDK.
+ */
+function safeUsermavenTrack(event: string, payload?: Record<string, any>) {
+  if (typeof window === "undefined") return
+
+  window.dispatchEvent(
+    new CustomEvent<UsermavenEventDetail>("usermaven:track", {
+      detail: { event, payload },
+    })
+  )
+}
+
+/**
  * 1. Signup Success Event
  * Fires when user successfully completes signup (Google or email)
  */
@@ -27,6 +46,7 @@ export function trackSignUp(method: 'google' | 'email') {
   safeGtag('sign_up', {
     method
   })
+  safeUsermavenTrack("signed_up", { method })
 }
 
 /**
@@ -39,6 +59,7 @@ export function trackRateStart(actor: string, movie: string, year: number) {
     movie,
     year
   })
+  safeUsermavenTrack("rate_start", { actor, movie, year })
 }
 
 /**
@@ -51,6 +72,11 @@ export function trackRateSubmit(actor: string, movie: string, overall_score: num
     movie,
     overall_score
   })
+  safeUsermavenTrack("rate_submit", {
+    actor,
+    movie,
+    overall_score,
+  })
 }
 
 /**
@@ -61,6 +87,7 @@ export function trackShareRating(platform: 'native' | 'twitter' | 'facebook' | '
   safeGtag('share_rating', {
     platform
   })
+  safeUsermavenTrack("share_rating", { platform })
 }
 
 /**
@@ -78,6 +105,7 @@ export function trackFirstRatingComplete() {
   
   // Track the event
   safeGtag('first_rating_complete')
+  safeUsermavenTrack("first_rating_complete")
   
   // Mark as done
   localStorage.setItem('first_rating_done', 'true')
