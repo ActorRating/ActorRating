@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-type UsermavenEventDetail = {
+type MixpanelEventDetail = {
   event: string
   payload?: Record<string, any>
 }
@@ -25,14 +25,14 @@ function safeGtag(eventName: string, eventParams?: Record<string, any>) {
 }
 
 /**
- * Dispatch custom Usermaven track events from one analytics hub.
- * Usermaven provider listens to this event and forwards it to SDK.
+ * Dispatch custom Mixpanel track events from one analytics hub.
+ * Mixpanel provider listens to this event and forwards it to SDK.
  */
-function safeUsermavenTrack(event: string, payload?: Record<string, any>) {
+function safeMixpanelTrack(event: string, payload?: Record<string, any>) {
   if (typeof window === "undefined") return
 
   window.dispatchEvent(
-    new CustomEvent<UsermavenEventDetail>("usermaven:track", {
+    new CustomEvent<MixpanelEventDetail>("mixpanel:track", {
       detail: { event, payload },
     })
   )
@@ -46,7 +46,22 @@ export function trackSignUp(method: 'google' | 'email') {
   safeGtag('sign_up', {
     method
   })
-  safeUsermavenTrack("signed_up", { method })
+  safeMixpanelTrack("Sign Up", { signup_method: method })
+}
+
+/**
+ * Sign In Event
+ * Fires when user successfully signs into an existing account.
+ */
+export function trackSignIn(method: 'google' | 'email', success = true) {
+  safeGtag('login', {
+    method,
+    success
+  })
+  safeMixpanelTrack("Sign In", {
+    login_method: method,
+    success
+  })
 }
 
 /**
@@ -59,7 +74,7 @@ export function trackRateStart(actor: string, movie: string, year: number) {
     movie,
     year
   })
-  safeUsermavenTrack("rate_start", { actor, movie, year })
+  safeMixpanelTrack("Rate Start", { actor, movie, year })
 }
 
 /**
@@ -72,7 +87,7 @@ export function trackRateSubmit(actor: string, movie: string, overall_score: num
     movie,
     overall_score
   })
-  safeUsermavenTrack("rate_submit", {
+  safeMixpanelTrack("Rate Submit", {
     actor,
     movie,
     overall_score,
@@ -87,7 +102,7 @@ export function trackShareRating(platform: 'native' | 'twitter' | 'facebook' | '
   safeGtag('share_rating', {
     platform
   })
-  safeUsermavenTrack("share_rating", { platform })
+  safeMixpanelTrack("Share Rating", { platform })
 }
 
 /**
@@ -105,7 +120,7 @@ export function trackFirstRatingComplete() {
   
   // Track the event
   safeGtag('first_rating_complete')
-  safeUsermavenTrack("first_rating_complete")
+  safeMixpanelTrack("First Rating Complete")
   
   // Mark as done
   localStorage.setItem('first_rating_done', 'true')

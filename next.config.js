@@ -80,7 +80,7 @@ const nextConfig = {
       "media-src 'self' blob: data:",
 
       // XHR/fetch/WebSocket: GA + reCAPTCHA + Formspree + Vercel telemetry + S3
-      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://events.usermaven.com https://t.usermaven.com https://*.amazonaws.com",
+      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://*.amazonaws.com",
 
       "worker-src 'self'",
     ].join('; ')

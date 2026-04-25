@@ -8,7 +8,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { buildDevNextAuthSession, isDevMode } from "@/lib/devAuth";
 import { CookieConsentProvider } from "@/components/providers/CookieConsentProvider";
 import { NavigationProgressProvider } from "@/components/providers/NavigationProgressProvider";
-import { UsermavenAnalyticsProvider } from "@/components/providers/UsermavenAnalyticsProvider";
+import { MixpanelAnalyticsProvider } from "@/components/providers/MixpanelAnalyticsProvider";
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
@@ -158,7 +158,7 @@ export default async function RootLayout({
         {/* App Providers */}
         <SessionProvider session={session}>
           <CookieConsentProvider>
-            <UsermavenAnalyticsProvider>
+            <MixpanelAnalyticsProvider>
               <NavigationProgressProvider>
                 <Suspense fallback={null}>
                   <RouteChangeScroll />
@@ -170,7 +170,7 @@ export default async function RootLayout({
                 <Analytics />
                 <SpeedInsights />
               </NavigationProgressProvider>
-            </UsermavenAnalyticsProvider>
+            </MixpanelAnalyticsProvider>
           </CookieConsentProvider>
         </SessionProvider>
       </body>

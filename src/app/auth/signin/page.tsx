@@ -141,6 +141,9 @@ function SignInContent() {
         }
         return
       }
+      if (typeof window !== "undefined") {
+        localStorage.setItem("pending_signin_method", "email")
+      }
       setSuccessMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`)
       setHasSentLink(true)
       setCooldownRemaining(60)
