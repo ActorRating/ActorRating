@@ -65,7 +65,7 @@ const nextConfig = {
 
       // Scripts: Google Analytics, reCAPTCHA, Vercel Analytics/Speed Insights
       // 'unsafe-eval' helps some Next/runtime tooling and packages; keep with 'unsafe-inline' for Next bootstrap
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://va.vercel-scripts.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://va.vercel-scripts.com https://cloud.umami.is",
 
       // Styles: inline for Next + Google Fonts CSS
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -80,7 +80,7 @@ const nextConfig = {
       "media-src 'self' blob: data:",
 
       // XHR/fetch/WebSocket: GA + reCAPTCHA + Formspree + Vercel telemetry + S3
-      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://*.amazonaws.com",
+      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://cloud.umami.is https://*.amazonaws.com",
 
       "worker-src 'self'",
     ].join('; ')

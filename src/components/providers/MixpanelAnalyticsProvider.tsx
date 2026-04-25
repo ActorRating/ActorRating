@@ -4,6 +4,7 @@ import { PropsWithChildren, useEffect, useRef } from "react";
 import mixpanel from "mixpanel-browser";
 import { useSession } from "@/components/providers/SessionProvider";
 import { useCookieConsentContext } from "@/components/providers/CookieConsentProvider";
+import { MixpanelUserTracker } from "@/components/providers/MixpanelUserTracker";
 
 const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || "";
 let hasInitializedMixpanel = false;
@@ -17,7 +18,6 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
   const { user, status } = useSession();
   const { consent, isLoading } = useCookieConsentContext();
   const initializedRef = useRef(false);
-  const identifiedUserIdRef = useRef<string | null>(null);
   const isAnalyticsEnabled = !isLoading && !!consent?.analytics;
 
   useEffect(() => {
@@ -47,38 +47,6 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!isAnalyticsEnabled || !initializedRef.current) return;
-    if (status !== "authenticated" || !user) return;
-
-    const typedUser = user as typeof user & { id?: string };
-    const userId = typedUser.id;
-    if (!userId) {
-      console.log("[mixpanel] identify skipped: missing user.id", {
-        status,
-        hasEmail: !!user.email,
-      });
-      return;
-    }
-    const email = user.email || null;
-
-    if (identifiedUserIdRef.current === userId) return;
-    identifiedUserIdRef.current = userId;
-
-    mixpanel.identify(userId);
-    console.log("[mixpanel] identify", { userId });
-    mixpanel.people.set({
-      $email: email,
-      $name: user.name || null,
-      user_id: userId,
-    });
-    console.log("[mixpanel] people.set", {
-      userId,
-      email,
-      name: user.name || null,
-    });
-  }, [isAnalyticsEnabled, status, user]);
-
-  useEffect(() => {
-    if (!isAnalyticsEnabled || !initializedRef.current) return;
 
     const onTrack = (evt: Event) => {
       const customEvent = evt as CustomEvent<MixpanelTrackEventDetail>;
@@ -91,5 +59,15 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
     return () => window.removeEventListener("mixpanel:track", onTrack as EventListener);
   }, [isAnalyticsEnabled]);
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {isAnalyticsEnabled ? (
+        <MixpanelUserTracker
+          user={user}
+          isAuthenticated={status === "authenticated"}
+        />
+      ) : null}
+    </>
+  );
 }
