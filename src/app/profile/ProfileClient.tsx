@@ -3,6 +3,7 @@
 import { useSession } from "@/components/providers/SessionProvider"
 import { handleLogout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { SignedInLayout } from "@/components/layout"
 import { Button } from "@/components/ui/Button"
@@ -20,7 +21,7 @@ import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
 
 type ProfileClientProps = {
-  initialProfile?: { email?: string } | null
+  initialProfile?: { email?: string; username?: string | null } | null
 }
 
 export default function ProfileClient({ initialProfile = null }: ProfileClientProps) {
@@ -30,7 +31,10 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(initialProfile == null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [profile, setProfile] = useState({ email: initialProfile?.email ?? "" })
+  const [profile, setProfile] = useState({
+    email: initialProfile?.email ?? "",
+    username: initialProfile?.username ?? null,
+  })
   const [termsData, setTermsData] = useState({})
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -235,6 +239,23 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
             >
               Manage your account settings and data
             </motion.p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/performances" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
+                Browse Performances
+              </Link>
+              <Link href="/search" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
+                Search Actors & Movies
+              </Link>
+              <Link href="/rate" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
+                Rate a Performance
+              </Link>
+              {profile.username ? (
+                <Link href={`/u/${profile.username}`} className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
+                  View Public Profile
+                </Link>
+              ) : null}
+            </div>
           </motion.div>
 
           <div className="space-y-6 sm:space-y-8">

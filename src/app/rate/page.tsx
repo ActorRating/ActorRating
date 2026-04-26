@@ -21,6 +21,7 @@ import { CelebrationConfetti } from '@/components/ui/Confetti'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { trackRateStart } from '@/lib/analytics'
+import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -586,18 +587,49 @@ function RatePageContent() {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {searchResults.performances.slice(0, 6).map((performance) => (
-                            <button
+                            <div
                               key={`performance-${performance.id}`}
-                              onClick={() => handlePerformanceSelect(performance)}
                               className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
                             >
-                              <div className="font-semibold text-foreground mb-1">
-                                {performance.actor?.name} in "{performance.movie?.title}"
+                              <button
+                                onClick={() => handlePerformanceSelect(performance)}
+                                className="w-full text-left"
+                              >
+                                <div className="font-semibold text-foreground mb-1">
+                                  {performance.actor?.name} in "{performance.movie?.title}"
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {performance.movie?.year} • {performance.movie?.director}
+                                </div>
+                              </button>
+                              <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                                {performance.actor && (
+                                  <Link
+                                    href={getActorUrl({
+                                      id: performance.actorId,
+                                      name: performance.actor.name,
+                                      slug: null,
+                                    })}
+                                    className="text-primary hover:underline"
+                                  >
+                                    Actor Page
+                                  </Link>
+                                )}
+                                {performance.movie && (
+                                  <Link
+                                    href={getMovieUrl({
+                                      id: performance.movieId,
+                                      title: performance.movie.title,
+                                      year: performance.movie.year,
+                                      slug: null,
+                                    })}
+                                    className="text-primary hover:underline"
+                                  >
+                                    Movie Page
+                                  </Link>
+                                )}
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                {performance.movie?.year} • {performance.movie?.director}
-                              </div>
-                            </button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -612,20 +644,34 @@ function RatePageContent() {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {searchResults.actors.slice(0, 6).map((actor) => (
-                            <button
+                            <div
                               key={`rate-actor-${actor.id}`}
-                              onClick={() => setActor(actor)}
                               className="text-left p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-colors"
                             >
-                              <div className="font-semibold text-foreground mb-1">
-                                {actor.name}
-                              </div>
-                              {actor.nationality && (
-                                <div className="text-sm text-muted-foreground">
-                                  {actor.nationality}
+                              <button
+                                onClick={() => setActor(actor)}
+                                className="w-full text-left"
+                              >
+                                <div className="font-semibold text-foreground mb-1">
+                                  {actor.name}
                                 </div>
-                              )}
-                            </button>
+                                {actor.nationality && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {actor.nationality}
+                                  </div>
+                                )}
+                              </button>
+                              <Link
+                                href={getActorUrl({
+                                  id: actor.id,
+                                  name: actor.name,
+                                  slug: actor.slug || null,
+                                })}
+                                className="mt-3 inline-block text-sm text-primary hover:underline"
+                              >
+                                View Actor Page
+                              </Link>
+                            </div>
                           ))}
                         </div>
                       </div>

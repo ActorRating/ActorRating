@@ -34,6 +34,7 @@ export default async function ProfilePage() {
     <ProfileClient
       initialProfile={{
         email: result.user.email ?? '',
+        username: result.user.username ?? null,
       }}
     />
   )

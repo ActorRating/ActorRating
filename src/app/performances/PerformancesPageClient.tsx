@@ -7,7 +7,7 @@ import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
 import { FaStar } from "react-icons/fa"
 import Link from "next/link"
-import { getRateUrl } from "@/lib/slugHelper"
+import { getActorUrl, getMovieUrl, getRateUrl } from "@/lib/slugHelper"
 import { SearchBar } from "@/components/SearchBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS, buildByLookupUrl } from "@/lib/performances-page-targets"
@@ -402,6 +402,17 @@ export function PerformancesPageClient({
 function LandingPageCard({ performance, index }: { performance: EnrichedPerformance; index: number }) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
+  const actorUrl = getActorUrl({
+    id: performance.actorId,
+    name: performance.actor.name,
+    slug: performance.actor.slug || null,
+  })
+  const movieUrl = getMovieUrl({
+    id: performance.movieId,
+    title: performance.movie.title,
+    year: performance.movie.year,
+    slug: performance.movie.slug || null,
+  })
   const rateUrl =
     performance.actor && performance.movie
       ? getRateUrl(
@@ -474,9 +485,23 @@ function LandingPageCard({ performance, index }: { performance: EnrichedPerforma
               )}
               <div className="text-[#a3a3a3] text-base font-medium">{performance.movie.year}</div>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>{performance.actor.name}</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>
+              <Link href={actorUrl} className="hover:underline decoration-dotted underline-offset-4">
+                {performance.actor.name}
+              </Link>
+            </h3>
             <div className="mb-4">
-              <span className="text-lg text-[#FFD700] font-semibold tracking-wide">{performance.movie.title}</span>
+              <Link href={movieUrl} className="text-lg text-[#FFD700] font-semibold tracking-wide hover:underline decoration-dotted underline-offset-4">
+                {performance.movie.title}
+              </Link>
+            </div>
+            <div className="mb-6 flex items-center gap-4 text-sm">
+              <Link href={actorUrl} className="text-gray-300 hover:text-white hover:underline">
+                Actor Page
+              </Link>
+              <Link href={movieUrl} className="text-gray-300 hover:text-white hover:underline">
+                Movie Page
+              </Link>
             </div>
             <div className="mb-6">
               <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">as {character}</p>

@@ -321,8 +321,8 @@ export default function PerformanceDetailPage() {
             </Button>
 
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => router.push('/search')}
+              <Link
+                href="/search"
                 className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98] flex items-center justify-center gap-1.5"
                 style={{
                   background: 'rgba(255,255,255,0.04)',
@@ -332,10 +332,10 @@ export default function PerformanceDetailPage() {
               >
                 Rate Again
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => router.push(`/actors/${performance.actor.id}`)}
-                className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98]"
+              </Link>
+              <Link
+                href={`/actors/${performance.actor.id}`}
+                className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98] flex items-center justify-center"
                 style={{
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.10)',
@@ -343,7 +343,7 @@ export default function PerformanceDetailPage() {
                 }}
               >
                 More Films
-              </button>
+              </Link>
             </div>
           </motion.div>
 

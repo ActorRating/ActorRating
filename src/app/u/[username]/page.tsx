@@ -146,6 +146,17 @@ export default async function UserProfilePage({ params }: Props) {
         <div>
           <h1 className="text-3xl font-bold text-foreground">{displayName}</h1>
           <p className="mt-2 text-muted-foreground">@{user.username}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <Link href="/performances" className="text-muted-foreground hover:text-foreground hover:underline">
+              Performances Hub
+            </Link>
+            <Link href="/search" className="text-muted-foreground hover:text-foreground hover:underline">
+              Search
+            </Link>
+            <Link href="/rate" className="text-muted-foreground hover:text-foreground hover:underline">
+              Rate
+            </Link>
+          </div>
         </div>
         <CopyProfileLinkButton profileUrl={profileUrl} />
       </header>
