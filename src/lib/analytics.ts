@@ -7,6 +7,9 @@ declare global {
   interface Window {
     gtag?: (...args: any[]) => void
     dataLayer?: any[]
+    umami?: {
+      track: (eventName: string, payload?: Record<string, any>) => void
+    }
   }
 }
 
@@ -39,6 +42,14 @@ function safeMixpanelTrack(event: string, payload?: Record<string, any>) {
 }
 
 /**
+ * Safe wrapper for Umami event tracking.
+ */
+function safeUmamiTrack(event: string, payload?: Record<string, any>) {
+  if (typeof window === "undefined" || !window.umami) return
+  window.umami.track(event, payload)
+}
+
+/**
  * 1. Signup Success Event
  * Fires when user successfully completes signup (Google or email)
  */
@@ -46,7 +57,8 @@ export function trackSignUp(method: 'google' | 'email') {
   safeGtag('sign_up', {
     method
   })
-  safeMixpanelTrack("Sign Up", { signup_method: method })
+  safeMixpanelTrack("User Signed Up", { signup_method: method })
+  safeUmamiTrack("user_signed_up", { signup_method: method })
 }
 
 /**
@@ -58,7 +70,11 @@ export function trackSignIn(method: 'google' | 'email', success = true) {
     method,
     success
   })
-  safeMixpanelTrack("Sign In", {
+  safeMixpanelTrack("User Logged In", {
+    login_method: method,
+    success
+  })
+  safeUmamiTrack("user_logged_in", {
     login_method: method,
     success
   })
@@ -87,10 +103,13 @@ export function trackRateSubmit(actor: string, movie: string, overall_score: num
     movie,
     overall_score
   })
-  safeMixpanelTrack("Rate Submit", {
-    actor,
-    movie,
-    overall_score,
+  safeMixpanelTrack("Rated Actor", {
+    actor_name: actor,
+    score: overall_score,
+  })
+  safeUmamiTrack("rated_actor", {
+    actor_name: actor,
+    score: overall_score,
   })
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import mixpanel from "mixpanel-browser";
 import type { Session } from "next-auth";
+import { trackSignUp } from "@/lib/analytics";
 
 type MixpanelUserTrackerProps = {
   user: Session["user"] | null;
@@ -40,6 +41,13 @@ export function MixpanelUserTracker({
       email: user.email || null,
       name: user.name || null,
     });
+
+    // Track signup at first authenticated session handoff, independent of redirect path.
+    const pendingSignupMethod = localStorage.getItem("pending_signup_method");
+    if (pendingSignupMethod === "google" || pendingSignupMethod === "email") {
+      trackSignUp(pendingSignupMethod);
+      localStorage.removeItem("pending_signup_method");
+    }
 
     console.log(`Mixpanel identified user: ${distinctId}`);
   }, [isAuthenticated, user]);

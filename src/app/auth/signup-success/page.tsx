@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/providers/SessionProvider'
 import { CheckCircle } from 'lucide-react'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-import { trackSignUp } from '@/lib/analytics'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
@@ -24,16 +23,6 @@ export default function SignupSuccessPage() {
         // If no session after initialization, redirect to signin
         router.push('/auth/signin')
         return
-      }
-
-      // Track signup once per successful new-account flow.
-      const pendingSignupMethod =
-        typeof window !== 'undefined'
-          ? localStorage.getItem('pending_signup_method')
-          : null
-      if (pendingSignupMethod === 'google' || pendingSignupMethod === 'email') {
-        trackSignUp(pendingSignupMethod)
-        localStorage.removeItem('pending_signup_method')
       }
 
       // Check if there's a pending rating to submit
