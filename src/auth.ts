@@ -194,9 +194,9 @@ export const authOptions: NextAuthConfig = {
         // Ensure email is always present — fall back through token then existing value.
         session.user.email =
           (token.email as string | undefined) ?? session.user.email ?? null
-        // Ensure name is always a string so downstream code never sees undefined.
+        // Preserve real names only; never force a placeholder like "User".
         session.user.name =
-          (token.name as string | undefined) ?? session.user.name ?? "User"
+          (token.name as string | undefined) ?? session.user.name ?? null
       }
       // Always log — this is the ground truth for "did a session get created".
       console.log("[auth][session] ✓ session created", {

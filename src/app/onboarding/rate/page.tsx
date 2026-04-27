@@ -129,7 +129,7 @@ export default function OnboardingRatePage() {
           const ratings = await res.json()
           if (Array.isArray(ratings) && ratings.length > 0) {
             // User already has ratings, redirect to dashboard
-            router.push('/dashboard')
+            router.replace('/dashboard')
             return
           } else {
             // User has no ratings, so this will be their first
@@ -370,7 +370,7 @@ export default function OnboardingRatePage() {
       } else {
         // Redirect to dashboard after a short delay to show success
         setTimeout(() => {
-          router.push('/dashboard')
+          router.replace('/dashboard')
         }, 2000)
       }
     } catch (err: any) {
@@ -415,7 +415,9 @@ export default function OnboardingRatePage() {
   }
 
   const userScore = calculateUserScore()
-  const welcomeName = user?.name?.trim() || user?.email?.split('@')[0] || 'there'
+  const normalizedName = user?.name?.trim()
+  const safeName = normalizedName && normalizedName.toLowerCase() !== "user" ? normalizedName : ""
+  const welcomeName = safeName || user?.email?.split('@')[0] || 'there'
 
   if (showFirstRatingSuccess) {
     return (
@@ -448,7 +450,7 @@ export default function OnboardingRatePage() {
               >
                 {/* Close Button */}
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.replace('/dashboard')}
                   className="absolute top-3 right-3 z-[100] text-gray-400 hover:text-white transition-colors cursor-pointer"
                   style={{ pointerEvents: 'auto' }}
                   aria-label="Close and go to dashboard"
@@ -584,7 +586,7 @@ export default function OnboardingRatePage() {
                       Rate Another
                     </button>
                     <button
-                      onClick={() => router.push('/dashboard')}
+                      onClick={() => router.replace('/dashboard')}
                       className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] hover:from-[#FFD700] hover:via-[#FFA500] hover:to-[#FF8C00] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Dashboard

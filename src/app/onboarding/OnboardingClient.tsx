@@ -16,6 +16,11 @@ function buildSuggestedUsername(seed: string): string {
   return `${cleaned}user`.slice(0, 20).padEnd(3, "0")
 }
 
+function isGenericPlaceholderName(value?: string | null): boolean {
+  if (!value) return false
+  return value.trim().toLowerCase() === "user"
+}
+
 export default function OnboardingClient() {
   const user = useUser()
   const router = useRouter()
@@ -31,6 +36,7 @@ export default function OnboardingClient() {
   const usernameCheckAbortRef = useRef<AbortController | null>(null)
   const usernameAvailabilityCacheRef = useRef<Map<string, boolean>>(new Map())
   const usernameInFlightRef = useRef<Map<string, AbortController>>(new Map())
+  const hasHydratedDefaultsRef = useRef(false)
 
   const normalizedUsername = useMemo(() => {
     const normalizedInput = username.toLowerCase().trim().replace(/\s{2,}/g, " ")
@@ -48,20 +54,21 @@ export default function OnboardingClient() {
   }, [normalizedUsername])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || hasHydratedDefaultsRef.current) return
 
     const emailLocal = user.email?.split("@")[0] || ""
-    const fallbackName = user.name?.trim() || emailLocal || ""
-    if (!name && fallbackName) {
+    const safeSessionName = isGenericPlaceholderName(user.name) ? "" : user.name?.trim() || ""
+    const fallbackName = safeSessionName || emailLocal || ""
+    const seed = safeSessionName || emailLocal
+
+    if (fallbackName) {
       setName(fallbackName)
     }
-    if (!username) {
-      const seed = user.name?.trim() || emailLocal
-      if (seed) {
-        setUsername(buildSuggestedUsername(seed))
-      }
+    if (seed) {
+      setUsername(buildSuggestedUsername(seed))
     }
-  }, [user, name, username])
+    hasHydratedDefaultsRef.current = true
+  }, [user])
 
   useEffect(() => {
     usernameCheckAbortRef.current?.abort()

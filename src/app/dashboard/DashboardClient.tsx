@@ -86,7 +86,9 @@ export default function DashboardClient({
   const [popularActors, setPopularActors] = useState<Actor[]>(initialPopularActors ?? [])
   const [visibleRatingsCount, setVisibleRatingsCount] = useState(6)
   const prevPathnameRef = useRef<string | null>(null)
-  const welcomeName = user?.name?.trim() || user?.email?.split('@')[0] || 'there'
+  const normalizedName = user?.name?.trim()
+  const safeName = normalizedName && normalizedName.toLowerCase() !== "user" ? normalizedName : ""
+  const welcomeName = safeName || user?.email?.split('@')[0] || 'there'
 
   const fetchUserData = async () => {
     try {

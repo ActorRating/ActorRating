@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+import { getCache, setCache } from "@/lib/admin/cache"
 
 export type AdminUserWithStats = {
   id: string
@@ -14,60 +16,115 @@ export type AdminUserWithStats = {
 
 type GetUsersWithStatsParams = {
   search?: string
+  page?: number
+  take?: number
+}
+
+type UserStatsRow = {
+  id: string
+  name: string | null
+  username: string | null
+  email: string
+  createdAt: Date
+  totalRatings: bigint | number
+  averageRating: number | null
+  firstActivity: Date | null
+  lastActivity: Date | null
 }
 
 export async function getUsersWithStats(
   params: GetUsersWithStatsParams = {}
-): Promise<AdminUserWithStats[]> {
+): Promise<{
+  users: AdminUserWithStats[]
+  page: number
+  take: number
+  totalCount: number
+  hasNext: boolean
+}> {
   const search = params.search?.trim()
+  const page = Number.isFinite(params.page) && (params.page ?? 0) >= 0 ? (params.page ?? 0) : 0
+  const take =
+    Number.isFinite(params.take) && (params.take ?? 50) > 0 ? Math.min(params.take ?? 50, 50) : 50
+  const skip = page * take
+  const searchTerm = search && search.length > 0 ? `%${search}%` : null
+  const cacheKey = `admin:users:${search ?? "all"}:${page}:${take}`
+  const cached = getCache<{
+    users: AdminUserWithStats[]
+    page: number
+    take: number
+    totalCount: number
+    hasNext: boolean
+  }>(cacheKey)
+  if (cached) return cached
 
-  const users = await prisma.user.findMany({
-    where: search
-      ? {
-          OR: [
-            { username: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-            { name: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      email: true,
-      createdAt: true,
-      ratings: {
-        select: {
-          createdAt: true,
-          weightedScore: true,
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
-  })
+  try {
+    const [rows, totalCount] = await Promise.all([
+      prisma.$queryRaw<UserStatsRow[]>(Prisma.sql`
+        SELECT
+          u."id",
+          u."name",
+          u."username",
+          u."email",
+          u."createdAt",
+          COUNT(r."id")::bigint AS "totalRatings",
+          AVG(r."weightedScore")::float AS "averageRating",
+          MIN(r."createdAt") AS "firstActivity",
+          MAX(r."createdAt") AS "lastActivity"
+        FROM "User" u
+        LEFT JOIN "Rating" r ON r."userId" = u."id"
+        WHERE (
+          ${searchTerm}::text IS NULL
+          OR u."username" ILIKE ${searchTerm}
+          OR u."email" ILIKE ${searchTerm}
+          OR u."name" ILIKE ${searchTerm}
+        )
+        GROUP BY u."id", u."name", u."username", u."email", u."createdAt"
+        ORDER BY COALESCE(MAX(r."createdAt"), u."createdAt") DESC
+        LIMIT ${take}
+        OFFSET ${skip}
+      `),
+      prisma.user.count({
+        where: search
+          ? {
+              OR: [
+                { username: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+                { name: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : undefined,
+      }),
+    ])
 
-  const withStats = users.map((user) => {
-    const totalRatings = user.ratings.length
-    const scoreSum = user.ratings.reduce((sum, rating) => sum + rating.weightedScore, 0)
-    const averageRating = totalRatings > 0 ? scoreSum / totalRatings : 0
-    const firstActivity = user.ratings[0]?.createdAt ?? user.createdAt
-    const lastActivity = user.ratings[totalRatings - 1]?.createdAt ?? user.createdAt
+    const users = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      username: row.username,
+      email: row.email,
+      createdAt: row.createdAt,
+      totalRatings: typeof row.totalRatings === "bigint" ? Number(row.totalRatings) : row.totalRatings,
+      averageRating: row.averageRating ?? 0,
+      firstActivity: row.firstActivity ?? row.createdAt,
+      lastActivity: row.lastActivity ?? row.createdAt,
+    }))
 
-    return {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      createdAt: user.createdAt,
-      totalRatings,
-      averageRating,
-      firstActivity,
-      lastActivity,
+    const result = {
+      users,
+      page,
+      take,
+      totalCount,
+      hasNext: (page + 1) * take < totalCount,
     }
-  })
-
-  withStats.sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime())
-
-  return withStats
+    setCache(cacheKey, result, 60_000)
+    return result
+  } catch (error) {
+    console.error("Admin query failed getUsersWithStats", error)
+    return {
+      users: [],
+      page,
+      take,
+      totalCount: 0,
+      hasNext: false,
+    }
+  }
 }

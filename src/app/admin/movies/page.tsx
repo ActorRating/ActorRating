@@ -3,6 +3,8 @@ import MoviesTable from "@/components/admin/MoviesTable";
 import SearchForm from "@/components/admin/SearchForm";
 import { Suspense } from "react";
 
+export const dynamic = "force-dynamic";
+
 interface Movie {
   id: string;
   title: string;

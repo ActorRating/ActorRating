@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { getCache, setCache } from "@/lib/admin/cache"
 
 type GrowthRow = {
   day: Date
@@ -57,72 +58,76 @@ function toNumber(value: bigint | number) {
 }
 
 export async function getAdminData(): Promise<AdminDashboardData> {
-  const todayStart = startOfToday()
+  const cacheKey = "admin:dashboard:summary"
+  const cached = getCache<AdminDashboardData>(cacheKey)
+  if (cached) return cached
 
-  const [
-    totalUsers,
-    totalRatings,
-    totalPerformances,
-    usersWithRatings,
-    usersToday,
-    ratingsToday,
-    todayAgg,
-    growthRows,
-    topActorRows,
-    recentRatings,
-  ] = await Promise.all([
-    prisma.user.count(),
-    prisma.rating.count(),
-    prisma.performance.count(),
-    prisma.user.count({
-      where: {
-        ratings: {
-          some: {},
+  const todayStart = startOfToday()
+  try {
+    const [
+      totalUsers,
+      totalRatings,
+      totalPerformances,
+      usersWithRatings,
+      usersToday,
+      ratingsToday,
+      todayAgg,
+      growthRows,
+      topActorRows,
+      recentRatings,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.rating.count(),
+      prisma.performance.count(),
+      prisma.user.count({
+        where: {
+          ratings: {
+            some: {},
+          },
         },
-      },
-    }),
-    prisma.user.count({
-      where: { createdAt: { gte: todayStart } },
-    }),
-    prisma.rating.count({
-      where: { createdAt: { gte: todayStart } },
-    }),
-    prisma.rating.aggregate({
-      where: { createdAt: { gte: todayStart } },
-      _avg: { weightedScore: true },
-    }),
-    prisma.$queryRaw<GrowthRow[]>(Prisma.sql`
-      SELECT DATE_TRUNC('day', "createdAt") AS day, COUNT(*)::bigint AS count
-      FROM "Rating"
-      WHERE "createdAt" >= NOW() - INTERVAL '6 days'
-      GROUP BY DATE_TRUNC('day', "createdAt")
-      ORDER BY day ASC
-    `),
-    prisma.$queryRaw<TopActorRow[]>(Prisma.sql`
-      SELECT
-        r."actorId" AS "actorId",
-        a."name" AS "actorName",
-        COUNT(*)::bigint AS count
-      FROM "Rating" r
-      INNER JOIN "Actor" a ON a."id" = r."actorId"
-      WHERE r."createdAt" >= DATE_TRUNC('day', NOW())
-      GROUP BY r."actorId", a."name"
-      ORDER BY count DESC
-      LIMIT 1
-    `),
-    prisma.rating.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        weightedScore: true,
-        createdAt: true,
-        actor: { select: { name: true } },
-        movie: { select: { title: true } },
-        user: { select: { username: true } },
-      },
-    }),
-  ])
+      }),
+      prisma.user.count({
+        where: { createdAt: { gte: todayStart } },
+      }),
+      prisma.rating.count({
+        where: { createdAt: { gte: todayStart } },
+      }),
+      prisma.rating.aggregate({
+        where: { createdAt: { gte: todayStart } },
+        _avg: { weightedScore: true },
+      }),
+      prisma.$queryRaw<GrowthRow[]>(Prisma.sql`
+        SELECT DATE_TRUNC('day', "createdAt") AS day, COUNT(*)::bigint AS count
+        FROM "Rating"
+        WHERE "createdAt" >= NOW() - INTERVAL '6 days'
+        GROUP BY DATE_TRUNC('day', "createdAt")
+        ORDER BY day ASC
+      `),
+      prisma.$queryRaw<TopActorRow[]>(Prisma.sql`
+        SELECT
+          r."actorId" AS "actorId",
+          a."name" AS "actorName",
+          COUNT(*)::bigint AS count
+        FROM "Rating" r
+        INNER JOIN "Actor" a ON a."id" = r."actorId"
+        WHERE r."createdAt" >= DATE_TRUNC('day', NOW())
+        GROUP BY r."actorId", a."name"
+        ORDER BY count DESC
+        LIMIT 1
+      `),
+      prisma.rating.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          weightedScore: true,
+          createdAt: true,
+          actor: { select: { name: true } },
+          movie: { select: { title: true } },
+          user: { select: { username: true } },
+        },
+      }),
+    ])
 
   const growthByDate = new Map<string, number>()
   for (const row of growthRows) {
@@ -151,25 +156,48 @@ export async function getAdminData(): Promise<AdminDashboardData> {
   const ratingsPerUser = totalUsers > 0 ? totalRatings / totalUsers : 0
   const conversionRate = totalUsers > 0 ? (usersWithRatings / totalUsers) * 100 : 0
 
-  return {
-    totalUsers,
-    totalRatings,
-    totalPerformances,
-    ratingsPerUser,
-    usersWithRatings,
-    conversionRate,
-    usersToday,
-    ratingsToday,
-    avgRatingToday: todayAgg._avg.weightedScore ?? null,
-    topActorToday,
-    growthLast7Days,
-    recentRatings: recentRatings.map((rating) => ({
-      id: rating.id,
-      actorName: rating.actor.name,
-      movieTitle: rating.movie.title,
-      value: Number(rating.weightedScore.toFixed(1)),
-      username: rating.user?.username ?? null,
-      createdAt: rating.createdAt,
-    })),
+    const data: AdminDashboardData = {
+      totalUsers,
+      totalRatings,
+      totalPerformances,
+      ratingsPerUser,
+      usersWithRatings,
+      conversionRate,
+      usersToday,
+      ratingsToday,
+      avgRatingToday: todayAgg._avg.weightedScore ?? null,
+      topActorToday,
+      growthLast7Days,
+      recentRatings: recentRatings.map((rating) => ({
+        id: rating.id,
+        actorName: rating.actor.name,
+        movieTitle: rating.movie.title,
+        value: Number(rating.weightedScore.toFixed(1)),
+        username: rating.user?.username ?? null,
+        createdAt: rating.createdAt,
+      })),
+    }
+    setCache(cacheKey, data, 30_000)
+    return data
+  } catch (error) {
+    console.error("Admin query failed getAdminData", error)
+    return {
+      totalUsers: 0,
+      totalRatings: 0,
+      totalPerformances: 0,
+      ratingsPerUser: 0,
+      usersWithRatings: 0,
+      conversionRate: 0,
+      usersToday: 0,
+      ratingsToday: 0,
+      avgRatingToday: null,
+      topActorToday: null,
+      growthLast7Days: Array.from({ length: 7 }).map((_, idx) => {
+        const d = new Date(todayStart)
+        d.setDate(todayStart.getDate() - (6 - idx))
+        return { date: dayFormatter.format(d), count: 0 }
+      }),
+      recentRatings: [],
+    }
   }
 }

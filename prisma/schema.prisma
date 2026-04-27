@@ -24,6 +24,10 @@ model User {
   sessions      Session[]
   performances  Performance[]
   ratings       Rating[]
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([username])
 }
 
 model Account {
@@ -172,6 +176,8 @@ model Rating {
   shortLinks             ShortLink[]
 
   @@unique([userId, actorId, movieId])
+  @@index([createdAt])
+  @@index([userId])
   @@index([actorId])
   @@index([movieId])
   @@index([actorId, movieId])

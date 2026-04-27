@@ -13,26 +13,33 @@ export default async function AdminUserDetailPage({
 }) {
   const { id } = await params
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      email: true,
-      createdAt: true,
-      ratings: {
-        orderBy: { createdAt: "desc" },
+  const user = await (async () => {
+    try {
+      return await prisma.user.findUnique({
+        where: { id },
         select: {
           id: true,
-          weightedScore: true,
+          name: true,
+          username: true,
+          email: true,
           createdAt: true,
-          actor: { select: { name: true } },
-          movie: { select: { title: true } },
+          ratings: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              weightedScore: true,
+              createdAt: true,
+              actor: { select: { name: true } },
+              movie: { select: { title: true } },
+            },
+          },
         },
-      },
-    },
-  })
+      })
+    } catch (error) {
+      console.error("Admin query failed AdminUserDetailPage", error)
+      return null
+    }
+  })()
 
   if (!user) notFound()
 
