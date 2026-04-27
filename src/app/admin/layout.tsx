@@ -1,15 +1,17 @@
-import { MainLayout } from "@/components/layout"
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 
-export const dynamic = "force-dynamic"
-
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  return (
-    <MainLayout showSidebar={true} showBreadcrumbs={true}>
-      {children}
-    </MainLayout>
-  );
-} 
+  const session = await auth()
+  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim()
+
+  if (!session || !session.user?.email || session.user.email.toLowerCase().trim() !== adminEmail) {
+    redirect("/auth/signin")
+  }
+
+  return <>{children}</>
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import mixpanel from "mixpanel-browser";
 import { useSession } from "@/components/providers/SessionProvider";
 import { useCookieConsentContext } from "@/components/providers/CookieConsentProvider";
@@ -18,10 +18,11 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
   const { user, status } = useSession();
   const { consent, isLoading } = useCookieConsentContext();
   const initializedRef = useRef(false);
+  const [isMixpanelReady, setIsMixpanelReady] = useState(() => hasInitializedMixpanel);
   const isAnalyticsEnabled = !isLoading && !!consent?.analytics;
 
   useEffect(() => {
-    if (!isAnalyticsEnabled || initializedRef.current || hasInitializedMixpanel || !MIXPANEL_TOKEN) {
+    if (!isAnalyticsEnabled || !MIXPANEL_TOKEN) {
       if (process.env.NODE_ENV !== "production") {
         console.log("[mixpanel] init skipped", {
           isAnalyticsEnabled,
@@ -30,6 +31,12 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
           hasToken: !!MIXPANEL_TOKEN,
         });
       }
+      return;
+    }
+
+    if (initializedRef.current || hasInitializedMixpanel) {
+      initializedRef.current = true;
+      setIsMixpanelReady(true);
       return;
     }
 
@@ -42,11 +49,12 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
     });
     hasInitializedMixpanel = true;
     initializedRef.current = true;
+    setIsMixpanelReady(true);
     console.log("[mixpanel] initialized");
   }, [isAnalyticsEnabled]);
 
   useEffect(() => {
-    if (!isAnalyticsEnabled || !initializedRef.current) return;
+    if (!isAnalyticsEnabled || !isMixpanelReady) return;
 
     const onTrack = (evt: Event) => {
       const customEvent = evt as CustomEvent<MixpanelTrackEventDetail>;
@@ -57,12 +65,12 @@ export function MixpanelAnalyticsProvider({ children }: PropsWithChildren) {
 
     window.addEventListener("mixpanel:track", onTrack as EventListener);
     return () => window.removeEventListener("mixpanel:track", onTrack as EventListener);
-  }, [isAnalyticsEnabled]);
+  }, [isAnalyticsEnabled, isMixpanelReady]);
 
   return (
     <>
       {children}
-      {isAnalyticsEnabled ? (
+      {isAnalyticsEnabled && isMixpanelReady ? (
         <MixpanelUserTracker
           user={user}
           isAuthenticated={status === "authenticated"}

@@ -8,6 +8,11 @@ export default function AdminNav() {
 
   const navItems = [
     {
+      href: '/admin',
+      label: 'Dashboard',
+      description: 'Business metrics overview'
+    },
+    {
       href: '/admin/movies',
       label: 'Movies',
       description: 'View and manage all movies'
