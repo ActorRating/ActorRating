@@ -228,7 +228,7 @@ export default async function AdminDashboardPage({
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {users.users.map((user) => (
                 <tr key={user.id} className="text-sm text-foreground/95">
                   <td className="border-b border-border/60 px-3 py-3">
                     <Link href={`/admin/users/${user.id}`} className="font-medium text-primary hover:underline">
