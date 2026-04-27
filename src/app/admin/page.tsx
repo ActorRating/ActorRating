@@ -1,14 +1,100 @@
 import Link from "next/link"
+import { Prisma } from "@prisma/client"
 import { Button } from "@/components/ui/Button"
 import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import { getAdminData } from "@/lib/admin/getAdminData"
+import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
+import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminDashboardPage() {
-  const data = await getAdminData()
+type AdminSearchParams = {
+  usersQ?: string
+  ratingsQ?: string
+  user?: string
+  actor?: string
+  movie?: string
+  page?: string
+}
+
+const RATINGS_PAGE_SIZE = 50
+
+async function getGlobalRatings(searchParams: AdminSearchParams) {
+  const page = Number(searchParams.page ?? "0")
+  const safePage = Number.isFinite(page) && page >= 0 ? page : 0
+  const user = searchParams.user?.trim()
+  const actor = searchParams.actor?.trim()
+  const movie = searchParams.movie?.trim()
+  const ratingsQ = searchParams.ratingsQ?.trim()
+
+  const where: Prisma.RatingWhereInput = {
+    AND: [
+      user ? { user: { username: { contains: user, mode: "insensitive" } } } : {},
+      actor ? { actor: { name: { contains: actor, mode: "insensitive" } } } : {},
+      movie ? { movie: { title: { contains: movie, mode: "insensitive" } } } : {},
+      ratingsQ
+        ? {
+            OR: [
+              { user: { username: { contains: ratingsQ, mode: "insensitive" } } },
+              { actor: { name: { contains: ratingsQ, mode: "insensitive" } } },
+            ],
+          }
+        : {},
+    ],
+  }
+
+  const [totalCount, ratings] = await Promise.all([
+    prisma.rating.count({ where }),
+    prisma.rating.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: safePage * RATINGS_PAGE_SIZE,
+      take: RATINGS_PAGE_SIZE,
+      select: {
+        id: true,
+        weightedScore: true,
+        createdAt: true,
+        user: { select: { id: true, username: true } },
+        actor: { select: { name: true } },
+        movie: { select: { title: true } },
+      },
+    }),
+  ])
+
+  return {
+    ratings,
+    page: safePage,
+    totalCount,
+    hasNext: (safePage + 1) * RATINGS_PAGE_SIZE < totalCount,
+  }
+}
+
+function createQueryString(searchParams: AdminSearchParams, patch: Record<string, string | undefined>) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value && value.length > 0) params.set(key, value)
+  }
+  for (const [key, value] of Object.entries(patch)) {
+    if (!value) params.delete(key)
+    else params.set(key, value)
+  }
+  return `?${params.toString()}`
+}
+
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<AdminSearchParams>
+}) {
+  const resolvedSearchParams = await searchParams
+  const [data, users, globalRatings] = await Promise.all([
+    getAdminData(),
+    getUsersWithStats({ search: resolvedSearchParams.usersQ }),
+    getGlobalRatings(resolvedSearchParams),
+  ])
 
   return (
     <div className="max-w-7xl mx-auto p-6 sm:p-8">
@@ -76,6 +162,170 @@ export default async function AdminDashboardPage() {
       <div className="mt-6">
         <RecentRatings ratings={data.recentRatings} />
       </div>
+
+      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">All Users</h2>
+          <form method="get" className="flex items-center gap-2">
+            <input
+              type="text"
+              name="usersQ"
+              defaultValue={resolvedSearchParams.usersQ ?? ""}
+              placeholder="Search username or email"
+              className="h-10 w-64 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <input type="hidden" name="ratingsQ" value={resolvedSearchParams.ratingsQ ?? ""} />
+            <input type="hidden" name="user" value={resolvedSearchParams.user ?? ""} />
+            <input type="hidden" name="actor" value={resolvedSearchParams.actor ?? ""} />
+            <input type="hidden" name="movie" value={resolvedSearchParams.movie ?? ""} />
+            <input type="hidden" name="page" value={resolvedSearchParams.page ?? "0"} />
+            <Button type="submit" variant="outline">
+              Search
+            </Button>
+          </form>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">Username</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Email</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Avg Rating</th>
+                <th className="border-b border-border px-3 py-3 font-medium">First Active</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Last Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3">
+                    <Link href={`/admin/users/${user.id}`} className="font-medium text-primary hover:underline">
+                      {user.username ?? user.name ?? "Unnamed"}
+                    </Link>
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">{user.email}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{user.totalRatings}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {user.averageRating.toFixed(2)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">{formatAdminDateTime(user.firstActivity)}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{formatAdminDateTime(user.lastActivity)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">All Ratings</h2>
+          <form method="get" className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              name="ratingsQ"
+              defaultValue={resolvedSearchParams.ratingsQ ?? ""}
+              placeholder="Search by username or actor"
+              className="h-10 w-56 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <input
+              type="text"
+              name="user"
+              defaultValue={resolvedSearchParams.user ?? ""}
+              placeholder="Filter user"
+              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <input
+              type="text"
+              name="actor"
+              defaultValue={resolvedSearchParams.actor ?? ""}
+              placeholder="Filter actor"
+              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <input
+              type="text"
+              name="movie"
+              defaultValue={resolvedSearchParams.movie ?? ""}
+              placeholder="Filter movie"
+              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <input type="hidden" name="usersQ" value={resolvedSearchParams.usersQ ?? ""} />
+            <input type="hidden" name="page" value="0" />
+            <Button type="submit" variant="outline">
+              Apply
+            </Button>
+          </form>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">User</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Actor</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Movie</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Score</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Created At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {globalRatings.ratings.map((rating) => (
+                <tr key={rating.id} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {rating.user?.id ? (
+                      <Link href={`/admin/users/${rating.user.id}`} className="text-primary hover:underline">
+                        {rating.user.username ?? "Anonymous"}
+                      </Link>
+                    ) : (
+                      "Anonymous"
+                    )}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">{rating.actor.name}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{rating.movie.title}</td>
+                  <td className="border-b border-border/60 px-3 py-3 font-semibold">
+                    {rating.weightedScore.toFixed(1)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
+                    <div>{formatAdminDateTime(rating.createdAt)}</div>
+                    <div className="text-xs">{formatRelativeTime(rating.createdAt)}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+          <div>
+            {globalRatings.totalCount === 0
+              ? "No ratings found"
+              : `Showing ${globalRatings.page * RATINGS_PAGE_SIZE + 1}-${Math.min(
+                  (globalRatings.page + 1) * RATINGS_PAGE_SIZE,
+                  globalRatings.totalCount
+                )} of ${globalRatings.totalCount}`}
+          </div>
+          <div className="flex gap-2">
+            {globalRatings.page > 0 ? (
+              <Link
+                href={createQueryString(resolvedSearchParams, { page: String(globalRatings.page - 1) })}
+                className="rounded-lg border border-border px-3 py-2 hover:bg-background"
+              >
+                Previous
+              </Link>
+            ) : null}
+            {globalRatings.hasNext ? (
+              <Link
+                href={createQueryString(resolvedSearchParams, { page: String(globalRatings.page + 1) })}
+                className="rounded-lg border border-border px-3 py-2 hover:bg-background"
+              >
+                Next
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

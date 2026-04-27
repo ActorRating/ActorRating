@@ -1,22 +1,8 @@
 import type { AdminRecentRating } from "@/lib/admin/getAdminData"
+import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
 
 type RecentRatingsProps = {
   ratings: AdminRecentRating[]
-}
-
-function formatRelativeTime(date: Date) {
-  const diffMs = date.getTime() - Date.now()
-  const diffSeconds = Math.round(diffMs / 1000)
-  const absSeconds = Math.abs(diffSeconds)
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" })
-
-  if (absSeconds < 60) return rtf.format(diffSeconds, "second")
-  const minutes = Math.round(diffSeconds / 60)
-  if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute")
-  const hours = Math.round(minutes / 60)
-  if (Math.abs(hours) < 24) return rtf.format(hours, "hour")
-  const days = Math.round(hours / 24)
-  return rtf.format(days, "day")
 }
 
 export default function RecentRatings({ ratings }: RecentRatingsProps) {
@@ -46,7 +32,8 @@ export default function RecentRatings({ ratings }: RecentRatingsProps) {
                   {rating.username ?? "Anonymous"}
                 </td>
                 <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
-                  {formatRelativeTime(rating.createdAt)}
+                  <div>{formatAdminDateTime(rating.createdAt)}</div>
+                  <div className="text-xs">{formatRelativeTime(rating.createdAt)}</div>
                 </td>
               </tr>
             ))}
