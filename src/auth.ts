@@ -9,6 +9,7 @@ import { getRequestIp, isDisposableEmail, validateMagicLinkRequest } from "@/lib
 import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 import { authConfig } from "./auth.config"
 import { cookies } from "next/headers"
+import { isValidSource } from "@/lib/tracking/source"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -39,10 +40,8 @@ const runtimeAuthEnv = validateAuthEnv()
 
 function getAcquisitionSourceFromCookie(): string | null {
   try {
-    const validSources = ["tiktok", "instagram", "youtube"] as const
     const raw = cookies().get("ar_src")?.value ?? null
-    if (!raw) return null
-    return (validSources as readonly string[]).includes(raw) ? raw : null
+    return isValidSource(raw) ? raw : null
   } catch {
     // cookies() may not be available in certain non-request contexts (e.g. build)
     return null
@@ -54,12 +53,15 @@ function createAdapter() {
   return {
     ...base,
     async createUser(data: any) {
-      const source = getAcquisitionSourceFromCookie()
+      const cookieSource = getAcquisitionSourceFromCookie()
+      const finalSource = isValidSource(cookieSource) ? cookieSource : null
       // Only set on first creation; never override existing users (createUser is new-user only).
-      return base.createUser({
-        ...data,
-        source: source ?? null,
-        firstSeenAt: new Date(),
+      return prisma.user.create({
+        data: {
+          ...data,
+          source: finalSource,
+          firstSeenAt: new Date(),
+        },
       })
     },
   }

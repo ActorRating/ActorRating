@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import { authConfig } from "./auth.config"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { isValidSource } from "@/lib/tracking/source"
 
 /**
  * Middleware is the ONLY place that enforces authentication.
@@ -21,7 +22,6 @@ const { auth } = NextAuth(authConfig)
 export default auth((req: NextRequest & { auth: unknown }) => {
   const url = req.nextUrl
   const src = url.searchParams.get("src")
-  const validSrc = src && ["tiktok", "instagram", "youtube"].includes(src) ? src : null
   const hasExistingSrc = Boolean(req.cookies.get("ar_src")?.value)
 
   // 301: www → canonical domain (SEO + cookie domain consistency)
@@ -31,8 +31,8 @@ export default auth((req: NextRequest & { auth: unknown }) => {
       `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
       301
     )
-    if (!hasExistingSrc && validSrc) {
-      response.cookies.set("ar_src", validSrc, {
+    if (!hasExistingSrc && isValidSource(src)) {
+      response.cookies.set("ar_src", src, {
         maxAge: 60 * 60 * 24 * 7,
         path: "/",
         sameSite: "lax",
@@ -42,8 +42,8 @@ export default auth((req: NextRequest & { auth: unknown }) => {
   }
 
   const response = NextResponse.next()
-  if (!hasExistingSrc && validSrc) {
-    response.cookies.set("ar_src", validSrc, {
+  if (!hasExistingSrc && isValidSource(src)) {
+    response.cookies.set("ar_src", src, {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
       sameSite: "lax",
