@@ -19,16 +19,37 @@ import type { NextRequest } from "next/server"
 const { auth } = NextAuth(authConfig)
 
 export default auth((req: NextRequest & { auth: unknown }) => {
+  const url = req.nextUrl
+  const src = url.searchParams.get("src")
+  const validSrc = src && ["tiktok", "instagram", "youtube"].includes(src) ? src : null
+  const hasExistingSrc = Boolean(req.cookies.get("ar_src")?.value)
+
   // 301: www → canonical domain (SEO + cookie domain consistency)
   const host = req.headers.get("host")
   if (host === "www.actorrating.com") {
-    return NextResponse.redirect(
+    const response = NextResponse.redirect(
       `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
       301
     )
+    if (!hasExistingSrc && validSrc) {
+      response.cookies.set("ar_src", validSrc, {
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/",
+        sameSite: "lax",
+      })
+    }
+    return response
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+  if (!hasExistingSrc && validSrc) {
+    response.cookies.set("ar_src", validSrc, {
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+      sameSite: "lax",
+    })
+  }
+  return response
 })
 
 export const config = {

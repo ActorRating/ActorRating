@@ -215,6 +215,16 @@ export default async function AdminDashboardPage({
           </form>
         </div>
 
+        <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Source breakdown:</span>
+          {data.sourceBreakdown.map((row) => (
+            <span key={row.source}>
+              {" "}
+              {row.source}: {row.users}
+            </span>
+          ))}
+        </div>
+
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left">
             <thead>
@@ -223,6 +233,7 @@ export default async function AdminDashboardPage({
                 <th className="border-b border-border px-3 py-3 font-medium">Name</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Email</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Signup</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Source</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Avg Rating</th>
                 <th className="border-b border-border px-3 py-3 font-medium">First Active</th>
@@ -240,6 +251,7 @@ export default async function AdminDashboardPage({
                   <td className="border-b border-border/60 px-3 py-3">{user.name ?? "—"}</td>
                   <td className="border-b border-border/60 px-3 py-3">{user.email}</td>
                   <td className="border-b border-border/60 px-3 py-3">{user.signupProvider ?? "—"}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{user.source ?? "unknown"}</td>
                   <td className="border-b border-border/60 px-3 py-3">{user.totalRatings}</td>
                   <td className="border-b border-border/60 px-3 py-3">
                     {user.averageRating.toFixed(2)}
@@ -278,6 +290,32 @@ export default async function AdminDashboardPage({
               </Link>
             ) : null}
           </div>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground">Acquisition Performance</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[740px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">Source</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Users</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Users Who Rated</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Conversion %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.sourceBreakdown.map((row) => (
+                <tr key={row.source} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3 font-medium">{row.source}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{row.users}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{row.usersWithRatings}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{row.conversion.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

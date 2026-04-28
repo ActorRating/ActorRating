@@ -18,6 +18,8 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  source        String?   @db.VarChar(50)
+  firstSeenAt   DateTime? @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]

@@ -9,6 +9,7 @@ export type AdminUserWithStats = {
   email: string
   createdAt: Date
   signupProvider: string | null
+  source: string | null
   totalRatings: number
   averageRating: number
   firstActivity: Date
@@ -28,6 +29,7 @@ type UserStatsRow = {
   email: string
   createdAt: Date
   signupProvider: string | null
+  source: string | null
   totalRatings: bigint | number
   averageRating: number | null
   firstActivity: Date | null
@@ -68,6 +70,7 @@ export async function getUsersWithStats(
           u."username",
           u."email",
           u."createdAt",
+          u."source" AS "source",
           CASE
             WHEN BOOL_OR(a."provider" = 'google') THEN 'google'
             WHEN BOOL_OR(a."provider" = 'email') THEN 'email'
@@ -111,6 +114,7 @@ export async function getUsersWithStats(
       email: row.email,
       createdAt: row.createdAt,
       signupProvider: row.signupProvider,
+      source: row.source,
       totalRatings: typeof row.totalRatings === "bigint" ? Number(row.totalRatings) : row.totalRatings,
       averageRating: row.averageRating ?? 0,
       firstActivity: row.firstActivity ?? row.createdAt,

@@ -8,6 +8,7 @@ import { sendMagicLinkEmail } from "@/lib/magicLinkEmail"
 import { getRequestIp, isDisposableEmail, validateMagicLinkRequest } from "@/lib/authGuards"
 import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 import { authConfig } from "./auth.config"
+import { cookies } from "next/headers"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -36,12 +37,40 @@ function validateAuthEnv(): {
 }
 const runtimeAuthEnv = validateAuthEnv()
 
+function getAcquisitionSourceFromCookie(): string | null {
+  try {
+    const validSources = ["tiktok", "instagram", "youtube"] as const
+    const raw = cookies().get("ar_src")?.value ?? null
+    if (!raw) return null
+    return (validSources as readonly string[]).includes(raw) ? raw : null
+  } catch {
+    // cookies() may not be available in certain non-request contexts (e.g. build)
+    return null
+  }
+}
+
+function createAdapter() {
+  const base = PrismaAdapter(prisma)
+  return {
+    ...base,
+    async createUser(data: any) {
+      const source = getAcquisitionSourceFromCookie()
+      // Only set on first creation; never override existing users (createUser is new-user only).
+      return base.createUser({
+        ...data,
+        source: source ?? null,
+        firstSeenAt: new Date(),
+      })
+    },
+  }
+}
+
 export const authOptions: NextAuthConfig = {
   // Spread the Edge-safe config so pages + authorized callback are shared
   // between middleware and the full server-side auth instance.
   ...authConfig,
   trustHost: true,
-  adapter: PrismaAdapter(prisma),
+  adapter: createAdapter(),
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,

@@ -22,6 +22,7 @@ export default async function AdminUserDetailPage({
           name: true,
           username: true,
           email: true,
+          source: true,
           createdAt: true,
           ratings: {
             orderBy: { createdAt: "desc" },
@@ -63,6 +64,7 @@ export default async function AdminUserDetailPage({
           {user.username ?? user.name ?? "Unnamed User"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+        <p className="mt-1 text-sm text-muted-foreground">Source: {user.source ?? "unknown"}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Joined: {formatAdminDateTime(user.createdAt)}
         </p>

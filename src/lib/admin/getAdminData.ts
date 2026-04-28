@@ -45,6 +45,12 @@ export type AdminDashboardData = {
   topActorToday: { id: string; name: string; count: number } | null
   growthLast7Days: AdminGrowthPoint[]
   recentRatings: AdminRecentRating[]
+  sourceBreakdown: Array<{
+    source: "tiktok" | "instagram" | "youtube" | "unknown"
+    users: number
+    usersWithRatings: number
+    conversion: number
+  }>
 }
 
 function startOfToday() {
@@ -75,6 +81,8 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       growthRows,
       topActorRows,
       recentRatings,
+      totalUsersBySource,
+      usersWithRatingsBySource,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.rating.count(),
@@ -127,6 +135,17 @@ export async function getAdminData(): Promise<AdminDashboardData> {
           user: { select: { username: true } },
         },
       }),
+      prisma.$queryRaw<Array<{ source: string | null; users: bigint | number }>>(Prisma.sql`
+        SELECT "source" AS source, COUNT(*)::bigint AS users
+        FROM "User"
+        GROUP BY "source"
+      `),
+      prisma.$queryRaw<Array<{ source: string | null; usersWithRatings: bigint | number }>>(Prisma.sql`
+        SELECT u."source" AS source, COUNT(DISTINCT u."id")::bigint AS "usersWithRatings"
+        FROM "User" u
+        INNER JOIN "Rating" r ON r."userId" = u."id"
+        GROUP BY u."source"
+      `),
     ])
 
   const growthByDate = new Map<string, number>()
@@ -156,6 +175,30 @@ export async function getAdminData(): Promise<AdminDashboardData> {
   const ratingsPerUser = totalUsers > 0 ? totalRatings / totalUsers : 0
   const conversionRate = totalUsers > 0 ? (usersWithRatings / totalUsers) * 100 : 0
 
+    const totalMap = new Map<string, number>()
+    for (const row of totalUsersBySource) {
+      const key = row.source ?? "unknown"
+      totalMap.set(key, toNumber(row.users))
+    }
+    const raterMap = new Map<string, number>()
+    for (const row of usersWithRatingsBySource) {
+      const key = row.source ?? "unknown"
+      raterMap.set(key, toNumber(row.usersWithRatings))
+    }
+
+    const sources: Array<"tiktok" | "instagram" | "youtube" | "unknown"> = [
+      "tiktok",
+      "instagram",
+      "youtube",
+      "unknown",
+    ]
+    const sourceBreakdown = sources.map((source) => {
+      const users = totalMap.get(source) ?? 0
+      const usersWithRatings = raterMap.get(source) ?? 0
+      const conversion = users > 0 ? (usersWithRatings / users) * 100 : 0
+      return { source, users, usersWithRatings, conversion }
+    })
+
     const data: AdminDashboardData = {
       totalUsers,
       totalRatings,
@@ -176,6 +219,7 @@ export async function getAdminData(): Promise<AdminDashboardData> {
         username: rating.user?.username ?? null,
         createdAt: rating.createdAt,
       })),
+      sourceBreakdown,
     }
     setCache(cacheKey, data, 30_000)
     return data
@@ -198,6 +242,12 @@ export async function getAdminData(): Promise<AdminDashboardData> {
         return { date: dayFormatter.format(d), count: 0 }
       }),
       recentRatings: [],
+      sourceBreakdown: [
+        { source: "tiktok", users: 0, usersWithRatings: 0, conversion: 0 },
+        { source: "instagram", users: 0, usersWithRatings: 0, conversion: 0 },
+        { source: "youtube", users: 0, usersWithRatings: 0, conversion: 0 },
+        { source: "unknown", users: 0, usersWithRatings: 0, conversion: 0 },
+      ],
     }
   }
 }

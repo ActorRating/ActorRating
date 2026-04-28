@@ -1,59 +1,82 @@
-"use client"
-
-import React, { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import React from 'react'
+import { redirect } from "next/navigation"
 import { Star, Trophy, TrendingUp, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { useUser } from '@/components/providers/SessionProvider'
 import { HomeLayout } from '@/components/layout/HomeLayout'
 import { SignedInLayout } from '@/components/layout/SignedInLayout'
-import { Button } from '@/components/ui/Button'
 import { motion } from 'framer-motion'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
 
-export default function RatingSuccessPage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const user = useUser()
-  
-  const [ratingData, setRatingData] = useState<any>(null)
-  const [totalScore, setTotalScore] = useState(0)
+export const dynamic = "force-dynamic"
 
-  useEffect(() => {
-    const actorName = searchParams?.get('actorName')
-    const movieTitle = searchParams?.get('movieTitle')
-    const movieYear = searchParams?.get('movieYear')
-    const comment = searchParams?.get('comment')
-    const emotionalRangeDepth = parseInt(searchParams?.get('emotionalRangeDepth') || '0')
-    const characterBelievability = parseInt(searchParams?.get('characterBelievability') || '0')
-    const technicalSkill = parseInt(searchParams?.get('technicalSkill') || '0')
-    const screenPresence = parseInt(searchParams?.get('screenPresence') || '0')
-    const chemistryInteraction = parseInt(searchParams?.get('chemistryInteraction') || '0')
+type RatingSuccessSearchParams = {
+  actorName?: string
+  movieTitle?: string
+  movieYear?: string
+  comment?: string
+  emotionalRangeDepth?: string
+  characterBelievability?: string
+  technicalSkill?: string
+  screenPresence?: string
+  chemistryInteraction?: string
+}
 
-    if (actorName && movieTitle && movieYear) {
-      const data = {
-        actorName,
-        movieTitle,
-        movieYear,
-        comment,
-        emotionalRangeDepth,
-        characterBelievability,
-        technicalSkill,
-        screenPresence,
-        chemistryInteraction
+export default async function RatingSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<RatingSuccessSearchParams>
+}) {
+  const sp = await searchParams
+
+  // Stable, server-side guard: if an authenticated user already has ratings,
+  // landing here via "Back" should not trigger client redirect loops.
+  const session = await auth()
+  const userId = session?.user?.id
+  if (userId) {
+    try {
+      const count = await prisma.rating.count({ where: { userId } })
+      if (count > 0) {
+        redirect("/dashboard")
       }
-      setRatingData(data)
-      
-      const score = (
-        emotionalRangeDepth * 0.25 +
-        characterBelievability * 0.25 +
-        technicalSkill * 0.20 +
-        screenPresence * 0.15 +
-        chemistryInteraction * 0.15
-      )
-      setTotalScore(score)
+    } catch (error) {
+      console.error("rating-success guard failed:", error)
     }
-  }, [searchParams])
+  }
+
+  const actorName = sp.actorName
+  const movieTitle = sp.movieTitle
+  const movieYear = sp.movieYear
+  const comment = sp.comment
+  const emotionalRangeDepth = parseInt(sp.emotionalRangeDepth || '0')
+  const characterBelievability = parseInt(sp.characterBelievability || '0')
+  const technicalSkill = parseInt(sp.technicalSkill || '0')
+  const screenPresence = parseInt(sp.screenPresence || '0')
+  const chemistryInteraction = parseInt(sp.chemistryInteraction || '0')
+
+  const ratingData =
+    actorName && movieTitle && movieYear
+      ? {
+          actorName,
+          movieTitle,
+          movieYear,
+          comment,
+          emotionalRangeDepth,
+          characterBelievability,
+          technicalSkill,
+          screenPresence,
+          chemistryInteraction,
+        }
+      : null
+
+  const totalScore = ratingData
+    ? ratingData.emotionalRangeDepth * 0.25 +
+      ratingData.characterBelievability * 0.25 +
+      ratingData.technicalSkill * 0.2 +
+      ratingData.screenPresence * 0.15 +
+      ratingData.chemistryInteraction * 0.15
+    : 0
 
   const getQualityAssessment = (score: number) => {
     if (score >= 90) return { label: 'Masterpiece', icon: Trophy, description: 'Oscar-worthy performance' }
@@ -290,19 +313,19 @@ export default function RatingSuccessPage() {
           transition={{ delay: 0.85 }}
           className="flex flex-col gap-3"
         >
-          <button
-            onClick={() => router.push('/')}
+          <Link
+            href="/"
             className="w-full py-3.5 rounded-full text-black text-sm font-bold tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
             }}
           >
             Back to Home
-          </button>
+          </Link>
 
           <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => router.push('/search')}
+            <Link
+              href="/search"
               className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98] flex items-center justify-center gap-1.5"
               style={{
                 background: 'rgba(255,255,255,0.04)',
@@ -312,9 +335,9 @@ export default function RatingSuccessPage() {
             >
               Rate Again
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => router.push('/dashboard')}
+            </Link>
+            <Link
+              href="/dashboard"
               className="py-3 rounded-full text-sm font-semibold transition-all duration-200 hover:bg-white/8 active:scale-[0.98]"
               style={{
                 background: 'rgba(255,255,255,0.04)',
@@ -323,7 +346,7 @@ export default function RatingSuccessPage() {
               }}
             >
               My Ratings
-            </button>
+            </Link>
           </div>
         </motion.div>
 
@@ -352,7 +375,7 @@ export default function RatingSuccessPage() {
     </div>
   )
 
-  return user ? (
+  return userId ? (
     <SignedInLayout>
       <SuccessContent />
     </SignedInLayout>
