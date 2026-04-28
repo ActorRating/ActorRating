@@ -8,6 +8,7 @@ export type AdminUserWithStats = {
   username: string | null
   email: string
   createdAt: Date
+  signupProvider: string | null
   totalRatings: number
   averageRating: number
   firstActivity: Date
@@ -26,6 +27,7 @@ type UserStatsRow = {
   username: string | null
   email: string
   createdAt: Date
+  signupProvider: string | null
   totalRatings: bigint | number
   averageRating: number | null
   firstActivity: Date | null
@@ -66,12 +68,18 @@ export async function getUsersWithStats(
           u."username",
           u."email",
           u."createdAt",
+          CASE
+            WHEN BOOL_OR(a."provider" = 'google') THEN 'google'
+            WHEN BOOL_OR(a."provider" = 'email') THEN 'email'
+            ELSE MIN(a."provider")
+          END AS "signupProvider",
           COUNT(r."id")::bigint AS "totalRatings",
           AVG(r."weightedScore")::float AS "averageRating",
           MIN(r."createdAt") AS "firstActivity",
           MAX(r."createdAt") AS "lastActivity"
         FROM "User" u
         LEFT JOIN "Rating" r ON r."userId" = u."id"
+        LEFT JOIN "Account" a ON a."userId" = u."id"
         WHERE (
           ${searchTerm}::text IS NULL
           OR u."username" ILIKE ${searchTerm}
@@ -102,6 +110,7 @@ export async function getUsersWithStats(
       username: row.username,
       email: row.email,
       createdAt: row.createdAt,
+      signupProvider: row.signupProvider,
       totalRatings: typeof row.totalRatings === "bigint" ? Number(row.totalRatings) : row.totalRatings,
       averageRating: row.averageRating ?? 0,
       firstActivity: row.firstActivity ?? row.createdAt,

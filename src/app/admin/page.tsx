@@ -220,7 +220,9 @@ export default async function AdminDashboardPage({
             <thead>
               <tr className="text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="border-b border-border px-3 py-3 font-medium">Username</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Name</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Email</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Signup</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Avg Rating</th>
                 <th className="border-b border-border px-3 py-3 font-medium">First Active</th>
@@ -235,7 +237,9 @@ export default async function AdminDashboardPage({
                       {user.username ?? user.name ?? "Unnamed"}
                     </Link>
                   </td>
+                  <td className="border-b border-border/60 px-3 py-3">{user.name ?? "—"}</td>
                   <td className="border-b border-border/60 px-3 py-3">{user.email}</td>
+                  <td className="border-b border-border/60 px-3 py-3">{user.signupProvider ?? "—"}</td>
                   <td className="border-b border-border/60 px-3 py-3">{user.totalRatings}</td>
                   <td className="border-b border-border/60 px-3 py-3">
                     {user.averageRating.toFixed(2)}
