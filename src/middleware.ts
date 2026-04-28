@@ -22,34 +22,45 @@ const { auth } = NextAuth(authConfig)
 export default auth((req: NextRequest & { auth: unknown }) => {
   const url = req.nextUrl
   const src = url.searchParams.get("src")
-  const hasExistingSrc = Boolean(req.cookies.get("ar_src")?.value)
+  const existingSrcCookie = req.cookies.get("ar_src")?.value
+  const hasExistingSrc = Boolean(existingSrcCookie)
+  const shouldSetSource = !hasExistingSrc && isValidSource(src)
+  const isDev = process.env.NODE_ENV !== "production"
 
-  // 301: www → canonical domain (SEO + cookie domain consistency)
-  const host = req.headers.get("host")
-  if (host === "www.actorrating.com") {
-    const response = NextResponse.redirect(
-      `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
-      301
-    )
-    if (!hasExistingSrc && isValidSource(src)) {
+  console.log("[TRACKING] incoming src:", src)
+
+  const applyTrackingHeadersAndCookie = (response: NextResponse) => {
+    if (isDev) {
+      response.headers.set("x-src-debug", src ?? "")
+      response.headers.set("x-cookie-debug", shouldSetSource ? src : existingSrcCookie ?? "")
+    }
+
+    if (shouldSetSource && src) {
       response.cookies.set("ar_src", src, {
         maxAge: 60 * 60 * 24 * 7,
         path: "/",
         sameSite: "lax",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
       })
+      console.log("[TRACKING] cookie set:", src)
     }
+
     return response
   }
 
-  const response = NextResponse.next()
-  if (!hasExistingSrc && isValidSource(src)) {
-    response.cookies.set("ar_src", src, {
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-      sameSite: "lax",
-    })
+  // 301: www → canonical domain (SEO + cookie domain consistency)
+  const host = req.headers.get("host")
+  if (host === "www.actorrating.com") {
+    return applyTrackingHeadersAndCookie(
+      NextResponse.redirect(
+      `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
+      301
+    )
+    )
   }
-  return response
+
+  return applyTrackingHeadersAndCookie(NextResponse.next())
 })
 
 export const config = {

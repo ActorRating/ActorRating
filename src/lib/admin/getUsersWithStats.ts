@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getCache, setCache } from "@/lib/admin/cache"
+import { isValidSource } from "@/lib/tracking/source"
 
 export type AdminUserWithStats = {
   id: string
@@ -114,7 +115,7 @@ export async function getUsersWithStats(
       email: row.email,
       createdAt: row.createdAt,
       signupProvider: row.signupProvider,
-      source: row.source,
+      source: isValidSource(row.source) ? row.source : null,
       totalRatings: typeof row.totalRatings === "bigint" ? Number(row.totalRatings) : row.totalRatings,
       averageRating: row.averageRating ?? 0,
       firstActivity: row.firstActivity ?? row.createdAt,

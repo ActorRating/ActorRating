@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
+import { isValidSource } from "@/lib/tracking/source"
 
 type GrowthRow = {
   day: Date
@@ -177,12 +178,12 @@ export async function getAdminData(): Promise<AdminDashboardData> {
 
     const totalMap = new Map<string, number>()
     for (const row of totalUsersBySource) {
-      const key = row.source ?? "unknown"
+      const key = isValidSource(row.source) ? row.source : "unknown"
       totalMap.set(key, toNumber(row.users))
     }
     const raterMap = new Map<string, number>()
     for (const row of usersWithRatingsBySource) {
-      const key = row.source ?? "unknown"
+      const key = isValidSource(row.source) ? row.source : "unknown"
       raterMap.set(key, toNumber(row.usersWithRatings))
     }
 
@@ -198,6 +199,7 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       const conversion = users > 0 ? (usersWithRatings / users) * 100 : 0
       return { source, users, usersWithRatings, conversion }
     })
+    console.log("[ADMIN SOURCE] aggregated values", sourceBreakdown)
 
     const data: AdminDashboardData = {
       totalUsers,
