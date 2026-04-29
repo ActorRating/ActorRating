@@ -199,8 +199,6 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       const conversion = users > 0 ? (usersWithRatings / users) * 100 : 0
       return { source, users, usersWithRatings, conversion }
     })
-    console.log("[ADMIN SOURCE] aggregated values", sourceBreakdown)
-
     const data: AdminDashboardData = {
       totalUsers,
       totalRatings,

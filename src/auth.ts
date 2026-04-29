@@ -55,7 +55,6 @@ function createAdapter() {
     async createUser(data: any) {
       const cookieSource = getAcquisitionSourceFromCookie()
       const finalSource = isValidSource(cookieSource) ? cookieSource : null
-      console.log("[USER SOURCE]", finalSource)
       // Only set on first creation; never override existing users (createUser is new-user only).
       return prisma.user.create({
         data: {
