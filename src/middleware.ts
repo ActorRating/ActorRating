@@ -4,67 +4,51 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { isValidSource } from "@/lib/tracking/source"
 
-/**
- * Middleware is the ONLY place that enforces authentication.
- *
- * NextAuth(authConfig).auth wraps every matched request:
- *   - Decodes the JWT from the session cookie (Edge-safe, no DB call)
- *   - Calls authConfig.callbacks.authorized() with the decoded session
- *   - authorized() returns false  → NextAuth redirects to /auth/signin
- *   - authorized() returns a Response → used as-is (e.g. redirect to /dashboard)
- *   - authorized() returns true  → request proceeds normally
- *
- * The www→canonical redirect runs first, before auth is checked.
- */
-
 const { auth } = NextAuth(authConfig)
 
-export default auth((req: NextRequest & { auth: unknown }) => {
-  const url = req.nextUrl
+export async function middleware(request: NextRequest) {
+  const url = request.nextUrl
   const src = url.searchParams.get("src")
-  const existingSrcCookie = req.cookies.get("ar_src")?.value
-  const hasExistingSrc = Boolean(existingSrcCookie)
-  const shouldSetSource = !hasExistingSrc && isValidSource(src)
-  const isDev = process.env.NODE_ENV !== "production"
+  const hasExistingSrc = Boolean(request.cookies.get("ar_src")?.value)
 
-  console.log("[TRACKING] incoming src:", src)
+  console.log("[TRACKING] src:", src)
 
-  const applyTrackingHeadersAndCookie = (response: NextResponse) => {
-    if (isDev) {
-      response.headers.set("x-src-debug", src ?? "")
-      response.headers.set("x-cookie-debug", shouldSetSource ? src : existingSrcCookie ?? "")
-    }
+  // 1️⃣ Create ONE response
+  let response: NextResponse
 
-    if (shouldSetSource && src) {
-      response.cookies.set("ar_src", src, {
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/",
-        sameSite: "lax",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-      })
-      console.log("[TRACKING] cookie set:", src)
-    }
+  const host = request.headers.get("host")
 
-    return response
-  }
-
-  // 301: www → canonical domain (SEO + cookie domain consistency)
-  const host = req.headers.get("host")
+  // Handle www → root redirect FIRST
   if (host === "www.actorrating.com") {
-    return applyTrackingHeadersAndCookie(
-      NextResponse.redirect(
-      `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
+    response = NextResponse.redirect(
+      `https://actorrating.com${url.pathname}${url.search}`,
       301
     )
-    )
+  } else {
+    response = NextResponse.next()
   }
 
-  return applyTrackingHeadersAndCookie(NextResponse.next())
-})
+  // 2️⃣ Set cookie BEFORE auth runs
+  if (src && isValidSource(src) && !hasExistingSrc) {
+    console.log("[TRACKING] setting cookie:", src)
+
+    const isProduction = process.env.NODE_ENV === "production"
+    const cookieDomain = host?.endsWith(".actorrating.com") ? ".actorrating.com" : undefined
+
+    response.cookies.set("ar_src", src, {
+      path: "/",
+      domain: cookieDomain,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction,
+      maxAge: 60 * 60 * 24 * 7,
+    })
+  }
+
+  // 3️⃣ Now pass THROUGH NextAuth
+  return auth(request, response)
+}
 
 export const config = {
-  // Exclude Next.js internals, all /api/* routes (NextAuth callbacks must be
-  // reachable without auth), and static assets.
   matcher: ["/((?!_next|api|favicon.ico).*)"],
 }
