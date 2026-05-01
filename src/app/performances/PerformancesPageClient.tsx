@@ -6,6 +6,7 @@ import { HomeLayout } from "@/components/layout"
 import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
 import { FaStar } from "react-icons/fa"
+import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import { getActorUrl, getMovieUrl, getRateUrl } from "@/lib/slugHelper"
 import { SearchBar } from "@/components/SearchBar"
@@ -486,21 +487,15 @@ function LandingPageCard({ performance, index }: { performance: EnrichedPerforma
               <div className="text-[#a3a3a3] text-base font-medium">{performance.movie.year}</div>
             </div>
             <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>
-              <Link href={actorUrl} className="hover:underline decoration-dotted underline-offset-4">
+              <Link href={actorUrl} className="group/actor inline-flex items-center gap-1.5 hover:text-[#FFD700] transition-colors duration-200">
                 {performance.actor.name}
+                <ArrowUpRight className="w-4 h-4 opacity-0 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
               </Link>
             </h3>
-            <div className="mb-4">
-              <Link href={movieUrl} className="text-lg text-[#FFD700] font-semibold tracking-wide hover:underline decoration-dotted underline-offset-4">
+            <div className="mb-6">
+              <Link href={movieUrl} className="group/movie inline-flex items-center gap-1.5 text-lg text-[#FFD700] font-semibold tracking-wide hover:text-[#FFE55C] transition-colors duration-200">
                 {performance.movie.title}
-              </Link>
-            </div>
-            <div className="mb-6 flex items-center gap-4 text-sm">
-              <Link href={actorUrl} className="text-gray-300 hover:text-white hover:underline">
-                Actor Page
-              </Link>
-              <Link href={movieUrl} className="text-gray-300 hover:text-white hover:underline">
-                Movie Page
+                <ArrowUpRight className="w-4 h-4 opacity-60 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
               </Link>
             </div>
             <div className="mb-6">

@@ -16,6 +16,8 @@ import {
 } from "@/lib/performances-page-targets";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
+import { getActorUrl, getMovieUrl } from "@/lib/slugHelper";
+import { ArrowUpRight } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar"
 import { ActorAvatar } from "@/components/ui/ActorAvatar";
 import { ActorHeadshot } from "@/components/ui/ActorHeadshot";
@@ -389,52 +391,32 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   }, []);
 
   useEffect(() => {
+    // If SSR already gave us all five rows, use that data as-is — no fetch needed.
+    const seeded = performancesMapFromEnriched(initialPerformances);
+    if (isHomeLeaderboardHydrated(seeded)) return;
+
     let cancelled = false;
-    const targets = PERFORMANCES.map((h) => ({ actor: h.actor, movie: h.movie }));
-
-    const applyFetchedPerformances = (rows: EnrichedPerformance[]) => {
-      const map = new Map<string, EnrichedPerformance>();
-      rows.forEach((p: EnrichedPerformance) => {
-        if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
-      });
-      setPerformancesData(map);
-      setSortedPerfs(sortLeaderboardRowsByRatings(map));
-    };
-
     (async () => {
-      const seeded = performancesMapFromEnriched(initialPerformances);
-
-      if (isHomeLeaderboardHydrated(seeded)) {
-        setIsLoading(false);
-        try {
-          const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
-          if (!res.ok || cancelled) return;
-          const data = await res.json();
-          const rows = data.performances as EnrichedPerformance[] | undefined;
-          if (!rows?.length || cancelled) return;
-          applyFetchedPerformances(rows);
-        } catch {
-          /* optional background refresh */
-        }
-        return;
-      }
-
       try {
+        const targets = PERFORMANCES.map((h) => ({ actor: h.actor, movie: h.movie }));
         const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const rows = data.performances as EnrichedPerformance[] | undefined;
-        if (rows?.length && !cancelled) applyFetchedPerformances(rows);
+        if (!rows?.length || cancelled) return;
+        const map = new Map<string, EnrichedPerformance>();
+        rows.forEach((p) => {
+          if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
+        });
+        setPerformancesData(map);
+        setSortedPerfs(sortLeaderboardRowsByRatings(map));
       } catch {
         /* silent */
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [initialPerformances]);
 
   useLayoutEffect(() => {
@@ -532,6 +514,12 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
                   const href = perfData?.actor && perfData?.movie
                     ? `/rate/${perfData.movie.slug || perfData.movieId}/${perfData.actor.slug || perfData.actorId}`
                     : '/performances';
+                  const actorPageHref = perfData?.actor
+                    ? getActorUrl({ id: perfData.actorId, name: perfData.actor.name, slug: perfData.actor.slug ?? null })
+                    : null;
+                  const moviePageHref = perfData?.movie
+                    ? getMovieUrl({ id: perfData.movieId, title: perfData.movie.title, year: perfData.movie.year, slug: perfData.movie.slug ?? null })
+                    : null;
 
                   return (
                     <div
@@ -552,6 +540,8 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
                         rating={rating}
                         isLoading={isLoading}
                         href={href}
+                        actorPageHref={actorPageHref}
+                        moviePageHref={moviePageHref}
                         actorImageUrl={upgradeActorImageRes(perfData?.actor?.imageUrl)}
                         moviePosterUrl={perfData?.movie?.posterUrl}
                         router={router}
@@ -603,9 +593,10 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   );
 }
 
-function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href, actorImageUrl, moviePosterUrl, router }: {
+function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href, actorPageHref, moviePageHref, actorImageUrl, moviePosterUrl, router }: {
   actorName: string; movieTitle: string; year: string; rating: string | null;
-  isLoading: boolean; href: string; actorImageUrl?: string | null; moviePosterUrl?: string | null;
+  isLoading: boolean; href: string; actorPageHref: string | null; moviePageHref: string | null;
+  actorImageUrl?: string | null; moviePosterUrl?: string | null;
   router: ReturnType<typeof useRouter>;
 }) {
   const handlePrefetch = () => router.prefetch(href);
@@ -640,8 +631,22 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
             <div className="text-[#a3a3a3] text-base font-medium">{year}</div>
           </div>
           <div className="flex-1">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={CINZEL}>{actorName}</h3>
-            <p className="text-lg text-[#FFD700] font-semibold tracking-wide mb-4">{movieTitle}</p>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={CINZEL}>
+              {actorPageHref ? (
+                <Link href={actorPageHref} className="group/actor inline-flex items-center gap-1.5 hover:text-[#FFD700] transition-colors duration-200">
+                  {actorName}
+                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+                </Link>
+              ) : actorName}
+            </h3>
+            {moviePageHref ? (
+              <Link href={moviePageHref} className="group/movie inline-flex items-center gap-1.5 text-lg text-[#FFD700] font-semibold tracking-wide hover:text-[#FFE55C] transition-colors duration-200 mb-4">
+                {movieTitle}
+                <ArrowUpRight className="w-4 h-4 opacity-60 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+              </Link>
+            ) : (
+              <p className="text-lg text-[#FFD700] font-semibold tracking-wide mb-4">{movieTitle}</p>
+            )}
           </div>
           <div className="mt-auto pt-4">
             <Link href={href} prefetch={false} onMouseEnter={handlePrefetch}>
