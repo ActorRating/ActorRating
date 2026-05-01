@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import {
   FaStar, FaSearch, FaArrowRight,
   FaUsers, FaChartLine, FaFilm, FaGlobe,
@@ -386,18 +386,14 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
           return bRating - aRating;
         });
         setSortedPerfs(sorted);
-        // Reset scroll to start after re-sort so snap doesn't jump to the wrong card
-        requestAnimationFrame(() => {
-          if (scrollRef.current) scrollRef.current.scrollLeft = 0;
-        });
       } catch (_) { /* silent */ } finally { setIsLoading(false); }
     })();
   }, []);
 
-  // Ensure scroll starts at position 0 on mount
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollLeft = 0;
-  }, []);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = 0;
+  }, [sortedPerfs]);
 
   // Scroll tracking for active dot
   useEffect(() => {
@@ -477,7 +473,8 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
             >
               <div
                 ref={scrollRef}
-                className="flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]"
+                dir="ltr"
+                className="flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-proximity scrollbar-hide px-[max(1rem,calc((100%-85vw)/2))] sm:px-[max(1rem,calc((100%-70vw)/2))] lg:px-[max(1rem,calc((100%-min(35vw,28rem))/2))] xl:px-[max(1rem,calc((100%-min(30vw,28rem))/2))]"
               >
                 {sortedPerfs.map((p, index) => {
                   const key = `${p.actor}:${p.movie}`;
@@ -576,8 +573,8 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
         </div>
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
-            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" priority />
-            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" priority />
+            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" loading="lazy" />
+            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" loading="lazy" />
           </div>
           <div className="flex items-center justify-between mb-6">
             {isLoading ? (

@@ -5,11 +5,19 @@ import { getActorUrl, getMovieUrl, getRateUrl } from '@/lib/slugHelper'
 export const revalidate = 1800
 
 export default async function HomeSeoLinkSections() {
-  const [topMovies, topActors, recent] = await Promise.all([
-    getTopRatedMovies(12),
-    getTopRatedActors(12),
-    getRecentlyRated(12),
-  ])
+  let topMovies: Awaited<ReturnType<typeof getTopRatedMovies>> = []
+  let topActors: Awaited<ReturnType<typeof getTopRatedActors>> = []
+  let recent: Awaited<ReturnType<typeof getRecentlyRated>> = []
+  try {
+    ;[topMovies, topActors, recent] = await Promise.all([
+      getTopRatedMovies(12),
+      getTopRatedActors(12),
+      getRecentlyRated(12),
+    ])
+  } catch {
+    /* DB unreachable (local dev without tunnel, Neon paused, etc.) — omit footer SEO lists */
+    return null
+  }
 
   if (!topMovies.length && !topActors.length && !recent.length) {
     return null

@@ -2,28 +2,11 @@ export const revalidate = 60;
 
 // src/app/page.tsx (Server Component)
 import { Metadata } from "next";
-import { preload } from "react-dom";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
-import { upgradeActorImageRes } from "@/lib/tmdb";
-
-function preloadLeaderboardHeroImages(
-  performances: Awaited<ReturnType<typeof getPerformancesByLookup>>
-) {
-  const seen = new Set<string>();
-  for (const p of performances) {
-    const actorSrc = upgradeActorImageRes(p.actor?.imageUrl);
-    const posterSrc = p.movie?.posterUrl ?? null;
-    for (const href of [actorSrc, posterSrc]) {
-      if (!href || seen.has(href)) continue;
-      seen.add(href);
-      preload(href, { as: "image", fetchPriority: "high" });
-    }
-  }
-}
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -64,7 +47,6 @@ export default async function Home() {
   } catch {
     /* DB/API unavailable during build or deploy — client LeaderboardSection still fetches */
   }
-  preloadLeaderboardHeroImages(initialLeaderboardPerformances);
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",

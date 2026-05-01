@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -10,8 +10,6 @@ interface MoviePosterProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'hero'
   className?: string
   loading?: 'eager' | 'lazy'
-  /** Eager load + high fetch priority (above-the-fold carousels, etc.) */
-  priority?: boolean
   /** Make corners more or less rounded */
   rounded?: string
 }
@@ -39,12 +37,16 @@ export function MoviePoster({
   size = 'md',
   className,
   loading = 'lazy',
-  priority = false,
   rounded,
 }: MoviePosterProps) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
   const showPhoto = !!posterUrl && !errored
+
+  useEffect(() => {
+    setLoaded(false)
+    setErrored(false)
+  }, [posterUrl])
 
   return (
     <div
@@ -71,8 +73,7 @@ export function MoviePoster({
         <img
           src={posterUrl!}
           alt={title}
-          loading={priority ? 'eager' : loading}
-          fetchPriority={priority ? 'high' : undefined}
+          loading={loading}
           decoding="async"
           className={cn(
             'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
