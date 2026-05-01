@@ -10,6 +10,8 @@ interface ActorHeadshotProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'hero'
   className?: string
   loading?: 'eager' | 'lazy'
+  /** Eager load + high fetch priority (above-the-fold carousels, etc.) */
+  priority?: boolean
   rounded?: string
 }
 
@@ -36,6 +38,7 @@ export function ActorHeadshot({
   size = 'md',
   className,
   loading = 'lazy',
+  priority = false,
   rounded,
 }: ActorHeadshotProps) {
   const [loaded, setLoaded] = useState(false)
@@ -66,7 +69,8 @@ export function ActorHeadshot({
         <img
           src={imageUrl!}
           alt={name}
-          loading={loading}
+          loading={priority ? 'eager' : loading}
+          fetchPriority={priority ? 'high' : undefined}
           decoding="async"
           className={cn(
             'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',

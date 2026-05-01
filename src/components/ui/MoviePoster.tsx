@@ -10,6 +10,8 @@ interface MoviePosterProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'hero'
   className?: string
   loading?: 'eager' | 'lazy'
+  /** Eager load + high fetch priority (above-the-fold carousels, etc.) */
+  priority?: boolean
   /** Make corners more or less rounded */
   rounded?: string
 }
@@ -37,6 +39,7 @@ export function MoviePoster({
   size = 'md',
   className,
   loading = 'lazy',
+  priority = false,
   rounded,
 }: MoviePosterProps) {
   const [loaded, setLoaded] = useState(false)
@@ -57,7 +60,7 @@ export function MoviePoster({
       }}
     >
       {/* Skeleton shimmer */}
-      {!loaded && (
+      {showPhoto && !loaded && (
         <div
           className="absolute inset-0 animate-pulse"
           style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)' }}
@@ -68,7 +71,8 @@ export function MoviePoster({
         <img
           src={posterUrl!}
           alt={title}
-          loading={loading}
+          loading={priority ? 'eager' : loading}
+          fetchPriority={priority ? 'high' : undefined}
           decoding="async"
           className={cn(
             'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',

@@ -576,8 +576,8 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
         </div>
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
-            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" loading="lazy" />
-            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" loading="lazy" />
+            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" priority />
+            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" priority />
           </div>
           <div className="flex items-center justify-between mb-6">
             {isLoading ? (
