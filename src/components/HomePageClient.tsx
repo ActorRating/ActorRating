@@ -635,14 +635,14 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
               {actorPageHref ? (
                 <Link href={actorPageHref} className="group/actor inline-flex items-center gap-1.5 hover:text-[#FFD700] transition-colors duration-200">
                   {actorName}
-                  <ArrowUpRight className="w-4 h-4 opacity-0 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+                  <ArrowUpRight className="w-4 h-4 opacity-40 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
                 </Link>
               ) : actorName}
             </h3>
             {moviePageHref ? (
               <Link href={moviePageHref} className="group/movie inline-flex items-center gap-1.5 text-lg text-[#FFD700] font-semibold tracking-wide hover:text-[#FFE55C] transition-colors duration-200 mb-4">
                 {movieTitle}
-                <ArrowUpRight className="w-4 h-4 opacity-60 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+                <ArrowUpRight className="w-4 h-4 opacity-50 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
               </Link>
             ) : (
               <p className="text-lg text-[#FFD700] font-semibold tracking-wide mb-4">{movieTitle}</p>

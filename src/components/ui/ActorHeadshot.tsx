@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,12 +40,16 @@ export function ActorHeadshot({
 }: ActorHeadshotProps) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  const showPhoto = !!imageUrl && !errored
-
-  useEffect(() => {
+  // Synchronously reset derived state when URL changes (avoids useEffect race where
+  // onLoad fires before the effect runs, then the effect resets loaded→false).
+  const [prevImageUrl, setPrevImageUrl] = useState(imageUrl)
+  if (prevImageUrl !== imageUrl) {
+    setPrevImageUrl(imageUrl)
     setLoaded(false)
     setErrored(false)
-  }, [imageUrl])
+  }
+
+  const showPhoto = !!imageUrl && !errored
 
   return (
     <div

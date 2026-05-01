@@ -489,13 +489,13 @@ function LandingPageCard({ performance, index }: { performance: EnrichedPerforma
             <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>
               <Link href={actorUrl} className="group/actor inline-flex items-center gap-1.5 hover:text-[#FFD700] transition-colors duration-200">
                 {performance.actor.name}
-                <ArrowUpRight className="w-4 h-4 opacity-0 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+                <ArrowUpRight className="w-4 h-4 opacity-40 group-hover/actor:opacity-100 transition-opacity duration-200 flex-shrink-0" />
               </Link>
             </h3>
             <div className="mb-6">
               <Link href={movieUrl} className="group/movie inline-flex items-center gap-1.5 text-lg text-[#FFD700] font-semibold tracking-wide hover:text-[#FFE55C] transition-colors duration-200">
                 {performance.movie.title}
-                <ArrowUpRight className="w-4 h-4 opacity-60 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
+                <ArrowUpRight className="w-4 h-4 opacity-50 group-hover/movie:opacity-100 transition-opacity duration-200 flex-shrink-0" />
               </Link>
             </div>
             <div className="mb-6">

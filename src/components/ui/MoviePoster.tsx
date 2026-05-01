@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,12 +41,16 @@ export function MoviePoster({
 }: MoviePosterProps) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  const showPhoto = !!posterUrl && !errored
-
-  useEffect(() => {
+  // Synchronously reset derived state when URL changes (avoids useEffect race where
+  // onLoad fires before the effect runs, then the effect resets loaded→false).
+  const [prevPosterUrl, setPrevPosterUrl] = useState(posterUrl)
+  if (prevPosterUrl !== posterUrl) {
+    setPrevPosterUrl(posterUrl)
     setLoaded(false)
     setErrored(false)
-  }, [posterUrl])
+  }
+
+  const showPhoto = !!posterUrl && !errored
 
   return (
     <div
