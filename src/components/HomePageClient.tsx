@@ -348,6 +348,20 @@ function performancesMapFromEnriched(perfs: EnrichedPerformance[] | undefined): 
   return map;
 }
 
+type LeaderboardRow = (typeof PERFORMANCES)[number];
+
+function isHomeLeaderboardHydrated(map: Map<string, EnrichedPerformance>): boolean {
+  return PERFORMANCES.every((row) => map.has(`${row.actor}:${row.movie}`));
+}
+
+function sortLeaderboardRowsByRatings(map: Map<string, EnrichedPerformance>): LeaderboardRow[] {
+  return [...PERFORMANCES].sort((a, b) => {
+    const ar = map.get(`${a.actor}:${a.movie}`)?.averageRating ?? 0;
+    const br = map.get(`${b.actor}:${b.movie}`)?.averageRating ?? 0;
+    return br - ar;
+  });
+}
+
 // ─── LEADERBOARD — performances page carousel style ──────────────────────────
 
 function LeaderboardSection({ initialPerformances }: { initialPerformances?: EnrichedPerformance[] }) {
@@ -355,8 +369,14 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   const [performancesData, setPerformancesData] = useState<Map<string, EnrichedPerformance>>(() =>
     performancesMapFromEnriched(initialPerformances)
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortedPerfs, setSortedPerfs] = useState(PERFORMANCES);
+  const [sortedPerfs, setSortedPerfs] = useState<LeaderboardRow[]>(() => {
+    const map = performancesMapFromEnriched(initialPerformances);
+    return isHomeLeaderboardHydrated(map) ? sortLeaderboardRowsByRatings(map) : PERFORMANCES;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const map = performancesMapFromEnriched(initialPerformances);
+    return !isHomeLeaderboardHydrated(map);
+  });
   const [activeCard, setActiveCard] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -369,26 +389,53 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const targets = PERFORMANCES.map((h) => ({ actor: h.actor, movie: h.movie }));
+
+    const applyFetchedPerformances = (rows: EnrichedPerformance[]) => {
+      const map = new Map<string, EnrichedPerformance>();
+      rows.forEach((p: EnrichedPerformance) => {
+        if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
+      });
+      setPerformancesData(map);
+      setSortedPerfs(sortLeaderboardRowsByRatings(map));
+    };
+
     (async () => {
+      const seeded = performancesMapFromEnriched(initialPerformances);
+
+      if (isHomeLeaderboardHydrated(seeded)) {
+        setIsLoading(false);
+        try {
+          const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
+          if (!res.ok || cancelled) return;
+          const data = await res.json();
+          const rows = data.performances as EnrichedPerformance[] | undefined;
+          if (!rows?.length || cancelled) return;
+          applyFetchedPerformances(rows);
+        } catch {
+          /* optional background refresh */
+        }
+        return;
+      }
+
       try {
-        const targets = PERFORMANCES.map(h => ({ actor: h.actor, movie: h.movie }));
         const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
-        if (!res.ok) return;
+        if (!res.ok || cancelled) return;
         const data = await res.json();
-        const map = new Map<string, EnrichedPerformance>();
-        data.performances?.forEach?.((p: EnrichedPerformance) => {
-          if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
-        });
-        setPerformancesData(map);
-        const sorted = [...PERFORMANCES].sort((a, b) => {
-          const aRating = map.get(`${a.actor}:${a.movie}`)?.averageRating ?? 0;
-          const bRating = map.get(`${b.actor}:${b.movie}`)?.averageRating ?? 0;
-          return bRating - aRating;
-        });
-        setSortedPerfs(sorted);
-      } catch (_) { /* silent */ } finally { setIsLoading(false); }
+        const rows = data.performances as EnrichedPerformance[] | undefined;
+        if (rows?.length && !cancelled) applyFetchedPerformances(rows);
+      } catch {
+        /* silent */
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     })();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialPerformances]);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
