@@ -1556,11 +1556,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${
           user
             ? showInDepthSliders
-              ? 'pt-16 sm:pt-20 md:pt-24'
-              : 'pt-28 sm:pt-20 md:pt-24'
+              ? 'pt-14 sm:pt-20 md:pt-24'
+              : 'pt-24 sm:pt-20 md:pt-24'
             : showInDepthSliders
-              ? 'pt-20 sm:pt-24 md:pt-28'
-              : 'pt-32 sm:pt-24 md:pt-28'
+              ? 'pt-[4.5rem] sm:pt-24 md:pt-28'
+              : 'pt-28 sm:pt-24 md:pt-28'
         }`}
         style={{
           contentVisibility: 'visible',
@@ -1823,11 +1823,21 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
                   {/* Instructions */}
                   <div className="text-center mb-3 sm:mb-6 max-w-[600px] mx-auto">
-                    <p className="text-xs sm:text-base text-[#a3a3a3] font-light">
-                      {showInDepthSliders
-                        ? 'Each criterion is scored individually. Final score is the average of all five.'
-                        : 'Slide to set your overall rating.'}
-                    </p>
+                    {showInDepthSliders ? (
+                      <p className="text-xs sm:text-base text-[#a3a3a3] font-light">
+                        Each criterion is scored individually. Final score is the average of all five.
+                      </p>
+                    ) : (
+                      <p
+                        className="text-lg sm:text-xl md:text-2xl text-white font-semibold italic tracking-tight px-1"
+                        style={{
+                          textShadow: '0 0 28px rgba(255,255,255,0.12), 0 2px 12px rgba(0,0,0,0.45)',
+                          fontFamily: 'var(--font-geist-sans), var(--font-sans), system-ui, sans-serif',
+                        }}
+                      >
+                        How good was this Performance?
+                      </p>
+                    )}
                   </div>
 
                   {/* Sliders - One by default, five when "Rate in more depth" is expanded */}
