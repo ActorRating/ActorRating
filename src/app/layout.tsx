@@ -27,10 +27,10 @@ const geistMono = Geist_Mono({
 });
 
 const playfairDisplay = Playfair_Display({
-  variable: "--font-cinzel",
+  variable: "--font-playfair-display",
   subsets: ["latin"],
-  weight: "400",
-  display: "optional", // Faster LCP - don't block rendering
+  weight: ["400", "600", "700", "800"],
+  display: "optional",
   preload: true,
 });
 

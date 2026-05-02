@@ -6,6 +6,7 @@ import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
+import { featuredHeroFromPerformances } from "@/lib/home-featured-performance";
 import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
 
 // --- SEO Metadata ---
@@ -47,6 +48,7 @@ export default async function Home() {
   } catch {
     /* DB/API unavailable during build or deploy — client LeaderboardSection still fetches */
   }
+  const featuredHero = featuredHeroFromPerformances(initialLeaderboardPerformances);
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
@@ -144,7 +146,10 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
       <LandingLayout>
-        <HomePageClient initialLeaderboardPerformances={initialLeaderboardPerformances} />
+        <HomePageClient
+          initialLeaderboardPerformances={initialLeaderboardPerformances}
+          featuredHero={featuredHero}
+        />
         <HomeSeoLinkSections />
       </LandingLayout>
     </>

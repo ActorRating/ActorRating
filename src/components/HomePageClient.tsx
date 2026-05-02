@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo } from "react";
 import {
   FaStar, FaSearch, FaArrowRight,
   FaUsers, FaChartLine, FaFilm, FaGlobe,
@@ -16,10 +16,13 @@ import {
 } from "@/lib/performances-page-targets";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
-import { getActorUrl, getMovieUrl } from "@/lib/slugHelper";
+import { getActorUrl, getMovieUrl, getRateUrl } from "@/lib/slugHelper";
+import {
+  type FeaturedHeroPayload,
+  featuredHeroFromPerformances,
+} from "@/lib/home-featured-performance";
 import { ArrowUpRight } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar"
-import { ActorAvatar } from "@/components/ui/ActorAvatar";
 import { ActorHeadshot } from "@/components/ui/ActorHeadshot";
 import { MoviePoster } from "@/components/ui/MoviePoster";
 
@@ -32,7 +35,9 @@ const GOLD_TEXT: React.CSSProperties = {
   WebkitTextFillColor: 'transparent',
   backgroundClip: 'text',
 };
-const CINZEL: React.CSSProperties = { fontFamily: 'var(--font-cinzel), serif' };
+const PLAYFAIR_HEADING: React.CSSProperties = {
+  fontFamily: 'var(--font-playfair-display), "Playfair Display", Georgia, serif',
+};
 
 const CARD_SHADOW = `
   0 35px 90px -20px rgba(0,0,0,0.95),
@@ -43,6 +48,14 @@ const CARD_SHADOW = `
 `.trim();
 
 const CARD_BG = 'linear-gradient(135deg, rgba(26,26,26,0.95) 0%, rgba(15,15,15,0.95) 50%, rgba(0,0,0,0.95) 100%)';
+
+/** Symmetric vertical padding so each section boundary matches How It Works ↔ Why ActorRating spacing. */
+const HOME_SECTION_PY =
+  'py-[4.25rem] sm:py-24 md:py-28 lg:py-32';
+
+/** Hero grid bottom — pairs with first section’s top padding from HOME_SECTION_PY. */
+const HOME_HERO_BOTTOM_PB =
+  'pb-[4.25rem] sm:pb-24 md:pb-28 lg:pb-32';
 
 const PERFORMANCES = HOME_LEADERBOARD_ROWS.map((r) => ({ ...r }));
 
@@ -87,7 +100,7 @@ function SectionHeading({ eyebrow, goldWord, rest }: { eyebrow?: string; goldWor
       {eyebrow && (
         <p className="text-xs font-bold tracking-[0.25em] uppercase text-[#FFD700] opacity-70 mb-4">{eyebrow}</p>
       )}
-      <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight" style={CINZEL}>
+      <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight" style={PLAYFAIR_HEADING}>
         <span style={{ ...GOLD_TEXT, filter: isMobile ? 'none' : 'drop-shadow(0 0 40px rgba(255,215,0,0.3))' }}>
           {goldWord}
         </span>{' '}{rest}
@@ -99,7 +112,11 @@ function SectionHeading({ eyebrow, goldWord, rest }: { eyebrow?: string; goldWor
 
 // ─── HERO ─────────────────────────────────────────────────────────────────────
 
-function HeroSection() {
+function HeroSection({
+  initialLeaderboardPerformances,
+}: {
+  initialLeaderboardPerformances?: EnrichedPerformance[];
+}) {
   const router = useRouter();
   const { isMobile, prefersReducedMotion } = useDevice();
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -145,7 +162,7 @@ function HeroSection() {
         className="hero-content w-full relative z-10"
         style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}
       >
-        <div className="grid grid-cols-12 pt-48 xs:pt-52 sm:pt-36 md:pt-44 lg:pt-52 pb-20 sm:pb-28 md:pb-32 lg:pb-40 w-full">
+        <div className={`grid grid-cols-12 pt-48 xs:pt-52 sm:pt-36 md:pt-44 lg:pt-52 ${HOME_HERO_BOTTOM_PB} w-full`}>
           <div className="col-span-12 flex flex-col justify-center items-center w-full">
 
             {/* Eyebrow */}
@@ -169,7 +186,7 @@ function HeroSection() {
               <h1
                 className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
                 style={{
-                  ...CINZEL,
+                  ...PLAYFAIR_HEADING,
                   textShadow: '0 10px 40px rgba(0,0,0,0.7)',
                   letterSpacing: '0.08em',
                   lineHeight: '1.1',
@@ -193,6 +210,17 @@ function HeroSection() {
               </h1>
             </motion.div>
 
+            {/* Tagline under title */}
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.15 }}
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center px-4 mb-5 sm:mb-6 max-w-3xl mx-auto leading-snug"
+              style={{ ...GOLD_TEXT }}
+            >
+              Rate the greatest performances in film
+            </motion.p>
+
             {/* Gold divider */}
             <motion.div
               initial={prefersReducedMotion || isMobile ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
@@ -212,128 +240,73 @@ function HeroSection() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl w-full max-w-4xl leading-relaxed text-[#d4d4d4] mb-4 xs:mb-5 sm:mb-6 md:mb-8 font-light text-center px-4 sm:px-6"
+              className="text-base xs:text-lg sm:text-xl md:text-2xl w-full max-w-3xl leading-relaxed text-[#c4c4c4] mb-8 sm:mb-10 font-light text-center px-4 sm:px-6"
             >
-              A place for movie fans. Rate acting. Compare roles. Find great performances.
+              See how your rating compares with others
             </motion.p>
 
-            {/* Search bar — same component as Performances page */}
+            {/* Top rated carousel */}
             <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.4 }}
+              className="w-full px-2 mb-5"
+            >
+              <LeaderboardSection initialPerformances={initialLeaderboardPerformances} compact />
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.48 }}
+              className="text-xs sm:text-sm text-center text-[#52525b] font-medium mb-6 sm:mb-8 px-4"
+            >
+              Join others rating performances like this
+            </motion.p>
+
+            {/* Search bar — matches performances page */}
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.45 }}
-              className="w-full max-w-2xl mb-6 px-2"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="mb-3 sm:mb-4 max-w-3xl mx-auto w-full px-2 sm:px-0"
               ref={ctaRef}
             >
-              <div
-                className="relative rounded-[2rem] overflow-hidden transition-all duration-300"
-                style={{
-                  background: '#111',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: `0 25px 70px -15px rgba(0,0,0,0.9), 0 15px 40px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.3)`,
-                  transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
-                  transformStyle: 'preserve-3d',
-                }}
-              >
-                <SearchBar
-                  placeholder="Search for an actor or film…"
-                  showClear
-                  disableAutoScrollOnFocus
-                  className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#555] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:min-h-[54px]"
-                />
+              <div className="relative group">
+                <div
+                  className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
+                  style={{
+                    boxShadow: `0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)`,
+                    transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
+                    transformStyle: 'preserve-3d',
+                  }}
+                >
+                  <SearchBar
+                    placeholder="Search for actors and movies..."
+                    showClear
+                    className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-5 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[56px]"
+                  />
+                </div>
               </div>
             </motion.div>
 
-            {/* Primary CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.55 }}
-              className="mb-8"
-            >
-              <Link
-                href="/performances"
-                onMouseEnter={() => { prefetchPerformancesPageData(); router.prefetch('/performances'); }}
-                aria-label="Start rating acting performances now"
-              >
-                <button
-                  className="group px-8 xs:px-10 sm:px-16 py-4 xs:py-5 sm:py-6 rounded-full text-black text-lg xs:text-xl sm:text-2xl font-bold tracking-wider transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] relative overflow-hidden touch-manipulation"
-                  style={{ background: GOLD, boxShadow: '0 0 20px rgba(255,215,0,0.25), 0 0 40px rgba(255,215,0,0.15)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                  aria-label="Start rating acting performances now"
-                >
-                  {/* Sweep effect */}
-                  <span
-                    className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)' }}
-                    aria-hidden="true"
-                  />
-                  <span className="flex items-center justify-center gap-3 xs:gap-4 sm:gap-5 whitespace-nowrap relative z-10">
-                    Start Rating Now
-                    <FaArrowRight className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:translate-x-2" aria-hidden="true" />
-                  </span>
-                </button>
-              </Link>
-            </motion.div>
-
-            {/* Quick links */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.65 }}
-              className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap px-4"
+              transition={{ duration: 0.6, delay: 0.58 }}
+              className="flex justify-center px-4 mb-16 sm:mb-20 md:mb-24 lg:mb-28"
             >
-              {[
-                { label: 'Browse Performances', href: '/performances' },
-                { label: 'About ActorRating', href: '/about' },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="group flex items-center gap-1.5 text-xs sm:text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200"
-                >
-                  <span className="w-1 h-1 rounded-full bg-[#FFD700] opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                  {link.label}
-                </Link>
-              ))}
+              <Link
+                href="/performances"
+                className="text-xs sm:text-sm text-[#71717a] hover:text-[#FFD700] transition-colors duration-200"
+                onMouseEnter={() => { prefetchPerformancesPageData(); router.prefetch('/performances'); }}
+              >
+                View all performances →
+              </Link>
             </motion.div>
 
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── STATS STRIP ─────────────────────────────────────────────────────────────
-
-function StatsStrip() {
-  const stats = [
-    { value: '570K+', label: 'Performances' },
-    { value: '208K+', label: 'Actors' },
-    { value: '5',     label: 'Rating Dimensions' },
-    { value: '●',     label: 'Growing Daily', live: true },
-  ];
-  return (
-    <div className="relative z-10 border-y" style={{ borderColor: 'rgba(255,215,0,0.08)', background: '#050505' }}>
-      <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4">
-        {stats.map((s, i) => (
-          <div key={i} className="relative flex flex-col items-center justify-center py-6 sm:py-8">
-            {i > 0 && (
-              <div className="absolute left-0 top-[20%] h-[60%] w-px" style={{ background: 'rgba(255,215,0,0.08)' }} />
-            )}
-            {s.live ? (
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" style={{ boxShadow: '0 0 6px rgba(255,215,0,0.7)' }} />
-                <span className="text-xl sm:text-2xl font-extrabold" style={GOLD_TEXT}>Live</span>
-              </div>
-            ) : (
-              <span className="text-2xl sm:text-3xl font-extrabold mb-1" style={GOLD_TEXT}>{s.value}</span>
-            )}
-            <span className="text-[10px] sm:text-xs text-[#555] font-medium tracking-[0.15em] uppercase">{s.label}</span>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -366,7 +339,13 @@ function sortLeaderboardRowsByRatings(map: Map<string, EnrichedPerformance>): Le
 
 // ─── LEADERBOARD — performances page carousel style ──────────────────────────
 
-function LeaderboardSection({ initialPerformances }: { initialPerformances?: EnrichedPerformance[] }) {
+function LeaderboardSection({
+  initialPerformances,
+  compact = false,
+}: {
+  initialPerformances?: EnrichedPerformance[];
+  compact?: boolean;
+}) {
   const router = useRouter();
   const [performancesData, setPerformancesData] = useState<Map<string, EnrichedPerformance>>(() =>
     performancesMapFromEnriched(initialPerformances)
@@ -479,16 +458,20 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   }, [isDesktop]);
 
   return (
-    <div id="leaderboard" className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
-      </div>
-
-      <div className="w-full relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4">
-          <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated" />
+    <div id="leaderboard" className={`relative z-10 bg-black ${compact ? 'py-0' : 'py-20 sm:py-28 md:py-32 lg:py-40'}`}>
+      {!compact && (
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
         </div>
+      )}
+
+      <div className="w-full relative" style={{ maxWidth: compact ? '100%' : '1280px', margin: '0 auto' }}>
+        {!compact && (
+          <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4">
+            <SectionHeading eyebrow="Community Rankings" goldWord="Top" rest="Rated" />
+          </div>
+        )}
 
         {/* Carousel */}
         <div className="relative">
@@ -512,7 +495,10 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
                   const cnt = perfData?.ratingCount ?? 0;
                   const rating = avg != null && avg > 0 && cnt > 0 ? (avg / 10).toFixed(1) : null;
                   const href = perfData?.actor && perfData?.movie
-                    ? `/rate/${perfData.movie.slug || perfData.movieId}/${perfData.actor.slug || perfData.actorId}`
+                    ? getRateUrl(
+                        { id: perfData.actorId, name: perfData.actor.name, slug: perfData.actor.slug },
+                        { id: perfData.movieId, title: perfData.movie.title, year: perfData.movie.year, slug: perfData.movie.slug },
+                      )
                     : '/performances';
                   const actorPageHref = perfData?.actor
                     ? getActorUrl({ id: perfData.actorId, name: perfData.actor.name, slug: perfData.actor.slug ?? null })
@@ -578,7 +564,7 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
           </div>
         </div>
 
-        <div className="mt-10 text-center">
+        <div className={`${compact ? 'mt-4 text-center' : 'mt-10 text-center'}`}>
           <Link
             href="/performances"
             className="group inline-flex items-center gap-2.5 text-sm text-[#888] hover:text-[#FFD700] transition-colors duration-200"
@@ -593,11 +579,12 @@ function LeaderboardSection({ initialPerformances }: { initialPerformances?: Enr
   );
 }
 
-function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href, actorPageHref, moviePageHref, actorImageUrl, moviePosterUrl, router }: {
+function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href, actorPageHref, moviePageHref, actorImageUrl, moviePosterUrl, router, rateCta = 'Rate this performance' }: {
   actorName: string; movieTitle: string; year: string; rating: string | null;
   isLoading: boolean; href: string; actorPageHref: string | null; moviePageHref: string | null;
   actorImageUrl?: string | null; moviePosterUrl?: string | null;
   router: ReturnType<typeof useRouter>;
+  rateCta?: string;
 }) {
   const handlePrefetch = () => router.prefetch(href);
   return (
@@ -631,7 +618,7 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
             <div className="text-[#a3a3a3] text-base font-medium">{year}</div>
           </div>
           <div className="flex-1">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={CINZEL}>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={PLAYFAIR_HEADING}>
               {actorPageHref ? (
                 <Link href={actorPageHref} className="group/actor inline-flex items-center gap-1.5 hover:text-[#FFD700] transition-colors duration-200">
                   {actorName}
@@ -654,7 +641,10 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
                 className="w-full px-6 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation"
                 style={{ background: GOLD }}
               >
-                <span className="flex items-center justify-center gap-2">Rate <FaStar className="w-5 h-5" /></span>
+                <span className="flex items-center justify-center gap-2">
+                  {rateCta}
+                  <FaArrowRight className="w-4 h-4" />
+                </span>
               </button>
             </Link>
           </div>
@@ -675,19 +665,19 @@ const CRITERIA = [
   { num: "05", title: "Chemistry & Interaction",       sub: "Strong work makes everyone else look better too." },
 ];
 
-function RatingCriteriaSection() {
+function RatingCriteriaSection({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
   const { isMobile, prefersReducedMotion } = useDevice();
   const reduceMotion = isMobile || prefersReducedMotion;
   return (
-    <div className="relative z-10 py-20 sm:py-28 md:py-32" style={{ background: '#040404' }}>
+    <div className={`relative z-10 ${HOME_SECTION_PY}`} style={{ background: '#040404' }}>
       <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent)' }} />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-12 sm:pt-14 md:pt-16">
         {/* Header */}
         <div className="mb-14 sm:mb-20">
           <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#FFD700] opacity-60 mb-4">How We Rate</p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight" style={CINZEL}>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight" style={PLAYFAIR_HEADING}>
               The 5<br />
               <span style={GOLD_TEXT}>Dimensions</span>
             </h2>
@@ -725,7 +715,7 @@ function RatingCriteriaSection() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 pt-1">
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 leading-tight group-hover:text-[#FFD700] transition-colors duration-200" style={CINZEL}>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1.5 leading-tight group-hover:text-[#FFD700] transition-colors duration-200" style={PLAYFAIR_HEADING}>
                     {c.title}
                   </h3>
                   <p className="text-sm sm:text-base text-[#555] leading-relaxed">{c.sub}</p>
@@ -736,7 +726,7 @@ function RatingCriteriaSection() {
         </div>
 
         <div className="mt-12 sm:mt-16 flex justify-center">
-          <Link href="/performances">
+          <Link href={primaryRateHref} prefetch={false}>
             <button
               className="group inline-flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.3)]"
               style={{ background: GOLD }}
@@ -755,7 +745,7 @@ function RatingCriteriaSection() {
 
 // ─── HOW IT WORKS ─────────────────────────────────────────────────────────────
 
-function HowItWorksSection() {
+function HowItWorksSection({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
   const router = useRouter();
   const { isMobile, prefersReducedMotion } = useDevice();
 
@@ -766,7 +756,7 @@ function HowItWorksSection() {
   ];
 
   return (
-    <div className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
+    <div className={`relative z-10 bg-black ${HOME_SECTION_PY}`}>
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(255,180,0,0.15) 0%, transparent 70%)', filter: isMobile ? 'blur(80px)' : 'blur(150px)' }} />
@@ -810,7 +800,7 @@ function HowItWorksSection() {
                       style={{ background: 'rgba(255,215,0,0.08)', border: '2px solid rgba(255,215,0,0.25)', boxShadow: '0 0 30px rgba(255,215,0,0.1)' }}>
                       <Icon className="w-7 h-7 sm:w-9 sm:h-9 text-[#FFD700]" />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-4 leading-tight" style={CINZEL}>{step.title}</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-4 leading-tight" style={PLAYFAIR_HEADING}>{step.title}</h3>
                     <p className="text-sm text-[#a0a0a0] leading-relaxed">{step.description}</p>
                   </div>
                   <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-[#FFD700]/6 to-transparent rounded-tl-[80px] pointer-events-none" />
@@ -823,8 +813,12 @@ function HowItWorksSection() {
 
         <div className="mt-14 sm:mt-20 text-center">
           <Link
-            href="/performances"
-            onMouseEnter={() => { prefetchPerformancesPageData(); router.prefetch('/performances'); }}
+            href={primaryRateHref}
+            prefetch={false}
+            onMouseEnter={() => {
+              if (primaryRateHref.startsWith('/rate/')) router.prefetch(primaryRateHref);
+              else { prefetchPerformancesPageData(); router.prefetch('/performances'); }
+            }}
           >
             <button
               className="group inline-flex items-center gap-4 px-10 sm:px-16 py-5 sm:py-6 rounded-full text-black text-base sm:text-xl font-bold tracking-wider transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]"
@@ -832,7 +826,7 @@ function HowItWorksSection() {
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Start Rating Now
+              Rate a performance
               <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-2" />
             </button>
           </Link>
@@ -844,7 +838,7 @@ function HowItWorksSection() {
 
 // ─── WHY ACTORRATING ──────────────────────────────────────────────────────────
 
-function FeaturesSection() {
+function FeaturesSection({ compact = false }: { compact?: boolean }) {
   const { isMobile, prefersReducedMotion } = useDevice();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
@@ -873,8 +867,8 @@ function FeaturesSection() {
   ];
 
   return (
-    <div className="relative z-10 bg-black py-20 sm:py-28 md:py-32 lg:py-40">
-      <div className="absolute inset-0 opacity-15 pointer-events-none">
+    <div className={`relative z-10 bg-black ${compact ? HOME_SECTION_PY : 'py-20 sm:py-28 md:py-32 lg:py-40'}`}>
+      <div className={`absolute inset-0 pointer-events-none ${compact ? 'opacity-10' : 'opacity-15'}`}>
         <div className="absolute top-1/3 right-1/4 w-[700px] h-[700px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(255,200,0,0.2) 0%, transparent 70%)', filter: isMobile ? 'blur(80px)' : 'blur(160px)' }} />
       </div>
@@ -915,7 +909,7 @@ function FeaturesSection() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-                        <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight" style={CINZEL}>{f.title}</h3>
+                        <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight" style={PLAYFAIR_HEADING}>{f.title}</h3>
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full flex-shrink-0 self-start"
                           style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)' }}>
                           <span className="text-xs font-semibold text-[#FFD700]">{f.stat}</span>
@@ -949,7 +943,7 @@ function FeaturesSection() {
 
 function AboutTeaser() {
   return (
-    <div className="relative z-10 bg-black py-16 sm:py-20 md:py-24">
+    <div className={`relative z-10 bg-black ${HOME_SECTION_PY}`}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div
           className="relative group p-8 sm:p-12 md:p-16 rounded-[2rem] overflow-hidden transition-all duration-300 text-center"
@@ -962,7 +956,7 @@ function AboutTeaser() {
 
           <div className="relative z-10">
             <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-5">Our Mission</p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={CINZEL}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={PLAYFAIR_HEADING}>
               <span style={GOLD_TEXT}>&ldquo;A great performance</span>
               <br />
               can exist in a mediocre movie.&rdquo;
@@ -992,26 +986,22 @@ function AboutTeaser() {
 
 // ─── COMMUNITY CTA ─────────────────────────────────────────────────────────────
 
-function CommunityCta() {
+function CommunityCta({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
+  const router = useRouter();
   const { isMobile, prefersReducedMotion } = useDevice();
   const reduceMotion = isMobile || prefersReducedMotion;
-  const stats = [
-    { value: '570K+', label: 'Performances' },
-    { value: '208K+', label: 'Actors' },
-    { live: true,     label: 'Growing Daily' },
-  ];
 
   return (
-    <div className="relative z-10 bg-black py-24 sm:py-32 md:py-40 lg:py-48">
+    <div className={`relative z-10 bg-black ${HOME_SECTION_PY}`}>
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-15"
         style={{ width: '800px', height: '800px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,200,0,0.25) 0%, transparent 65%)', filter: isMobile ? 'blur(60px)' : 'blur(120px)' }}
       />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center relative z-10">
-        <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-6">Join the Community</p>
+        <p className="text-[10px] sm:text-xs font-bold tracking-[0.28em] uppercase text-[#FFD700] opacity-70 mb-6">Start rating now — it takes 10 seconds</p>
 
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight" style={CINZEL}>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight" style={PLAYFAIR_HEADING}>
           Be part of building
           <br />
           <span style={GOLD_TEXT}>the performance canon</span>
@@ -1036,41 +1026,23 @@ function CommunityCta() {
           Your ratings help define what &quot;great acting&quot; means. Start rating — it&apos;s free, forever.
         </p>
 
-        <div className="flex items-center justify-center gap-8 sm:gap-14 mb-12">
-          {stats.map((s, i) => (
-            <div key={i} className="text-center">
-              {s.live ? (
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" style={{ boxShadow: '0 0 8px rgba(255,215,0,0.8)' }} />
-                  <span className="text-xl sm:text-2xl font-extrabold" style={GOLD_TEXT}>Live</span>
-                </div>
-              ) : (
-                <div className="text-xl sm:text-2xl font-extrabold mb-1" style={GOLD_TEXT}>{(s as any).value}</div>
-              )}
-              <div className="text-[10px] sm:text-xs text-[#555] tracking-[0.15em] uppercase">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/auth/signin">
+        <div className="flex justify-center">
+          <Link
+            href={primaryRateHref}
+            prefetch={false}
+            onMouseEnter={() => {
+              if (primaryRateHref.startsWith('/rate/')) router.prefetch(primaryRateHref);
+              else { prefetchPerformancesPageData(); router.prefetch('/performances'); }
+            }}
+          >
             <button
               className="px-8 sm:px-12 py-4 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)]"
               style={{ background: GOLD }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.04)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
             >
-              Continue with Email
+              Rate a performance
             </button>
-          </Link>
-          <Link
-            href="/performances"
-            className="px-8 sm:px-10 py-4 sm:py-5 rounded-full text-sm sm:text-base font-semibold text-[#888] hover:text-white transition-all duration-200"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff'; prefetchPerformancesPageData(); }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#888'; }}
-          >
-            Browse First
           </Link>
         </div>
       </div>
@@ -1082,9 +1054,46 @@ function CommunityCta() {
 
 export default function HomePageClient({
   initialLeaderboardPerformances = [],
+  featuredHero: featuredHeroProp = null,
 }: {
   initialLeaderboardPerformances?: EnrichedPerformance[];
+  featuredHero?: FeaturedHeroPayload | null;
 }) {
+  const fromSeed = useMemo(() => {
+    if (featuredHeroProp) return featuredHeroProp;
+    return featuredHeroFromPerformances(initialLeaderboardPerformances);
+  }, [featuredHeroProp, initialLeaderboardPerformances]);
+
+  const [clientResolvedFeatured, setClientResolvedFeatured] = useState<FeaturedHeroPayload | null>(null);
+  const [featuredFetchDone, setFeaturedFetchDone] = useState(!!fromSeed);
+
+  useEffect(() => {
+    if (fromSeed) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const targets = HOME_LEADERBOARD_ROWS.map(({ actor, movie }) => ({ actor, movie }));
+        const res = await fetch(buildByLookupUrl(targets), { cache: 'force-cache' });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const rows = data.performances as EnrichedPerformance[] | undefined;
+        if (!rows?.length || cancelled) return;
+        const picked = featuredHeroFromPerformances(rows);
+        if (picked && !cancelled) setClientResolvedFeatured(picked);
+      } catch {
+        /* silent */
+      } finally {
+        if (!cancelled) setFeaturedFetchDone(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fromSeed]);
+
+  const activeFeatured = fromSeed ?? clientResolvedFeatured;
+  const primaryRateHref = activeFeatured?.rateHref ?? '/performances';
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.scrollY > 0) {
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1093,14 +1102,12 @@ export default function HomePageClient({
 
   return (
     <>
-      <HeroSection />
-      <StatsStrip />
-      <LeaderboardSection initialPerformances={initialLeaderboardPerformances} />
-      <RatingCriteriaSection />
-      <HowItWorksSection />
-      <FeaturesSection />
+      <HeroSection initialLeaderboardPerformances={initialLeaderboardPerformances} />
+      <CommunityCta primaryRateHref={primaryRateHref} />
+      <RatingCriteriaSection primaryRateHref={primaryRateHref} />
+      <HowItWorksSection primaryRateHref={primaryRateHref} />
+      <FeaturesSection compact />
       <AboutTeaser />
-      <CommunityCta />
     </>
   );
 }
