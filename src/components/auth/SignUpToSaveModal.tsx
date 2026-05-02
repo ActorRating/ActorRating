@@ -386,7 +386,7 @@ function MomentumContent({
         <p className="text-white font-bold text-xl sm:text-2xl">You&apos;re on a roll 🔥</p>
         {guestRatingsCount >= 2 && (
           <p className="text-sm font-semibold" style={{ color: '#FFD700' }}>
-            {guestRatingsCount === 2 ? 'Save my 2 ratings' : 'Save my 3 ratings'}
+            Save your ratings
           </p>
         )}
         <p className="text-sm sm:text-base text-[#a1a1aa]">

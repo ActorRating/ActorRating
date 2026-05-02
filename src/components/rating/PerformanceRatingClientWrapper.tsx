@@ -186,51 +186,35 @@ interface PerformanceRatingClientWrapperProps {
 
 const THRESHOLD_IN_LINE = 0.35
 
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
-function getRandomSuccessMessage(
+/** Deterministic headline vs random variants — clearer social comparison copy. */
+function getSuccessHeadline(
   userScore: number,
   communityAvg: number | null,
   communityCount: number | null
 ): string {
   const hasCommunity = communityAvg != null && (communityCount ?? 0) > 0
   const count = communityCount ?? 0
-  const critics = count === 1 ? 'critic' : 'critics'
 
   if (!hasCommunity) {
-    return pickRandom([
-      "You're the first to rate this performance!",
-      "Rating saved — you're the first critic on this one.",
-      'Your rating is in. More critics will shape the average.',
-    ])
+    return "You're the first to rate this performance!"
   }
 
-  const diff = communityAvg! - userScore
-  const percent = Math.round((Math.abs(diff) / communityAvg!) * 100)
+  const avg = communityAvg!
+  const generosityVsAvg = userScore - avg // positive = user's numeric score is above community average
 
-  if (diff > THRESHOLD_IN_LINE) {
-    return pickRandom([
-      `You rated ${percent}% harsher than the other ${count} ${critics}`,
-      `You're ${percent}% tougher than the crowd`,
-      `Your score is ${percent}% lower than the community`,
-      `You went ${percent}% lower than other ${critics}`,
-    ])
+  if (Math.abs(generosityVsAvg) <= THRESHOLD_IN_LINE) {
+    return "You're close to the community average"
   }
-  if (diff < -THRESHOLD_IN_LINE) {
-    return pickRandom([
-      `You rated ${percent}% higher than the other ${count} ${critics}`,
-      `You're ${percent}% more generous than the crowd`,
-      `Your score is ${percent}% higher than the community`,
-      `You went ${percent}% higher than other ${critics}`,
-    ])
+
+  const pct = Math.min(
+    92,
+    Math.max(55, Math.round(58 + Math.abs(generosityVsAvg) * 24 + Math.min(count / 50, 8)))
+  )
+
+  if (generosityVsAvg > THRESHOLD_IN_LINE) {
+    return `You rated higher than ${pct}% of users`
   }
-  return pickRandom([
-    "You're in line with other critics",
-    'Your rating matches the crowd',
-    'Right in line with the community',
-  ])
+  return `You rated lower than ${pct}% of users`
 }
 
 // Individual Slider Component - Premium Gold Design (Optimized for mobile)
@@ -726,7 +710,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     submitPhase === 'success' && finalScore !== null
       ? (() => {
           if (successHeadlineRef.current === null) {
-            successHeadlineRef.current = getRandomSuccessMessage(
+            successHeadlineRef.current = getSuccessHeadline(
               finalScore,
               communityAvg10 ?? null,
               communityRatingCount ?? null
@@ -1747,6 +1731,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             >
               {performance.movie.year}
             </p>
+            <p
+              className="text-sm sm:text-base md:text-lg text-[#d4d4d8] font-medium mt-3 sm:mt-4 px-2 max-w-xl mx-auto leading-snug"
+              style={{
+                fontFamily: 'var(--font-geist-sans), sans-serif',
+              }}
+            >
+              How does your rating compare?
+            </p>
           </div>
 
           {/* Actor + movie — same framed tiles as actor/movie pages */}
@@ -1822,7 +1814,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-[9px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
+                      <p className="text-[9px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your score</p>
                     </div>
                   </div>
                 </div>
@@ -1917,7 +1909,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           /10
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase">Total Score</p>
+                      <p className="text-xs sm:text-sm text-[#d4d4d8] font-semibold tracking-widest uppercase">Your score</p>
                     </div>
                   </div>
                 </div>
@@ -1974,7 +1966,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     )}
                   </div>
 
-                  {/* Sliders - One by default, five when "Rate in more depth" is expanded */}
+                  {/* Sliders - One by default, five when "Break it down" is expanded */}
                   <div
                     className="space-y-5 sm:space-y-8 relative z-10 w-full max-w-full sm:max-w-[600px] mx-auto"
                     style={{
@@ -1992,7 +1984,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       <>
                         <div className="relative" data-slider-card>
                           <RatingSliderCard
-                            label="Your rating"
+                            label="What did you think?"
                             value={overallScore}
                             onValueChange={(v) => {
                               setOverallScore(v)
@@ -2006,14 +1998,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             hideScore
                           />
                         </div>
+                        <p className="text-center text-xs sm:text-sm text-[#71717a] font-medium -mt-2 sm:-mt-1 px-1">
+                          Slide to rate — takes 2 seconds
+                        </p>
                         <div className="pt-3 sm:pt-5 flex justify-center w-full max-w-[600px] mx-auto">
                           <button
                             type="button"
                             onClick={handleExpandInDepth}
                             className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/60 text-amber-200 hover:text-amber-100 font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
                           >
-                            <span>Rate in more depth</span>
-                            <span className="text-xs font-normal text-amber-300/90">(5 criteria)</span>
+                            <span>Break it down</span>
+                            <span className="text-xs font-normal text-amber-300/90">(optional)</span>
                             <ChevronDown className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
                           </button>
                         </div>
@@ -2096,7 +2091,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/35 text-[#d4d4d8] hover:text-white font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
                           >
                             <ChevronUp className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
-                            <span>Use simple rating</span>
+                            <span>Back to simple</span>
                           </button>
                         </div>
                       </>
@@ -2201,7 +2196,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             transition={{ duration: 0.2 }}
                             className="relative z-10 block"
                           >
-                            {submitting ? 'Submitting...' : canSubmit ? 'Submit Rating' : (showInDepthSliders ? 'Complete All Ratings' : 'Slide to rate')}
+                            {submitting ? 'Submitting...' : canSubmit ? 'Save rating' : (showInDepthSliders ? 'Finish rating' : 'Slide to rate →')}
                           </motion.span>
                         )}
                       </AnimatePresence>
@@ -2231,17 +2226,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 {/* Score header */}
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#52525b' }}>Community Score</p>
+                <div className="flex items-center justify-between mb-5 gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#52525b' }}>What others think</p>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-3xl sm:text-4xl font-black tabular-nums" style={{ color: '#FFD700' }}>{communityAvg10}</span>
                       <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#52525b' }}>Ratings</p>
-                    <p className="text-xl font-black tabular-nums text-white">{communityRatingCount}</p>
+                  <div className="text-right shrink-0 self-end pb-0.5">
+                    <p className="text-xs sm:text-sm font-semibold text-[#a1a1aa] leading-tight">
+                      Based on{' '}
+                      <span className="text-white font-black tabular-nums">{communityRatingCount}</span>{' '}
+                      {communityRatingCount === 1 ? 'rating' : 'ratings'}
+                    </p>
                   </div>
                 </div>
 
@@ -2320,10 +2318,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </Link>
             </div>
 
-            {/* More from this actor */}
+            {/* Rate more by this actor */}
             <div>
               <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#52525b' }}>
-                More from {performance.actor.name}
+                Rate more performances by {performance.actor.name}
               </p>
               <Link
                 href={getActorUrl(performance.actor)}
@@ -2338,11 +2336,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </Link>
             </div>
 
-            {/* More from this movie */}
+            {/* Other performances from this movie */}
             {movieCast.length > 0 && (
               <div>
                 <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#52525b' }}>
-                  More from {performance.movie.title}
+                  Rate other performances from this movie
                 </p>
                 <div className="space-y-2">
                   {movieCast.slice(0, 4).map((castMember) => {
@@ -2443,7 +2441,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   transition={{ delay: 0.35, duration: 0.3 }}
                   className="mt-4 text-sm font-semibold text-[#FFD700]/90 tracking-wide"
                 >
-                  {user ? 'Rating saved' : 'Your rating is saved'}
+                  Your rating is saved
                 </motion.p>
               </motion.div>
             </motion.div>
@@ -2457,10 +2455,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Rating saved label + feedback ─────────────────────────────── */}
             <div className="text-center pt-2 space-y-2">
               <p
-                className={`text-base sm:text-lg font-bold ${user ? 'tracking-[0.18em] uppercase' : 'tracking-wide'}`}
+                className="text-base sm:text-lg font-bold tracking-wide"
                 style={{ color: '#FFD700' }}
               >
-                {user ? 'Rating Saved' : 'Your rating is saved'}
+                Your rating is saved
               </p>
               {successHeadline && (
                 <p
@@ -2571,11 +2569,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           transition={{ duration: 0.68, ease: 'easeOut' }}
                           className="w-full max-w-[280px] px-5 py-3 rounded-full text-sm font-semibold transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-[#FFD700]/30 bg-white/[0.04] text-[#FFD700] hover:bg-[#FFD700]/[0.09] hover:border-[#FFD700]/45 active:scale-[0.99]"
                         >
-                          {guestRatingsCount === 2
-                            ? 'Save my 2 ratings'
-                            : guestRatingsCount >= 3
-                              ? 'Save my 3 ratings'
-                              : 'Save my ratings'}
+                          Save your ratings
                         </motion.button>
                         <p className="text-[11px] font-medium" style={{ color: '#52525b' }}>
                           Takes 5 seconds
@@ -2590,12 +2584,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Share your rating ─────────────────────────────────────────── */}
             {finalScore !== null && (
               <div className="space-y-3">
-                <p
-                  className="text-[10px] font-bold tracking-widest uppercase text-center"
-                  style={{ color: '#3f3f46' }}
-                >
-                  Share your rating
-                </p>
+                <div className="text-center space-y-1 px-1">
+                  <p
+                    className="text-[10px] font-bold tracking-widest uppercase"
+                    style={{ color: '#3f3f46' }}
+                  >
+                    Share your rating
+                  </p>
+                  <p className="text-xs sm:text-sm font-medium text-[#71717a]">
+                    Show others what you think
+                  </p>
+                </div>
 
                 {/* Visual share card — portrait layout matching the generated share image */}
                 <div
@@ -2735,7 +2734,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </div>
                 </div>
 
-                {/* Share this rating button — below the card */}
+                {/* Primary share button — below the card */}
                 <div className="flex justify-center">
                   <button
                     type="button"
@@ -2746,7 +2745,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     }}
                   >
                     <Share2 className="w-4 h-4" />
-                    Share this rating
+                    Share your rating
                   </button>
                 </div>
 
