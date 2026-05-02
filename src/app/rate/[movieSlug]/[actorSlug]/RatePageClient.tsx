@@ -27,6 +27,8 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   const params = useParams()
   const router = useRouter()
   const { user, loading: authLoading } = useSession()
+  /** NextAuth can replace `session.user` by reference on refetch — avoid effect churn / stuck rating gate. */
+  const sessionUserKey = user?.id ?? user?.email ?? ''
   const [loading, setLoading] = useState(!initialMovie || !initialActor)
   const [actor, setActor] = useState<Actor | null>(initialActor)
   const [movie, setMovie] = useState<Movie | null>(initialMovie)
@@ -163,14 +165,15 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       .catch(() => {})
   }, [movie?.id, movie?.slug, actor?.id])
 
-  // When not logged in, no need to wait for a rating check
+  // When not logged in, no need to wait for a rating check (only after auth finished resolving).
   useEffect(() => {
-    if (!user) setRatingCheckDone(true)
-  }, [user])
+    if (authLoading) return
+    if (!sessionUserKey) setRatingCheckDone(true)
+  }, [sessionUserKey, authLoading])
 
   // Fetch current user's rating for this performance so we can prefill the form (Edit flow)
   useEffect(() => {
-    if (!user || !actor?.id || !movie?.id) return
+    if (!sessionUserKey || !actor?.id || !movie?.id) return
     setRatingCheckDone(false)
     let cancelled = false
     fetch('/api/ratings/me', { cache: 'no-store' })
@@ -203,7 +206,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     return () => {
       cancelled = true
     }
-  }, [user, actor?.id, movie?.id])
+  }, [sessionUserKey, actor?.id, movie?.id])
 
   // Wait until NextAuth finishes resolving — otherwise user is briefly null while authenticated,
   // we mount the rating UI, then unmount when session resolves (flash + fragile teardown in prod).
