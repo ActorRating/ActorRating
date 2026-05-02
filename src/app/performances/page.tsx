@@ -13,7 +13,12 @@ import { PerformancesPageClient } from "./PerformancesPageClient"
 
 export default async function PerformancesPage() {
   const allTargets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
-  const performances = await getPerformancesByLookup(allTargets)
+  let performances: Awaited<ReturnType<typeof getPerformancesByLookup>> = []
+  try {
+    performances = await getPerformancesByLookup(allTargets)
+  } catch {
+    /* DB unreachable (e.g. local dev / bad DATABASE_URL) — PerformancesPageClient fetches via /api */
+  }
 
   const initialRecent = RECENT_PERFORMANCE_TARGETS.map((target) =>
     performances.find((p) => p.actor.name === target.actor && p.movie.title === target.movie)

@@ -10,7 +10,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Actor, Movie } from '@/types'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { RatePageLayout } from '@/components/layout/RatePageLayout'
-import { useUser } from '@/components/providers/SessionProvider'
+import { useSession } from '@/components/providers/SessionProvider'
 import { ratingsApi } from '@/lib/api'
 import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
@@ -26,7 +26,7 @@ type RatePageClientProps = {
 export default function RatePageClient({ initialMovie = null, initialActor = null }: RatePageClientProps) {
   const params = useParams()
   const router = useRouter()
-  const user = useUser()
+  const { user, loading: authLoading } = useSession()
   const [loading, setLoading] = useState(!initialMovie || !initialActor)
   const [actor, setActor] = useState<Actor | null>(initialActor)
   const [movie, setMovie] = useState<Movie | null>(initialMovie)
@@ -205,8 +205,9 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     }
   }, [user, actor?.id, movie?.id])
 
-  // When logged in, wait for rating check so the form can render with sliders prefilled (edit flow)
-  const formReady = !loading && (!user || ratingCheckDone)
+  // Wait until NextAuth finishes resolving — otherwise user is briefly null while authenticated,
+  // we mount the rating UI, then unmount when session resolves (flash + fragile teardown in prod).
+  const formReady = !authLoading && !loading && (!user || ratingCheckDone)
 
   if (!formReady) {
     return (
@@ -216,7 +217,11 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
             size="lg"
             color="#FFD700"
             showText={true}
-            text={user && !ratingCheckDone ? 'Loading your rating...' : 'Loading rating page...'}
+            text={
+              !authLoading && user && !ratingCheckDone
+                ? 'Loading your rating...'
+                : 'Loading rating page...'
+            }
           />
         </div>
       </RatePageLayout>

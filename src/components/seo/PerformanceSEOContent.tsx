@@ -1,15 +1,16 @@
 /**
  * SEO-friendly crawlable content for performance rating pages
- * 
+ *
  * Requirements:
- * - Only renders when user is logged out
+ * - Only hides for logged-in users after mount (avoids SSR/client tree mismatch)
  * - Visually hidden but screen-reader accessible (sr-only)
  * - Present in HTML on first load (SSR)
- * - Not cloaking - truthfully describes the page
  * - JSON-LD moved to layout.tsx for guaranteed SSR
  */
 
-import React from 'react'
+"use client"
+
+import React, { useEffect, useState } from 'react'
 
 interface PerformanceSEOContentProps {
   actorName: string
@@ -24,8 +25,11 @@ export function PerformanceSEOContent({
   movieYear,
   isLoggedIn,
 }: PerformanceSEOContentProps) {
-  // Don't render if user is logged in
-  if (isLoggedIn) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  // Before mount, always match SSR (logged-out SEO block). After mount, drop for signed-in users only.
+  if (mounted && isLoggedIn) {
     return null
   }
 
