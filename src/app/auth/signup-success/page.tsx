@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from '@/components/providers/SessionProvider'
 import { CheckCircle } from 'lucide-react'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { clearGuestRatingsStorage, readGuestRatings, type GuestRating } from '@/hooks/useGuestRatings'
 
 export default function SignupSuccessPage() {
   const router = useRouter()
@@ -25,7 +26,40 @@ export default function SignupSuccessPage() {
         return
       }
 
-      // Check if there's a pending rating to submit
+      // ── Batch-sync guest ratings first ─────────────────────────────────
+      const guestRatings: GuestRating[] = readGuestRatings()
+      if (guestRatings.length > 0) {
+        setIsSubmittingRating(true)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        try {
+          await Promise.allSettled(
+            guestRatings.map((r) =>
+              fetch('/api/ratings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  actorId: r.actorId,
+                  movieId: r.movieId,
+                  emotionalRangeDepth: r.emotionalRangeDepth,
+                  characterBelievability: r.characterBelievability,
+                  technicalSkill: r.technicalSkill,
+                  screenPresence: r.screenPresence,
+                  chemistryInteraction: r.chemistryInteraction,
+                  comment: r.comment,
+                  recaptchaToken: 'bypass',
+                }),
+              })
+            )
+          )
+        } catch (err) {
+          console.error('Failed to sync guest ratings:', err)
+        } finally {
+          clearGuestRatingsStorage()
+          setIsSubmittingRating(false)
+        }
+      }
+
+      // ── Then handle any single pending rating (intercepted 4th rating) ──
       const pendingRating = localStorage.getItem('pendingRating')
       if (pendingRating) {
         setIsSubmittingRating(true)

@@ -16,6 +16,7 @@ import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 import { ProgressModal } from '@/components/dashboard/ProgressModal'
 import { ProgressBar } from '@/components/badges/ProgressBar'
+import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatings'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -167,6 +168,20 @@ interface PerformanceRatingClientWrapperProps {
     actorImageUrl: string | null
     movieSlug: string | null
   }>
+  /** Guest-only: opens momentum signup modal in context (no full-page navigation). */
+  onGuestMomentumSignup?: (payload: {
+    emotionalDepth: number
+    believability: number
+    technicalSkill: number
+    screenPresence: number
+    chemistry: number
+    actorId: string
+    movieId: string
+    actorName: string
+    movieTitle: string
+    movieYear: number
+    comment?: string
+  }) => void
 }
 
 const THRESHOLD_IN_LINE = 0.35
@@ -599,6 +614,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   communityRatingCount,
   communityDimensions,
   movieCast = [],
+  onGuestMomentumSignup,
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
@@ -637,6 +653,60 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const successHeadlineRef = useRef<string | null>(null)
   const [successOverlayFaded, setSuccessOverlayFaded] = useState(false)
 
+  // Guest-specific success state: count (re-read from localStorage when entering success)
+  const [guestRatingsCount, setGuestRatingsCount] = useState(0)
+  const [showGuestComparison, setShowGuestComparison] = useState(false)
+  const [showGuestProgressCard, setShowGuestProgressCard] = useState(false)
+  const [earlySaveCtaPulse, setEarlySaveCtaPulse] = useState(false)
+  const [earlySavePulseDone, setEarlySavePulseDone] = useState(false)
+
+  // Re-read guest count from localStorage when entering success (parent has already incremented it)
+  useEffect(() => {
+    if (submitPhase === 'success' && !user) {
+      setGuestRatingsCount(readGuestRatingsCount())
+    }
+    if (submitPhase !== 'success') {
+      setShowGuestComparison(false)
+      setShowGuestProgressCard(false)
+      setEarlySavePulseDone(false)
+      setEarlySaveCtaPulse(false)
+    }
+  }, [submitPhase, user])
+
+  useEffect(() => {
+    if (submitPhase !== 'success' || user) return
+    const cmp = setTimeout(() => setShowGuestComparison(true), 480)
+    const prg = setTimeout(() => setShowGuestProgressCard(true), 720)
+    return () => {
+      clearTimeout(cmp)
+      clearTimeout(prg)
+    }
+  }, [submitPhase, user])
+
+  // One subtle pulse on the early-save CTA (~1s after progress card appears), once per success session
+  useEffect(() => {
+    if (
+      submitPhase !== 'success' ||
+      user ||
+      !showGuestProgressCard ||
+      guestRatingsCount < 2 ||
+      !onGuestMomentumSignup ||
+      earlySavePulseDone
+    ) {
+      return
+    }
+    let pulseOff: ReturnType<typeof setTimeout> | undefined
+    const t = setTimeout(() => {
+      setEarlySaveCtaPulse(true)
+      setEarlySavePulseDone(true)
+      pulseOff = setTimeout(() => setEarlySaveCtaPulse(false), 700)
+    }, 1000)
+    return () => {
+      clearTimeout(t)
+      if (pulseOff) clearTimeout(pulseOff)
+    }
+  }, [submitPhase, user, showGuestProgressCard, guestRatingsCount, onGuestMomentumSignup, earlySavePulseDone])
+
   // Set final score if external submitted rating is provided
   useEffect(() => {
     if (externalSubmittedRating) {
@@ -668,6 +738,29 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           successHeadlineRef.current = null
           return null
         })()
+
+  /** Percentile line only when sample size and gap are strong enough; otherwise average only. */
+  const guestCommunityComparison = useMemo(() => {
+    if (user || submitPhase !== 'success' || finalScore === null) return null
+    const avg = communityAvg10
+    const count = communityRatingCount ?? 0
+    if (avg == null || count <= 0) return null
+    const avgRounded = Number(avg.toFixed(1))
+    const MIN_COUNT_FOR_PERCENTILE = 12
+    const MIN_GAP_FOR_PERCENTILE = 0.22
+    const diff = finalScore - avg
+    if (
+      count >= MIN_COUNT_FOR_PERCENTILE &&
+      diff >= MIN_GAP_FOR_PERCENTILE
+    ) {
+      const pct = Math.min(
+        92,
+        Math.max(55, Math.round(58 + diff * 24 + Math.min(count / 50, 8)))
+      )
+      return { kind: 'higher' as const, pct, avgRounded }
+    }
+    return { kind: 'average' as const, avgRounded }
+  }, [user, submitPhase, finalScore, communityAvg10, communityRatingCount])
 
   // Success page: scroll is handled by scroll-to-carousel when overlay fades (no scroll to top)
 
@@ -1185,6 +1278,47 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       }
     }
   }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title])
+
+  const buildGuestMomentumPayload = useCallback(() => {
+    const ratingData = showInDepthSliders
+      ? {
+          emotionalDepth: Math.round(emotionalRangeDepth),
+          technicalSkill: Math.round(technicalSkill),
+          believability: Math.round(characterBelievability),
+          screenPresence: Math.round(screenPresence),
+          chemistry: Math.round(chemistryInteraction),
+        }
+      : {
+          emotionalDepth: Math.round(overallScore),
+          technicalSkill: Math.round(overallScore),
+          believability: Math.round(overallScore),
+          screenPresence: Math.round(overallScore),
+          chemistry: Math.round(overallScore),
+        }
+    return {
+      ...ratingData,
+      actorId: performance.actor.id,
+      movieId: performance.movie.id,
+      actorName: performance.actor.name,
+      movieTitle: performance.movie.title,
+      movieYear: performance.movie.year,
+      comment: performance.comment,
+    }
+  }, [
+    showInDepthSliders,
+    emotionalRangeDepth,
+    technicalSkill,
+    characterBelievability,
+    screenPresence,
+    chemistryInteraction,
+    overallScore,
+    performance.actor.id,
+    performance.actor.name,
+    performance.movie.id,
+    performance.movie.title,
+    performance.movie.year,
+    performance.comment,
+  ])
 
   // Share functionality - use rating slug if available
   const shareUrl = typeof window !== 'undefined'
@@ -2309,7 +2443,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   transition={{ delay: 0.35, duration: 0.3 }}
                   className="mt-4 text-sm font-semibold text-[#FFD700]/90 tracking-wide"
                 >
-                  Rating saved
+                  {user ? 'Rating saved' : 'Your rating is saved'}
                 </motion.p>
               </motion.div>
             </motion.div>
@@ -2323,10 +2457,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Rating saved label + feedback ─────────────────────────────── */}
             <div className="text-center pt-2 space-y-2">
               <p
-                className="text-base sm:text-lg font-bold tracking-[0.18em] uppercase"
+                className={`text-base sm:text-lg font-bold ${user ? 'tracking-[0.18em] uppercase' : 'tracking-wide'}`}
                 style={{ color: '#FFD700' }}
               >
-                Rating Saved
+                {user ? 'Rating Saved' : 'Your rating is saved'}
               </p>
               {successHeadline && (
                 <p
@@ -2337,6 +2471,121 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </p>
               )}
             </div>
+
+            {/* ── Guest vs community (near score psychology) ───────────────── */}
+            {!user && finalScore !== null && (
+              <AnimatePresence>
+                {showGuestComparison && guestCommunityComparison && (
+                  <motion.div
+                    key="guest-vs-community"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="rounded-2xl px-4 py-3 text-center mx-auto max-w-sm"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <p className="text-[11px] font-bold tracking-widest uppercase mb-1" style={{ color: '#52525b' }}>
+                      Your score · {finalScore}/10
+                    </p>
+                    {guestCommunityComparison.kind === 'higher' ? (
+                      <p className="text-sm sm:text-base font-semibold text-white leading-snug">
+                        You rated higher than{' '}
+                        <span style={{ color: '#FFD700' }}>{guestCommunityComparison.pct}%</span>
+                        {' '}of users on this performance
+                      </p>
+                    ) : (
+                      <p className="text-sm sm:text-base font-semibold text-white leading-snug">
+                        Community average:{' '}
+                        <span style={{ color: '#FFD700' }}>{guestCommunityComparison.avgRounded}/10</span>
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+
+            {/* ── Guest momentum progress (●●●○ + unlock copy) ───────────────── */}
+            {!user && (
+              <AnimatePresence>
+                {showGuestProgressCard && (
+                  <motion.div
+                    key="guest-progress"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="rounded-2xl p-4 sm:p-5 space-y-3"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
+                      border: '1px solid rgba(255,215,0,0.18)',
+                    }}
+                  >
+                    <p
+                      className="text-center text-xl sm:text-2xl font-black tabular-nums flex justify-center gap-3 sm:gap-4"
+                      style={{ color: '#FFD700' }}
+                      aria-hidden
+                    >
+                      {Array.from({ length: GUEST_RATING_LIMIT }).map((_, i) => (
+                        <span key={i}>{i < guestRatingsCount ? '●' : '○'}</span>
+                      ))}
+                    </p>
+                    <p className="text-center text-sm sm:text-[15px] font-bold text-white leading-snug px-1">
+                      {guestRatingsCount === 1 && <>You&apos;ve rated 1 performance</>}
+                      {guestRatingsCount === 2 && (
+                        <>You&apos;ve rated 2 performances — 1 more to unlock your profile</>
+                      )}
+                      {guestRatingsCount >= 3 && (
+                        <>You&apos;ve rated 3 performances — unlock your profile to save them</>
+                      )}
+                      {guestRatingsCount === 0 && <>Keep rating — your progress builds here</>}
+                    </p>
+                    {guestRatingsCount === 2 && (
+                      <p className="text-center text-xs font-medium" style={{ color: '#a1a1aa' }}>
+                        Create your profile to keep your ratings
+                      </p>
+                    )}
+                    <p className="text-center text-xs sm:text-sm font-medium pt-0.5" style={{ color: '#71717a' }}>
+                      Create an account to keep it forever
+                    </p>
+                    {guestRatingsCount >= 2 && onGuestMomentumSignup && (
+                      <div className="flex flex-col items-center gap-1.5 pt-1">
+                        <motion.button
+                          type="button"
+                          onClick={() => onGuestMomentumSignup(buildGuestMomentumPayload())}
+                          animate={
+                            earlySaveCtaPulse
+                              ? {
+                                  scale: [1, 1.028, 1],
+                                  boxShadow: [
+                                    '0 0 0 0 rgba(255,215,0,0)',
+                                    '0 0 24px rgba(255,215,0,0.28)',
+                                    '0 0 0 0 rgba(255,215,0,0)',
+                                  ],
+                                }
+                              : {}
+                          }
+                          transition={{ duration: 0.68, ease: 'easeOut' }}
+                          className="w-full max-w-[280px] px-5 py-3 rounded-full text-sm font-semibold transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-[#FFD700]/30 bg-white/[0.04] text-[#FFD700] hover:bg-[#FFD700]/[0.09] hover:border-[#FFD700]/45 active:scale-[0.99]"
+                        >
+                          {guestRatingsCount === 2
+                            ? 'Save my 2 ratings'
+                            : guestRatingsCount >= 3
+                              ? 'Save my 3 ratings'
+                              : 'Save my ratings'}
+                        </motion.button>
+                        <p className="text-[11px] font-medium" style={{ color: '#52525b' }}>
+                          Takes 5 seconds
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
 
             {/* ── Share your rating ─────────────────────────────────────────── */}
             {finalScore !== null && (

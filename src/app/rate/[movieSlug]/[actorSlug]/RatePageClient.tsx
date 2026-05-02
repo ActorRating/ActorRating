@@ -6,7 +6,7 @@
 "use client"
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Actor, Movie } from '@/types'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { RatePageLayout } from '@/components/layout/RatePageLayout'
@@ -16,6 +16,7 @@ import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
+import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
 
 type RatePageClientProps = {
   initialMovie?: Movie | null
@@ -74,6 +75,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     comment: string
   } | null>(null)
   const { executeRecaptcha } = useRecaptchaV3()
+  const { count: guestCount, addRating: addGuestRating } = useGuestRatings()
 
   // Always load at top: on mount (client nav) and when content finishes loading (so top is visible before demo scroll)
   useEffect(() => {
@@ -247,19 +249,68 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     if (!actor || !movie) return Promise.resolve()
 
     if (!user) {
-      setPendingRatingData({
-        ...ratingData,
-        actorId: actor.id,
-        movieId: movie.id,
-        actorName: actor.name,
-        movieTitle: movie.title,
-        movieYear: movie.year,
-        comment: '',
-      })
-      setShowSignUpModal(true)
-      return Promise.reject()
+      // ── Guest path ────────────────────────────────────────────────────────
+      // If they've hit the free-rating limit, block and ask them to sign up.
+      if (guestCount >= GUEST_RATING_LIMIT) {
+        setPendingRatingData({
+          ...ratingData,
+          actorId: actor.id,
+          movieId: movie.id,
+          actorName: actor.name,
+          movieTitle: movie.title,
+          movieYear: movie.year,
+          comment: '',
+        })
+        setShowSignUpModal(true)
+        return Promise.reject()
+      }
+
+      // Under the limit: submit as guest, store locally, show success UI.
+      setSubmitting(true)
+      try {
+        const recaptchaToken = await executeRecaptcha('submit_rating')
+        const res = await fetch('/api/ratings/guest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            actorId: actor.id,
+            movieId: movie.id,
+            emotionalRangeDepth: ratingData.emotionalDepth,
+            characterBelievability: ratingData.believability,
+            technicalSkill: ratingData.technicalSkill,
+            screenPresence: ratingData.screenPresence,
+            chemistryInteraction: ratingData.chemistry,
+            recaptchaToken,
+          }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Guest rating failed')
+        }
+        addGuestRating({
+          actorId: actor.id,
+          movieId: movie.id,
+          actorName: actor.name,
+          movieTitle: movie.title,
+          movieYear: movie.year,
+          emotionalRangeDepth: ratingData.emotionalDepth,
+          characterBelievability: ratingData.believability,
+          technicalSkill: ratingData.technicalSkill,
+          screenPresence: ratingData.screenPresence,
+          chemistryInteraction: ratingData.chemistry,
+          timestamp: new Date().toISOString(),
+        })
+        // Resolves normally → wrapper enters submitPhase = 'success'
+      } catch (err: unknown) {
+        console.error('Failed to submit guest rating:', err)
+        throw err
+      } finally {
+        setSubmitting(false)
+      }
+      return
     }
 
+    // ── Authenticated path (unchanged) ────────────────────────────────────
     setSubmitting(true)
     try {
       if (userExistingRating?.id) {
@@ -273,7 +324,6 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       } else {
         // Skip reCAPTCHA network round-trip for authenticated users — the API already
         // skips verification for signed-in users, saving ~300ms per submission.
-        const recaptchaToken = user ? '' : await executeRecaptcha('submit_rating')
         await ratingsApi.create({
           actorId: actor.id,
           movieId: movie.id,
@@ -282,16 +332,49 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
           technicalSkill: ratingData.technicalSkill,
           screenPresence: ratingData.screenPresence,
           chemistryInteraction: ratingData.chemistry,
-          recaptchaToken,
+          recaptchaToken: '',
         })
       }
     } catch (err: unknown) {
       console.error('Failed to submit rating:', err)
       setError(err instanceof Error ? err.message : 'Failed to submit rating. Please try again.')
+      throw err
     } finally {
       setSubmitting(false)
     }
   }
+
+  const openGuestMomentumSignup = useCallback(
+    (payload: {
+      emotionalDepth: number
+      believability: number
+      technicalSkill: number
+      screenPresence: number
+      chemistry: number
+      actorId: string
+      movieId: string
+      actorName: string
+      movieTitle: string
+      movieYear: number
+      comment?: string
+    }) => {
+      setPendingRatingData({
+        emotionalDepth: payload.emotionalDepth,
+        believability: payload.believability,
+        technicalSkill: payload.technicalSkill,
+        screenPresence: payload.screenPresence,
+        chemistry: payload.chemistry,
+        actorId: payload.actorId,
+        movieId: payload.movieId,
+        actorName: payload.actorName,
+        movieTitle: payload.movieTitle,
+        movieYear: payload.movieYear,
+        comment: payload.comment ?? '',
+      })
+      setShowSignUpModal(true)
+    },
+    []
+  )
 
   return (
     <RatePageLayout onBack={ratingSubmitted ? () => router.push('/dashboard') : undefined}>
@@ -337,6 +420,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         communityRatingCount={communityRatingCount}
         communityDimensions={communityDimensions}
         movieCast={movieCast}
+        onGuestMomentumSignup={openGuestMomentumSignup}
       />
       {showSignUpModal && pendingRatingData && actor && movie && (
         <SignUpToSaveModal
@@ -350,6 +434,8 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
           movieTitle={movie.title}
           movieYear={movie.year}
           ratingData={pendingRatingData}
+          variant="momentum"
+          guestRatingsCount={guestCount}
         />
       )}
     </RatePageLayout>

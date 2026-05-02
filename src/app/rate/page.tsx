@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -22,6 +22,7 @@ import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { trackRateStart } from '@/lib/analytics'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
+import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -48,6 +49,7 @@ function RatePageContent() {
   const { executeRecaptcha } = useRecaptchaV3()
   const [showSignUpModal, setShowSignUpModal] = useState(false)
   const [pendingRatingData, setPendingRatingData] = useState<any>(null)
+  const { count: guestCount, addRating: addGuestRating } = useGuestRatings()
 
   // Track rate_start ref - must be declared before any conditional returns
   const hasTrackedRateStart = useRef(false)
@@ -279,25 +281,70 @@ function RatePageContent() {
       chemistryInteraction: ratingData.chemistry,
     }
 
-    // If user is not signed in, show modal immediately
+    // ── Guest path ────────────────────────────────────────────────────────
     if (!user) {
-      const ratingDataToStore = {
-        ...ratingData,
-        actorId: actor.id,
-        movieId: movie.id,
-        actorName: actor.name,
-        movieTitle: movie.title,
-        movieYear: movie.year,
-        comment: characterName,
+      // At or over the free-rating limit: block and prompt sign-up.
+      if (guestCount >= GUEST_RATING_LIMIT) {
+        const ratingDataToStore = {
+          ...ratingData,
+          actorId: actor.id,
+          movieId: movie.id,
+          actorName: actor.name,
+          movieTitle: movie.title,
+          movieYear: movie.year,
+          comment: characterName,
+        }
+        setPendingRatingData(ratingDataToStore)
+        setShowSignUpModal(true)
+        return Promise.reject(new Error('USER_NOT_SIGNED_IN'))
       }
 
-      // Show modal immediately - no setTimeout
-      setPendingRatingData(ratingDataToStore)
-      setShowSignUpModal(true)
-
-      // Return a rejected promise without error to prevent success animation but avoid console error
-      // Use a special rejection that can be identified
-      return Promise.reject(new Error('USER_NOT_SIGNED_IN'))
+      // Under the limit: submit as guest, store locally, show success UI.
+      setSubmitting(true)
+      setError(null)
+      try {
+        const recaptchaToken = await executeRecaptcha('submit_rating')
+        const res = await fetch('/api/ratings/guest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            actorId: actor.id,
+            movieId: movie.id,
+            emotionalRangeDepth: apiRatingData.emotionalRangeDepth,
+            characterBelievability: apiRatingData.characterBelievability,
+            technicalSkill: apiRatingData.technicalSkill,
+            screenPresence: apiRatingData.screenPresence,
+            chemistryInteraction: apiRatingData.chemistryInteraction,
+            recaptchaToken,
+          }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Guest rating failed')
+        }
+        addGuestRating({
+          actorId: actor.id,
+          movieId: movie.id,
+          actorName: actor.name,
+          movieTitle: movie.title,
+          movieYear: movie.year,
+          emotionalRangeDepth: apiRatingData.emotionalRangeDepth,
+          characterBelievability: apiRatingData.characterBelievability,
+          technicalSkill: apiRatingData.technicalSkill,
+          screenPresence: apiRatingData.screenPresence,
+          chemistryInteraction: apiRatingData.chemistryInteraction,
+          comment: characterName || undefined,
+          timestamp: new Date().toISOString(),
+        })
+        // Resolves normally → wrapper enters submitPhase = 'success'
+        return
+      } catch (err: unknown) {
+        console.error('Failed to submit guest rating:', err)
+        setError(err instanceof Error ? err.message : 'Failed to submit rating. Please try again.')
+        throw err
+      } finally {
+        setSubmitting(false)
+      }
     }
 
     setSubmitting(true)
@@ -387,6 +434,38 @@ function RatePageContent() {
       setSubmitting(false)
     }
   }
+
+  const openGuestMomentumSignup = useCallback(
+    (payload: {
+      emotionalDepth: number
+      believability: number
+      technicalSkill: number
+      screenPresence: number
+      chemistry: number
+      actorId: string
+      movieId: string
+      actorName: string
+      movieTitle: string
+      movieYear: number
+      comment?: string
+    }) => {
+      setPendingRatingData({
+        emotionalDepth: payload.emotionalDepth,
+        believability: payload.believability,
+        technicalSkill: payload.technicalSkill,
+        screenPresence: payload.screenPresence,
+        chemistry: payload.chemistry,
+        actorId: payload.actorId,
+        movieId: payload.movieId,
+        actorName: payload.actorName,
+        movieTitle: payload.movieTitle,
+        movieYear: payload.movieYear,
+        comment: payload.comment ?? characterName,
+      })
+      setShowSignUpModal(true)
+    },
+    [characterName]
+  )
 
   if (loading) {
     return (
@@ -501,6 +580,7 @@ function RatePageContent() {
               onSuccess={() => {
                 // Success animation is handled in the component
               }}
+              onGuestMomentumSignup={openGuestMomentumSignup}
             />
           </div>
         )}
@@ -518,6 +598,8 @@ function RatePageContent() {
             movieTitle={movie.title}
             movieYear={movie.year}
             ratingData={pendingRatingData}
+            variant="momentum"
+            guestRatingsCount={guestCount}
           />
         )}
       </Suspense>
