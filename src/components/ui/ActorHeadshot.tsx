@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useLayoutEffect, useRef } from 'react'
 import { User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,14 +40,22 @@ export function ActorHeadshot({
 }: ActorHeadshotProps) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  // Synchronously reset derived state when URL changes (avoids useEffect race where
-  // onLoad fires before the effect runs, then the effect resets loaded→false).
-  const [prevImageUrl, setPrevImageUrl] = useState(imageUrl)
-  if (prevImageUrl !== imageUrl) {
-    setPrevImageUrl(imageUrl)
-    setLoaded(false)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  useLayoutEffect(() => {
     setErrored(false)
-  }
+    const img = imgRef.current
+    if (!imageUrl || !img) {
+      setLoaded(false)
+      return
+    }
+    // Covers cached / sync-decoded images so we don’t rely on onLoad racing effects.
+    if (img.complete && img.naturalWidth > 0) {
+      setLoaded(true)
+    } else {
+      setLoaded(false)
+    }
+  }, [imageUrl])
 
   const showPhoto = !!imageUrl && !errored
 
@@ -73,7 +81,9 @@ export function ActorHeadshot({
 
       {showPhoto ? (
         <img
-          src={imageUrl!}
+          key={imageUrl}
+          ref={imgRef}
+          src={imageUrl}
           alt={name}
           loading={loading}
           decoding="async"

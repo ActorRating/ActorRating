@@ -184,7 +184,7 @@ function HeroSection({
               style={{ opacity: 1, transform: 'translateY(0)' }}
             >
               <h1
-                className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-extrabold text-center lg:whitespace-nowrap px-4 mx-auto"
+                className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-bold text-center lg:whitespace-nowrap px-4 mx-auto"
                 style={{
                   ...PLAYFAIR_HEADING,
                   textShadow: '0 10px 40px rgba(0,0,0,0.7)',
@@ -329,12 +329,24 @@ function isHomeLeaderboardHydrated(map: Map<string, EnrichedPerformance>): boole
   return PERFORMANCES.every((row) => map.has(`${row.actor}:${row.movie}`));
 }
 
-function sortLeaderboardRowsByRatings(map: Map<string, EnrichedPerformance>): LeaderboardRow[] {
-  return [...PERFORMANCES].sort((a, b) => {
+/** First slots fixed order; tail sorted by community average (desc). */
+const HOME_LEADERBOARD_HEAD_KEYS = [
+  'Heath Ledger:The Dark Knight',
+  'Cillian Murphy:Oppenheimer',
+  'Margot Robbie:Barbie',
+] as const;
+
+function orderHomeLeaderboardRows(map: Map<string, EnrichedPerformance>): LeaderboardRow[] {
+  const head = HOME_LEADERBOARD_HEAD_KEYS.map((key) =>
+    PERFORMANCES.find((r) => `${r.actor}:${r.movie}` === key),
+  ).filter((r): r is LeaderboardRow => r != null);
+  const headKeySet = new Set(head.map((r) => `${r.actor}:${r.movie}`));
+  const tail = PERFORMANCES.filter((r) => !headKeySet.has(`${r.actor}:${r.movie}`)).sort((a, b) => {
     const ar = map.get(`${a.actor}:${a.movie}`)?.averageRating ?? 0;
     const br = map.get(`${b.actor}:${b.movie}`)?.averageRating ?? 0;
     return br - ar;
   });
+  return [...head, ...tail];
 }
 
 // ─── LEADERBOARD — performances page carousel style ──────────────────────────
@@ -350,10 +362,9 @@ function LeaderboardSection({
   const [performancesData, setPerformancesData] = useState<Map<string, EnrichedPerformance>>(() =>
     performancesMapFromEnriched(initialPerformances)
   );
-  const [sortedPerfs, setSortedPerfs] = useState<LeaderboardRow[]>(() => {
-    const map = performancesMapFromEnriched(initialPerformances);
-    return isHomeLeaderboardHydrated(map) ? sortLeaderboardRowsByRatings(map) : PERFORMANCES;
-  });
+  const [sortedPerfs, setSortedPerfs] = useState<LeaderboardRow[]>(() =>
+    orderHomeLeaderboardRows(performancesMapFromEnriched(initialPerformances)),
+  );
   const [isLoading, setIsLoading] = useState(() => {
     const map = performancesMapFromEnriched(initialPerformances);
     return !isHomeLeaderboardHydrated(map);
@@ -368,6 +379,15 @@ function LeaderboardSection({
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Keep client map/sort aligned with SSR props (streaming / delayed payload / navigation).
+  useEffect(() => {
+    const seeded = performancesMapFromEnriched(initialPerformances);
+    if (!isHomeLeaderboardHydrated(seeded)) return;
+    setPerformancesData(seeded);
+    setSortedPerfs(orderHomeLeaderboardRows(seeded));
+    setIsLoading(false);
+  }, [initialPerformances]);
 
   useEffect(() => {
     // If SSR already gave us all five rows, use that data as-is — no fetch needed.
@@ -388,7 +408,7 @@ function LeaderboardSection({
           if (p.actor?.name && p.movie?.title) map.set(`${p.actor.name}:${p.movie.title}`, p);
         });
         setPerformancesData(map);
-        setSortedPerfs(sortLeaderboardRowsByRatings(map));
+        setSortedPerfs(orderHomeLeaderboardRows(map));
       } catch {
         /* silent */
       } finally {
@@ -598,8 +618,20 @@ function LeaderboardCard({ actorName, movieTitle, year, rating, isLoading, href,
         </div>
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
-            <ActorHeadshot name={actorName} imageUrl={actorImageUrl} size="lg" loading="eager" />
-            <MoviePoster title={movieTitle} posterUrl={moviePosterUrl} size="lg" loading="eager" />
+            <ActorHeadshot
+              key={`h-${actorImageUrl ?? actorName}`}
+              name={actorName}
+              imageUrl={actorImageUrl}
+              size="lg"
+              loading="eager"
+            />
+            <MoviePoster
+              key={`p-${moviePosterUrl ?? movieTitle}`}
+              title={movieTitle}
+              posterUrl={moviePosterUrl}
+              size="lg"
+              loading="eager"
+            />
           </div>
           <div className="flex items-center justify-between mb-6">
             {isLoading ? (

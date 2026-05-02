@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useLayoutEffect, useRef } from 'react'
 import { Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,14 +41,21 @@ export function MoviePoster({
 }: MoviePosterProps) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  // Synchronously reset derived state when URL changes (avoids useEffect race where
-  // onLoad fires before the effect runs, then the effect resets loaded→false).
-  const [prevPosterUrl, setPrevPosterUrl] = useState(posterUrl)
-  if (prevPosterUrl !== posterUrl) {
-    setPrevPosterUrl(posterUrl)
-    setLoaded(false)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  useLayoutEffect(() => {
     setErrored(false)
-  }
+    const img = imgRef.current
+    if (!posterUrl || !img) {
+      setLoaded(false)
+      return
+    }
+    if (img.complete && img.naturalWidth > 0) {
+      setLoaded(true)
+    } else {
+      setLoaded(false)
+    }
+  }, [posterUrl])
 
   const showPhoto = !!posterUrl && !errored
 
@@ -65,7 +72,6 @@ export function MoviePoster({
         border: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      {/* Skeleton shimmer */}
       {showPhoto && !loaded && (
         <div
           className="absolute inset-0 animate-pulse"
@@ -75,7 +81,9 @@ export function MoviePoster({
 
       {showPhoto ? (
         <img
-          src={posterUrl!}
+          key={posterUrl}
+          ref={imgRef}
+          src={posterUrl}
           alt={title}
           loading={loading}
           decoding="async"
