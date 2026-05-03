@@ -247,6 +247,38 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
     }
   }, [sessionUserKey, actor?.id, movie?.id])
 
+  const openGuestMomentumSignup = useCallback(
+    (payload: {
+      emotionalDepth: number
+      believability: number
+      technicalSkill: number
+      screenPresence: number
+      chemistry: number
+      actorId: string
+      movieId: string
+      actorName: string
+      movieTitle: string
+      movieYear: number
+      comment?: string
+    }) => {
+      setPendingRatingData({
+        emotionalDepth: payload.emotionalDepth,
+        believability: payload.believability,
+        technicalSkill: payload.technicalSkill,
+        screenPresence: payload.screenPresence,
+        chemistry: payload.chemistry,
+        actorId: payload.actorId,
+        movieId: payload.movieId,
+        actorName: payload.actorName,
+        movieTitle: payload.movieTitle,
+        movieYear: payload.movieYear,
+        comment: payload.comment ?? '',
+      })
+      setShowSignUpModal(true)
+    },
+    []
+  )
+
   // Wait until NextAuth finishes resolving — otherwise user is briefly null while authenticated,
   // we mount the rating UI, then unmount when session resolves (flash + fragile teardown in prod).
   const formReady = !authLoading && !loading && (!user || ratingCheckDone)
@@ -390,38 +422,6 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       setSubmitting(false)
     }
   }
-
-  const openGuestMomentumSignup = useCallback(
-    (payload: {
-      emotionalDepth: number
-      believability: number
-      technicalSkill: number
-      screenPresence: number
-      chemistry: number
-      actorId: string
-      movieId: string
-      actorName: string
-      movieTitle: string
-      movieYear: number
-      comment?: string
-    }) => {
-      setPendingRatingData({
-        emotionalDepth: payload.emotionalDepth,
-        believability: payload.believability,
-        technicalSkill: payload.technicalSkill,
-        screenPresence: payload.screenPresence,
-        chemistry: payload.chemistry,
-        actorId: payload.actorId,
-        movieId: payload.movieId,
-        actorName: payload.actorName,
-        movieTitle: payload.movieTitle,
-        movieYear: payload.movieYear,
-        comment: payload.comment ?? '',
-      })
-      setShowSignUpModal(true)
-    },
-    []
-  )
 
   return (
     <RatePageLayout onBack={ratingSubmitted ? () => router.push('/dashboard') : undefined}>
