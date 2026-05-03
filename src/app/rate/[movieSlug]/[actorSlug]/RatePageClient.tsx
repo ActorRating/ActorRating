@@ -6,7 +6,7 @@
 "use client"
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Actor, Movie } from '@/types'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { RatePageLayout } from '@/components/layout/RatePageLayout'
@@ -21,6 +21,45 @@ import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
 type RatePageClientProps = {
   initialMovie?: Movie | null
   initialActor?: Actor | null
+}
+
+type RateFormBoundaryProps = {
+  children: React.ReactNode
+}
+
+type RateFormBoundaryState = {
+  hasError: boolean
+}
+
+class RateFormErrorBoundary extends React.Component<RateFormBoundaryProps, RateFormBoundaryState> {
+  state: RateFormBoundaryState = { hasError: false }
+
+  static getDerivedStateFromError(): RateFormBoundaryState {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('Rate form crashed:', error, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-black flex items-center justify-center px-4">
+          <div className="text-center">
+            <p className="text-white text-xl mb-4">Couldn&apos;t load the rating form.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-[#FFD700] text-black rounded-lg hover:bg-[#FFC700] transition"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
 }
 
 export default function RatePageClient({ initialMovie = null, initialActor = null }: RatePageClientProps) {
@@ -400,36 +439,38 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
         movieYear={movie.year}
         isLoggedIn={!!user}
       />
-      <PerformanceRatingClientWrapper
-        performance={{
-          id: `${actor.id}-${movie.id}`,
-          actor: { ...actor, slug: actor.slug ?? undefined },
-          movie: {
-            ...movie,
-            slug: movie.slug ?? undefined,
-            director: movie.director ?? undefined,
-            posterUrl: movie.posterUrl ?? undefined,
-          },
-          emotionalRangeDepth: 0,
-          characterBelievability: 0,
-          technicalSkill: 0,
-          screenPresence: 0,
-          chemistryInteraction: 0,
-          comment: undefined,
-          user: { name: '', email: '' },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }}
-        onSubmit={handleSubmit}
-        submitting={submitting}
-        onSuccess={() => setRatingSubmitted(true)}
-        initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
-        communityAvg10={communityAvg10}
-        communityRatingCount={communityRatingCount}
-        communityDimensions={communityDimensions}
-        movieCast={movieCast}
-        onGuestMomentumSignup={openGuestMomentumSignup}
-      />
+      <RateFormErrorBoundary>
+        <PerformanceRatingClientWrapper
+          performance={{
+            id: `${actor.id}-${movie.id}`,
+            actor: { ...actor, slug: actor.slug ?? undefined },
+            movie: {
+              ...movie,
+              slug: movie.slug ?? undefined,
+              director: movie.director ?? undefined,
+              posterUrl: movie.posterUrl ?? undefined,
+            },
+            emotionalRangeDepth: 0,
+            characterBelievability: 0,
+            technicalSkill: 0,
+            screenPresence: 0,
+            chemistryInteraction: 0,
+            comment: undefined,
+            user: { name: '', email: '' },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }}
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          onSuccess={() => setRatingSubmitted(true)}
+          initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
+          communityAvg10={communityAvg10}
+          communityRatingCount={communityRatingCount}
+          communityDimensions={communityDimensions}
+          movieCast={movieCast}
+          onGuestMomentumSignup={openGuestMomentumSignup}
+        />
+      </RateFormErrorBoundary>
       {showSignUpModal && pendingRatingData && actor && movie && (
         <SignUpToSaveModal
           isOpen={showSignUpModal}
