@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { HomeLayout } from "@/components/layout"
 import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
@@ -27,6 +28,7 @@ export function PerformancesPageClient({
   initialIconic = [],
 }: PerformancesPageClientProps) {
   const user = useUser()
+  const reduceMotion = useReducedMotion() === true
   const hasInitialData = initialRecent.length > 0 || initialIconic.length > 0
   const [recentPerformances, setRecentPerformances] = useState<EnrichedPerformance[]>(initialRecent)
   const [iconicPerformances, setIconicPerformances] = useState<EnrichedPerformance[]>(initialIconic)
@@ -269,7 +271,13 @@ export function PerformancesPageClient({
           </div>
 
           <div className="grid grid-cols-12">
-            <div className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48">
+            <motion.div
+              className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48"
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
                 <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
                   <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255,215,0,0.3))" }}>Trending</span> Now
@@ -280,12 +288,26 @@ export function PerformancesPageClient({
                 </p>
               </div>
 
-              {loading ? (
-                <div className="flex justify-center py-16">
-                  <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
-                </div>
-              ) : recentPerformances.length > 0 ? (
-                <div className="relative">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div
+                    key="recent-loading"
+                    className="flex justify-center py-16 min-h-[min(42vh,420px)] items-center"
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={reduceMotion ? undefined : { opacity: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                  >
+                    <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
+                  </motion.div>
+                ) : recentPerformances.length > 0 ? (
+                  <motion.div
+                    key="recent-carousel"
+                    className="relative"
+                    initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  >
                   <div className="relative -mx-4 sm:-mx-0">
                     <div className="overflow-hidden" style={isDesktop ? { maskImage: "linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)" } : {}}>
                       <div className="recent-scroll-container flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide pl-[calc(50vw-42.5vw)] pr-[calc(50vw-42.5vw)] sm:pl-[calc(50vw-35vw)] sm:pr-[calc(50vw-35vw)] lg:px-[20vw] xl:px-[25vw]">
@@ -326,15 +348,28 @@ export function PerformancesPageClient({
                       </button>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               ) : (
-                <div className="text-center py-12 px-4">
+                <motion.div
+                  key="recent-empty"
+                  className="text-center py-12 px-4"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                >
                   <p className="text-xl sm:text-2xl text-[#a3a3a3]">No recent performances found. Check back soon!</p>
-                </div>
+                </motion.div>
               )}
-            </div>
+              </AnimatePresence>
+            </motion.div>
 
-            <div className="col-span-12 mb-16 sm:mb-20">
+            <motion.div
+              className="col-span-12 mb-16 sm:mb-20"
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.12 }}
+              transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1], delay: reduceMotion ? 0 : 0.05 }}
+            >
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
                 <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
                   <span style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 0 40px rgba(255,215,0,0.3))" }}>Iconic</span> Classics
@@ -387,12 +422,14 @@ export function PerformancesPageClient({
                     ))}
                   </div>
                 </div>
-              ) : loading ? null : (
+              ) : loading ? (
+                <div className="min-h-[min(38vh,360px)] sm:min-h-[380px]" aria-hidden />
+              ) : (
                 <div className="text-center py-12 px-4">
                   <p className="text-xl sm:text-2xl text-[#a3a3a3]">Iconic performances will appear here once added to the database.</p>
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

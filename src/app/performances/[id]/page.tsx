@@ -113,7 +113,8 @@ export default function PerformanceDetailPage() {
       
       // Redirect to magic-link sign-in page
       router.push('/auth/signin')
-      return
+      // Reject so the rating wrapper does not enter a false "success" state
+      return Promise.reject(new Error('REDIRECT_SIGNIN'))
     }
 
     setSubmitting(true)

@@ -753,12 +753,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (submitPhase === 'success') setSuccessOverlayFaded(false)
   }, [submitPhase])
 
-  // After checkmark has been visible, fade out the success overlay
+  // After checkmark has been visible, fade out the success overlay.
+  // Guests need the overlay to release sooner: it sits at z-[100] with pointer-events:auto
+  // and would otherwise swallow every click (e.g. "Save your ratings") until dismiss.
   useEffect(() => {
     if (submitPhase !== 'success' || successOverlayFaded) return
-    const t = setTimeout(() => setSuccessOverlayFaded(true), 1150)
+    const delayMs = user ? 1150 : 700
+    const t = setTimeout(() => setSuccessOverlayFaded(true), delayMs)
     return () => clearTimeout(t)
-  }, [submitPhase, successOverlayFaded])
+  }, [submitPhase, successOverlayFaded, user])
 
   // When overlay fades, scroll to top so the success state starts at the top of the viewport
   useEffect(() => {

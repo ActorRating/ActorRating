@@ -63,7 +63,9 @@ const PERFORMANCES = HOME_LEADERBOARD_ROWS.map((r) => ({ ...r }));
 
 function useDevice() {
   const [isMobile, setIsMobile] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   useEffect(() => {
     const check = () => {
       setIsMobile(window.innerWidth < 768);
@@ -223,9 +225,9 @@ function HeroSection({
 
             {/* Gold divider */}
             <motion.div
-              initial={prefersReducedMotion || isMobile ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
+              initial={prefersReducedMotion ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="h-[2px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 relative"
               style={{ width: '180px', transformOrigin: 'center' }}
             >
@@ -506,7 +508,7 @@ function LeaderboardSection({
               <div
                 ref={scrollRef}
                 dir="ltr"
-                className="flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-proximity scrollbar-hide px-[max(1rem,calc((100%-85vw)/2))] sm:px-[max(1rem,calc((100%-70vw)/2))] lg:px-[max(1rem,calc((100%-min(35vw,28rem))/2))] xl:px-[max(1rem,calc((100%-min(30vw,28rem))/2))]"
+                className="flex gap-8 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide px-[max(1rem,calc((100%-85vw)/2))] sm:px-[max(1rem,calc((100%-70vw)/2))] lg:px-[max(1rem,calc((100%-min(35vw,28rem))/2))] xl:px-[max(1rem,calc((100%-min(30vw,28rem))/2))]"
               >
                 {sortedPerfs.map((p, index) => {
                   const key = `${p.actor}:${p.movie}`;
@@ -698,8 +700,8 @@ const CRITERIA = [
 ];
 
 function RatingCriteriaSection({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
-  const { isMobile, prefersReducedMotion } = useDevice();
-  const reduceMotion = isMobile || prefersReducedMotion;
+  const { prefersReducedMotion } = useDevice();
+  const reduceMotion = prefersReducedMotion;
   return (
     <div className={`relative z-10 ${HOME_SECTION_PY}`} style={{ background: '#040404' }}>
       <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent)' }} />
@@ -800,7 +802,7 @@ function HowItWorksSection({ primaryRateHref = '/performances' }: { primaryRateH
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 md:gap-7">
           {steps.map((step, i) => {
             const Icon = step.icon;
-            const reduceMotion = isMobile || prefersReducedMotion;
+            const reduceMotion = prefersReducedMotion;
             return (
               <motion.div
                 key={i}
@@ -912,7 +914,7 @@ function FeaturesSection({ compact = false }: { compact?: boolean }) {
           {features.map((f, i) => {
             const Icon = f.icon;
             const isExpanded = expanded.has(i);
-            const reduceMotion = isMobile || prefersReducedMotion;
+            const reduceMotion = prefersReducedMotion;
             return (
               <motion.div
                 key={i}
@@ -1021,7 +1023,7 @@ function AboutTeaser() {
 function CommunityCta({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
   const router = useRouter();
   const { isMobile, prefersReducedMotion } = useDevice();
-  const reduceMotion = isMobile || prefersReducedMotion;
+  const reduceMotion = prefersReducedMotion;
 
   return (
     <div className={`relative z-10 bg-black ${HOME_SECTION_PY}`}>
