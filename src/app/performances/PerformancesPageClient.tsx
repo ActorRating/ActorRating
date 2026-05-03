@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
+import { SCROLL_REVEAL_VIEWPORT, SCROLL_REVEAL_TRANSITION } from "@/lib/scroll-reveal"
 import { HomeLayout } from "@/components/layout"
 import { SignedInLayout } from "@/components/layout/SignedInLayout"
 import { useUser } from "@/components/providers/SessionProvider"
@@ -273,10 +274,10 @@ export function PerformancesPageClient({
           <div className="grid grid-cols-12">
             <motion.div
               className="col-span-12 mb-20 sm:mb-32 md:mb-40 lg:mb-48"
-              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
               whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+              viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+              transition={reduceMotion ? { duration: 0 } : SCROLL_REVEAL_TRANSITION}
             >
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
                 <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>
@@ -296,7 +297,7 @@ export function PerformancesPageClient({
                     initial={reduceMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={reduceMotion ? undefined : { opacity: 0 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                    transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, duration: 0.22 }}
                   >
                     <BouncingBallsLoader size="md" color="#FFD700" showText={false} />
                   </motion.div>
@@ -304,9 +305,9 @@ export function PerformancesPageClient({
                   <motion.div
                     key="recent-carousel"
                     className="relative"
-                    initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    transition={reduceMotion ? { duration: 0 } : SCROLL_REVEAL_TRANSITION}
                   >
                   <div className="relative -mx-4 sm:-mx-0">
                     <div className="overflow-hidden" style={isDesktop ? { maskImage: "linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 80px, black calc(100% - 80px), transparent 100%)" } : {}}>
@@ -355,7 +356,7 @@ export function PerformancesPageClient({
                   className="text-center py-12 px-4"
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                  transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, duration: 0.35 }}
                 >
                   <p className="text-xl sm:text-2xl text-[#a3a3a3]">No recent performances found. Check back soon!</p>
                 </motion.div>
@@ -365,10 +366,10 @@ export function PerformancesPageClient({
 
             <motion.div
               className="col-span-12 mb-16 sm:mb-20"
-              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
               whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.12 }}
-              transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1], delay: reduceMotion ? 0 : 0.05 }}
+              viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+              transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, delay: 0.07 }}
             >
               <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4 sm:px-0">
                 <h3 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 tracking-tight" style={{ fontFamily: "var(--font-cinzel), serif" }}>

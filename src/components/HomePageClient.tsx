@@ -21,6 +21,11 @@ import {
   type FeaturedHeroPayload,
   featuredHeroFromPerformances,
 } from "@/lib/home-featured-performance";
+import {
+  SCROLL_REVEAL_VIEWPORT,
+  SCROLL_REVEAL_TRANSITION,
+  scrollRevealStaggerDelay,
+} from "@/lib/scroll-reveal";
 import { ArrowUpRight } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar"
 import { ActorHeadshot } from "@/components/ui/ActorHeadshot";
@@ -726,11 +731,11 @@ function RatingCriteriaSection({ primaryRateHref = '/performances' }: { primaryR
           {CRITERIA.map((c, i) => (
             <motion.div
               key={i}
-              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -12 }}
+              initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
               animate={reduceMotion ? { opacity: 1, x: 0 } : undefined}
               whileInView={reduceMotion ? undefined : { opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: reduceMotion ? '0px' : '-30px' }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.04 }}
+              viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+              transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, delay: scrollRevealStaggerDelay(i, 0.045, 0.18) }}
             >
               <div
                 className="group flex items-start gap-6 sm:gap-10 py-7 sm:py-8 transition-all duration-200 cursor-default"
@@ -806,11 +811,11 @@ function HowItWorksSection({ primaryRateHref = '/performances' }: { primaryRateH
             return (
               <motion.div
                 key={i}
-                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
                 animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
-                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
+                viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+                transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, delay: scrollRevealStaggerDelay(i, 0.06, 0.2) }}
                 className="group"
               >
                 <div
@@ -918,11 +923,11 @@ function FeaturesSection({ compact = false }: { compact?: boolean }) {
             return (
               <motion.div
                 key={i}
-                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
                 animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: reduceMotion ? '0px' : '-40px' }}
-                transition={reduceMotion ? { duration: 0 } : { duration: 0.25, delay: i * 0.05 }}
+                viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+                transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, delay: scrollRevealStaggerDelay(i, 0.055, 0.2) }}
                 className="group"
               >
                 <div
@@ -1045,8 +1050,8 @@ function CommunityCta({ primaryRateHref = '/performances' }: { primaryRateHref?:
           initial={reduceMotion ? { width: '180px', opacity: 1 } : { width: 0, opacity: 0 }}
           animate={reduceMotion ? { width: '180px', opacity: 1 } : undefined}
           whileInView={reduceMotion ? undefined : { width: '180px', opacity: 1 }}
-          viewport={{ once: true }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.4, delay: 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+          viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+          transition={reduceMotion ? { duration: 0 } : { ...SCROLL_REVEAL_TRANSITION, duration: 0.48, delay: 0.06 }}
           className="h-[2px] mx-auto mb-8"
           style={{ willChange: reduceMotion ? 'auto' : 'width, opacity' }}
         >

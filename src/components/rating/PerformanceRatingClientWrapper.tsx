@@ -896,6 +896,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
+  const [submitFeedback, setSubmitFeedback] = useState<string | null>(null)
 
   // Calculate average of 5 sliders (or single overall when simple mode), convert to 0-10 scale
   const totalScoreOutOf10 = useMemo(() => {
@@ -1242,6 +1243,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Pre-fetch next performances so carousel is ready when success page shows (authenticated only)
     if (user) fetchNextPerf()
 
+    setSubmitFeedback(null)
     setSubmitPhase('loading')
 
     try {
@@ -1256,9 +1258,17 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       )
       trackFirstRatingComplete()
       if (onSuccess) onSuccess(ratingData)
-    } catch {
-      // Rejection = unauthenticated (sign-up modal); reset so button is clickable again
+    } catch (err: unknown) {
+      // Rejection = unauthenticated (sign-up modal); reset so button is clickable again.
+      // For real failures (e.g. guest API/reCAPTCHA errors), show visible feedback
+      // so the click never feels like a no-op.
       setSubmitPhase('idle')
+      const msg = err instanceof Error ? err.message : ''
+      if (msg && msg !== 'USER_NOT_SIGNED_IN' && msg !== 'REDIRECT_SIGNIN') {
+        setSubmitFeedback(msg)
+      } else if (msg !== 'USER_NOT_SIGNED_IN' && msg !== 'REDIRECT_SIGNIN') {
+        setSubmitFeedback('Could not save your rating. Please try again.')
+      }
       if (typeof document !== 'undefined') {
         document.body.style.overflow = ''
         document.body.style.touchAction = ''
@@ -1820,6 +1830,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       <p className="text-[9px] sm:text-xs text-[#d4d4d8] font-semibold tracking-widest uppercase">Your score</p>
                     </div>
                   </div>
+                  {submitFeedback && (
+                    <div
+                      className="mt-3 sm:mt-4 mx-auto max-w-[600px] rounded-xl px-4 py-3 text-sm text-center"
+                      style={{
+                        background: 'rgba(239,68,68,0.10)',
+                        border: '1px solid rgba(239,68,68,0.35)',
+                        color: '#fecaca',
+                      }}
+                    >
+                      {submitFeedback}
+                    </div>
+                  )}
                 </div>
               )}
 
