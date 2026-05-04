@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server"
-import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { checkRateLimit } from "@/lib/rateLimit"
 
 export async function POST(request: NextRequest) {
@@ -32,31 +31,13 @@ export async function POST(request: NextRequest) {
       technicalSkill,
       screenPresence,
       chemistryInteraction,
-      comment,
-      recaptchaToken
+      comment
     } = body
 
     if (!actorId || !movieId) {
       return NextResponse.json(
         { error: "Actor ID and Movie ID are required" },
         { status: 400 }
-      )
-    }
-
-    // Validate reCAPTCHA
-    if (!recaptchaToken) {
-      return NextResponse.json(
-        { error: "reCAPTCHA verification is required" },
-        { status: 400 }
-      )
-    }
-
-    // Verify reCAPTCHA token
-    const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
-    if (!recaptchaResult.success) {
-      return NextResponse.json(
-        { error: recaptchaResult.error || "reCAPTCHA verification failed" },
-        { status: 403 }
       )
     }
 

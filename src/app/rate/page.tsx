@@ -303,7 +303,6 @@ function RatePageContent() {
       setSubmitting(true)
       setError(null)
       try {
-        const recaptchaToken = await executeRecaptcha('submit_rating')
         const res = await fetch('/api/ratings/guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -315,7 +314,6 @@ function RatePageContent() {
             technicalSkill: apiRatingData.technicalSkill,
             screenPresence: apiRatingData.screenPresence,
             chemistryInteraction: apiRatingData.chemistryInteraction,
-            recaptchaToken,
           }),
         })
         if (!res.ok) {

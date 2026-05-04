@@ -347,7 +347,6 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
       // Under the limit: submit as guest, store locally, show success UI.
       setSubmitting(true)
       try {
-        const recaptchaToken = await executeRecaptcha('submit_rating')
         const res = await fetch('/api/ratings/guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -359,7 +358,6 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
             technicalSkill: ratingData.technicalSkill,
             screenPresence: ratingData.screenPresence,
             chemistryInteraction: ratingData.chemistry,
-            recaptchaToken,
           }),
         })
         if (!res.ok) {
