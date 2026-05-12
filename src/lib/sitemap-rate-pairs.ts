@@ -23,6 +23,19 @@ export async function getDistinctRatePagePairCount(): Promise<number> {
   return Number(rows[0]?.count ?? 0)
 }
 
+/** Distinct (actorId, movieId) with ≥1 Rating on a non-featurette movie — aligned with sitemap performance URLs. */
+export async function getDistinctRatedRatePagePairCount(): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*)::bigint AS count
+    FROM (
+      SELECT DISTINCT r."actorId", r."movieId"
+      FROM "Rating" r
+      INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+    ) t
+  `
+  return Number(rows[0]?.count ?? 0)
+}
+
 export type RatePagePairRow = {
   actorId: string
   movieId: string

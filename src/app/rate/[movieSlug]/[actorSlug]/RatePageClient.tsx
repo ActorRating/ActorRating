@@ -1,6 +1,6 @@
 /**
  * Client component for slug-based rate page: /rate/[movieSlug]/[actorSlug]
- * Server wrapper in page.tsx returns 410 if movie/actor not found.
+ * Server wrapper in page.tsx resolves data, 301s to slug URLs, and calls notFound() when invalid.
  */
 
 "use client"

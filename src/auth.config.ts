@@ -3,7 +3,7 @@ import type { NextAuthConfig } from "next-auth"
 /**
  * Edge-safe NextAuth config — no Prisma, no server-only imports.
  *
- * Used by src/middleware.ts (runs on the Vercel/Coolify Edge before any page
+ * Used by root `middleware.ts` (Edge, before pages) to enforce authentication
  * is rendered) to enforce authentication purely from the JWT cookie.
  *
  * src/auth.ts spreads this config and adds the full Node.js-only pieces

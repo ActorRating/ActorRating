@@ -1,14 +1,10 @@
 #!/bin/sh
-# Starts the Next.js server immediately, then generates sitemaps in the background.
-# The server is never blocked or delayed by sitemap generation.
-
-(
-  echo "[sitemaps] Generation started in background…"
-  if node /app/scripts/generate-sitemaps.js; then
-    echo "[sitemaps] Generation complete."
-  else
-    echo "[sitemaps] WARNING: Generation failed – stale or missing sitemaps will be served until next restart."
-  fi
-) &
-
+set -e
+# Sitemaps must be complete before any HTTP traffic: Googlebot may crawl immediately after deploy.
+echo "[sitemaps] Starting synchronous generation…"
+if ! node /app/scripts/generate-sitemaps.js; then
+  echo "[sitemaps] FATAL: Sitemap generation failed — refusing to start server."
+  exit 1
+fi
+echo "[sitemaps] Generation complete. Starting Next.js…"
 exec node server.js

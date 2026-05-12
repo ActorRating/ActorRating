@@ -1,63 +1,64 @@
 /**
- * Count total indexed pages site-wide with current rules (aligned with sitemap + layouts):
- * - Static: 6 (home, about, signin, signup, privacy, oscars-2026)
- * - Actor pages: any Performance or Rating on a non-featurette film
- * - Movie pages: same eligibility, excluding adult content (title/genre/overview) like sitemap
- * - Rate pages: distinct (actorId, movieId) in Performance ∪ Rating on non-featurette films
+ * Approximate counts aligned with current sitemap rules (see scripts/generate-sitemaps.ts):
+ * - Static: home, about, privacy-policy, oscars-2026 (no auth URLs)
+ * - Actors: ≥1 rating on non-featurette OR ≥5 performances on non-featurette
+ * - Movies: same bar + junk/adult exclusion
+ * - Rate pairs in sitemap: ≥1 rating (distinct) + small curated set (not counted here)
  *
  * Run: npx tsx scripts/count-indexed-pages.ts
  */
 import { prisma } from '../src/lib/prisma'
-import { isAdultContentMovie, isAdultContentSlug } from '../src/lib/adult-content-filter'
-import { isJunkMovieSlug, isAllowedMovieSlug } from '../src/lib/junk-movie-slugs'
-import { getDistinctRatePagePairCount } from '../src/lib/sitemap-rate-pairs'
+import { isPublicSeoBlockedMovie } from '../src/lib/public-movie-seo-block'
+import { getDistinctRatedRatePagePairCount } from '../src/lib/sitemap-rate-pairs'
 
-const STATIC_PAGES = 6
+const STATIC_PAGES = 4
 
 async function main() {
-  console.log('Counting indexed pages (sitemap + no noindex)...\n')
+  console.log('Counting URLs under current sitemap rules…\n')
 
   const actorRows = await prisma.$queryRaw<Array<{ actorId: string }>>`
-    SELECT DISTINCT p."actorId" FROM "Performance" p
-    INNER JOIN "Movie" m ON m.id = p."movieId" AND NOT m."isFeaturette"
-    UNION
-    SELECT DISTINCT r."actorId" FROM "Rating" r
-    INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+    SELECT DISTINCT a.id AS "actorId"
+    FROM "Actor" a
+    WHERE
+      EXISTS (
+        SELECT 1 FROM "Rating" r
+        INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+        WHERE r."actorId" = a.id
+      )
+      OR (
+        SELECT COUNT(*)::bigint FROM "Performance" p
+        INNER JOIN "Movie" m ON m.id = p."movieId" AND NOT m."isFeaturette"
+        WHERE p."actorId" = a.id
+      ) >= 5
   `
-  const actorCount = new Set(actorRows.map((r) => r.actorId)).size
+  const actorCount = actorRows.length
 
-  const movieRows = await prisma.$queryRaw<Array<{ movieId: string }>>`
-    SELECT DISTINCT p."movieId" FROM "Performance" p
-    INNER JOIN "Movie" m ON m.id = p."movieId" AND NOT m."isFeaturette"
-    UNION
-    SELECT DISTINCT r."movieId" FROM "Rating" r
-    INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+  const movieRows = await prisma.$queryRaw<
+    Array<{ id: string; slug: string | null; title: string; genre: string | null; overview: string | null }>
+  >`
+    SELECT m.id, m.slug, m.title, m.genre, m.overview
+    FROM "Movie" m
+    WHERE NOT m."isFeaturette"
+      AND (
+        EXISTS (SELECT 1 FROM "Rating" r WHERE r."movieId" = m.id)
+        OR (SELECT COUNT(*)::bigint FROM "Performance" p WHERE p."movieId" = m.id) >= 5
+      )
   `
-  const movieIds = [...new Set(movieRows.map((r) => r.movieId))]
-  const movies = await prisma.movie.findMany({
-    where: { id: { in: movieIds } },
-    select: { slug: true, id: true, title: true, genre: true, overview: true },
-  })
-  const movieCount = movies.filter((m) => {
-    const slug = m.slug ?? m.id
-    if (isAllowedMovieSlug(slug)) return true
-    if (isJunkMovieSlug(slug)) return false
-    if (isAdultContentSlug(slug)) return false
-    if (isAdultContentMovie({ title: m.title, genre: m.genre, overview: m.overview })) return false
-    return true
+  const movieCount = movieRows.filter((m) => {
+    return !isPublicSeoBlockedMovie(m.slug ?? m.id, m.title, m.genre ?? null, m.overview ?? null)
   }).length
 
-  const rateCount = await getDistinctRatePagePairCount()
+  const rateCount = await getDistinctRatedRatePagePairCount()
 
   const total = STATIC_PAGES + actorCount + movieCount + rateCount
 
   console.log('Breakdown:')
   console.log(`  Static pages:        ${STATIC_PAGES}`)
   console.log(`  Actor pages:         ${actorCount}`)
-  console.log(`  Movie pages:         ${movieCount} (junk/adult slug+title excluded, same as sitemap)`)
-  console.log(`  Rate page pairs:     ${rateCount}`)
+  console.log(`  Movie pages:         ${movieCount} (junk/adult excluded)`)
+  console.log(`  Rate pairs (rated):  ${rateCount} (+ curated homepage targets in sitemap)`)
   console.log('  ─────────────────────────')
-  console.log(`  Total indexed:      ${total}`)
+  console.log(`  Approx. total:       ${total}`)
 }
 
 main()

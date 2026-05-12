@@ -63,31 +63,48 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) {
     return {
-      title: 'Performance Not Found',
-      description: 'The requested acting performance could not be found.',
+      title: "Performance Not Found",
+      description: "The requested acting performance could not be found.",
+      robots: { index: false, follow: true },
     }
   }
 
   const { actor, movie } = data
-  const yearPart = movie.year ? ` (${movie.year})` : ''
+
+  let ratingCount = 0
+  try {
+    ratingCount = await prisma.rating.count({
+      where: { actorId: actor.id, movieId: movie.id },
+    })
+  } catch (e) {
+    console.error("Rate layout rating count failed:", e)
+  }
+
+  const robots =
+    ratingCount >= 1 ? undefined : ({ index: false as const, follow: true as const })
+
+  const yearPart = movie.year ? ` (${movie.year})` : ""
   const title = `Rate ${actor.name} in ${movie.title}${yearPart}`
   const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
-  const canonical = `${baseUrl}/rate/${movieSlug}/${actorSlug}`
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
+  const canonMovieSeg = movie.slug ?? movie.id
+  const canonActorSeg = actor.slug ?? actor.id
+  const canonical = `${baseUrl}/rate/${canonMovieSeg}/${canonActorSeg}`
 
   return {
     title,
     description,
+    robots,
     alternates: { canonical },
     openGraph: {
       title,
       description,
-      type: 'website',
+      type: "website",
       url: canonical,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
     },
@@ -98,10 +115,13 @@ export default async function RateLayout({ params, children }: Props) {
   const { actorSlug, movieSlug } = await params
   const data = await fetchActorAndMovie(actorSlug, movieSlug)
 
-  // When actor/movie not found, 410 is returned by middleware; layout still renders so no Server Component error
+  // When actor/movie missing, the page Server Component calls notFound(); layout still wraps children.
   if (!data) {
     return <>{children}</>
   }
+
+  const canonMovieSeg = data.movie.slug ?? data.movie.id
+  const canonActorSeg = data.actor.slug ?? data.actor.id
 
   let ratingAgg: Awaited<ReturnType<typeof prisma.rating.aggregate>> | null = null
   if (data?.actor?.id && data?.movie?.id) {
@@ -130,7 +150,7 @@ export default async function RateLayout({ params, children }: Props) {
   // Google rich results: use Movie + aggregateRating ONLY. Do NOT use Review/itemReviewed — that
   // makes Google interpret "you rated a review" and triggers the warning. Person is optional, no rating on Person.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://actorrating.com"
-  const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${movieSlug}/${actorSlug}`
+  const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${canonMovieSeg}/${canonActorSeg}`
   const jsonLd =
     data && ratingCount >= 1 && avg10 != null
       ? {

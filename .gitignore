@@ -45,5 +45,7 @@ backfill-posters.log
 
 /src/generated/prisma
 
-# generated sitemaps (built fresh on each deploy, not committed)
+# generated sitemaps (built on deploy / `npm run generate:sitemaps`; not committed)
 /public/sitemaps/
+/public/sitemaps-temp/
+/public/sitemaps-prev/

@@ -3,26 +3,12 @@ export const revalidate = 60;
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter";
-import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs";
+import { isPublicSeoBlockedMovie } from "@/lib/public-movie-seo-block";
 
 type Props = {
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
 };
-
-function isBlockedMovie(
-  slug: string | null,
-  title: string,
-  genre: string | null,
-  overview: string | null
-): boolean {
-  if (slug && isAllowedMovieSlug(slug)) return false;
-  if (slug && isJunkMovieSlug(slug)) return true;
-  if (slug && isAdultContentSlug(slug)) return true;
-  if (isAdultContentMovie({ title, genre, overview })) return true;
-  return false;
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -52,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     // Junk/adult content: treat as not found (410-style handling at page level)
-    if (isBlockedMovie(movie.slug ?? null, movie.title, movie.genre ?? null, movie.overview ?? null)) {
+    if (isPublicSeoBlockedMovie(movie.slug ?? null, movie.title, movie.genre ?? null, movie.overview ?? null)) {
       notFound();
     }
 

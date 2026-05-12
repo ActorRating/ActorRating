@@ -1,14 +1,14 @@
 /**
  * Slug-based rate page: /rate/[movieSlug]/[actorSlug]
- * Returns 410 Gone if movie or actor no longer exists (e.g. removed adult content).
- * Fetches movie + actor on the server so the client can render immediately (no loading spinner).
- * Uses Prisma first; on failure (e.g. DB unavailable), falls back to internal HTTP APIs.
+ * Invalid combinations → 404. ID-based URLs 301 to canonical slug path when available.
+ * Uses Prisma first; on failure falls back to internal HTTP APIs (same-origin).
  */
 
+import { notFound, permanentRedirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { toIsoDate } from '@/lib/dateUtils'
+import { isPublicSeoBlockedMovie } from '@/lib/public-movie-seo-block'
 import RatePageClient from './RatePageClient'
-import RatePageFallback from './RatePageFallback'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
   if (!value) return ''
@@ -60,7 +60,19 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
   const [movieBySlug, actorBySlug] = await Promise.all([
     prisma.movie.findFirst({
       where: { slug: movieSlug },
-      select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true, createdAt: true, updatedAt: true, isFeaturette: true },
+      select: {
+        id: true,
+        title: true,
+        year: true,
+        director: true,
+        slug: true,
+        posterUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        isFeaturette: true,
+        genre: true,
+        overview: true,
+      },
     }),
     prisma.actor.findFirst({
       where: { slug: actorSlug },
@@ -68,16 +80,43 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
     }),
   ])
 
-  const movieRow = movieBySlug ?? await prisma.movie.findFirst({
-    where: { id: movieSlug },
-    select: { id: true, title: true, year: true, director: true, slug: true, posterUrl: true, createdAt: true, updatedAt: true, isFeaturette: true },
-  })
-  const actorRow = actorBySlug ?? await prisma.actor.findFirst({
-    where: { id: actorSlug },
-    select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
-  })
+  const movieRow =
+    movieBySlug ??
+    (await prisma.movie.findFirst({
+      where: { id: movieSlug },
+      select: {
+        id: true,
+        title: true,
+        year: true,
+        director: true,
+        slug: true,
+        posterUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        isFeaturette: true,
+        genre: true,
+        overview: true,
+      },
+    }))
+  const actorRow =
+    actorBySlug ??
+    (await prisma.actor.findFirst({
+      where: { id: actorSlug },
+      select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
+    }))
 
   if (!movieRow || !actorRow || movieRow.isFeaturette) return null
+  if (
+    isPublicSeoBlockedMovie(
+      movieRow.slug ?? movieRow.id,
+      movieRow.title,
+      movieRow.genre ?? null,
+      movieRow.overview ?? null,
+    )
+  ) {
+    return null
+  }
+
   return { movieRow, actorRow }
 }
 
@@ -87,12 +126,11 @@ export default async function RatePage({
   params: Promise<{ movieSlug: string; actorSlug: string }>
 }) {
   const { movieSlug, actorSlug } = await params
-  // Temporary: log every ISR render/revalidation to verify rate-page load in Vercel
   if (process.env.NODE_ENV === 'production') {
     console.log('[ISR] Rate page render', `/rate/${movieSlug}/${actorSlug}`)
   }
   if (!movieSlug || !actorSlug) {
-    return <RatePageFallback />
+    notFound()
   }
 
   let resolved: Awaited<ReturnType<typeof resolveRatePageData>> | null = null
@@ -101,9 +139,8 @@ export default async function RatePage({
   } catch (err) {
     console.error(
       `Rate page data failed [${movieSlug}/${actorSlug}]:`,
-      err instanceof Error ? err.message : String(err)
+      err instanceof Error ? err.message : String(err),
     )
-    // Fallback: fetch from internal APIs when Prisma fails (e.g. DB unavailable or wrong DATABASE_URL)
     const apiResolved = await resolveRatePageDataViaApi(movieSlug, actorSlug)
     if (apiResolved) {
       return (
@@ -113,14 +150,20 @@ export default async function RatePage({
         />
       )
     }
-    return <RatePageFallback />
+    notFound()
   }
 
   if (!resolved) {
-    return <RatePageFallback />
+    notFound()
   }
 
   const { movieRow, actorRow } = resolved
+
+  const canonicalMovieSeg = movieRow.slug ?? movieRow.id
+  const canonicalActorSeg = actorRow.slug ?? actorRow.id
+  if (movieSlug !== canonicalMovieSeg || actorSlug !== canonicalActorSeg) {
+    permanentRedirect(`/rate/${canonicalMovieSeg}/${canonicalActorSeg}`)
+  }
 
   const initialMovie = {
     id: movieRow.id,
@@ -141,7 +184,6 @@ export default async function RatePage({
     updatedAt: toIsoDate(actorRow.updatedAt),
   }
 
-  // Serialize to plain objects so Client Component never receives Prisma/Date/class instances
   const plainMovie = JSON.parse(JSON.stringify(initialMovie))
   const plainActor = JSON.parse(JSON.stringify(initialActor))
 

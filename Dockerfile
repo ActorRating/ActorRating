@@ -73,11 +73,10 @@ COPY --from=builder /app/prisma ./prisma
 # @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./scripts/generate-sitemaps.js
 
-# Ensure the sitemaps output directory exists and is owned by the app user
-# before we drop privileges (the generator writes here at startup).
-RUN mkdir -p /app/public/sitemaps && chown nextjs:nodejs /app/public/sitemaps
+# Writable dirs for atomic sitemap publish (live + temp during generation).
+RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp
 
-# Entrypoint script: generates sitemaps then execs the Next.js server
+# Entrypoint: synchronous sitemap generation (atomic publish) before Next.js binds.
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 

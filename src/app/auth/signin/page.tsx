@@ -32,7 +32,7 @@ function SignInContent() {
   }, [])
 
   // No client-side auth redirect here.
-  // Middleware (src/middleware.ts) redirects authenticated users away from
+  // Middleware redirects authenticated users away from
   // /auth/signin → /dashboard before this page is ever rendered.
   // A client-side redirect would race against session hydration timing
   // and could cause signin ↔ post-auth loops.
