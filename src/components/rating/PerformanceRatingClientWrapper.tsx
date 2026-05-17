@@ -17,6 +17,8 @@ import { upgradeActorImageRes } from '@/lib/tmdb'
 import { ProgressModal } from '@/components/dashboard/ProgressModal'
 import { ProgressBar } from '@/components/badges/ProgressBar'
 import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatings'
+import { fetchGuestSuccessRecommendations, type SuccessCarouselPerf } from '@/lib/guest-success-recommendations'
+import { SuccessRateAnotherCarousel } from '@/components/rating/SuccessRateAnotherCarousel'
 
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
@@ -641,6 +643,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const [guestRatingsCount, setGuestRatingsCount] = useState(0)
   const [showGuestComparison, setShowGuestComparison] = useState(false)
   const [showGuestProgressCard, setShowGuestProgressCard] = useState(false)
+  const [showGuestCarouselSection, setShowGuestCarouselSection] = useState(false)
   const [earlySaveCtaPulse, setEarlySaveCtaPulse] = useState(false)
   const [earlySavePulseDone, setEarlySavePulseDone] = useState(false)
 
@@ -652,6 +655,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     if (submitPhase !== 'success') {
       setShowGuestComparison(false)
       setShowGuestProgressCard(false)
+      setShowGuestCarouselSection(false)
+      setGuestNextPerfs([])
+      setGuestNextPerfLoading(false)
       setEarlySavePulseDone(false)
       setEarlySaveCtaPulse(false)
     }
@@ -660,9 +666,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   useEffect(() => {
     if (submitPhase !== 'success' || user) return
     const cmp = setTimeout(() => setShowGuestComparison(true), 480)
-    const prg = setTimeout(() => setShowGuestProgressCard(true), 720)
+    const carousel = setTimeout(() => setShowGuestCarouselSection(true), 900)
+    const prg = setTimeout(() => setShowGuestProgressCard(true), 1280)
     return () => {
       clearTimeout(cmp)
+      clearTimeout(carousel)
       clearTimeout(prg)
     }
   }, [submitPhase, user])
@@ -863,36 +871,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const previousScoreRef = useRef(0)
   const isDraggingRef = useRef<boolean>(false)
   const [sliderReleaseTime, setSliderReleaseTime] = useState<number>(0)
-  const [nextPerfs, setNextPerfs] = useState<{
-    movieSlug: string; actorSlug: string; movieTitle: string; movieYear: number; moviePosterUrl?: string | null; actorImageUrl?: string | null
-  }[]>([])
-  const [activeCarouselCard, setActiveCarouselCard] = useState(0)
+  const [nextPerfs, setNextPerfs] = useState<SuccessCarouselPerf[]>([])
+  const [guestNextPerfs, setGuestNextPerfs] = useState<SuccessCarouselPerf[]>([])
+  const [guestNextPerfLoading, setGuestNextPerfLoading] = useState(false)
   const [nextPerfLoading, setNextPerfLoading] = useState(false)
   const [actorProgress, setActorProgress] = useState<{ totalPerformances: number; userRatedCount: number } | null>(null)
-  const carouselRef = useRef<HTMLDivElement>(null)
   const carouselSectionRef = useRef<HTMLDivElement>(null)
-
-  // Track active carousel card for dot indicators
-  useEffect(() => {
-    const container = carouselRef.current
-    if (!container || nextPerfs.length === 0) return
-    const updateActive = () => {
-      const containerRect = container.getBoundingClientRect()
-      const containerCenter = containerRect.left + containerRect.width / 2
-      const cards = container.querySelectorAll('.carousel-card')
-      let closest = 0
-      let closestDist = Infinity
-      cards.forEach((card, _idx) => {
-        const cardRect = card.getBoundingClientRect()
-        const dist = Math.abs(containerCenter - (cardRect.left + cardRect.width / 2))
-        if (dist < closestDist) { closestDist = dist; closest = _idx }
-      })
-      setActiveCarouselCard(closest)
-    }
-    container.addEventListener('scroll', updateActive, { passive: true })
-    updateActive()
-    return () => container.removeEventListener('scroll', updateActive)
-  }, [nextPerfs.length])
 
   // Sticky score pill state
   const [isSticky, setIsSticky] = useState(false)
@@ -1152,7 +1136,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       )
       if (res.ok) {
         const data = await res.json()
-        setNextPerfs(data.performances ?? [])
+        const rows = (data.performances ?? []) as Array<{
+          movieSlug: string
+          actorSlug: string
+          movieTitle: string
+          movieYear: number
+          moviePosterUrl?: string | null
+          actorImageUrl?: string | null
+        }>
+        setNextPerfs(
+          rows.map((p) => ({
+            ...p,
+            actorName: performance.actor.name,
+          }))
+        )
         if (typeof data.totalPerformances === 'number' && typeof data.userRatedCount === 'number') {
           setActorProgress({ totalPerformances: data.totalPerformances, userRatedCount: data.userRatedCount })
         } else {
@@ -1168,7 +1165,37 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     } finally {
       setNextPerfLoading(false)
     }
-  }, [performance.actor.id, performance.actor.slug, performance.movie.id])
+  }, [performance.actor.id, performance.actor.slug, performance.actor.name, performance.movie.id])
+
+  const fetchGuestNextPerf = useCallback(async () => {
+    setGuestNextPerfLoading(true)
+    try {
+      const list = await fetchGuestSuccessRecommendations({
+        currentActorId: performance.actor.id,
+        currentActorSlug: performance.actor.slug,
+        currentActorName: performance.actor.name,
+        currentActorImageUrl: performance.actor.imageUrl,
+        currentMovieId: performance.movie.id,
+      })
+      setGuestNextPerfs(list)
+    } catch {
+      setGuestNextPerfs([])
+    } finally {
+      setGuestNextPerfLoading(false)
+    }
+  }, [
+    performance.actor.id,
+    performance.actor.slug,
+    performance.actor.name,
+    performance.actor.imageUrl,
+    performance.movie.id,
+  ])
+
+  useEffect(() => {
+    if (submitPhase === 'success' && !user) {
+      fetchGuestNextPerf()
+    }
+  }, [submitPhase, user, fetchGuestNextPerf])
 
   // Fetch user progress data
   const fetchUserProgress = useCallback(async () => {
@@ -1240,8 +1267,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       document.body.style.touchAction = ''
     }
 
-    // Pre-fetch next performances so carousel is ready when success page shows (authenticated only)
+    // Pre-fetch next performances so carousel is ready when success page shows
     if (user) fetchNextPerf()
+    else fetchGuestNextPerf()
 
     setSubmitFeedback(null)
     setSubmitPhase('loading')
@@ -1657,7 +1685,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     doNavigateToActorPage()
   }
 
-  const handleRateNextPerformance = (p?: { movieSlug: string; actorSlug: string }) => {
+  const handleRateNextPerformance = (p?: SuccessCarouselPerf) => {
     if (p) {
       router.push(`/rate/${p.movieSlug}/${p.actorSlug}`)
     } else if (nextPerfs.length > 0) {
@@ -2531,80 +2559,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </AnimatePresence>
             )}
 
-            {/* ── Guest momentum progress (●●●○ + unlock copy) ───────────────── */}
-            {!user && (
-              <AnimatePresence>
-                {showGuestProgressCard && (
-                  <motion.div
-                    key="guest-progress"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="rounded-2xl p-4 sm:p-5 space-y-3"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
-                      border: '1px solid rgba(255,215,0,0.18)',
-                    }}
-                  >
-                    <p
-                      className="text-center text-xl sm:text-2xl font-black tabular-nums flex justify-center gap-3 sm:gap-4"
-                      style={{ color: '#FFD700' }}
-                      aria-hidden
-                    >
-                      {Array.from({ length: GUEST_RATING_LIMIT }).map((_, i) => (
-                        <span key={i}>{i < guestRatingsCount ? '●' : '○'}</span>
-                      ))}
-                    </p>
-                    <p className="text-center text-sm sm:text-[15px] font-bold text-white leading-snug px-1">
-                      {guestRatingsCount === 1 && <>You&apos;ve rated 1 performance</>}
-                      {guestRatingsCount === 2 && (
-                        <>You&apos;ve rated 2 performances — 1 more to unlock your profile</>
-                      )}
-                      {guestRatingsCount >= 3 && (
-                        <>You&apos;ve rated 3 performances — unlock your profile to save them</>
-                      )}
-                      {guestRatingsCount === 0 && <>Keep rating — your progress builds here</>}
-                    </p>
-                    {guestRatingsCount === 2 && (
-                      <p className="text-center text-xs font-medium" style={{ color: '#a1a1aa' }}>
-                        Create your profile to keep your ratings
-                      </p>
-                    )}
-                    <p className="text-center text-xs sm:text-sm font-medium pt-0.5" style={{ color: '#71717a' }}>
-                      Create an account to keep it forever
-                    </p>
-                    {guestRatingsCount >= 2 && onGuestMomentumSignup && (
-                      <div className="flex flex-col items-center gap-1.5 pt-1">
-                        <motion.button
-                          type="button"
-                          onClick={() => onGuestMomentumSignup(buildGuestMomentumPayload())}
-                          animate={
-                            earlySaveCtaPulse
-                              ? {
-                                  scale: [1, 1.028, 1],
-                                  boxShadow: [
-                                    '0 0 0 0 rgba(255,215,0,0)',
-                                    '0 0 24px rgba(255,215,0,0.28)',
-                                    '0 0 0 0 rgba(255,215,0,0)',
-                                  ],
-                                }
-                              : {}
-                          }
-                          transition={{ duration: 0.68, ease: 'easeOut' }}
-                          className="w-full max-w-[280px] px-5 py-3 rounded-full text-sm font-semibold transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-[#FFD700]/30 bg-white/[0.04] text-[#FFD700] hover:bg-[#FFD700]/[0.09] hover:border-[#FFD700]/45 active:scale-[0.99]"
-                        >
-                          Save your ratings
-                        </motion.button>
-                        <p className="text-[11px] font-medium" style={{ color: '#52525b' }}>
-                          Takes 5 seconds
-                        </p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            )}
 
             {/* ── Share your rating ─────────────────────────────────────────── */}
             {finalScore !== null && (
@@ -2876,8 +2830,122 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             )}
 
+            {/* ── Guest: rate another performance carousel ───────────────────── */}
+            {!user && (
+              <AnimatePresence>
+                {showGuestCarouselSection && (
+                  <motion.div
+                    key="guest-rate-another"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: [0.22, 0.61, 0.36, 1] }}
+                    className="space-y-3"
+                  >
+                    <SuccessRateAnotherCarousel
+                      variant="guest"
+                      perfs={guestNextPerfs}
+                      loading={guestNextPerfLoading}
+                      headlineActorName={performance.actor.name}
+                      headlineActorImageUrl={performance.actor.imageUrl}
+                      onRate={handleRateNextPerformance}
+                      emptyMessage="Explore more performances from search or the homepage."
+                      headerAbove={
+                        guestRatingsCount >= 2 ? (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.05, duration: 0.35 }}
+                            className="text-xs sm:text-sm font-medium tracking-wide"
+                            style={{ color: 'rgba(255, 215, 0, 0.55)' }}
+                          >
+                            Your taste profile is starting to form.
+                          </motion.p>
+                        ) : undefined
+                      }
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+
+            {/* ── Guest momentum progress (below carousel) ───────────────────── */}
+            {!user && (
+              <AnimatePresence>
+                {showGuestProgressCard && (
+                  <motion.div
+                    key="guest-progress"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="rounded-2xl p-4 sm:p-5 space-y-3"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
+                      border: '1px solid rgba(255,215,0,0.18)',
+                    }}
+                  >
+                    <p
+                      className="text-center text-xl sm:text-2xl font-black tabular-nums flex justify-center gap-3 sm:gap-4"
+                      style={{ color: '#FFD700' }}
+                      aria-hidden
+                    >
+                      {Array.from({ length: GUEST_RATING_LIMIT }).map((_, i) => (
+                        <span key={i}>{i < guestRatingsCount ? '●' : '○'}</span>
+                      ))}
+                    </p>
+                    <p className="text-center text-sm sm:text-[15px] font-bold text-white leading-snug px-1">
+                      {guestRatingsCount === 1 && <>You&apos;ve rated 1 performance</>}
+                      {guestRatingsCount === 2 && (
+                        <>You&apos;ve rated 2 performances — 1 more to unlock your profile</>
+                      )}
+                      {guestRatingsCount >= 3 && (
+                        <>You&apos;ve rated 3 performances — unlock your profile to save them</>
+                      )}
+                      {guestRatingsCount === 0 && <>Keep rating — your progress builds here</>}
+                    </p>
+                    {guestRatingsCount === 2 && (
+                      <p className="text-center text-xs font-medium" style={{ color: '#a1a1aa' }}>
+                        Create your profile to keep your ratings
+                      </p>
+                    )}
+                    <p className="text-center text-xs sm:text-sm font-medium pt-0.5" style={{ color: '#71717a' }}>
+                      Create an account to keep it forever
+                    </p>
+                    {guestRatingsCount >= 2 && onGuestMomentumSignup && (
+                      <motion.div className="flex flex-col items-center gap-1.5 pt-1">
+                        <motion.button
+                          type="button"
+                          onClick={() => onGuestMomentumSignup(buildGuestMomentumPayload())}
+                          animate={
+                            earlySaveCtaPulse
+                              ? {
+                                  scale: [1, 1.028, 1],
+                                  boxShadow: [
+                                    '0 0 0 0 rgba(255,215,0,0)',
+                                    '0 0 24px rgba(255,215,0,0.28)',
+                                    '0 0 0 0 rgba(255,215,0,0)',
+                                  ],
+                                }
+                              : {}
+                          }
+                          transition={{ duration: 0.68, ease: 'easeOut' }}
+                          className="w-full max-w-[280px] px-5 py-3 rounded-full text-sm font-semibold transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-[#FFD700]/30 bg-white/[0.04] text-[#FFD700] hover:bg-[#FFD700]/[0.09] hover:border-[#FFD700]/45 active:scale-[0.99]"
+                        >
+                          Save your ratings
+                        </motion.button>
+                        <p className="text-[11px] font-medium" style={{ color: '#52525b' }}>
+                          Takes 5 seconds
+                        </p>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+
             {/* ── Actor completion: X / Y performances rated (prominent) ─────────── */}
-            {actorProgress != null && (
+            {user && actorProgress != null && (
               <div
                 className="rounded-2xl sm:rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-center"
                 style={{
@@ -2914,168 +2982,25 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             )}
 
-            {/* ── "Rate another performance" carousel ─────────────────────────── */}
-            <div ref={carouselSectionRef}>
-              <div className="flex items-center justify-between mb-2 sm:mb-4 gap-2">
-                <p
-                  className="text-[10px] sm:text-xs font-bold tracking-widest uppercase leading-tight"
-                  style={{ color: '#a1a1aa' }}
-                >
-                  {actorProgress != null && actorProgress.totalPerformances > 0 && (actorProgress.totalPerformances - actorProgress.userRatedCount) <= 3
-                    ? 'Almost finished rating this actor'
-                    : 'Rate another performance'}
-                </p>
-                {nextPerfs.length > 1 && (
-                  <span className="text-[10px] sm:text-xs text-[#71717a] shrink-0">
-                    {nextPerfs.length} left
-                  </span>
-                )}
-              </div>
-
-              {/* ── Carousel or states ─────────────────────────────────────────── */}
-              {nextPerfLoading ? (
-                /* Loading skeleton */
-                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide -mx-1 px-1">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="flex-shrink-0 w-[80vw] sm:w-[300px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
-                      style={{ minHeight: 360 }}
-                    />
-                  ))}
-                </div>
-              ) : nextPerfs.length > 0 ? (
-                /* ── Performance Carousel — LandingPageCard style ──────────────── */
-                <div className="relative">
-                  <div className="relative -mx-4 sm:-mx-0">
-                    <div
-                      ref={carouselRef}
-                      className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scrollbar-hide pl-4 pr-4 sm:pl-2 sm:pr-2"
-                    >
-                      {nextPerfs.map((p, idx) => (
-                        <div
-                          key={p.movieSlug}
-                          className="carousel-card flex-shrink-0 w-[80vw] sm:w-[300px] snap-center"
-                          style={{ transform: 'translateZ(0)' }}
-                        >
-                          <div className="group relative h-full">
-                            <div
-                              className="relative h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] cursor-pointer"
-                              style={{ boxShadow: '0 25px 70px -15px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1)' }}
-                              onClick={() => handleRateNextPerformance(p)}
-                            >
-                              {/* Hover gold glow */}
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                              </div>
-
-                              <div className="relative z-10 flex flex-col h-full">
-                                {/* Actor headshot + movie poster side by side */}
-                                <div className="flex justify-center items-end gap-4 mb-5">
-                                  <ActorHeadshot
-                                    name={performance.actor.name}
-                                    imageUrl={upgradeActorImageRes(p.actorImageUrl ?? performance.actor.imageUrl ?? null)}
-                                    size="lg"
-                                    loading="lazy"
-                                  />
-                                  <MoviePoster
-                                    title={p.movieTitle}
-                                    posterUrl={p.moviePosterUrl ?? undefined}
-                                    size="lg"
-                                    loading="lazy"
-                                  />
-                                </div>
-
-                                {/* "Unrated by you" badge + year */}
-                                <div className="flex items-center justify-between mb-4">
-                                  <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                    <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#FFD700]" />
-                                    <span className="text-xs font-bold text-[#FFD700]">Unrated by you</span>
-                                  </div>
-                                  <span className="text-[#a3a3a3] text-sm font-medium">{p.movieYear}</span>
-                                </div>
-
-                                {/* Actor name + movie title */}
-                                <div className="flex-1">
-                                  <h3
-                                    className="text-xl sm:text-2xl font-bold text-white mb-1"
-                                    style={{ fontFamily: 'var(--font-cinzel, serif)' }}
-                                  >
-                                    {performance.actor.name}
-                                  </h3>
-                                  <p className="text-base text-[#FFD700] font-semibold tracking-wide mb-4 line-clamp-2">
-                                    {p.movieTitle}
-                                  </p>
-                                </div>
-
-                                {/* CTA */}
-                                <div className="mt-auto">
-                                  <div
-                                    className="w-full px-6 py-4 rounded-full text-black text-sm font-bold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 group-hover:scale-105"
-                                    style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
-                                  >
-                                    Rate <Star className="w-4 h-4 fill-current" />
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dot indicators */}
-                  {nextPerfs.length > 1 && (
-                    <div className="flex justify-center items-center mt-4" style={{ gap: '4px' }}>
-                      {nextPerfs.map((_, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => {
-                            const cards = carouselRef.current?.querySelectorAll('.carousel-card')
-                            const target = cards?.[index] as HTMLElement
-                            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                          }}
-                          style={{ padding: '10px 4px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                          aria-label={`Go to card ${index + 1}`}
-                        >
-                          <div style={{
-                            width: index === activeCarouselCard ? '20px' : '8px',
-                            height: '8px',
-                            backgroundColor: index === activeCarouselCard ? '#FFD700' : 'rgba(115,115,115,0.4)',
-                            borderRadius: '9999px',
-                            transition: 'all 0.3s ease',
-                          }} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* All performances rated — no carousel, just message + filmography */
-                <div
-                  className="rounded-2xl sm:rounded-[2rem] border border-white/8 p-5 sm:p-8 text-center"
-                  style={{ background: 'linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))' }}
-                >
-                  <p className="text-[#a1a1aa] text-xs sm:text-sm mb-4 sm:mb-5">
-                    You&apos;ve rated every performance for this actor. Try another actor.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleBackToFilmography}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                    View Filmography
-                  </button>
-                </div>
-              )}
-              {/* Discover another actor — always curated list, with real images */}
+            {user && (
+            <div ref={carouselSectionRef} className="space-y-4 sm:space-y-6">
+              <SuccessRateAnotherCarousel
+                variant="auth"
+                perfs={nextPerfs}
+                loading={nextPerfLoading}
+                headlineActorName={performance.actor.name}
+                headlineActorImageUrl={performance.actor.imageUrl}
+                actorProgress={actorProgress}
+                onRate={handleRateNextPerformance}
+                onViewFilmography={handleBackToFilmography}
+              />
               {!nextPerfLoading && (
-                <div className="mt-4 sm:mt-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.1 }}
+                  className="mt-4 sm:mt-6"
+                >
                   <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-[#a1a1aa] mb-2 sm:mb-3 text-center">
                     Discover another actor
                   </p>
@@ -3130,12 +3055,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </button>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
-
+            )}
             {/* ── Progress bar + badges ────────────────────────────────────────── */}
-            {progressData != null && (
+            {user && progressData != null && (
               <div
                 className="rounded-2xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 space-y-2 sm:space-y-3"
                 style={{

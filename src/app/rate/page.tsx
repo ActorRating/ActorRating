@@ -35,6 +35,22 @@ function RatePageContent() {
 
   const [actor, setActor] = useState<Actor | null>(null)
   const [movie, setMovie] = useState<Movie | null>(null)
+  const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
+  const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
+  const [communityDimensions, setCommunityDimensions] = useState<{
+    emotionalRangeDepth: number | null
+    characterBelievability: number | null
+    technicalSkill: number | null
+    screenPresence: number | null
+    chemistryInteraction: number | null
+  } | null>(null)
+  const [movieCast, setMovieCast] = useState<Array<{
+    actorId: string
+    actorName: string
+    actorSlug: string | null
+    actorImageUrl: string | null
+    movieSlug: string | null
+  }>>([])
   const [characterName, setCharacterName] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -154,6 +170,7 @@ function RatePageContent() {
                   year: data.year,
                   director: data.director || 'Unknown',
                   slug: data.slug,
+                  posterUrl: data.posterUrl ?? undefined,
                   createdAt: data.createdAt || new Date().toISOString(),
                   updatedAt: data.updatedAt || new Date().toISOString(),
                 }))
@@ -189,6 +206,30 @@ function RatePageContent() {
       hasTrackedRateStart.current = true
     }
   }, [actor?.id, movie?.id, submitted, ratingId])
+
+  useEffect(() => {
+    if (!actor?.id || !movie?.id) return
+    fetch(`/api/ratings/community-stats?actorId=${actor.id}&movieId=${movie.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return
+        if (typeof data.count === 'number') setCommunityRatingCount(data.count > 0 ? data.count : null)
+        if (data.avg10 != null) setCommunityAvg10(data.avg10)
+        if (data.dimensions) setCommunityDimensions(data.dimensions)
+      })
+      .catch(() => {})
+  }, [actor?.id, movie?.id])
+
+  useEffect(() => {
+    if (!movie?.id && !movie?.slug) return
+    const movieIdOrSlug = movie.slug ?? movie.id
+    fetch(`/api/movies/${movieIdOrSlug}/cast?excludeActorId=${actor?.id ?? ''}&limit=6`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.cast) setMovieCast(data.cast)
+      })
+      .catch(() => {})
+  }, [movie?.id, movie?.slug, actor?.id])
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
@@ -535,15 +576,14 @@ function RatePageContent() {
               performance={{
                 id: `${actor.id}-${movie.id}`,
                 actor: {
-                  id: actor.id,
-                  name: actor.name,
-                  imageUrl: actor.imageUrl
+                  ...actor,
+                  slug: actor.slug ?? undefined,
                 },
                 movie: {
-                  id: movie.id,
-                  title: movie.title,
-                  year: movie.year,
-                  director: movie.director
+                  ...movie,
+                  slug: movie.slug ?? undefined,
+                  director: movie.director ?? undefined,
+                  posterUrl: movie.posterUrl ?? undefined,
                 },
                 emotionalRangeDepth: 0,
                 characterBelievability: 0,
@@ -553,10 +593,10 @@ function RatePageContent() {
                 comment: characterName,
                 user: {
                   name: '',
-                  email: ''
+                  email: '',
                 },
-                createdAt: '',
-                updatedAt: ''
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
               }}
               onSubmit={handleWrapperSubmit}
               submitting={submitting}
@@ -575,6 +615,10 @@ function RatePageContent() {
                 screenPresence: submittedRating.screenPresence,
                 chemistryInteraction: submittedRating.chemistryInteraction
               } : undefined}
+              communityAvg10={communityAvg10}
+              communityRatingCount={communityRatingCount}
+              communityDimensions={communityDimensions}
+              movieCast={movieCast}
               onSuccess={() => {
                 // Success animation is handled in the component
               }}
