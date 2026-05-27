@@ -25,7 +25,7 @@ export default async function HomeSeoLinkSections() {
 
   return (
     <section className="bg-black border-t border-white/10">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 grid gap-10 lg:gap-12 md:grid-cols-3">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 grid gap-10 lg:gap-12 md:grid-cols-3" aria-label="Top rated actors, movies, and performances">
         {/* Top Rated Movies */}
         <div>
           <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-gray-400 mb-4">
@@ -114,6 +114,14 @@ export default async function HomeSeoLinkSections() {
             ))}
           </ul>
         </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 text-center">
+        <Link
+          href="/performances"
+          className="text-sm text-gray-500 hover:text-[#FFD700] transition-colors underline underline-offset-4 decoration-gray-700 hover:decoration-[#FFD700]/50"
+        >
+          Explore all performances →
+        </Link>
       </div>
     </section>
   )

@@ -198,57 +198,73 @@ function SearchPageContent() {
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
                       {result.type === 'actor' ? (
-                        <Link
-                          href={getActorUrl({ id: result.id, name: result.name || '', slug: result.slug || null })}
-                          className="group block"
-                        >
-                          {/* Square avatar tile */}
-                          <div className="aspect-square rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
-                            {result.imageUrl ? (
-                              <img
-                                src={result.imageUrl}
-                                alt={result.name}
-                                loading="lazy"
-                                decoding="async"
-                                className="w-full h-full object-cover"
-                                style={{ objectPosition: 'top center' }}
-                              />
-                            ) : (
-                              <span className="text-4xl font-bold text-gray-600">
-                                {result.name?.charAt(0) || 'A'}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
-                            {result.name}
-                          </p>
-                        </Link>
+                        <div className="flex flex-col">
+                          <Link
+                            href={getActorUrl({ id: result.id, name: result.name || '', slug: result.slug || null })}
+                            className="group block"
+                          >
+                            {/* Square avatar tile */}
+                            <div className="aspect-square rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+                              {result.imageUrl ? (
+                                <img
+                                  src={result.imageUrl}
+                                  alt={result.name}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="w-full h-full object-cover"
+                                  style={{ objectPosition: 'top center' }}
+                                />
+                              ) : (
+                                <span className="text-4xl font-bold text-gray-600">
+                                  {result.name?.charAt(0) || 'A'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
+                              {result.name}
+                            </p>
+                          </Link>
+                          <Link
+                            href={getActorUrl({ id: result.id, name: result.name || '', slug: result.slug || null })}
+                            className="mt-2 text-center text-xs font-semibold text-[#FFD700] hover:text-[#FFA500] transition-colors"
+                          >
+                            Rate →
+                          </Link>
+                        </div>
                       ) : (
-                        <Link
-                          href={getMovieUrl({ id: result.id, title: result.title || '', year: result.year || 0, slug: result.slug || null })}
-                          className="group block"
-                        >
-                          {/* Poster tile — 2:3 aspect */}
-                          <div className="aspect-[2/3] rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
-                            {result.posterUrl ? (
-                              <img
-                                src={result.posterUrl}
-                                alt={result.title}
-                                loading="lazy"
-                                decoding="async"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Film className="w-12 h-12 text-gray-600" />
+                        <div className="flex flex-col">
+                          <Link
+                            href={getMovieUrl({ id: result.id, title: result.title || '', year: result.year || 0, slug: result.slug || null })}
+                            className="group block"
+                          >
+                            {/* Poster tile — 2:3 aspect */}
+                            <div className="aspect-[2/3] rounded-2xl mb-3 overflow-hidden border-2 border-transparent group-hover:border-[#FFD700] transition-all relative bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+                              {result.posterUrl ? (
+                                <img
+                                  src={result.posterUrl}
+                                  alt={result.title}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Film className="w-12 h-12 text-gray-600" />
+                              )}
+                            </div>
+                            <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
+                              {result.title}
+                            </p>
+                            {result.year && (
+                              <p className="text-xs text-center text-gray-500 mt-1">{result.year}</p>
                             )}
-                          </div>
-                          <p className="text-sm font-medium text-center text-gray-300 group-hover:text-[#FFD700] transition-colors line-clamp-2">
-                            {result.title}
-                          </p>
-                          {result.year && (
-                            <p className="text-xs text-center text-gray-500 mt-1">{result.year}</p>
-                          )}
-                        </Link>
+                          </Link>
+                          <Link
+                            href={getMovieUrl({ id: result.id, title: result.title || '', year: result.year || 0, slug: result.slug || null })}
+                            className="mt-2 text-center text-xs font-semibold text-[#FFD700] hover:text-[#FFA500] transition-colors"
+                          >
+                            Rate cast →
+                          </Link>
+                        </div>
                       )}
                     </motion.div>
                   ))}

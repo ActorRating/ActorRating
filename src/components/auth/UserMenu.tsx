@@ -75,7 +75,7 @@ export function UserMenu() {
             </PrefetchLink>
             
             <PrefetchLink
-              href="/profile/settings"
+              href="/profile"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >
@@ -84,7 +84,7 @@ export function UserMenu() {
             </PrefetchLink>
             
             <PrefetchLink
-              href="/profile/privacy"
+              href="/privacy"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(false)}
             >

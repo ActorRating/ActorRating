@@ -104,6 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: "User Profile | ActorRating",
       description: "Public ActorRating profile.",
+      robots: { index: false, follow: false },
     }
   }
 
@@ -115,6 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${displayName} | ActorRating`,
     description,
+    robots: { index: true, follow: true },
     alternates: { canonical: profileUrl },
     openGraph: {
       type: "profile",

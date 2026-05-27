@@ -1,4 +1,9 @@
+import type { Metadata } from "next"
 import { SliderDemo } from '@/components/rating/SliderDemo'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function TestSlidersPage() {
   return (

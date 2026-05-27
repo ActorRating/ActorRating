@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "All Acting Performances Ranked",
   description:
     "Browse all acting performances rated by users. Discover the best performances across movies and actors.",
+  robots: { index: true, follow: true },
+  alternates: {
+    canonical: "https://actorrating.com/performances",
+  },
 }
 import { RECENT_PERFORMANCE_TARGETS, ICONIC_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
 import { PerformancesPageClient } from "./PerformancesPageClient"

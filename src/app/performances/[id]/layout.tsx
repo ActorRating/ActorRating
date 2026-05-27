@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title,
       description,
+      robots: { index: false, follow: true },
       openGraph: {
         title,
         description,
@@ -47,6 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: "Acting Performance",
       description: "View acting performance ratings on ActorRating.",
+      robots: { index: false, follow: true },
     }
   }
 }

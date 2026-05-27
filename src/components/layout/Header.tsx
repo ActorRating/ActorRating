@@ -68,7 +68,7 @@ export function Header({
         router.push('/profile')
         break
       case 'settings':
-        router.push('/profile/settings')
+        router.push('/profile')
         break
       case 'logout':
         handleLogout()
