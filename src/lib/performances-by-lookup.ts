@@ -3,6 +3,7 @@
  * Used by the API route and by the performances page for SSR.
  */
 
+import { isStaticProductionBuild } from "@/lib/is-static-build"
 import { prisma } from "@/lib/prisma"
 
 export interface LookupTarget {
@@ -43,6 +44,7 @@ function computeAverage(ratings: Array<Record<string, unknown>> = []): number {
 export async function getPerformancesByLookup(
   targets: LookupTarget[]
 ): Promise<EnrichedPerformance[]> {
+  if (isStaticProductionBuild()) return []
   if (!Array.isArray(targets) || targets.length === 0) return []
 
   const actorNames = [...new Set(targets.map((t) => t.actor).filter(Boolean))]

@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { getTopRatedMovies, getTopRatedActors, getRecentlyRated } from '@/lib/home-seo-data'
 import { getActorUrl, getMovieUrl, getRateUrl } from '@/lib/slugHelper'
+import { isStaticProductionBuild } from '@/lib/is-static-build'
 
 export const revalidate = 1800
 
 export default async function HomeSeoLinkSections() {
+  if (isStaticProductionBuild()) return null
+
   let topMovies: Awaited<ReturnType<typeof getTopRatedMovies>> = []
   let topActors: Awaited<ReturnType<typeof getTopRatedActors>> = []
   let recent: Awaited<ReturnType<typeof getRecentlyRated>> = []

@@ -15,22 +15,31 @@ export type FeaturedHeroPayload = {
   subline: string
 }
 
-export function enrichedToFeaturedPayload(p: EnrichedPerformance): FeaturedHeroPayload | null {
+export function enrichedToFeaturedPayload(
+  p: EnrichedPerformance,
+  copy?: Pick<FeaturedHeroPayload, 'headline' | 'subline'>,
+): FeaturedHeroPayload | null {
   if (!p?.actor || !p?.movie) return null
   const avg = p.averageRating
   const cnt = p.ratingCount ?? 0
   const communityScore = avg != null && avg > 0 && cnt > 0 ? (avg / 10).toFixed(1) : null
+  const actorName = p.actor.name
+  const movieTitle = p.movie.title
   return {
     rateHref: getRateUrl(
       { id: p.actorId, name: p.actor.name, slug: p.actor.slug },
       { id: p.movieId, title: p.movie.title, year: p.movie.year, slug: p.movie.slug },
     ),
-    actorName: p.actor.name,
-    movieTitle: p.movie.title,
+    actorName,
+    movieTitle,
     year: String(p.movie.year),
     communityScore,
     actorImageUrl: p.actor.imageUrl,
     moviePosterUrl: p.movie.posterUrl,
+    headline: copy?.headline ?? `How do you rate ${actorName} in ${movieTitle}?`,
+    subline:
+      copy?.subline ??
+      'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
   }
 }
 
@@ -39,10 +48,8 @@ export function buildWeeklyFeaturedHero(
   config: WeeklyHeroConfig,
   perf: EnrichedPerformance | null | undefined,
 ): FeaturedHeroPayload {
-  const base = perf ? enrichedToFeaturedPayload(perf) : null
-  if (base) {
-    return { ...base, headline: config.headline, subline: config.subline }
-  }
+  const base = perf ? enrichedToFeaturedPayload(perf, config) : null
+  if (base) return base
   return {
     rateHref: '/performances',
     actorName: config.actor,
