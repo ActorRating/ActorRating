@@ -176,6 +176,7 @@ export default function ActorPageClient({
   const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
   const [userRatingsMap, setUserRatingsMap] = useState<Map<string, number>>(new Map())
   const [seoExpanded, setSeoExpanded] = useState(false)
+  const [bioExpanded, setBioExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -210,6 +211,10 @@ export default function ActorPageClient({
       setRefreshKey(prev => prev + 1)
     }
   }, [actorId, pathname])
+
+  useEffect(() => {
+    setBioExpanded(false)
+  }, [actorId])
 
   // Also refresh when page becomes visible (user returns from another tab/app)
   useEffect(() => {
@@ -890,16 +895,36 @@ export default function ActorPageClient({
               </motion.p>
             )}
 
-            {actor.bio?.trim() && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-2xl mx-auto mb-6 sm:mb-8 px-1 text-left sm:text-center"
-              >
-                {actor.bio.trim()}
-              </motion.p>
-            )}
+            {actor.bio?.trim() && (() => {
+              const bioText = actor.bio.trim()
+              const bioIsLong = bioText.length > 200
+              return (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  className="max-w-2xl mx-auto mb-6 sm:mb-8 px-1 text-left sm:text-center"
+                >
+                  <p
+                    className={`text-base sm:text-lg text-gray-400 leading-relaxed ${
+                      bioIsLong && !bioExpanded ? 'line-clamp-3' : ''
+                    }`}
+                  >
+                    {bioText}
+                  </p>
+                  {bioIsLong && (
+                    <button
+                      type="button"
+                      onClick={() => setBioExpanded((v) => !v)}
+                      className="mt-2 text-sm font-medium text-[#FFD700] hover:text-[#FFE55C] transition-colors"
+                      aria-expanded={bioExpanded}
+                    >
+                      {bioExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
+                </motion.div>
+              )
+            })()}
               
             {/* Divider - Minimal */}
             <motion.div
