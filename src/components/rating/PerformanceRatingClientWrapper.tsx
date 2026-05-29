@@ -2909,36 +2909,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         Create your profile to keep your ratings
                       </p>
                     )}
-                    <p className="text-center text-xs sm:text-sm font-medium pt-0.5" style={{ color: '#71717a' }}>
-                      Create an account to keep it forever
-                    </p>
-                    {guestRatingsCount >= 2 && onGuestMomentumSignup && (
-                      <motion.div className="flex flex-col items-center gap-1.5 pt-1">
-                        <motion.button
-                          type="button"
-                          onClick={() => onGuestMomentumSignup(buildGuestMomentumPayload())}
-                          animate={
-                            earlySaveCtaPulse
-                              ? {
-                                  scale: [1, 1.028, 1],
-                                  boxShadow: [
-                                    '0 0 0 0 rgba(255,215,0,0)',
-                                    '0 0 24px rgba(255,215,0,0.28)',
-                                    '0 0 0 0 rgba(255,215,0,0)',
-                                  ],
-                                }
-                              : {}
-                          }
-                          transition={{ duration: 0.68, ease: 'easeOut' }}
-                          className="w-full max-w-[280px] px-5 py-3 rounded-full text-sm font-semibold transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-[#FFD700]/30 bg-white/[0.04] text-[#FFD700] hover:bg-[#FFD700]/[0.09] hover:border-[#FFD700]/45 active:scale-[0.99]"
-                        >
-                          Save your ratings
-                        </motion.button>
-                        <p className="text-[11px] font-medium" style={{ color: '#52525b' }}>
-                          Takes 5 seconds
-                        </p>
-                      </motion.div>
-                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -3124,6 +3094,42 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 Back to filmography
               </button>
             </div>
+
+            {!user && showGuestProgressCard && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.12 }}
+                className="pb-6 pt-1 text-center"
+              >
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    if (onGuestMomentumSignup) {
+                      onGuestMomentumSignup(buildGuestMomentumPayload())
+                    } else {
+                      router.push('/auth/signin')
+                    }
+                  }}
+                  animate={
+                    earlySaveCtaPulse
+                      ? {
+                          scale: [1, 1.02, 1],
+                          boxShadow: [
+                            '0 0 0 0 rgba(255,215,0,0)',
+                            '0 0 18px rgba(255,215,0,0.2)',
+                            '0 0 0 0 rgba(255,215,0,0)',
+                          ],
+                        }
+                      : {}
+                  }
+                  transition={{ duration: 0.68, ease: 'easeOut' }}
+                  className="inline-flex items-center justify-center max-w-[min(100%,20rem)] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-white/[0.1] bg-white/[0.02] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#FFD700]/22 hover:bg-white/[0.04] active:scale-[0.99]"
+                >
+                  Create an account to save your ratings forever
+                </motion.button>
+              </motion.div>
+            )}
             </motion.div>
           </>
         )}

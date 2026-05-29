@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight, ArrowRight, Heart, Target, Zap, Eye } from 'lucide-react'
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -111,6 +111,21 @@ function HeroActorPhoto({ imageUrl, name }: { imageUrl?: string | null; name: st
 }
 
 /** Small tile on movie poster — container sizes to image aspect ratio (max bounds only). */
+function formatBirthYear(birthDate: string | undefined | null): string | null {
+  if (!birthDate) return null
+  const d = new Date(birthDate)
+  if (Number.isNaN(d.getTime())) return null
+  return String(d.getFullYear())
+}
+
+const CAREER_CRITERIA = [
+  { key: 'emotionalRangeDepth' as const, label: 'Emotional Range & Depth', shortLabel: 'Emotional Range', Icon: Heart },
+  { key: 'characterBelievability' as const, label: 'Character Believability', shortLabel: 'Believability', Icon: Target },
+  { key: 'technicalSkill' as const, label: 'Technical Skill & Authenticity', shortLabel: 'Performance Quality', Icon: Zap },
+  { key: 'screenPresence' as const, label: 'Screen Presence & Impact', shortLabel: 'Screen Presence', Icon: Eye },
+  { key: 'chemistryInteraction' as const, label: 'Chemistry & Interaction', shortLabel: 'Chemistry', Icon: Users },
+]
+
 function FilmographyPosterBadge({ name, imageUrl }: { name: string; imageUrl?: string | null }) {
   const [failed, setFailed] = useState(false)
   const src = upgradeActorImageRes(imageUrl)
@@ -408,6 +423,24 @@ export default function ActorPageClient({
       ? scoredPerformances.reduce((sum, perf) => sum + (perf.averageScore || 0), 0) / scoredPerformances.length
       : null
   }, [scoredPerformances])
+
+  const birthYear = useMemo(() => formatBirthYear(actor?.birthDate ?? null), [actor?.birthDate])
+
+  const careerCriteriaAverages = useMemo(() => {
+    const ratings = actor?.ratings || []
+    if (ratings.length === 0) return null
+
+    const averages = CAREER_CRITERIA.map(({ key, label, shortLabel, Icon }) => {
+      const values = ratings
+        .map((r) => r[key])
+        .filter((s): s is number => typeof s === 'number' && s > 0)
+      if (values.length === 0) return null
+      const avg = values.reduce((sum, s) => sum + s, 0) / values.length
+      return { key, label, shortLabel, Icon, avg }
+    }).filter((row): row is NonNullable<typeof row> => row !== null)
+
+    return averages.length > 0 ? averages : null
+  }, [actor?.ratings])
 
   // Calculate community stats
   const communityStats = useMemo(() => {
@@ -843,6 +876,30 @@ export default function ActorPageClient({
                 </motion.p>
               ) : null
             })()}
+
+            {(birthYear || actor.nationality?.trim()) && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.55 }}
+                className="text-base sm:text-lg text-gray-400 mb-4"
+              >
+                {[birthYear ? `Born ${birthYear}` : null, actor.nationality?.trim() || null]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </motion.p>
+            )}
+
+            {actor.bio?.trim() && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-2xl mx-auto mb-6 sm:mb-8 px-1 text-left sm:text-center"
+              >
+                {actor.bio.trim()}
+              </motion.p>
+            )}
               
             {/* Divider - Minimal */}
             <motion.div
@@ -1028,6 +1085,83 @@ export default function ActorPageClient({
                 </div>
               )}
             </motion.div>
+
+            {/* Five-criteria career breakdown */}
+            {careerCriteriaAverages && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
+                className="mb-8 max-w-3xl mx-auto w-full"
+              >
+                {communityStats.ratedPerformancesCount >= 5 ? (
+                  <>
+                    <h3
+                      className="text-lg sm:text-xl font-bold text-white text-center mb-6"
+                      style={{
+                        fontFamily: 'var(--font-geist-sans), sans-serif',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      How the community rates {actor.name}&apos;s performances
+                    </h3>
+                    <div className="space-y-3">
+                      {careerCriteriaAverages.map(({ key, label, shortLabel, Icon, avg }, index) => {
+                        const pct = Math.min(100, Math.max(0, avg))
+                        const display10 = (avg / 10).toFixed(1)
+                        return (
+                          <motion.div
+                            key={key}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: 1.05 + index * 0.06 }}
+                            className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 px-4 py-3 sm:px-5 sm:py-4"
+                          >
+                            <div className="flex items-center justify-between gap-3 mb-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="p-1.5 rounded-md bg-[#FFD700]/10 flex-shrink-0">
+                                  <Icon className="w-4 h-4 text-[#FFD700]" />
+                                </div>
+                                <span className="text-sm sm:text-base font-medium text-gray-200 truncate" title={label}>
+                                  <span className="sm:hidden">{shortLabel}</span>
+                                  <span className="hidden sm:inline">{label}</span>
+                                </span>
+                              </div>
+                              <span
+                                className="text-lg sm:text-xl font-bold text-[#FFD700] tabular-nums flex-shrink-0"
+                                style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+                              >
+                                {display10}
+                                <span className="text-sm font-semibold text-[#FFD700]/60">/10</span>
+                              </span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                                }}
+                              />
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="p-5 sm:p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 text-center"
+                  >
+                    <TrendingUp className="w-5 h-5 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm sm:text-base text-gray-400">
+                      Community criteria breakdown is still building — more ratings needed across{' '}
+                      {actor.name}&apos;s performances.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </motion.div>
         </div>
 
@@ -1556,7 +1690,7 @@ export default function ActorPageClient({
                           )}
 
                           {/* Movie Title - internal link */}
-                          <div className="mb-4">
+                          <div className={performance.movie.director?.trim() ? 'mb-2' : 'mb-4'}>
                             <Link
                               href={getMovieUrl(performance.movie)}
                               prefetch
@@ -1568,6 +1702,12 @@ export default function ActorPageClient({
                               <ArrowRight className="w-4 h-4 flex-shrink-0" aria-hidden />
                             </Link>
                           </div>
+
+                          {performance.movie.director?.trim() && (
+                            <p className="text-sm text-gray-400 mb-4">
+                              Directed by {performance.movie.director.trim()}
+                            </p>
+                          )}
 
                           {/* Character */}
                           <div className="mb-6">

@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, FormEvent } from 'react'
 import { FaSearch, FaTimes, FaBars } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { prefetchPerformancesPageData } from '@/lib/performances-page-targets'
 
 type NavLink = {
   label: string
@@ -21,9 +22,18 @@ const NAV_LINKS: NavLink[] = [
   { label: 'About',        href: '/about' },
 ]
 
-export function HomeNavbar() {
+export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
   const { user, loading, isInitialized } = useSession()
   const router = useRouter()
+
+  const prefetchRateHref = () => {
+    if (primaryRateHref.startsWith('/rate/')) {
+      router.prefetch(primaryRateHref)
+    } else {
+      prefetchPerformancesPageData()
+      router.prefetch('/performances')
+    }
+  }
   const homeHref = user ? '/dashboard' : '/'
   const navKey = `${user?.id || 'anon'}`
   const [mounted, setMounted] = useState(false)
@@ -192,13 +202,19 @@ export function HomeNavbar() {
                     >
                       Sign In
                     </Link>
-                    <Link href="/auth/signin">
+                    <Link
+                      href="/auth/signin"
+                      className="text-sm text-[#a3a3a3] hover:text-[#FFD700] transition-colors duration-200 px-2"
+                    >
+                      Join Free
+                    </Link>
+                    <Link href={primaryRateHref} onMouseEnter={prefetchRateHref}>
                       <button
                         className="px-5 py-2 rounded-full text-sm font-bold text-black hover:scale-105 transition-transform duration-200 min-h-[40px]"
                         style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
-                        aria-label="Join free"
+                        aria-label="Rate now"
                       >
-                        Join Free
+                        Rate Now
                       </button>
                     </Link>
                   </>
@@ -291,18 +307,35 @@ export function HomeNavbar() {
                   </>
                 ) : (
                   <>
-                    <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}
-                      className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-[#a3a3a3] bg-[#111] border border-white/5">
-                      Sign In
-                    </Link>
-                    <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)} className="flex-1">
+                    <Link
+                      href={primaryRateHref}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full mb-2"
+                      onMouseEnter={prefetchRateHref}
+                    >
                       <button
                         className="w-full px-4 py-3 rounded-xl text-sm font-bold text-black"
                         style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
                       >
-                        Join Free
+                        Rate Now
                       </button>
                     </Link>
+                    <div className="flex w-full gap-3">
+                      <Link
+                        href="/auth/signin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-[#a3a3a3] bg-[#111] border border-white/5"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/auth/signin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-[#a3a3a3] bg-[#111] border border-white/5"
+                      >
+                        Join Free
+                      </Link>
+                    </div>
                   </>
                 )}
               </div>

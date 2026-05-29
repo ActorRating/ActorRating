@@ -19,15 +19,15 @@ import { upgradeActorImageRes } from "@/lib/tmdb";
 import { getActorUrl, getMovieUrl, getRateUrl } from "@/lib/slugHelper";
 import {
   type FeaturedHeroPayload,
-  featuredHeroFromPerformances,
+  buildWeeklyFeaturedHero,
 } from "@/lib/home-featured-performance";
+import { getCurrentWeeklyHeroConfig, weeklyHeroLookupTarget } from "@/lib/weekly-hero-performance";
 import {
   SCROLL_REVEAL_VIEWPORT,
   SCROLL_REVEAL_TRANSITION,
   scrollRevealStaggerDelay,
 } from "@/lib/scroll-reveal";
 import { ArrowUpRight } from "lucide-react";
-import { SearchBar } from "@/components/SearchBar"
 import { ActorHeadshot } from "@/components/ui/ActorHeadshot";
 import { MoviePoster } from "@/components/ui/MoviePoster";
 
@@ -117,33 +117,96 @@ function SectionHeading({ eyebrow, goldWord, rest }: { eyebrow?: string; goldWor
   );
 }
 
-// ─── HERO ─────────────────────────────────────────────────────────────────────
+// ─── HERO — single weekly performance, one primary CTA ─────────────────────
 
-function HeroSection({
-  initialLeaderboardPerformances,
+function HeroFeaturedCard({
+  featured,
+  router,
 }: {
-  initialLeaderboardPerformances?: EnrichedPerformance[];
+  featured: FeaturedHeroPayload;
+  router: ReturnType<typeof useRouter>;
 }) {
+  const handlePrefetch = () => {
+    if (featured.rateHref.startsWith('/rate/')) {
+      router.prefetch(featured.rateHref);
+    } else {
+      prefetchPerformancesPageData();
+      router.prefetch('/performances');
+    }
+  };
+
+  return (
+    <div className="w-full max-w-lg mx-auto" onMouseEnter={handlePrefetch}>
+      <div
+        className="relative p-8 sm:p-10 md:p-12 rounded-[2rem] border border-[#FFD700]/20 bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 backdrop-blur-2xl overflow-hidden"
+        style={{
+          boxShadow: `
+            0 35px 90px -20px rgba(0,0,0,0.95),
+            0 0 0 1px rgba(255,215,0,0.12),
+            0 0 60px rgba(255,215,0,0.08),
+            inset 0 1px 0 rgba(255,255,255,0.1)
+          `,
+        }}
+      >
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-[#FFD700]/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="flex justify-center items-end gap-5 sm:gap-6 mb-6 sm:mb-8">
+            <ActorHeadshot
+              name={featured.actorName}
+              imageUrl={upgradeActorImageRes(featured.actorImageUrl)}
+              size="lg"
+              loading="eager"
+            />
+            <MoviePoster
+              title={featured.movieTitle}
+              posterUrl={featured.moviePosterUrl}
+              size="lg"
+              loading="eager"
+            />
+          </div>
+          {featured.communityScore ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD700]/10 border border-[#FFD700]/30 mb-5">
+              <FaStar className="w-4 h-4 text-[#FFD700]" />
+              <span className="text-sm text-[#a3a3a3]">Community</span>
+              <span className="text-xl font-bold text-[#FFD700] tabular-nums">{featured.communityScore}</span>
+              <span className="text-sm text-[#FFD700]/60">/10</span>
+            </div>
+          ) : null}
+          <p className="text-sm text-[#71717a] mb-1">{featured.movieTitle}</p>
+          <p className="text-xs text-[#52525b] mb-6">{featured.year}</p>
+          <Link href={featured.rateHref} prefetch={false} className="w-full">
+            <button
+              type="button"
+              className="w-full px-8 py-4 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-[1.02] min-h-[56px]"
+              style={{ background: GOLD }}
+            >
+              <span className="flex items-center justify-center gap-2">
+                Rate this performance
+                <FaArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </span>
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
   const router = useRouter();
   const { isMobile, prefersReducedMotion } = useDevice();
-  const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = ctaRef.current;
-    if (!el || !window.IntersectionObserver) return;
-    const isTouchOrNarrow = window.matchMedia('(hover: none)').matches || window.innerWidth < 1024;
-    if (!isTouchOrNarrow) return;
-    const obs = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) { prefetchPerformancesPageData(); obs.disconnect(); } },
-      { rootMargin: '100px' }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+    if (featured.rateHref.startsWith('/rate/')) {
+      router.prefetch(featured.rateHref);
+    }
+  }, [featured.rateHref, router]);
 
   return (
     <div
-      className="hero min-h-[90vh] relative flex items-start justify-center bg-black overflow-visible"
+      className="hero min-h-[min(100vh,920px)] relative flex items-start justify-center bg-black overflow-visible"
       style={{ willChange: 'auto', maxWidth: '100vw' }}
     >
       {/* Radial spotlight */}
@@ -169,151 +232,111 @@ function HeroSection({
         className="hero-content w-full relative z-10"
         style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '1rem', paddingRight: '1rem' }}
       >
-        <div className={`grid grid-cols-12 pt-48 xs:pt-52 sm:pt-36 md:pt-44 lg:pt-52 ${HOME_HERO_BOTTOM_PB} w-full`}>
-          <div className="col-span-12 flex flex-col justify-center items-center w-full">
+        <div className="grid grid-cols-12 pt-40 xs:pt-44 sm:pt-32 md:pt-36 lg:pt-40 pb-16 sm:pb-20 md:pb-24 w-full">
+          <div className="col-span-12 flex flex-col justify-center items-center w-full max-w-4xl mx-auto">
 
-            {/* Eyebrow */}
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="text-center text-[10px] sm:text-xs font-bold tracking-[0.15em] sm:tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-6 sm:mb-8 px-2 max-w-[90vw] mx-auto leading-snug"
+              className="text-center text-[10px] sm:text-xs font-bold tracking-[0.2em] sm:tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-5 sm:mb-6 px-2"
             >
-              The World&apos;s Acting Performance Database
+              This week&apos;s performance
             </motion.p>
 
-            {/* MASSIVE HERO HEADLINE — original breakpoint sizing */}
-            <motion.div
-              initial={false}
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-6 xs:mb-8 sm:mb-10 md:mb-12 lg:mb-14 w-full flex justify-center"
-              style={{ opacity: 1, transform: 'translateY(0)' }}
+              transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="text-[1.65rem] xs:text-[1.85rem] sm:text-3xl md:text-4xl lg:text-[2.75rem] text-white font-bold text-center px-3 sm:px-4 mb-4 sm:mb-5 leading-tight"
+              style={{ ...PLAYFAIR_HEADING, textShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
             >
-              <h1
-                className="hero-tagline hero-text-fade-in text-[3rem] xs:text-[3.5rem] sm:text-[3.75rem] md:text-[4.75rem] lg:text-[5.75rem] xl:text-[6.5rem] text-white mb-0 font-bold text-center lg:whitespace-nowrap px-4 mx-auto"
-                style={{
-                  ...PLAYFAIR_HEADING,
-                  textShadow: '0 10px 40px rgba(0,0,0,0.7)',
-                  letterSpacing: '0.08em',
-                  lineHeight: '1.1',
-                  maxWidth: '100%',
-                  display: 'inline-block',
-                }}
-              >
-                <span className="sr-only">Rate The Craft</span>
-                <span className="inline sm:hidden text-white" style={{ wordSpacing: '0.08em' }} aria-hidden="true">Rate The </span>
-                <span className="hidden sm:inline text-white" style={{ wordSpacing: '0.02em' }} aria-hidden="true">Rate The </span>
-                <span
-                  className="inline sm:hidden"
-                  style={{ ...GOLD_TEXT, wordSpacing: '0.08em', textShadow: 'none' }}
-                  aria-hidden="true"
-                >Craft</span>
-                <span
-                  className="hidden sm:inline"
-                  style={{ ...GOLD_TEXT, wordSpacing: '0.02em', textShadow: 'none' }}
-                  aria-hidden="true"
-                >Craft</span>
-              </h1>
-            </motion.div>
+              {featured.headline}
+            </motion.h1>
 
-            {/* Tagline under title */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.15 }}
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center px-4 mb-5 sm:mb-6 max-w-3xl mx-auto leading-snug"
-              style={{ ...GOLD_TEXT }}
+              transition={{ duration: 0.55, delay: 0.18 }}
+              className="text-sm sm:text-base md:text-lg text-[#a3a3a3] text-center px-4 sm:px-6 mb-8 sm:mb-10 max-w-2xl leading-relaxed font-light"
             >
-              Rate the greatest performances in film
+              {featured.subline}
             </motion.p>
 
-            {/* Gold divider */}
             <motion.div
               initial={prefersReducedMotion ? { opacity: 1, scaleX: 1 } : { opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
-              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="h-[2px] mx-auto mb-6 xs:mb-8 sm:mb-10 md:mb-12 relative"
-              style={{ width: '180px', transformOrigin: 'center' }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.7, delay: 0.22 }}
+              className="h-[2px] mx-auto mb-8 sm:mb-10"
+              style={{ width: '140px', transformOrigin: 'center' }}
             >
-              <div className="h-full w-full" style={{
-                background: 'linear-gradient(90deg, transparent, rgba(255,229,92,0.4) 15%, rgba(255,215,0,0.9) 40%, #FFD700 50%, rgba(255,215,0,0.9) 60%, rgba(255,229,92,0.4) 85%, transparent)',
-                boxShadow: '0 0 20px rgba(255,215,0,0.6), 0 0 40px rgba(255,215,0,0.3)',
-              }} />
+              <div
+                className="h-full w-full"
+                style={{
+                  background:
+                    'linear-gradient(90deg, transparent, rgba(255,215,0,0.5) 50%, transparent)',
+                }}
+              />
             </motion.div>
 
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-base xs:text-lg sm:text-xl md:text-2xl w-full max-w-3xl leading-relaxed text-[#c4c4c4] mb-8 sm:mb-10 font-light text-center px-4 sm:px-6"
-            >
-              See how your rating compares with others
-            </motion.p>
-
-            {/* Top rated carousel */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.4 }}
-              className="w-full px-2 mb-5"
+              transition={{ duration: 0.65, delay: 0.28 }}
+              className="w-full px-2 sm:px-4"
             >
-              <LeaderboardSection initialPerformances={initialLeaderboardPerformances} compact />
+              <HeroFeaturedCard featured={featured} router={router} />
             </motion.div>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.48 }}
-              className="text-xs sm:text-sm text-center text-[#52525b] font-medium mb-6 sm:mb-8 px-4"
+              transition={{ duration: 0.5, delay: 0.42 }}
+              className="text-sm text-center text-[#52525b] mt-6 sm:mt-8 px-4"
             >
-              Join others rating performances like this
+              Free to rate — no account required. See how you compare instantly.
             </motion.p>
-
-            {/* Search bar — matches performances page */}
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mb-3 sm:mb-4 max-w-3xl mx-auto w-full px-2 sm:px-0"
-              ref={ctaRef}
-            >
-              <div className="relative group">
-                <div
-                  className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
-                  style={{
-                    boxShadow: `0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)`,
-                    transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
-                    transformStyle: 'preserve-3d',
-                  }}
-                >
-                  <SearchBar
-                    placeholder="Search for actors and movies..."
-                    showClear
-                    className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-5 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[56px]"
-                  />
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.58 }}
-              className="flex justify-center px-4 mb-16 sm:mb-20 md:mb-24 lg:mb-28"
-            >
-              <Link
-                href="/performances"
-                className="text-xs sm:text-sm text-[#71717a] hover:text-[#FFD700] transition-colors duration-200"
-                onMouseEnter={() => { prefetchPerformancesPageData(); router.prefetch('/performances'); }}
-              >
-                View all performances →
-              </Link>
-            </motion.div>
-
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Discovery carousel — below hero; optional path for visitors who want to choose */
+function DiscoveryCarouselSection({
+  initialLeaderboardPerformances,
+}: {
+  initialLeaderboardPerformances?: EnrichedPerformance[];
+}) {
+  const { prefersReducedMotion } = useDevice();
+  const reduceMotion = prefersReducedMotion;
+
+  return (
+    <div id="leaderboard" className={`relative z-10 bg-black scroll-mt-24 ${HOME_SECTION_PY}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <motion.div
+          initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+          animate={reduceMotion ? { opacity: 1, y: 0 } : undefined}
+          whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={reduceMotion ? { once: true } : SCROLL_REVEAL_VIEWPORT}
+          transition={reduceMotion ? { duration: 0 } : SCROLL_REVEAL_TRANSITION}
+          className="text-center mb-10 sm:mb-12"
+        >
+          <p className="text-[10px] sm:text-xs font-bold tracking-[0.28em] uppercase text-[#FFD700] opacity-70 mb-4">
+            Or choose your own
+          </p>
+          <h2
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3"
+            style={PLAYFAIR_HEADING}
+          >
+            More performances to rate
+          </h2>
+          <p className="text-sm sm:text-base text-[#71717a] max-w-xl mx-auto">
+            Swipe through community favorites — or search from the nav when you know what you want.
+          </p>
+        </motion.div>
+        <LeaderboardSection initialPerformances={initialLeaderboardPerformances} />
       </div>
     </div>
   );
@@ -1093,45 +1116,38 @@ function CommunityCta({ primaryRateHref = '/performances' }: { primaryRateHref?:
 
 export default function HomePageClient({
   initialLeaderboardPerformances = [],
-  featuredHero: featuredHeroProp = null,
+  featuredHero: featuredHeroProp,
+  primaryRateHref: primaryRateHrefProp,
 }: {
   initialLeaderboardPerformances?: EnrichedPerformance[];
-  featuredHero?: FeaturedHeroPayload | null;
+  featuredHero: FeaturedHeroPayload;
+  primaryRateHref?: string;
 }) {
-  const fromSeed = useMemo(() => {
-    if (featuredHeroProp) return featuredHeroProp;
-    return featuredHeroFromPerformances(initialLeaderboardPerformances);
-  }, [featuredHeroProp, initialLeaderboardPerformances]);
-
+  const weeklyConfig = useMemo(() => getCurrentWeeklyHeroConfig(), []);
   const [clientResolvedFeatured, setClientResolvedFeatured] = useState<FeaturedHeroPayload | null>(null);
-  const [featuredFetchDone, setFeaturedFetchDone] = useState(!!fromSeed);
 
   useEffect(() => {
-    if (fromSeed) return;
+    if (featuredHeroProp.rateHref !== '/performances') return;
     let cancelled = false;
     (async () => {
       try {
-        const targets = HOME_LEADERBOARD_ROWS.map(({ actor, movie }) => ({ actor, movie }));
-        const res = await fetch(buildByLookupUrl(targets), { cache: 'force-cache' });
+        const res = await fetch(buildByLookupUrl([weeklyHeroLookupTarget()]), { cache: 'force-cache' });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const rows = data.performances as EnrichedPerformance[] | undefined;
-        if (!rows?.length || cancelled) return;
-        const picked = featuredHeroFromPerformances(rows);
-        if (picked && !cancelled) setClientResolvedFeatured(picked);
+        if (!rows?.[0] || cancelled) return;
+        setClientResolvedFeatured(buildWeeklyFeaturedHero(weeklyConfig, rows[0]));
       } catch {
         /* silent */
-      } finally {
-        if (!cancelled) setFeaturedFetchDone(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [fromSeed]);
+  }, [featuredHeroProp.rateHref, weeklyConfig]);
 
-  const activeFeatured = fromSeed ?? clientResolvedFeatured;
-  const primaryRateHref = activeFeatured?.rateHref ?? '/performances';
+  const activeFeatured = clientResolvedFeatured ?? featuredHeroProp;
+  const primaryRateHref = primaryRateHrefProp ?? activeFeatured.rateHref;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.scrollY > 0) {
@@ -1141,7 +1157,8 @@ export default function HomePageClient({
 
   return (
     <>
-      <HeroSection initialLeaderboardPerformances={initialLeaderboardPerformances} />
+      <HeroSection featured={activeFeatured} />
+      <DiscoveryCarouselSection initialLeaderboardPerformances={initialLeaderboardPerformances} />
       <CommunityCta primaryRateHref={primaryRateHref} />
       <RatingCriteriaSection primaryRateHref={primaryRateHref} />
       <HowItWorksSection primaryRateHref={primaryRateHref} />

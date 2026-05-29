@@ -6,8 +6,9 @@ import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
-import { featuredHeroFromPerformances } from "@/lib/home-featured-performance";
+import { buildWeeklyFeaturedHero } from "@/lib/home-featured-performance";
 import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
+import { getCurrentWeeklyHeroConfig, weeklyHeroLookupTarget } from "@/lib/weekly-hero-performance";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -42,13 +43,20 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const weeklyConfig = getCurrentWeeklyHeroConfig();
   let initialLeaderboardPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
+  let featuredHero = buildWeeklyFeaturedHero(weeklyConfig, null);
   try {
-    initialLeaderboardPerformances = await getPerformancesByLookup(homeLeaderboardLookupTargets());
+    const [weeklyRows, leaderboardRows] = await Promise.all([
+      getPerformancesByLookup([weeklyHeroLookupTarget()]),
+      getPerformancesByLookup(homeLeaderboardLookupTargets()),
+    ]);
+    initialLeaderboardPerformances = leaderboardRows;
+    featuredHero = buildWeeklyFeaturedHero(weeklyConfig, weeklyRows[0] ?? null);
   } catch {
-    /* DB/API unavailable during build or deploy — client LeaderboardSection still fetches */
+    /* DB/API unavailable during build or deploy — client still fetches */
   }
-  const featuredHero = featuredHeroFromPerformances(initialLeaderboardPerformances);
+  const primaryRateHref = featuredHero.rateHref;
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
@@ -145,10 +153,11 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
-      <LandingLayout>
+      <LandingLayout primaryRateHref={primaryRateHref}>
         <HomePageClient
           initialLeaderboardPerformances={initialLeaderboardPerformances}
           featuredHero={featuredHero}
+          primaryRateHref={primaryRateHref}
         />
         <HomeSeoLinkSections />
       </LandingLayout>

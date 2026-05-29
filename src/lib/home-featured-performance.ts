@@ -1,5 +1,6 @@
 import type { EnrichedPerformance } from '@/lib/performances-by-lookup'
 import { getRateUrl } from '@/lib/slugHelper'
+import type { WeeklyHeroConfig } from '@/lib/weekly-hero-performance'
 
 /** Serializable props for hero + conversion CTAs (server or client). */
 export type FeaturedHeroPayload = {
@@ -10,6 +11,8 @@ export type FeaturedHeroPayload = {
   communityScore: string | null
   actorImageUrl?: string | null
   moviePosterUrl?: string | null
+  headline: string
+  subline: string
 }
 
 export function enrichedToFeaturedPayload(p: EnrichedPerformance): FeaturedHeroPayload | null {
@@ -31,9 +34,38 @@ export function enrichedToFeaturedPayload(p: EnrichedPerformance): FeaturedHeroP
   }
 }
 
-/** Pick highest community-rated performance from lookup results for the hero spotlight. */
+/** Merge weekly copy with lookup row (hero + nav Rate Now). */
+export function buildWeeklyFeaturedHero(
+  config: WeeklyHeroConfig,
+  perf: EnrichedPerformance | null | undefined,
+): FeaturedHeroPayload {
+  const base = perf ? enrichedToFeaturedPayload(perf) : null
+  if (base) {
+    return { ...base, headline: config.headline, subline: config.subline }
+  }
+  return {
+    rateHref: '/performances',
+    actorName: config.actor,
+    movieTitle: config.movie,
+    year: config.year,
+    communityScore: null,
+    actorImageUrl: null,
+    moviePosterUrl: null,
+    headline: config.headline,
+    subline: config.subline,
+  }
+}
+
+/** Pick highest community-rated performance from lookup results (legacy fallback). */
 export function featuredHeroFromPerformances(perfs: EnrichedPerformance[]): FeaturedHeroPayload | null {
   if (!perfs.length) return null
   const sorted = [...perfs].sort((a, b) => (Number(b.averageRating) || 0) - (Number(a.averageRating) || 0))
-  return enrichedToFeaturedPayload(sorted[0])
+  const base = enrichedToFeaturedPayload(sorted[0])
+  if (!base) return null
+  return {
+    ...base,
+    headline: `How do you rate ${base.actorName} in ${base.movieTitle}?`,
+    subline:
+      'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
+  }
 }
