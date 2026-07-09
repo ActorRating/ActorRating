@@ -32,5 +32,5 @@ export default auth((req: NextRequest & { auth: unknown }) => {
 })
 
 export const config = {
-  matcher: ["/((?!_next|api|favicon.ico).*)"],
+  matcher: ["/((?!_next|api|favicon\\.ico|sitemap\\.xml|sitemaps|robots\\.txt).*)"],
 }

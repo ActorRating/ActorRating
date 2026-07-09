@@ -23,6 +23,7 @@ const PROTECTED = ["/dashboard", "/profile", "/onboarding"]
 const AUTH_PAGES = ["/auth/signin", "/auth/register"]
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/auth/signin",
   },

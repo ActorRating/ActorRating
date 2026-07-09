@@ -175,7 +175,6 @@ export default function ActorPageClient({
   const [userHasRatedActor, setUserHasRatedActor] = useState(false)
   const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
   const [userRatingsMap, setUserRatingsMap] = useState<Map<string, number>>(new Map())
-  const [seoExpanded, setSeoExpanded] = useState(false)
   const [bioExpanded, setBioExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
@@ -1815,54 +1814,30 @@ export default function ActorPageClient({
         )}
       </div>
 
-      {/* SEO Section - Collapsed by default */}
-      {actor.knownFor && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-white/10"
-        >
-          <button
-            onClick={() => setSeoExpanded(!seoExpanded)}
-            className="w-full flex items-center justify-between p-6 rounded-2xl bg-gradient-to-br from-[#1a1a1a]/50 via-[#0f0f0f]/40 to-black/50 border border-white/5 hover:border-white/10 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-300">
-                About {actor.name} performances
-              </h3>
-            </div>
-            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${seoExpanded ? 'rotate-180' : ''}`} />
-          </button>
-          
-          <AnimatePresence>
-            {seoExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="pt-6 text-gray-400 leading-relaxed">
-                  {actor.knownFor && (
-                    <p className="text-sm mb-4">
-                      <span className="font-semibold text-gray-300">Known for:</span> {actor.knownFor}
-                    </p>
-                  )}
-                  {communityStats.ratedPerformancesCount > 0 && (
-                    <p className="text-sm">
-                      The ActorRating community has rated {communityStats.ratedPerformancesCount} of {actor.name}'s performances, 
-                      with {communityStats.totalRatings} total ratings from critics worldwide.
-                      {communityStats.highestRated && ` Their highest-rated performance is ${communityStats.highestRated.movie.title}.`}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
+      {/* About section — always visible for content quality */}
+      {(actor.knownFor || communityStats.ratedPerformancesCount > 0) && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-white/10">
+          <div className="flex items-center gap-3 mb-4">
+            <User className="w-5 h-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-gray-300">
+              About {actor.name}
+            </h2>
+          </div>
+          <div className="text-gray-400 leading-relaxed space-y-3">
+            {actor.knownFor && (
+              <p className="text-sm">
+                <span className="font-semibold text-gray-300">Known for:</span> {actor.knownFor}
+              </p>
             )}
-          </AnimatePresence>
-        </motion.div>
+            {communityStats.ratedPerformancesCount > 0 && (
+              <p className="text-sm">
+                The ActorRating community has rated {communityStats.ratedPerformancesCount} of {actor.name}&apos;s performances,
+                with {communityStats.totalRatings} total {communityStats.totalRatings === 1 ? 'rating' : 'ratings'} from critics worldwide.
+                {communityStats.highestRated && ` Their highest-rated performance is ${communityStats.highestRated.movie.title}.`}
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       </div>

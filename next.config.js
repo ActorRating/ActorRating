@@ -24,6 +24,11 @@ const nextConfig = {
     optimizePackageImports: ['react-icons', 'framer-motion', 'lucide-react'],
     // Reduce bundle size by optimizing server components
     optimizeServerReact: true,
+    // Serve complete (non-streamed) HTML to crawlers so they never capture a
+    // loading skeleton or empty Suspense fallback instead of real content.
+    // Next.js already includes Googlebot by default; this extends the list.
+    htmlLimitedBots:
+      /Googlebot|AdsBot-Google|Storebot-Google|Google-InspectionTool|GoogleOther|Google-Extended|Mediapartners-Google|AdsBot-Google-Mobile|Bingbot|DuckDuckBot|YandexBot|Baiduspider|Slurp|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Applebot|AhrefsBot|SemrushBot|MJ12bot/,
   },
   // Optimize images
   images: {

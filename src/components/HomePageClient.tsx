@@ -336,7 +336,7 @@ function DiscoveryCarouselSection({
             Swipe through community favorites — or search from the nav when you know what you want.
           </p>
         </motion.div>
-        <LeaderboardSection initialPerformances={initialLeaderboardPerformances} />
+        <LeaderboardSection initialPerformances={initialLeaderboardPerformances} compact />
       </div>
     </div>
   );
@@ -508,7 +508,7 @@ function LeaderboardSection({
   }, [isDesktop]);
 
   return (
-    <div id="leaderboard" className={`relative z-10 bg-black ${compact ? 'py-0' : 'py-20 sm:py-28 md:py-32 lg:py-40'}`}>
+    <div className={`relative z-10 bg-black ${compact ? 'py-0' : 'py-20 sm:py-28 md:py-32 lg:py-40'}`}>
       {!compact && (
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />

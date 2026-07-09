@@ -718,6 +718,18 @@ export default function MoviePageClient({
               )}
             </div>
 
+            {/* Movie Overview / Plot Summary */}
+            {movie.overview?.trim() && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.55 }}
+                className="max-w-2xl mx-auto text-base sm:text-lg text-gray-400 leading-relaxed mb-8 px-1 text-left sm:text-center"
+              >
+                {movie.overview.trim()}
+              </motion.p>
+            )}
+
             {/* Primary CTA - Rate a Performance (scrolls to performance cards) */}
             {dedupedPerformances.length > 0 && (
               <motion.div
