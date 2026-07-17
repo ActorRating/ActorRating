@@ -8,7 +8,7 @@ const { auth } = NextAuth(authConfig)
 /**
  * Single middleware entrypoint (project root). Next.js uses this file, not `src/middleware.ts`.
  * - Legacy auth path redirects
- * - www → apex (canonical host)
+ * - www → apex 308 (canonical host; permanent + method-preserving)
  * - NextAuth `authorized` for protected routes (see `src/auth.config.ts`)
  */
 export default auth((req: NextRequest & { auth: unknown }) => {
@@ -22,9 +22,10 @@ export default auth((req: NextRequest & { auth: unknown }) => {
 
   const host = req.headers.get("host")
   if (host === "www.actorrating.com") {
+    // 308: permanent + preserve method (unlike 301, which may rewrite POST→GET)
     return NextResponse.redirect(
       `https://actorrating.com${req.nextUrl.pathname}${req.nextUrl.search}`,
-      301,
+      308,
     )
   }
 

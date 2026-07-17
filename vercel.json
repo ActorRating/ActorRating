@@ -2,14 +2,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "actorrating.com" }],
-      "destination": "https://actorrating.com/$1",
-      "permanent": true
-    }
-  ],
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30,
