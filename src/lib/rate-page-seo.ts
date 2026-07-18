@@ -2,10 +2,14 @@
  * Rate-page SEO helpers: malformed URL detection + indexability gate.
  *
  * Indexable when:
- *   (seeded || community) && (cohort === 1 || hasRealCommunityRating) && !malformed
+ *   (seeded || community)
+ *   && (cohort === 1 || hasRealCommunityRating)
+ *   && tier !== 'MINOR'
+ *   && !malformed
  *
  * Community-rated pages stay indexable regardless of cohort.
  * Cohort-1 only gates the seeded-score pathway.
+ * MINOR-tier performances stay live/rateable but are noindex.
  */
 
 /** Slugs like "-2019" or "-2019-abc123" from empty titles. */
@@ -28,6 +32,8 @@ export type RatePageIndexabilityInput = {
   indexingCohort: number | null | undefined
   seededAggregateScore: number | null | undefined
   communityRatingCount: number
+  /** Performance billing tier; MINOR is never indexable. */
+  tier: string | null | undefined
 }
 
 /**
@@ -35,6 +41,7 @@ export type RatePageIndexabilityInput = {
  */
 export function isRatePageIndexable(input: RatePageIndexabilityInput): boolean {
   if (isMalformedMovieForSeo(input.movieSlug, input.movieTitle)) return false
+  if (!input.tier || input.tier === "MINOR") return false
 
   const hasCommunity = input.communityRatingCount >= 1
   const hasSeeded =

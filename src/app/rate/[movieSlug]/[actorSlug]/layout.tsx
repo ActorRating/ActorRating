@@ -72,24 +72,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let ratingCount = 0
   let seededAggregateScore: number | null = null
   let indexingCohort = 0
+  let tier: string | null = null
   try {
-    const [count, perf, movieSeo] = await Promise.all([
+    const SYSTEM_USER_ID = "uuid-from-auth-users"
+    const [count, systemPerf, anyPerf, movieSeo] = await Promise.all([
       prisma.rating.count({
         where: { actorId: actor.id, movieId: movie.id },
       }),
       prisma.performance.findFirst({
+        where: { actorId: actor.id, movieId: movie.id, userId: SYSTEM_USER_ID },
+        select: { seededAggregateScore: true, tier: true },
+      }),
+      prisma.performance.findFirst({
         where: { actorId: actor.id, movieId: movie.id },
-        select: { seededAggregateScore: true },
-        orderBy: { createdAt: "asc" },
+        select: { seededAggregateScore: true, tier: true },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
       }),
       prisma.movie.findUnique({
         where: { id: movie.id },
         select: { indexingCohort: true, slug: true, title: true },
       }),
     ])
+    const perf = systemPerf ?? anyPerf
     ratingCount = count
     seededAggregateScore =
       typeof perf?.seededAggregateScore === "number" ? perf.seededAggregateScore : null
+    tier = perf?.tier ?? null
     indexingCohort = movieSeo?.indexingCohort ?? 0
   } catch (e) {
     console.error("Rate layout SEO metadata query failed:", e)
@@ -101,6 +109,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     indexingCohort,
     seededAggregateScore,
     communityRatingCount: ratingCount,
+    tier,
   })
 
   const robots = indexable ? undefined : ({ index: false as const, follow: true as const })

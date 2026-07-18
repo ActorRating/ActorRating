@@ -347,8 +347,8 @@ type PairRow = { actorId: string; movieId: string; maxUpd: Date }
 
 /**
  * Indexable rate URLs only (aligned with isRatePageIndexable):
- * - any non-featurette pair with ≥1 community Rating, OR
- * - cohort-1 performances with seededAggregateScore
+ * - non-MINOR pairs with ≥1 community Rating, OR
+ * - cohort-1 non-MINOR performances with seededAggregateScore
  * plus curated homepage/performances targets (still subject to movie filters).
  */
 async function generatePerformances(outDir: string): Promise<number> {
@@ -381,6 +381,12 @@ async function generatePerformances(outDir: string): Promise<number> {
         SELECT r."actorId", r."movieId", MAX(r."updatedAt") AS "maxUpd"
         FROM "Rating" r
         INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+        WHERE EXISTS (
+          SELECT 1 FROM "Performance" p
+          WHERE p."actorId" = r."actorId"
+            AND p."movieId" = r."movieId"
+            AND p.tier <> 'MINOR'
+        )
         GROUP BY r."actorId", r."movieId"
         UNION
         SELECT p."actorId", p."movieId", MAX(p."updatedAt") AS "maxUpd"
@@ -389,6 +395,7 @@ async function generatePerformances(outDir: string): Promise<number> {
           AND NOT m."isFeaturette"
           AND m."indexingCohort" = 1
         WHERE p."seededAggregateScore" IS NOT NULL
+          AND p.tier <> 'MINOR'
         GROUP BY p."actorId", p."movieId"
       ) t
       WHERE (
