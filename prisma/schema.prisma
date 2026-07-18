@@ -116,6 +116,12 @@ model Movie {
   isFeaturette   Boolean       @default(false)
   /// TMDB poster URL (w342), populated during ingestion and backfill.
   posterUrl      String?
+  /// TMDB vote_average (0–10). Restored for SEO seeded aggregates; not a community score.
+  tmdbRating     Float?
+  /// TMDB vote_count. Prefer seeding only when this is above a quality threshold.
+  tmdbVoteCount  Int?
+  /// When tmdbRating / tmdbVoteCount were last fetched from TMDB.
+  tmdbDataFetchedAt DateTime?
   performances   Performance[]
   ratings        Rating[]
 

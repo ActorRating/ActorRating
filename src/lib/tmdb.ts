@@ -70,18 +70,28 @@ export function upgradeActorImageRes(url: string | null | undefined): string | n
     .replace('/t/p/w45/', '/t/p/h632/');
 }
 
+export type TmdbMovieDetails = {
+  posterPath: string | null
+  voteAverage: number | null
+  voteCount: number | null
+}
+
 /**
- * Fetch basic movie details (title, poster_path) from TMDB by numeric movie ID.
+ * Fetch movie details from TMDB by numeric movie ID (poster + vote fields).
  * Returns null if the request fails or the movie is not found.
  */
-export async function getMovieDetails(tmdbMovieId: number): Promise<{ posterPath: string | null } | null> {
+export async function getMovieDetails(tmdbMovieId: number): Promise<TmdbMovieDetails | null> {
   await rateLimitTmdb();
   if (!API_KEY) return null;
   try {
     const url = `${TMDB_BASE_URL}/movie/${tmdbMovieId}?api_key=${API_KEY}&language=en-US`;
     const response = await axios.get(url, { timeout: 15000 });
-    const { poster_path } = response.data;
-    return { posterPath: typeof poster_path === 'string' ? poster_path : null };
+    const { poster_path, vote_average, vote_count } = response.data;
+    return {
+      posterPath: typeof poster_path === 'string' ? poster_path : null,
+      voteAverage: typeof vote_average === 'number' && Number.isFinite(vote_average) ? vote_average : null,
+      voteCount: typeof vote_count === 'number' && Number.isFinite(vote_count) ? Math.trunc(vote_count) : null,
+    };
   } catch {
     return null;
   }

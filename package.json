@@ -32,7 +32,9 @@
     "list-subtle-adult-movies": "tsx scripts/list-subtle-adult-movies.ts",
     "remove-adult-performers": "tsx scripts/remove-adult-performers.ts",
     "remove-adult-performers:yes": "tsx scripts/remove-adult-performers.ts --yes",
-    "generate:sitemaps": "tsx scripts/generate-sitemaps.ts"
+    "generate:sitemaps": "tsx scripts/generate-sitemaps.ts",
+    "backfill:movie-tmdb-ratings": "tsx scripts/backfill-movie-tmdb-ratings.ts",
+    "backfill:movie-tmdb-ratings:dry": "tsx scripts/backfill-movie-tmdb-ratings.ts --dry-run"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
