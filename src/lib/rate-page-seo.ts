@@ -1,8 +1,11 @@
 /**
  * Rate-page SEO helpers: malformed URL detection + indexability gate.
  *
- * Indexable when: (seeded || community) && cohort === 1 && !malformed
- * Outside cohort-1 stays noindex during the phased SEO recovery.
+ * Indexable when:
+ *   (seeded || community) && (cohort === 1 || hasRealCommunityRating) && !malformed
+ *
+ * Community-rated pages stay indexable regardless of cohort.
+ * Cohort-1 only gates the seeded-score pathway.
  */
 
 /** Slugs like "-2019" or "-2019-abc123" from empty titles. */
@@ -32,10 +35,12 @@ export type RatePageIndexabilityInput = {
  */
 export function isRatePageIndexable(input: RatePageIndexabilityInput): boolean {
   if (isMalformedMovieForSeo(input.movieSlug, input.movieTitle)) return false
-  if ((input.indexingCohort ?? 0) !== 1) return false
 
   const hasCommunity = input.communityRatingCount >= 1
   const hasSeeded =
     typeof input.seededAggregateScore === "number" && Number.isFinite(input.seededAggregateScore)
-  return hasSeeded || hasCommunity
+
+  if (!(hasSeeded || hasCommunity)) return false
+  if (!((input.indexingCohort ?? 0) === 1 || hasCommunity)) return false
+  return true
 }

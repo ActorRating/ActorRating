@@ -347,7 +347,8 @@ type PairRow = { actorId: string; movieId: string; maxUpd: Date }
 
 /**
  * Indexable rate URLs only (aligned with isRatePageIndexable):
- * cohort-1 movies with seededAggregateScore OR ≥1 community Rating,
+ * - any non-featurette pair with ≥1 community Rating, OR
+ * - cohort-1 performances with seededAggregateScore
  * plus curated homepage/performances targets (still subject to movie filters).
  */
 async function generatePerformances(outDir: string): Promise<number> {
@@ -377,6 +378,11 @@ async function generatePerformances(outDir: string): Promise<number> {
     const pairs = await prisma.$queryRaw<PairRow[]>`
       SELECT "actorId", "movieId", "maxUpd"
       FROM (
+        SELECT r."actorId", r."movieId", MAX(r."updatedAt") AS "maxUpd"
+        FROM "Rating" r
+        INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
+        GROUP BY r."actorId", r."movieId"
+        UNION
         SELECT p."actorId", p."movieId", MAX(p."updatedAt") AS "maxUpd"
         FROM "Performance" p
         INNER JOIN "Movie" m ON m.id = p."movieId"
@@ -384,13 +390,6 @@ async function generatePerformances(outDir: string): Promise<number> {
           AND m."indexingCohort" = 1
         WHERE p."seededAggregateScore" IS NOT NULL
         GROUP BY p."actorId", p."movieId"
-        UNION
-        SELECT r."actorId", r."movieId", MAX(r."updatedAt") AS "maxUpd"
-        FROM "Rating" r
-        INNER JOIN "Movie" m ON m.id = r."movieId"
-          AND NOT m."isFeaturette"
-          AND m."indexingCohort" = 1
-        GROUP BY r."actorId", r."movieId"
       ) t
       WHERE (
         ${lastActorId} = '' AND ${lastMovieId} = ''
@@ -440,7 +439,7 @@ async function generatePerformances(outDir: string): Promise<number> {
     lastActorId = tail.actorId
     lastMovieId = tail.movieId
     console.log(
-      `  performances: processed ${processed.toLocaleString()} cohort-1 indexable rows, unique URLs ${seen.size.toLocaleString()}...`,
+      `  performances: processed ${processed.toLocaleString()} indexable rows, unique URLs ${seen.size.toLocaleString()}...`,
     )
   }
 

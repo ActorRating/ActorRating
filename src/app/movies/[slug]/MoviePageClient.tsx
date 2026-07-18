@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Film, Star, ChevronDown, Award, User, TrendingUp, Users, Trophy, ChevronRight, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Film, ChevronDown, Award, User, Users, Trophy, ChevronRight, ArrowRight } from 'lucide-react'
 import { FaStar } from 'react-icons/fa'
 import { Button } from '@/components/ui/Button'
 import { useUser } from '@/components/providers/SessionProvider'
@@ -333,6 +333,18 @@ export default function MoviePageClient({
       ? scoredPerformances.reduce((sum, perf) => sum + (perf.averageScore || 0), 0) / scoredPerformances.length
       : null
   }, [scoredPerformances])
+
+  /** Film TMDB vote_average (0–10). Falls back to avg of cast seeded scores. Never merge with community. */
+  const criticAggregateScore = useMemo(() => {
+    if (typeof movie?.tmdbRating === 'number' && Number.isFinite(movie.tmdbRating)) {
+      return movie.tmdbRating
+    }
+    const seeded = dedupedPerformances
+      .map((p) => p.seededAggregateScore)
+      .filter((s): s is number => typeof s === 'number' && Number.isFinite(s))
+    if (seeded.length === 0) return null
+    return seeded.reduce((sum, s) => sum + s, 0) / seeded.length
+  }, [movie?.tmdbRating, dedupedPerformances])
 
   // Calculate community stats
   const communityStats = useMemo(() => {
@@ -767,177 +779,84 @@ export default function MoviePageClient({
               />
             </motion.div>
 
-            {/* Community Stats - Adapted for low/high data */}
+            {/* Critic Aggregate vs Community Rating — always separate */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
-              className="mb-8"
+              className="mb-8 max-w-2xl mx-auto"
             >
-              {communityStats.ratedPerformancesCount >= 5 ? (
-                // Show community score when we have decent data
-                <>
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#FFD700]" />
-                    <div 
-                      className="text-xs sm:text-sm uppercase tracking-wider font-semibold"
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      Community Score
-                    </div>
-                  </div>
-                  <div className="flex items-baseline justify-center gap-2 mb-4">
-                    <div 
-                      className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none"
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        fontFamily: 'var(--font-geist-sans), sans-serif',
-                        fontVariantNumeric: 'tabular-nums',
-                        letterSpacing: '-0.02em',
-                      }}
-                    >
-                      {movieScore !== null ? `${(movieScore / 10).toFixed(1)}` : 'N/A'}
-                    </div>
-                    {movieScore !== null && (
-                      <div 
-                        className="text-xl sm:text-2xl lg:text-3xl font-bold opacity-60"
-                        style={{
-                          background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}
-                      >
-                        /10
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Stats Grid */}
-                  <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap text-sm sm:text-base">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-300">
-                        <span className="font-bold text-white">{communityStats.ratedPerformancesCount}</span> of <span className="font-bold text-white">{communityStats.totalPerformances}</span> performances rated
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-300">
-                        <span className="font-bold text-white">{communityStats.totalRatings}</span> {communityStats.totalRatings === 1 ? 'Rating' : 'Ratings'}
-                      </span>
-                    </div>
-                    {communityStats.highestRated && (
-                      <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-300">
-                          Top: <Link href={getActorUrl(communityStats.highestRated.actor)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1 font-bold text-white underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors"><span>{communityStats.highestRated.actor.name}</span><ArrowRight className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /></Link>
+              <div
+                className="rounded-2xl p-5 sm:p-6 text-left"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 text-center" style={{ color: '#52525b' }}>
+                  Scores
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
+                      Critic Aggregate
+                    </p>
+                    {criticAggregateScore != null ? (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black tabular-nums text-white">
+                          {Number(criticAggregateScore.toFixed(1))}
                         </span>
+                        <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
                       </div>
+                    ) : (
+                      <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
+                        Not yet rated
+                      </p>
                     )}
+                    <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
+                      Based on the film&apos;s TMDB audience score — not ActorRating users
+                    </p>
                   </div>
-                </>
-              ) : (
-                // Show "Building Profile" when we have limited data
-                <div className="max-w-2xl mx-auto">
-                  <div className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 backdrop-blur-2xl"
-                    style={{
-                      boxShadow: `
-                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                      `,
-                    }}
-                  >
-                    <div className="flex items-center justify-center gap-2 mb-6">
-                      <TrendingUp className="w-5 h-5 text-gray-400" />
-                      <h3 
-                        className="text-xl sm:text-2xl font-bold text-white"
-                        style={{ 
-                          fontFamily: 'var(--font-geist-sans), sans-serif',
-                          letterSpacing: '0.02em',
-                        }}
-                      >
-                        Profile Building
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 sm:gap-6 mb-6">
-                      <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
-                          style={{
-                            fontFamily: 'var(--font-geist-sans), sans-serif',
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {communityStats.ratedPerformancesCount}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-400">
-                          of {communityStats.totalPerformances} rated
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
-                          style={{
-                            fontFamily: 'var(--font-geist-sans), sans-serif',
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {communityStats.unratedPerformances}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-400">
-                          Waiting for Ratings
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl sm:text-3xl font-black text-white mb-1"
-                          style={{
-                            fontFamily: 'var(--font-geist-sans), sans-serif',
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {communityStats.criticsCount}
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-400">
-                          Critics Contributing
-                        </div>
-                      </div>
-                    </div>
-                    {communityStats.highestRated && (
-                      <div className="text-center pt-6 border-t border-white/10">
-                        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400 mb-2">
-                          <Trophy className="w-4 h-4 text-gray-400" />
-                          Highest Rated So Far
-                        </div>
-                        <div className="text-base sm:text-lg font-bold text-white mb-2">
-                          <Link href={getActorUrl(communityStats.highestRated.actor)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1 font-bold text-white underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors"><span>{communityStats.highestRated.actor.name}</span><ArrowRight className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /></Link>
-                        </div>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                          <FaStar className="w-4 h-4 text-[#FFD700]" />
-                          <span 
-                            className="text-lg font-bold text-[#FFD700]"
-                            style={{
-                              fontFamily: 'var(--font-geist-sans), sans-serif',
-                              fontVariantNumeric: 'tabular-nums',
-                            }}
-                          >
-                            {((communityStats.highestRated.averageScore || 0) / 10).toFixed(1)}/10
+                  <div>
+                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
+                      Community Rating
+                    </p>
+                    {movieScore != null && communityStats.totalRatings > 0 ? (
+                      <>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-3xl sm:text-4xl font-black tabular-nums" style={{ color: '#FFD700' }}>
+                            {(movieScore / 10).toFixed(1)}
                           </span>
+                          <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
                         </div>
-                      </div>
+                        <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
+                          Based on{' '}
+                          <span className="text-white font-semibold tabular-nums">{communityStats.totalRatings}</span>{' '}
+                          {communityStats.totalRatings === 1 ? 'ActorRating rating' : 'ActorRating ratings'}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
+                        Not yet rated
+                      </p>
                     )}
                   </div>
                 </div>
-              )}
+
+                <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap text-sm sm:text-base mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-300">
+                      <span className="font-bold text-white">{communityStats.ratedPerformancesCount}</span> of <span className="font-bold text-white">{communityStats.totalPerformances}</span> performances rated
+                    </span>
+                  </div>
+                  {communityStats.highestRated && (
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-300">
+                        Top: <Link href={getActorUrl(communityStats.highestRated.actor)} prefetch onClick={() => startNavigation()} className="inline-flex items-center gap-1 font-bold text-white underline decoration-dotted decoration-2 underline-offset-2 hover:decoration-solid transition-colors"><span>{communityStats.highestRated.actor.name}</span><ArrowRight className="w-3.5 h-3.5 flex-shrink-0" aria-hidden /></Link>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         </div>

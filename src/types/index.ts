@@ -34,6 +34,10 @@ export interface Movie {
   tmdbId?: number
   posterUrl?: string | null
   overview?: string
+  /** TMDB vote_average (0–10). Critic Aggregate source for movie hubs — not community. */
+  tmdbRating?: number | null
+  tmdbVoteCount?: number | null
+  indexingCohort?: number | null
   performances?: Performance[]
   ratings?: Rating[]
   createdAt: string
@@ -52,6 +56,8 @@ export interface Performance {
   technicalSkill: number
   screenPresence: number
   chemistryInteraction: number
+  /** TMDB-derived movie vote_average (0–10). Never merge with community ratings. */
+  seededAggregateScore?: number | null
   comment?: string
   user?: {
     name?: string

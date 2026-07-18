@@ -66,6 +66,7 @@ export async function GET(
           movieId: true,
           comment: true,
           character: true,
+          seededAggregateScore: true,
           createdAt: true,
           updatedAt: true,
           movie: { select: actorApiMovieSelect },
