@@ -21,6 +21,8 @@ import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
 type RatePageClientProps = {
   initialMovie?: Movie | null
   initialActor?: Actor | null
+  /** TMDB-derived movie vote_average copied onto this performance (0–10). Not community data. */
+  initialSeededAggregateScore?: number | null
 }
 
 type RateFormBoundaryProps = {
@@ -62,7 +64,11 @@ class RateFormErrorBoundary extends React.Component<RateFormBoundaryProps, RateF
   }
 }
 
-export default function RatePageClient({ initialMovie = null, initialActor = null }: RatePageClientProps) {
+export default function RatePageClient({
+  initialMovie = null,
+  initialActor = null,
+  initialSeededAggregateScore = null,
+}: RatePageClientProps) {
   const params = useParams()
   const router = useRouter()
   const { user, loading: authLoading } = useSession()
@@ -71,6 +77,9 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
   const [loading, setLoading] = useState(!initialMovie || !initialActor)
   const [actor, setActor] = useState<Actor | null>(initialActor)
   const [movie, setMovie] = useState<Movie | null>(initialMovie)
+  const [seededAggregateScore] = useState<number | null>(
+    typeof initialSeededAggregateScore === "number" ? initialSeededAggregateScore : null,
+  )
   const [communityAvg10, setCommunityAvg10] = useState<number | null>(null)
   const [communityRatingCount, setCommunityRatingCount] = useState<number | null>(null)
   const [communityDimensions, setCommunityDimensions] = useState<{
@@ -465,6 +474,7 @@ export default function RatePageClient({ initialMovie = null, initialActor = nul
           communityAvg10={communityAvg10}
           communityRatingCount={communityRatingCount}
           communityDimensions={communityDimensions}
+          seededAggregateScore={seededAggregateScore}
           movieCast={movieCast}
           onGuestMomentumSignup={openGuestMomentumSignup}
         />

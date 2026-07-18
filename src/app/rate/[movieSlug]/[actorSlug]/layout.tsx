@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
+import { isRatePageIndexable } from "@/lib/rate-page-seo"
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -26,18 +27,18 @@ function computeAverage100FromAvgRow(avg: {
 
 async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+
     const [actorResponse, movieResponse] = await Promise.all([
       fetch(`${baseUrl}/api/actors/${actorSlug}`, {
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'omit',
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
       }),
       fetch(`${baseUrl}/api/movies/${movieSlug}`, {
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'omit',
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
       }),
     ])
 
@@ -45,14 +46,11 @@ async function fetchActorAndMovie(actorSlug: string, movieSlug: string) {
       return null
     }
 
-    const [actor, movie] = await Promise.all([
-      actorResponse.json(),
-      movieResponse.json()
-    ])
+    const [actor, movie] = await Promise.all([actorResponse.json(), movieResponse.json()])
 
     return { actor, movie }
   } catch (error) {
-    console.error('Error fetching actor/movie data for metadata:', error)
+    console.error("Error fetching actor/movie data for metadata:", error)
     return null
   }
 }
@@ -72,16 +70,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { actor, movie } = data
 
   let ratingCount = 0
+  let seededAggregateScore: number | null = null
+  let indexingCohort = 0
   try {
-    ratingCount = await prisma.rating.count({
-      where: { actorId: actor.id, movieId: movie.id },
-    })
+    const [count, perf, movieSeo] = await Promise.all([
+      prisma.rating.count({
+        where: { actorId: actor.id, movieId: movie.id },
+      }),
+      prisma.performance.findFirst({
+        where: { actorId: actor.id, movieId: movie.id },
+        select: { seededAggregateScore: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.movie.findUnique({
+        where: { id: movie.id },
+        select: { indexingCohort: true, slug: true, title: true },
+      }),
+    ])
+    ratingCount = count
+    seededAggregateScore =
+      typeof perf?.seededAggregateScore === "number" ? perf.seededAggregateScore : null
+    indexingCohort = movieSeo?.indexingCohort ?? 0
   } catch (e) {
-    console.error("Rate layout rating count failed:", e)
+    console.error("Rate layout SEO metadata query failed:", e)
   }
 
-  const robots =
-    ratingCount >= 1 ? undefined : ({ index: false as const, follow: true as const })
+  const indexable = isRatePageIndexable({
+    movieSlug: movie.slug ?? movie.id,
+    movieTitle: movie.title,
+    indexingCohort,
+    seededAggregateScore,
+    communityRatingCount: ratingCount,
+  })
+
+  const robots = indexable ? undefined : ({ index: false as const, follow: true as const })
 
   const yearPart = movie.year ? ` (${movie.year})` : ""
   const title = `Rate ${actor.name} in ${movie.title}${yearPart}`
@@ -138,7 +160,7 @@ export default async function RateLayout({ params, children }: Props) {
         },
       })
     } catch (err) {
-      console.error('Rate layout aggregate failed:', err)
+      console.error("Rate layout aggregate failed:", err)
     }
   }
 
@@ -146,9 +168,7 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD only when ≥1 rating (no schema for 0 ratings — indexing is a reward for engagement).
-  // Google rich results: use Movie + aggregateRating ONLY. Do NOT use Review/itemReviewed — that
-  // makes Google interpret "you rated a review" and triggers the warning. Person is optional, no rating on Person.
+  // JSON-LD only when ≥1 real community rating — never use seeded TMDB scores as AggregateRating.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://actorrating.com"
   const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${canonMovieSeg}/${canonActorSeg}`
   const jsonLd =
@@ -183,7 +203,6 @@ export default async function RateLayout({ params, children }: Props) {
 
   return (
     <>
-      {/* JSON-LD Schema — only for pages with ≥1 rating (eligible for rich snippets) */}
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -194,4 +213,3 @@ export default async function RateLayout({ params, children }: Props) {
     </>
   )
 }
-

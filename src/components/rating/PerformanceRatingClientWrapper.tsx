@@ -163,6 +163,8 @@ interface PerformanceRatingClientWrapperProps {
     screenPresence: number | null
     chemistryInteraction: number | null
   } | null
+  /** TMDB movie vote_average (0–10) seeded onto this performance — never merge with community. */
+  seededAggregateScore?: number | null
   movieCast?: Array<{
     actorId: string
     actorName: string
@@ -599,6 +601,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   communityAvg10,
   communityRatingCount,
   communityDimensions,
+  seededAggregateScore = null,
   movieCast = [],
   onGuestMomentumSignup,
 }: PerformanceRatingClientWrapperProps) {
@@ -2272,35 +2275,69 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             )}
 
-            {/* Community score + 5-dimension breakdown */}
-            {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 && (
-              <div
-                className="rounded-2xl p-5 sm:p-6"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                {/* Score header */}
-                <div className="flex items-center justify-between mb-5 gap-4">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#52525b' }}>What others think</p>
+            {/* Critic Aggregate (TMDB-seeded) vs Community Rating — always separate */}
+            <div
+              className="rounded-2xl p-5 sm:p-6"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: '#52525b' }}>
+                Scores
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
+                    Critic Aggregate
+                  </p>
+                  {typeof seededAggregateScore === 'number' && Number.isFinite(seededAggregateScore) ? (
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl sm:text-4xl font-black tabular-nums" style={{ color: '#FFD700' }}>{communityAvg10}</span>
+                      <span className="text-3xl sm:text-4xl font-black tabular-nums text-white">
+                        {Number(seededAggregateScore.toFixed(1))}
+                      </span>
                       <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
                     </div>
-                  </div>
-                  <div className="text-right shrink-0 self-end pb-0.5">
-                    <p className="text-xs sm:text-sm font-semibold text-[#a1a1aa] leading-tight">
-                      Based on{' '}
-                      <span className="text-white font-black tabular-nums">{communityRatingCount}</span>{' '}
-                      {communityRatingCount === 1 ? 'rating' : 'ratings'}
+                  ) : (
+                    <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
+                      Not yet rated
                     </p>
-                  </div>
+                  )}
+                  <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
+                    Based on the film&apos;s TMDB audience score — not ActorRating users
+                  </p>
                 </div>
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
+                    Community Rating
+                  </p>
+                  {communityAvg10 != null && communityRatingCount != null && communityRatingCount > 0 ? (
+                    <>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black tabular-nums" style={{ color: '#FFD700' }}>
+                          {communityAvg10}
+                        </span>
+                        <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
+                      </div>
+                      <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
+                        Based on{' '}
+                        <span className="text-white font-semibold tabular-nums">{communityRatingCount}</span>{' '}
+                        {communityRatingCount === 1 ? 'ActorRating rating' : 'ActorRating ratings'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
+                      Not yet rated
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                {/* 5-dimension breakdown */}
-                {communityDimensions && (
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#3f3f46' }}>Breakdown</p>
-                    {/* Grid ensures all bars start at exactly the same column regardless of label length */}
+              {communityAvg10 != null &&
+                communityRatingCount != null &&
+                communityRatingCount > 0 &&
+                communityDimensions && (
+                  <div className="space-y-3 mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-3" style={{ color: '#3f3f46' }}>
+                      Community breakdown
+                    </p>
                     <div className="grid gap-y-3" style={{ gridTemplateColumns: '130px 1fr 28px' }}>
                       {([
                         { key: 'emotionalRangeDepth', label: 'Emotional Impact' },
@@ -2330,8 +2367,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Links to actor page and movie page */}
             <div className="grid grid-cols-2 gap-3">

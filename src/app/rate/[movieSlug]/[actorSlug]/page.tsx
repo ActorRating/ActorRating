@@ -117,7 +117,20 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
     return null
   }
 
-  return { movieRow, actorRow }
+  const performance = await prisma.performance.findFirst({
+    where: { actorId: actorRow.id, movieId: movieRow.id },
+    select: { seededAggregateScore: true },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  return {
+    movieRow,
+    actorRow,
+    seededAggregateScore:
+      typeof performance?.seededAggregateScore === 'number'
+        ? performance.seededAggregateScore
+        : null,
+  }
 }
 
 export default async function RatePage({
@@ -157,7 +170,7 @@ export default async function RatePage({
     notFound()
   }
 
-  const { movieRow, actorRow } = resolved
+  const { movieRow, actorRow, seededAggregateScore } = resolved
 
   const canonicalMovieSeg = movieRow.slug ?? movieRow.id
   const canonicalActorSeg = actorRow.slug ?? actorRow.id
@@ -187,5 +200,11 @@ export default async function RatePage({
   const plainMovie = JSON.parse(JSON.stringify(initialMovie))
   const plainActor = JSON.parse(JSON.stringify(initialActor))
 
-  return <RatePageClient initialMovie={plainMovie} initialActor={plainActor} />
+  return (
+    <RatePageClient
+      initialMovie={plainMovie}
+      initialActor={plainActor}
+      initialSeededAggregateScore={seededAggregateScore}
+    />
+  )
 }
