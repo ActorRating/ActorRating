@@ -799,7 +799,7 @@ export default function MoviePageClient({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                   <div>
                     <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
-                      Critic Aggregate
+                      Critic Aggregate (Film)
                     </p>
                     {criticAggregateScore != null ? (
                       <div className="flex items-baseline gap-1.5">
@@ -814,7 +814,7 @@ export default function MoviePageClient({
                       </p>
                     )}
                     <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
-                      Based on the film&apos;s TMDB audience score — not ActorRating users
+                      via TMDB — film audience score, not ActorRating users
                     </p>
                   </div>
                   <div>
@@ -1195,13 +1195,10 @@ export default function MoviePageClient({
                             />
                           </div>
 
-                          {/* Scores: Critic Aggregate vs Community (+ YOU if rated) */}
+                          {/* Community only — film Critic Aggregate is at page top */}
                           <div className="flex items-start justify-between gap-3 mb-4">
                             <PerformanceCardScoreSplit
-                              seededAggregateScore={
-                                performance.seededAggregateScore ??
-                                (typeof movie?.tmdbRating === 'number' ? movie.tmdbRating : null)
-                              }
+                              showCriticAggregate={false}
                               communityAvg10={communityAvg10}
                               communityRatingCount={communityCount}
                               userScore10={hasUserRated && userScore != null ? userScore / 10 : null}
