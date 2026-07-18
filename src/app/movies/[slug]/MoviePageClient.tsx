@@ -17,6 +17,7 @@ import { MoviePoster } from '@/components/ui/MoviePoster'
 import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 import { resolveCharacterDisplay } from '@/lib/character'
+import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardScoreSplit'
 
 interface Rating {
   userId: string
@@ -41,6 +42,7 @@ interface Movie {
   overview?: string
   tmdbId?: number
   posterUrl?: string | null
+  tmdbRating?: number | null
   ratings?: Rating[]
 }
 
@@ -63,6 +65,7 @@ interface Performance {
   technicalSkill?: number
   screenPresence?: number
   chemistryInteraction?: number
+  seededAggregateScore?: number | null
   actor: Actor
   movie: {
     id: string
@@ -1129,8 +1132,13 @@ export default function MoviePageClient({
                   { id: performance.movie.id, title: performance.movie.title, year: performance.movie.year, slug: performance.movie.slug || null }
                 )
                 const character = resolveCharacterDisplay(performance) || "—"
-                const rating = performance.averageScore ? `${(performance.averageScore / 10).toFixed(1)}` : null
-                const isHighestRated = sortBy === 'rating' && index === 0 && rating && parseFloat(rating) > 0
+                const communityAvg10 = performance.averageScore != null ? performance.averageScore / 10 : null
+                const communityCount = (performance as any).ratingCount || 0
+                const isHighestRated =
+                  sortBy === 'rating' &&
+                  index === 0 &&
+                  communityAvg10 != null &&
+                  communityAvg10 > 0
                 const userScore = userRatingsMap.get(performance.actorId)
                 const hasUserRated = userRatedActors.has(performance.actorId)
 
@@ -1187,45 +1195,18 @@ export default function MoviePageClient({
                             />
                           </div>
 
-                          {/* Top Row: Rating Badge and Year */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex flex-col items-start gap-2">
-                              {hasUserRated && userScore ? (
-                                // User has rated: show their score as the primary pill
-                                <>
-                                  <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                    <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                    <span
-                                      className="text-2xl sm:text-3xl font-bold text-[#FFD700] tabular-nums"
-                                      style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-                                    >
-                                      {(userScore / 10).toFixed(1)}
-                                    </span>
-                                    <span className="text-xs font-semibold text-[#FFD700]/55 tracking-wide">YOU</span>
-                                  </div>
-                                  {rating && (
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/8">
-                                      <span className="text-xs text-[#71717a]">Avg</span>
-                                      <span className="text-sm font-semibold text-white/70 tabular-nums">{rating}</span>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                // Not yet rated: community score is primary
-                                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                                  <FaStar className="w-5 h-5 text-[#FFD700]" />
-                                  <span
-                                    className="text-2xl sm:text-3xl font-bold text-[#FFD700] tabular-nums"
-                                    style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
-                                  >
-                                    {rating || 'N/A'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Year + Rated badge - Top Right */}
-                            <div className="flex flex-col items-end gap-1.5">
+                          {/* Scores: Critic Aggregate vs Community (+ YOU if rated) */}
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <PerformanceCardScoreSplit
+                              seededAggregateScore={
+                                performance.seededAggregateScore ??
+                                (typeof movie?.tmdbRating === 'number' ? movie.tmdbRating : null)
+                              }
+                              communityAvg10={communityAvg10}
+                              communityRatingCount={communityCount}
+                              userScore10={hasUserRated && userScore != null ? userScore / 10 : null}
+                            />
+                            <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
                               <span className="text-[#a3a3a3] text-base font-medium">{performance.movie.year}</span>
                               {hasUserRated && (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-[#FFD700]/60 px-2 py-0.5 rounded-full border border-[#FFD700]/20">
@@ -1234,18 +1215,6 @@ export default function MoviePageClient({
                               )}
                             </div>
                           </div>
-                          
-                          {/* Social Proof - Rating Count */}
-                          {(performance as any).ratingCount > 0 && (
-                            <div className="mb-4">
-                              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                                <Users className="w-3.5 h-3.5 text-gray-400" />
-                                <span className="text-xs text-gray-300">
-                                  <span className="font-semibold text-white">{(performance as any).ratingCount}</span> {(performance as any).ratingCount === 1 ? 'critic' : 'critics'} rated
-                                </span>
-                              </div>
-                            </div>
-                          )}
 
                           {/* Actor Name */}
                           <div className="mb-4">
