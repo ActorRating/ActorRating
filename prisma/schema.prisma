@@ -122,12 +122,15 @@ model Movie {
   tmdbVoteCount  Int?
   /// When tmdbRating / tmdbVoteCount were last fetched from TMDB.
   tmdbDataFetchedAt DateTime?
+  /// SEO indexing rollout cohort (0 = not in a gated cohort; 1 = cohort-1, etc.).
+  indexingCohort Int           @default(0)
   performances   Performance[]
   ratings        Rating[]
 
   @@unique([title, year])
   @@index([title])
   @@index([slug])
+  @@index([indexingCohort])
 }
 
 model Performance {
@@ -148,6 +151,9 @@ model Performance {
   order                  Int?
   /// Computed from order + cast size: ensemble films surface more leads/supporting.
   tier                   PerformanceTier @default(MINOR)
+  /// TMDB movie vote_average copied onto the performance for SEO display only.
+  /// Never merge with community Rating aggregates — keep labeled separately in UI.
+  seededAggregateScore   Float?
   actor                  Actor           @relation(fields: [actorId], references: [id], onDelete: Cascade)
   movie                  Movie           @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user                   User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -157,6 +163,7 @@ model Performance {
   @@index([movieId])
   @@index([actorId, movieId])
   @@index([tier])
+  @@index([seededAggregateScore])
 }
 
 model Rating {
