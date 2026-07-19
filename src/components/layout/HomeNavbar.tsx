@@ -19,6 +19,7 @@ type NavLink = {
 const NAV_LINKS: NavLink[] = [
   { label: 'Performances', href: '/performances' },
   { label: 'Top Rated',    href: '/performances', scrollTo: 'leaderboard' },
+  { label: 'Lists',        href: '/lists' },
   { label: 'About',        href: '/about' },
 ]
 

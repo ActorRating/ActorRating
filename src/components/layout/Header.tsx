@@ -15,7 +15,8 @@ import {
   Moon,
   Bell,
   TrendingUp,
-  Award
+  Award,
+  List
 } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
 import { handleLogout } from '@/lib/auth'
@@ -48,6 +49,7 @@ export function Header({
   const navigation = [
     { name: 'Home', href: '/', icon: TrendingUp },
     { name: 'Rate', href: '/rate', icon: Award },
+    { name: 'Lists', href: '/lists', icon: List },
   ]
 
 

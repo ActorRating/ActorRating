@@ -14,6 +14,10 @@ export type EnrichedListEntry = {
   actorName: string
   movieTitle: string
   movieYear: number | null
+  actorImageUrl: string | null
+  moviePosterUrl: string | null
+  /** Film-level Critic Aggregate (TMDB), when present */
+  movieCriticAggregate: number | null
   ratePath: string
   communityAvg10: number | null
   communityRatingCount: number
@@ -57,7 +61,7 @@ export async function enrichListEntries(
     const [actor, movie] = await Promise.all([
       prisma.actor.findFirst({
         where: { slug: entry.actorSlug },
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, slug: true, imageUrl: true },
       }),
       prisma.movie.findFirst({
         where: { slug: entry.movieSlug },
@@ -68,6 +72,8 @@ export async function enrichListEntries(
           slug: true,
           indexingCohort: true,
           isFeaturette: true,
+          posterUrl: true,
+          tmdbRating: true,
         },
       }),
     ])
@@ -81,6 +87,9 @@ export async function enrichListEntries(
         actorName: entry.actorSlug,
         movieTitle: entry.movieSlug,
         movieYear: null,
+        actorImageUrl: null,
+        moviePosterUrl: null,
+        movieCriticAggregate: null,
         ratePath: `/rate/${entry.movieSlug}/${entry.actorSlug}`,
         communityAvg10: null,
         communityRatingCount: 0,
@@ -146,6 +155,10 @@ export async function enrichListEntries(
       actorName: actor.name,
       movieTitle: movie.title,
       movieYear: movie.year,
+      actorImageUrl: actor.imageUrl ?? null,
+      moviePosterUrl: movie.posterUrl ?? null,
+      movieCriticAggregate:
+        typeof movie.tmdbRating === "number" ? movie.tmdbRating : null,
       ratePath: `/rate/${movie.slug ?? movie.id}/${actor.slug ?? actor.id}`,
       communityAvg10,
       communityRatingCount,
