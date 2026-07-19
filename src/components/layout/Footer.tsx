@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCookieConsentContext } from '@/components/providers/CookieConsentProvider'
 import { useUser } from '@/components/providers/SessionProvider'
 import { useState, useEffect } from 'react'
+import { TmdbAttribution } from '@/components/attribution/TmdbAttribution'
 
 const GOLD_TEXT_STYLE = {
   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
@@ -117,6 +118,11 @@ export function Footer() {
               </a>
             </nav>
           </div>
+        </div>
+
+        {/* TMDB attribution — required by API Terms of Use */}
+        <div className="mb-8">
+          <TmdbAttribution variant="footer" />
         </div>
 
         {/* Divider */}

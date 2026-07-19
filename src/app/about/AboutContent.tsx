@@ -10,6 +10,7 @@ import {
   FaHandshake,
 } from "react-icons/fa";
 import Link from "next/link";
+import { TmdbAttribution } from "@/components/attribution/TmdbAttribution";
 
 const GOLD =
   "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)";
@@ -485,6 +486,35 @@ export function AboutContent() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Credits / data attribution (TMDB API Terms) */}
+        <section className="mb-16 sm:mb-20 md:mb-24 text-center">
+          <p className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase text-[#FFD700] opacity-60 mb-6">
+            Credits
+          </p>
+          <h2
+            className="text-2xl sm:text-3xl font-bold text-white mb-4"
+            style={CINZEL}
+          >
+            Data &amp; imagery
+          </h2>
+          <GoldDivider width={100} />
+          <p className="text-sm sm:text-base text-[#a0a0a0] font-light leading-relaxed max-w-xl mx-auto mb-8 mt-4">
+            Movie metadata, cast information, posters, and actor photos are provided
+            via{" "}
+            <Link
+              href="https://www.themoviedb.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#01b4e4] hover:underline"
+            >
+              The Movie Database (TMDB)
+            </Link>
+            . Performance ratings on ActorRating are created by our community and are
+            separate from TMDB scores.
+          </p>
+          <TmdbAttribution variant="about" />
         </section>
 
         {/* CTA */}
