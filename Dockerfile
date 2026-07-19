@@ -72,6 +72,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Prisma schema + migrations (needed by Prisma client at runtime for schema introspection)
 COPY --from=builder /app/prisma ./prisma
+# Curated listicle markdown (read at runtime by /lists routes + sitemap generator)
+COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
 # Bundled sitemap generator — runs at container start via docker-entrypoint.sh.
 # @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.

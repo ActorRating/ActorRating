@@ -11,6 +11,7 @@ interface Manifest {
   actorSitemapCount: number
   movieSitemapCount: number
   performanceSitemapCount: number
+  listSitemapCount?: number
 }
 
 function escapeXml(str: string): string {
@@ -61,6 +62,10 @@ export async function GET() {
 
   for (let i = 1; i <= manifest.performanceSitemapCount; i++) {
     entries.push(sitemapEntry(`${BASE_URL}/sitemaps/performances-${i}.xml`, genDate))
+  }
+
+  if ((manifest.listSitemapCount ?? 0) > 0) {
+    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/lists.xml`, genDate))
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

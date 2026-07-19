@@ -44,6 +44,7 @@ interface Manifest {
   actorSitemapCount: number
   movieSitemapCount: number
   performanceSitemapCount: number
+  listSitemapCount: number
 }
 
 function parseTypeArg(): GenerationType {
@@ -243,12 +244,49 @@ function generateStatic(outDir: string): void {
   const urls: UrlEntry[] = [
     { url: BASE_URL, lastModified: now, changeFrequency: "daily", priority: 1.0 },
     { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE_URL}/lists`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/performances`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ]
   writeXml(outDir, "static.xml", buildUrlsetXml(urls))
   console.log(`    → ${urls.length} URLs (auth URLs excluded — layout is noindex)`)
+}
+
+/** Curated /lists/[slug] pages from content/lists/*.md */
+function generateLists(outDir: string): number {
+  const listsDir = path.join(REPO_ROOT, "content", "lists")
+  const urls: UrlEntry[] = []
+
+  if (!fs.existsSync(listsDir)) {
+    console.warn(`[sitemap] content/lists missing at ${listsDir} — writing empty lists.xml`)
+  } else {
+    const files = fs.readdirSync(listsDir).filter((f) => f.endsWith(".md") && !f.startsWith("_"))
+    for (const file of files) {
+      const slug = file.replace(/\.md$/, "")
+      const full = path.join(listsDir, file)
+      const raw = fs.readFileSync(full, "utf-8")
+      const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+      let lastModified = fs.statSync(full).mtime
+      if (match) {
+        const pub = match[1].match(/^publishedAt:\s*['"]?([^\s'"]+)/m)
+        if (pub?.[1]) {
+          const d = new Date(pub[1])
+          if (!Number.isNaN(d.getTime())) lastModified = d
+        }
+      }
+      urls.push({
+        url: `${BASE_URL}/lists/${slug}`,
+        lastModified,
+        changeFrequency: "monthly",
+        priority: 0.85,
+      })
+    }
+  }
+
+  writeXml(outDir, "lists.xml", buildUrlsetXml(urls))
+  console.log(`    → ${urls.length} list URL(s)`)
+  return urls.length > 0 ? 1 : 0
 }
 
 /** Sitemap: ≥1 rating on non-featurette OR ≥5 performances on non-featurette. */
@@ -490,7 +528,13 @@ function validateGeneratedSet(outDir: string): void {
   }
 
   const manifest = readManifest(outDir)
-  const { actorSitemapCount, movieSitemapCount, performanceSitemapCount, generatedAt } = manifest
+  const {
+    actorSitemapCount,
+    movieSitemapCount,
+    performanceSitemapCount,
+    listSitemapCount = 0,
+    generatedAt,
+  } = manifest
 
   if (!generatedAt || typeof actorSitemapCount !== "number") {
     throw new Error("Invalid manifest shape")
@@ -517,7 +561,7 @@ function validateGeneratedSet(outDir: string): void {
       const p = path.join(outDir, name)
       if (!fs.existsSync(p)) throw new Error(`Missing ${name}`)
       const xml = fs.readFileSync(p, "utf-8")
-      if (!xml.includes("<urlset")) throw new Error(`${name}: missing urlset`)
+      if (!xml.includes("<urlset")) throw new Error(`${name}: missing urlset")
       const n = countUrlTags(xml)
       if (n < 1) throw new Error(`${name}: empty urlset`)
       if (n > CHUNK_SIZE) throw new Error(`${name}: exceeds CHUNK_SIZE`)
@@ -532,8 +576,17 @@ function validateGeneratedSet(outDir: string): void {
   checkSeries("movies", movieSitemapCount)
   checkSeries("performances", performanceSitemapCount)
 
+  const listsXmlPath = path.join(outDir, "lists.xml")
+  if (listSitemapCount > 0) {
+    if (!fs.existsSync(listsXmlPath)) throw new Error("Missing lists.xml")
+    const listsXml = fs.readFileSync(listsXmlPath, "utf-8")
+    if (!listsXml.includes("<urlset")) throw new Error("lists.xml: missing urlset")
+    if (countUrlTags(listsXml) < 1) throw new Error("lists.xml: empty urlset")
+    if (!validateLocHosts(listsXml)) throw new Error("lists.xml: invalid loc")
+  }
+
   const files = fs.readdirSync(outDir)
-  const allowed = /^(_manifest\.json|static\.xml|(actors|movies|performances)-\d+\.xml)$/
+  const allowed = /^(_manifest\.json|static\.xml|lists\.xml|(actors|movies|performances)-\d+\.xml)$/
   for (const f of files) {
     if (!allowed.test(f)) {
       throw new Error(`Unexpected file in sitemap output: ${f}`)
@@ -586,15 +639,21 @@ async function generateAllInto(outDir: string): Promise<void> {
   const actorSitemapCount = await generateActors(outDir)
   const movieSitemapCount = await generateMovies(outDir)
   const performanceSitemapCount = await generatePerformances(outDir)
+  const listSitemapCount = generateLists(outDir)
 
-  await writeManifest(outDir, { actorSitemapCount, movieSitemapCount, performanceSitemapCount })
+  await writeManifest(outDir, {
+    actorSitemapCount,
+    movieSitemapCount,
+    performanceSitemapCount,
+    listSitemapCount,
+  })
 
   validateGeneratedSet(outDir)
 
   const ms = Date.now() - t0
   console.log(`[sitemap] Generation + validation finished in ${ms}ms`)
   console.log(
-    `[sitemap] Counts: actors=${actorSitemapCount} files, movies=${movieSitemapCount} files, performances=${performanceSitemapCount} files`,
+    `[sitemap] Counts: actors=${actorSitemapCount} files, movies=${movieSitemapCount} files, performances=${performanceSitemapCount} files, lists=${listSitemapCount}`,
   )
 }
 
@@ -618,7 +677,13 @@ async function main(): Promise<void> {
     const a = await generateActors(LIVE_DIR)
     const m = await generateMovies(LIVE_DIR)
     const p = await generatePerformances(LIVE_DIR)
-    await writeManifest(LIVE_DIR, { actorSitemapCount: a, movieSitemapCount: m, performanceSitemapCount: p })
+    const l = generateLists(LIVE_DIR)
+    await writeManifest(LIVE_DIR, {
+      actorSitemapCount: a,
+      movieSitemapCount: m,
+      performanceSitemapCount: p,
+      listSitemapCount: l,
+    })
     validateGeneratedSet(LIVE_DIR)
     console.log("Done (partial / dev mode).")
     return

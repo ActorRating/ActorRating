@@ -1155,3 +1155,23 @@ nav {
 .floating-input.border-green-500.has-value+.floating-label {
   color: #22c55e;
 }
+
+/* Curated listicle body copy */
+.prose-lists p {
+  margin-bottom: 1rem;
+}
+.prose-lists p:last-child {
+  margin-bottom: 0;
+}
+.prose-lists a {
+  color: #ffd700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-lists strong {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+.prose-lists em {
+  font-style: italic;
+}

@@ -24,6 +24,11 @@ const nextConfig = {
     optimizePackageImports: ['react-icons', 'framer-motion', 'lucide-react'],
     // Reduce bundle size by optimizing server components
     optimizeServerReact: true,
+    // Ensure listicle markdown is traced into the standalone output.
+    outputFileTracingIncludes: {
+      '/lists': ['./content/lists/**/*'],
+      '/lists/[slug]': ['./content/lists/**/*'],
+    },
     // Serve complete (non-streamed) HTML to crawlers so they never capture a
     // loading skeleton or empty Suspense fallback instead of real content.
     // Next.js already includes Googlebot by default; this extends the list.
