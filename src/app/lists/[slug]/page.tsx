@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { connection } from "next/server"
 import { HomeLayout } from "@/components/layout"
 import { loadAllLists, loadListBySlug, renderMarkdownToHtml } from "@/lib/lists/load-lists"
 import { enrichListEntries } from "@/lib/lists/enrich-entries"
 
-export const revalidate = 3600
+/** Always enrich from live DB — never bake slug fallbacks into static HTML/JSON-LD at build. */
+export const dynamic = "force-dynamic"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
 
@@ -44,6 +46,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ListPage({ params }: Props) {
+  // Opt into request-time rendering so Coolify's SKIP_BUILD_TIME_DB build
+  // cannot ship ItemList JSON-LD with raw slug "names".
+  await connection()
+
   const { slug } = await params
   const list = loadListBySlug(slug)
   if (!list) notFound()
@@ -71,19 +77,24 @@ export default async function ListPage({ params }: Props) {
   const introHtml = renderMarkdownToHtml(list.introMarkdown)
   const pageUrl = `${BASE_URL}/lists/${list.slug}`
 
+  // Only emit structured data for rows we resolved to real Person/Movie names.
+  const jsonLdItems = enriched
+    .filter((entry) => entry.exists)
+    .map((entry, index) => ({
+      "@type": "ListItem" as const,
+      position: index + 1,
+      name: `${entry.actorName} in ${entry.movieTitle}`,
+      url: `${BASE_URL}${entry.ratePath}`,
+    }))
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: list.title,
     description: list.description,
     url: pageUrl,
-    numberOfItems: enriched.length,
-    itemListElement: enriched.map((entry, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: `${entry.actorName} in ${entry.movieTitle}`,
-      url: `${BASE_URL}${entry.ratePath}`,
-    })),
+    numberOfItems: jsonLdItems.length,
+    itemListElement: jsonLdItems,
   }
 
   return (
