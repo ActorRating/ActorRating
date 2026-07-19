@@ -561,7 +561,7 @@ function validateGeneratedSet(outDir: string): void {
       const p = path.join(outDir, name)
       if (!fs.existsSync(p)) throw new Error(`Missing ${name}`)
       const xml = fs.readFileSync(p, "utf-8")
-      if (!xml.includes("<urlset")) throw new Error(`${name}: missing urlset")
+      if (!xml.includes("<urlset")) throw new Error(`${name}: missing urlset`)
       const n = countUrlTags(xml)
       if (n < 1) throw new Error(`${name}: empty urlset`)
       if (n > CHUNK_SIZE) throw new Error(`${name}: exceeds CHUNK_SIZE`)

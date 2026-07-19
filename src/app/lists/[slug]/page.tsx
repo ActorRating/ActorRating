@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
 import { HomeLayout } from "@/components/layout"
-import { loadAllLists, loadListBySlug, renderMarkdownToHtml } from "@/lib/lists/load-lists"
+import { loadListBySlug, renderMarkdownToHtml } from "@/lib/lists/load-lists"
 import { enrichListEntries } from "@/lib/lists/enrich-entries"
 
 /** Always enrich from live DB — never bake slug fallbacks into static HTML/JSON-LD at build. */
@@ -13,10 +13,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https:
 
 type Props = {
   params: Promise<{ slug: string }>
-}
-
-export async function generateStaticParams() {
-  return loadAllLists().map((l) => ({ slug: l.slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
