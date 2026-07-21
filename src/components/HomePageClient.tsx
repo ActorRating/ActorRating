@@ -39,6 +39,19 @@ const PLAYFAIR: React.CSSProperties = {
 const HERO_SANS: React.CSSProperties = {
   fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
 };
+/** Letterboxd homepage manifesto: Tiempos Headline optical weight ≈ Playfair 800–900 */
+const HERO_MANIFESTO: React.CSSProperties = {
+  ...PLAYFAIR,
+  fontWeight: 900,
+  fontSize: "2.25rem",
+  lineHeight: 1.33333,
+  letterSpacing: "normal",
+  textAlign: "center",
+  textShadow: "none",
+  margin: 0,
+  WebkitFontSmoothing: "auto",
+  MozOsxFontSmoothing: "auto",
+};
 
 function upgradePosterBackdropRes(url?: string | null): string | null {
   if (!url) return null;
@@ -183,18 +196,26 @@ function CleanPosterLink({
   );
 }
 
-function PosterRailRow({
-  flush,
-  children,
+function RailTitle({
+  title,
+  subtitle,
 }: {
-  flush?: boolean;
-  children: React.ReactNode;
+  title: string;
+  subtitle?: string;
 }) {
   return (
-    <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 max-w-7xl mx-auto w-full">
-        {children}
-      </div>
+    <div className="text-center mb-3 sm:mb-3.5">
+      <h2
+        className="text-lg sm:text-xl font-semibold text-white tracking-tight"
+        style={HERO_SANS}
+      >
+        {title}
+      </h2>
+      {subtitle ? (
+        <p className="text-xs sm:text-sm text-zinc-500 mt-1" style={HERO_SANS}>
+          {subtitle}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -212,33 +233,31 @@ function StaticPosterRail({
 }) {
   return (
     <div className={flush ? "pb-1" : "mb-10 sm:mb-14"}>
-      {!flush && title ? (
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mb-4 sm:mb-5 text-center">
-          <h2 className="text-lg sm:text-xl font-bold text-white" style={PLAYFAIR}>
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">{subtitle}</p>
+      <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
+        <div className="mx-auto flex w-fit max-w-7xl flex-col items-center">
+          {!flush && title ? <RailTitle title={title} subtitle={subtitle} /> : null}
+          {!flush && title ? (
+            <div className="mb-4 h-px w-full bg-zinc-700 sm:mb-5" aria-hidden />
           ) : null}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
+            {items.map((item, i) => {
+              const poster = tmdbPoster(item.posterPath);
+              const href = movieHrefFromStatic(item);
+              return (
+                <CleanPosterLink
+                  key={`${item.actor}:${item.movie}`}
+                  href={href}
+                  poster={poster}
+                  actorName={item.actor}
+                  characterName={item.character}
+                  movieTitle={item.movie}
+                  priority={i < 4}
+                />
+              );
+            })}
+          </div>
         </div>
-      ) : null}
-      <PosterRailRow flush={flush}>
-        {items.map((item, i) => {
-          const poster = tmdbPoster(item.posterPath);
-          const href = movieHrefFromStatic(item);
-          return (
-            <CleanPosterLink
-              key={`${item.actor}:${item.movie}`}
-              href={href}
-              poster={poster}
-              actorName={item.actor}
-              characterName={item.character}
-              movieTitle={item.movie}
-              priority={i < 4}
-            />
-          );
-        })}
-      </PosterRailRow>
+      </div>
     </div>
   );
 }
@@ -262,53 +281,50 @@ function PosterRail({
 
   return (
     <div className={flush ? "pb-1" : "mb-10 sm:mb-14"}>
-      {!flush && title ? (
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 mb-4 sm:mb-5 text-center">
-          <h2 className="text-lg sm:text-xl font-bold text-white" style={PLAYFAIR}>
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1">{subtitle}</p>
+      <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
+        <div className="mx-auto flex w-fit max-w-7xl flex-col items-center">
+          {!flush && title ? <RailTitle title={title} subtitle={subtitle} /> : null}
+          {!flush && title ? (
+            <div className="mb-4 h-px w-full bg-zinc-700 sm:mb-5" aria-hidden />
           ) : null}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
+            {performances.map((perf, i) => {
+              const actor = perf.actor!;
+              const movie = perf.movie!;
+              const href = getMovieUrl({
+                id: perf.movieId,
+                title: movie.title,
+                year: movie.year,
+                slug: movie.slug,
+              });
+              const poster =
+                upgradePosterThumbRes(movie.posterUrl) ?? movie.posterUrl ?? null;
+              const face = upgradeActorImageRes(actor.imageUrl);
+              const character =
+                perf.character?.trim() ||
+                characterFallback(actor.name, movie.title, characterTargets);
+
+              return (
+                <div
+                  key={performanceKey(perf) ?? `${perf.actorId}-${perf.movieId}`}
+                  className="flex-shrink-0"
+                >
+                  <CleanPosterLink
+                    href={href}
+                    poster={poster}
+                    face={face}
+                    actorName={actor.name}
+                    characterName={character}
+                    movieTitle={movie.title}
+                    priority={i < 4}
+                    onPrefetch={() => router.prefetch(href)}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ) : null}
-
-      <PosterRailRow flush={flush}>
-        {performances.map((perf, i) => {
-          const actor = perf.actor!;
-          const movie = perf.movie!;
-          const href = getMovieUrl({
-            id: perf.movieId,
-            title: movie.title,
-            year: movie.year,
-            slug: movie.slug,
-          });
-          const poster =
-            upgradePosterThumbRes(movie.posterUrl) ?? movie.posterUrl ?? null;
-          const face = upgradeActorImageRes(actor.imageUrl);
-          const character =
-            perf.character?.trim() ||
-            characterFallback(actor.name, movie.title, characterTargets);
-
-          return (
-            <div
-              key={performanceKey(perf) ?? `${perf.actorId}-${perf.movieId}`}
-              className="flex-shrink-0"
-            >
-              <CleanPosterLink
-                href={href}
-                poster={poster}
-                face={face}
-                actorName={actor.name}
-                characterName={character}
-                movieTitle={movie.title}
-                priority={i < 4}
-                onPrefetch={() => router.prefetch(href)}
-              />
-            </div>
-          );
-        })}
-      </PosterRailRow>
+      </div>
     </div>
   );
 }
@@ -329,22 +345,16 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
         fill
         priority
         quality={90}
-        // Crop toward the warrior so the empty dark left of the still isn’t a black panel
+        className="object-cover object-center"
+        sizes="100vw"
+      />
+      {/* Readability wash — mid-start darkening on desktop + iPad landscape */}
+      <div
         className={
           mobile
-            ? "object-cover object-[68%_center]"
-            : "object-cover object-[72%_center]"
+            ? "hero-backdrop-wash hero-backdrop-wash--stacked absolute inset-0 pointer-events-none"
+            : "hero-backdrop-wash hero-backdrop-wash--cinematic absolute inset-0 pointer-events-none"
         }
-        sizes={mobile ? "100vw" : "100vw"}
-      />
-      {/* Bottom readability wash only — no side black bar */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: mobile
-            ? "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 40%, transparent 100%)"
-            : "linear-gradient(180deg, rgba(0,0,0,0.2) 0%, transparent 35%, transparent 62%, rgba(0,0,0,0.5) 100%)",
-        }}
       />
     </>
   );
@@ -365,13 +375,16 @@ function HeroCtaBlock({ featured }: { featured: FeaturedHeroPayload }) {
         className="inline-flex"
       >
         <span
-          className="inline-flex items-center justify-center gap-2 px-7 sm:px-8 py-3 sm:py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
-          style={{ background: GOLD }}
+          className="inline-flex items-center justify-center px-6 py-[15px] rounded text-black text-[18px] font-bold leading-none transition-transform hover:scale-[1.02] min-h-[48px]"
+          style={{ background: GOLD, ...HERO_SANS }}
         >
           Start rating — it&apos;s free!
         </span>
       </Link>
-      <p className="mt-3.5 text-xs sm:text-sm text-zinc-500 font-light">
+      <p
+        className="mt-5 text-[17px] font-normal leading-[1.5] tracking-normal text-[#778899]"
+        style={HERO_SANS}
+      >
         The network for rating acting — not movies.
       </p>
     </>
@@ -421,14 +434,14 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: reduceMotion ? 0 : 0.05 }}
-            className="text-[1.35rem] font-medium text-white leading-snug tracking-tight"
-            style={HERO_SANS}
+            className="hero-manifesto-stacked text-white"
+            style={HERO_MANIFESTO}
           >
-            Rate performances you&apos;ve seen.
+            Rate performances you&apos;ve&nbsp;seen.
             <br />
-            Save the ones that floored you.
+            Save the ones that floored&nbsp;you.
             <br />
-            Tell the internet who deserved it.
+            Tell the internet who deserved&nbsp;it.
           </motion.h1>
           <div className="mt-6 flex flex-col items-center">
             <HeroCtaBlock featured={featured} />
@@ -436,7 +449,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
         </div>
       </section>
 
-      {/* ── Desktop (lg+): full-bleed still, manifesto on fold bottom ── */}
+      {/* ── Desktop / large tablet (lg+): full-bleed still ── */}
       <section className="relative hidden lg:flex h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
           <div className="absolute inset-0" aria-hidden>
@@ -446,25 +459,52 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
           <div className="absolute inset-0 bg-black" />
         )}
 
-        <div className="relative z-10 flex-1" aria-hidden />
+        {/* iPad / tall screens: manifesto + CTA in the lower third */}
+        <div className="hero-cinematic-centered relative z-10 flex-1 flex-col items-center justify-end px-8 pb-[8vh] text-center">
+          <motion.h1
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="max-w-3xl text-white"
+            style={HERO_MANIFESTO}
+          >
+            Rate performances you&apos;ve&nbsp;seen.
+            <br />
+            Save the ones that floored&nbsp;you.
+            <br />
+            Tell the internet who deserved&nbsp;it.
+          </motion.h1>
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
+            className="mt-12 flex flex-col items-center"
+          >
+            <HeroCtaBlock featured={featured} />
+          </motion.div>
+        </div>
 
-        <motion.h1
-          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="relative z-10 max-w-2xl mx-auto px-8 pb-7 text-center text-[2.35rem] lg:text-[2.65rem] font-bold text-white leading-[1.28] tracking-tight"
-          style={{ ...PLAYFAIR, textShadow: "0 6px 28px rgba(0,0,0,0.85)" }}
-        >
-          Rate performances you&apos;ve seen.
-          <br />
-          Save the ones that floored you.
-          <br />
-          Tell the internet who deserved it.
-        </motion.h1>
+        {/* Desktop: manifesto pinned to fold bottom */}
+        <div className="hero-cinematic-bottom relative z-10 w-full flex-1 flex-col items-center">
+          <div className="flex-1 w-full" aria-hidden />
+          <motion.h1
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="w-full max-w-2xl px-8 pb-7 text-center text-white"
+            style={HERO_MANIFESTO}
+          >
+            Rate performances you&apos;ve&nbsp;seen.
+            <br />
+            Save the ones that floored&nbsp;you.
+            <br />
+            Tell the internet who deserved&nbsp;it.
+          </motion.h1>
+        </div>
       </section>
 
-      {/* Desktop CTA band — sits under the hero fold */}
-      <section className="relative hidden lg:block bg-black border-t border-white/[0.04] px-8 pt-7 pb-10 text-center">
+      {/* CTA band — only with bottom-pinned desktop hero */}
+      <section className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center">
         <HeroCtaBlock featured={featured} />
       </section>
     </>
@@ -549,7 +589,6 @@ function FeaturedPerformanceSection({
 }: {
   performance: EnrichedPerformance | null;
 }) {
-  const reduceMotion = usePrefersReducedMotion();
   const poster =
     upgradePosterThumbRes(performance?.movie?.posterUrl)?.replace(
       "/t/p/w342/",
@@ -590,13 +629,7 @@ function FeaturedPerformanceSection({
 
   return (
     <section className="bg-black px-5 sm:px-8 lg:px-10 py-14 sm:py-20">
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-5xl mx-auto"
-      >
+      <div className="max-w-5xl mx-auto">
         <p
           className="text-center text-xs sm:text-sm tracking-[0.22em] uppercase text-[#FFD700]/80 mb-6 sm:mb-8"
           style={HERO_SANS}
@@ -681,7 +714,7 @@ function FeaturedPerformanceSection({
             </Link>
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

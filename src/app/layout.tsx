@@ -29,8 +29,8 @@ const geistMono = Geist_Mono({
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-  display: "optional",
+  weight: ["400", "600", "700", "800", "900"],
+  display: "swap",
   preload: true,
 });
 
