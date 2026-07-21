@@ -96,10 +96,10 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
             {/* Right side: search + auth + hamburger */}
             <div className="flex items-center gap-3 sm:gap-4">
 
-              {/* Letterboxd-style mini search — always visible on sm+ */}
+              {/* Letterboxd-style mini search — desktop only (lg+) */}
               <form
                 onSubmit={handleSearch}
-                className="hidden sm:flex items-center navbar-search-form"
+                className="hidden lg:flex items-center navbar-search-form"
                 role="search"
               >
                 <label htmlFor="navbar-search" className="sr-only">
@@ -112,7 +112,7 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder=""
-                    className="navbar-search-input w-32 md:w-40 lg:w-48 h-9 pl-3 pr-9 rounded-full text-sm text-white outline-none transition-colors duration-200"
+                    className="navbar-search-input w-48 h-9 pl-3 pr-9 rounded-full text-sm text-white outline-none transition-colors duration-200"
                     autoComplete="off"
                   />
                   <button
@@ -126,8 +126,8 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
                 </div>
               </form>
 
-              {/* Auth — desktop */}
-              <div className="hidden sm:flex items-center gap-2 min-w-[100px] justify-end pointer-events-auto navbar-content">
+              {/* Auth — desktop only (lg+) so tablet keeps clean hamburger chrome */}
+              <div className="hidden lg:flex items-center gap-2 min-w-[100px] justify-end pointer-events-auto navbar-content">
                 {!mounted || !isInitialized || loading ? (
                   <div className="h-8 w-20 rounded-md bg-[#1a1a1a] animate-pulse" />
                 ) : user ? (
@@ -171,10 +171,10 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
                 )}
               </div>
 
-              {/* Mobile search toggle — beside hamburger */}
+              {/* Mobile + tablet search toggle — beside hamburger */}
               <button
                 type="button"
-                className="sm:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
+                className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
                   setMobileSearchOpen((open) => !open)
                   setMobileMenuOpen(false)
@@ -185,7 +185,7 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
                 {mobileSearchOpen ? <FaTimes className="w-5 h-5" /> : <FaSearch className="w-5 h-5" />}
               </button>
 
-              {/* Mobile hamburger */}
+              {/* Mobile + tablet hamburger */}
               <button
                 className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
@@ -210,7 +210,7 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-            className="sm:hidden overflow-hidden border-b border-white/10 bg-black"
+            className="lg:hidden overflow-hidden border-b border-white/10 bg-black"
           >
             <form onSubmit={handleSearch} className="px-4 py-3" role="search">
               <label htmlFor="navbar-search-mobile" className="sr-only">

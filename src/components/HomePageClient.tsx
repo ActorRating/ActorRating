@@ -106,7 +106,7 @@ function movieHrefFromStatic(item: StaticRailItem): string {
 }
 
 const POSTER_TILE =
-  "group flex-shrink-0 w-[86px] sm:w-[96px] md:w-[104px] lg:w-[110px] block";
+  "group flex-shrink-0 w-[86px] sm:w-[92px] md:w-[100px] lg:w-[110px] block";
 
 /** Clean Letterboxd-style poster — art first; actor / character / movie on hover */
 function CleanPosterLink({
@@ -192,7 +192,7 @@ function PosterRailRow({
 }) {
   return (
     <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 max-w-7xl mx-auto">
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5 max-w-7xl mx-auto w-full">
         {children}
       </div>
     </div>
@@ -387,12 +387,12 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
 
   return (
     <>
-      {/* ── Mobile: image on top, then branding + manifesto + CTA ── */}
-      <section className="md:hidden bg-black">
-        <div className="relative w-full aspect-[16/10] max-h-[52svh] overflow-hidden">
+      {/* ── Mobile + tablet: image on top, then branding + manifesto + CTA ── */}
+      <section className="lg:hidden bg-black">
+        <div className="relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[46svh] md:max-h-[42svh] overflow-hidden">
           {posterSrc ? <HeroBackdrop src={posterSrc} mobile /> : null}
         </div>
-        <div className="px-5 pt-6 pb-8 text-center">
+        <div className="px-5 sm:px-8 pt-6 pb-8 text-center">
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -436,8 +436,8 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
         </div>
       </section>
 
-      {/* ── Desktop: full-bleed still, manifesto on fold bottom ── */}
-      <section className="relative hidden md:flex h-[100svh] w-full overflow-clip bg-black flex-col">
+      {/* ── Desktop (lg+): full-bleed still, manifesto on fold bottom ── */}
+      <section className="relative hidden lg:flex h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
           <div className="absolute inset-0" aria-hidden>
             <HeroBackdrop src={posterSrc} />
@@ -464,7 +464,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
       </section>
 
       {/* Desktop CTA band — sits under the hero fold */}
-      <section className="relative hidden md:block bg-black border-t border-white/[0.04] px-8 pt-7 pb-10 text-center">
+      <section className="relative hidden lg:block bg-black border-t border-white/[0.04] px-8 pt-7 pb-10 text-center">
         <HeroCtaBlock featured={featured} />
       </section>
     </>
@@ -605,7 +605,7 @@ function FeaturedPerformanceSection({
         </p>
 
         <div
-          className="relative grid grid-cols-1 md:grid-cols-[minmax(0,240px)_1fr] lg:grid-cols-[minmax(0,280px)_1fr] gap-8 md:gap-10 lg:gap-12 items-center rounded-3xl border border-white/10 p-6 sm:p-8 lg:p-10 overflow-hidden"
+          className="relative grid grid-cols-1 lg:grid-cols-[minmax(0,280px)_1fr] gap-8 lg:gap-12 items-center rounded-3xl border border-white/10 p-6 sm:p-8 lg:p-10 overflow-hidden"
           style={{
             background:
               "linear-gradient(145deg, rgba(26,26,26,0.92) 0%, rgba(10,10,10,0.96) 55%, rgba(0,0,0,0.98) 100%)",
@@ -624,7 +624,7 @@ function FeaturedPerformanceSection({
             aria-hidden
           />
 
-          <div className="relative mx-auto md:mx-0 w-[180px] sm:w-[220px] md:w-full aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/15 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.9)]">
+          <div className="relative mx-auto lg:mx-0 w-[180px] sm:w-[220px] lg:w-full aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/15 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.9)]">
             {poster ? (
               <Image
                 src={poster}
@@ -637,8 +637,8 @@ function FeaturedPerformanceSection({
             ) : null}
           </div>
 
-          <div className="relative text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-3.5 sm:gap-4">
+          <div className="relative text-center lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start gap-3.5 sm:gap-4">
               <div className="relative w-14 sm:w-16 lg:w-[4.5rem] aspect-[2/3] rounded-md overflow-hidden ring-1 ring-white/15 shadow-[0_8px_24px_rgba(0,0,0,0.55)] shrink-0 bg-zinc-900">
                 <Image
                   src={actorImage}
@@ -661,7 +661,7 @@ function FeaturedPerformanceSection({
             <p className="mt-1 text-sm sm:text-base text-zinc-500">
               The Dark Knight
             </p>
-            <p className="mt-5 sm:mt-6 text-sm sm:text-base text-zinc-400 leading-relaxed max-w-xl mx-auto md:mx-0">
+            <p className="mt-5 sm:mt-6 text-sm sm:text-base text-zinc-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
               One of the most unforgettable performances in cinema history. Rate
               Heath Ledger&apos;s Oscar-winning portrayal of the Joker and see how
               it ranks among thousands of performances.

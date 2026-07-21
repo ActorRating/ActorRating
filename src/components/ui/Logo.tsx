@@ -17,12 +17,12 @@ export function Logo({
 }: LogoProps) {
   const LogoContent = () => (
     <div className={cn("flex items-center gap-0 sm:gap-0.5", className)} suppressHydrationWarning>
-      <div className="relative w-14 h-14 md:w-20 md:h-20 lg:w-[4.5rem] lg:h-[4.5rem] shrink-0">
+      <div className="relative w-14 h-14 lg:w-[4.5rem] lg:h-[4.5rem] shrink-0">
         <Image
           src="/logo_navbar.png"
           alt="ActorRating Logo"
-          width={80}
-          height={80}
+          width={72}
+          height={72}
           className="object-contain"
           priority
           suppressHydrationWarning
@@ -31,7 +31,7 @@ export function Logo({
       {showText ? (
         <span
           className={cn(
-            "hidden md:inline text-2xl lg:text-3xl font-extrabold text-white tracking-tight",
+            "hidden lg:inline text-3xl font-extrabold text-white tracking-tight",
             textClassName,
           )}
           style={{ textShadow: "0 1px 8px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25)" }}

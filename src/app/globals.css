@@ -764,7 +764,7 @@ video {
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .navbar-cinematic {
     position: absolute;
     background: transparent !important;
