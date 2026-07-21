@@ -10,28 +10,19 @@ interface LandingLayoutProps {
 
 export function LandingLayout({ children, primaryRateHref = '/performances' }: LandingLayoutProps) {
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      {/* Navbar */}
-      <div style={{ position: 'relative', zIndex: 999, background: 'transparent', width: '100%' }}>
-        <HomeNavbar primaryRateHref={primaryRateHref} />
-      </div>
+    <div className="min-h-screen bg-black flex flex-col relative">
+      {/* Navbar overlays hero — scrolls with page, not sticky */}
+      <HomeNavbar primaryRateHref={primaryRateHref} />
 
       {/* Main content */}
-      <main
-        className="flex-1 w-full"
-        style={{
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
+      <main className="flex-1 w-full relative z-0">
         {children}
       </main>
 
       {/* Footer - only for landing page */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
+      <div className="relative z-10">
         <Footer />
       </div>
-
     </div>
   )
 }

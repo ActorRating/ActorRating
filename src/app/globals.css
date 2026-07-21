@@ -107,7 +107,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   position: relative;
-  overflow-x: hidden;
+  /* Do NOT set overflow-x here — with overflow-y:visible it computes to
+     overflow-y:auto and creates a second scrollport (double scrollbar). */
+  overflow: visible;
 }
 
 /* Hero section - content will be layered above */
@@ -178,61 +180,47 @@ main {
   z-index: 20;
 }
 
-/* Prevent horizontal scrolling site-wide and improve mobile behavior */
+/* Single page scrollport on html only — body must stay overflow:visible on both axes */
 html,
 body {
   height: auto;
-  /* CRITICAL: Changed from 100% to auto to allow proper scrolling on iOS Safari */
   background: #000000;
-  overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   -webkit-text-size-adjust: 100%;
-  overscroll-behavior-x: none !important;
-  overscroll-behavior-y: auto !important;
-  /* Allow normal scroll behavior for trackpad */
-  overscroll-behavior: auto !important;
-  /* Allow normal scroll behavior */
-  overflow-y: auto;
-  /* Allow vertical scrolling */
   position: relative;
   margin: 0;
   padding: 0;
-  touch-action: pan-y pinch-zoom;
-  /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
 }
 
 html {
   scroll-padding-top: 0;
   scroll-snap-type: none;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  /* clip (not hidden) so overflow-y can stay visible on body without computing to auto */
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
+  -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   min-height: 100dvh;
-  /* Dynamic viewport height for mobile browsers - CRITICAL for iOS */
   padding-bottom: env(safe-area-inset-bottom);
-  /* Respect iOS safe area */
-  overflow-y: auto;
-  /* Changed from scroll to auto - only show scrollbar when needed */
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: auto !important;
-  /* Allow normal scroll behavior for trackpad */
-  overscroll-behavior-y: auto !important;
-  overscroll-behavior-x: none !important;
-  position: relative;
-  margin: 0;
-  touch-action: pan-y pinch-zoom;
-  /* Allow vertical scrolling and pinch-zoom, critical for trackpad scrolling */
-}
-
-/* Ensure body can scroll to top */
-html {
+  /* Both axes visible — body is NOT a scroll container */
+  overflow: visible;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
   scroll-margin-top: 0;
   scroll-padding-top: 0;
 }
 
-body {
+/* Ensure body can scroll to top */
+html {
   scroll-margin-top: 0;
   scroll-padding-top: 0;
 }
@@ -243,19 +231,6 @@ body {
 main {
   scroll-margin-top: 0;
   scroll-padding-top: 0;
-}
-
-/* Smooth scroll behavior for modern feel - Apple/Tesla level */
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: auto !important;
-  /* Allow normal scroll behavior for trackpad */
-  overscroll-behavior-y: auto !important;
-  overscroll-behavior-x: none !important;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 /* Carousel Pagination Dots - Minimal & Premium */
@@ -396,13 +371,11 @@ html {
 body>div,
 main,
 section {
-  max-width: 100vw;
+  max-width: 100%;
   width: 100%;
   margin-left: 0;
   margin-right: 0;
   position: relative;
-  overscroll-behavior: auto !important;
-  /* Allow normal scroll behavior for trackpad */
 }
 
 /* Fix mobile viewport height issues - prevent black bar at bottom */
@@ -747,23 +720,74 @@ video {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Cinematic navbar - solid black background */
+/* Cinematic navbar — solid + in-flow on mobile; overlays hero on desktop */
 .navbar-cinematic {
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
+  right: 0;
   width: 100%;
+  z-index: 50;
   background: rgb(0, 0, 0) !important;
   background-color: rgb(0, 0, 0) !important;
   border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-  transition: all 0.3s ease-in-out !important;
-  z-index: 50;
+  transition: background 0.3s ease-in-out, border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out !important;
 }
 
-.navbar-cinematic.navbar-scrolled {
-  background: rgb(0, 0, 0) !important;
-  background-color: rgb(0, 0, 0) !important;
+.navbar-cinematic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.38) 45%,
+    rgba(0, 0, 0, 0.12) 75%,
+    transparent 100%
+  );
+  transition: opacity 0.35s ease;
+}
+
+.navbar-cinematic .navbar-search-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar-cinematic .navbar-search-input:hover,
+.navbar-cinematic .navbar-search-input:focus {
+  background: rgba(210, 210, 210, 0.28);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+@media (min-width: 768px) {
+  .navbar-cinematic {
+    position: absolute;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-bottom: 1px solid transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .navbar-cinematic:hover::before {
+    opacity: 1;
+  }
+
+  .navbar-cinematic .navbar-link-desktop {
+    color: #fff !important;
+    font-weight: 700 !important;
+  }
+
+  .navbar-cinematic .navbar-auth-link {
+    color: #fff !important;
+    font-weight: 700 !important;
+  }
 }
 
 /* Navbar content - white text for visibility, transitions on scroll */
@@ -839,8 +863,8 @@ nav {
 }
 
 /* Ensure all navbar inner containers are transparent */
-.navbar-cinematic>div,
-.navbar-cinematic>div>div {
+.navbar-cinematic nav > div,
+.navbar-cinematic nav > div > div {
   background: transparent !important;
   background-color: transparent !important;
 }
@@ -1025,7 +1049,7 @@ nav {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 .scrollbar-hide::-webkit-scrollbar {

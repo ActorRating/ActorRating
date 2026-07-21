@@ -16,19 +16,29 @@ export function Logo({
   textClassName 
 }: LogoProps) {
   const LogoContent = () => (
-    <div className={cn("flex items-center", className)} suppressHydrationWarning>
-      {/* Logo Image - Responsive sizing to match button */}
-      <div className="relative w-12 h-12 md:w-16 md:h-16 lg:w-14 lg:h-14">
+    <div className={cn("flex items-center gap-0 sm:gap-0.5", className)} suppressHydrationWarning>
+      <div className="relative w-14 h-14 md:w-20 md:h-20 lg:w-[4.5rem] lg:h-[4.5rem] shrink-0">
         <Image
           src="/logo_navbar.png"
           alt="ActorRating Logo"
-          width={64}
-          height={64}
+          width={80}
+          height={80}
           className="object-contain"
           priority
           suppressHydrationWarning
         />
       </div>
+      {showText ? (
+        <span
+          className={cn(
+            "hidden md:inline text-2xl lg:text-3xl font-extrabold text-white tracking-tight",
+            textClassName,
+          )}
+          style={{ textShadow: "0 1px 8px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25)" }}
+        >
+          ActorRating
+        </span>
+      ) : null}
     </div>
   )
 

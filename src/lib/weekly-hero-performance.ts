@@ -72,10 +72,10 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
   },
   {
-    actor: 'Al Pacino',
-    movie: 'The Godfather Part II',
-    year: '1974',
-    headline: 'How do you rate Al Pacino in The Godfather Part II?',
+    actor: 'Matt Damon',
+    movie: 'The Odyssey',
+    year: '2026',
+    headline: 'How do you rate Matt Damon in The Odyssey?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
   },

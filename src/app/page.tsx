@@ -7,7 +7,10 @@ import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { buildWeeklyFeaturedHero } from "@/lib/home-featured-performance";
-import { homeLeaderboardLookupTargets } from "@/lib/performances-page-targets";
+import {
+  homeLeaderboardLookupTargets,
+  allLandingRailLookupTargets,
+} from "@/lib/performances-page-targets";
 import { getCurrentWeeklyHeroConfig, weeklyHeroLookupTarget } from "@/lib/weekly-hero-performance";
 
 // --- SEO Metadata ---
@@ -45,13 +48,16 @@ export const metadata: Metadata = {
 export default async function Home() {
   const weeklyConfig = getCurrentWeeklyHeroConfig();
   let initialLeaderboardPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
+  let initialRailPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
   let featuredHero = buildWeeklyFeaturedHero(weeklyConfig, null);
   try {
-    const [weeklyRows, leaderboardRows] = await Promise.all([
+    const [weeklyRows, leaderboardRows, railRows] = await Promise.all([
       getPerformancesByLookup([weeklyHeroLookupTarget()]),
       getPerformancesByLookup(homeLeaderboardLookupTargets()),
+      getPerformancesByLookup(allLandingRailLookupTargets()),
     ]);
     initialLeaderboardPerformances = leaderboardRows;
+    initialRailPerformances = railRows;
     featuredHero = buildWeeklyFeaturedHero(weeklyConfig, weeklyRows[0] ?? null);
   } catch {
     /* DB/API unavailable during build or deploy — client still fetches */
@@ -156,6 +162,7 @@ export default async function Home() {
       <LandingLayout primaryRateHref={primaryRateHref}>
         <HomePageClient
           initialLeaderboardPerformances={initialLeaderboardPerformances}
+          initialRailPerformances={initialRailPerformances}
           featuredHero={featuredHero}
           primaryRateHref={primaryRateHref}
         />

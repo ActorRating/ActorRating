@@ -49,7 +49,16 @@ export function buildWeeklyFeaturedHero(
   perf: EnrichedPerformance | null | undefined,
 ): FeaturedHeroPayload {
   const base = perf ? enrichedToFeaturedPayload(perf, config) : null
-  if (base) return base
+  if (base) {
+    // Prefer a wide still when we only have a poster path locally for The Odyssey week
+    if (!base.moviePosterUrl && config.movie === 'The Odyssey') {
+      return {
+        ...base,
+        moviePosterUrl: 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg',
+      }
+    }
+    return base
+  }
   return {
     rateHref: '/performances',
     actorName: config.actor,
@@ -57,7 +66,10 @@ export function buildWeeklyFeaturedHero(
     year: config.year,
     communityScore: null,
     actorImageUrl: null,
-    moviePosterUrl: null,
+    moviePosterUrl:
+      config.movie === 'The Odyssey'
+        ? 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg'
+        : null,
     headline: config.headline,
     subline: config.subline,
   }
