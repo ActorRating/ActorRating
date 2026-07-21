@@ -8,7 +8,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -27,12 +27,9 @@ import { getMovieUrl, getRateUrl } from "@/lib/slugHelper";
 import { createActorSlug, createMovieSlug } from "@/lib/createSlug";
 import {
   type FeaturedHeroPayload,
-  buildWeeklyFeaturedHero,
+  buildFixedLandingHero,
+  fixedLandingHeroLookupTarget,
 } from "@/lib/home-featured-performance";
-import {
-  getCurrentWeeklyHeroConfig,
-  weeklyHeroLookupTarget,
-} from "@/lib/weekly-hero-performance";
 
 const GOLD =
   "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)";
@@ -714,7 +711,6 @@ export default function HomePageClient({
   featuredHero: FeaturedHeroPayload;
   primaryRateHref?: string;
 }) {
-  const weeklyConfig = useMemo(() => getCurrentWeeklyHeroConfig(), []);
   const [clientResolvedFeatured, setClientResolvedFeatured] =
     useState<FeaturedHeroPayload | null>(null);
   const [railPool, setRailPool] = useState<EnrichedPerformance[]>(() => {
@@ -734,14 +730,14 @@ export default function HomePageClient({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(buildByLookupUrl([weeklyHeroLookupTarget()]), {
+        const res = await fetch(buildByLookupUrl([fixedLandingHeroLookupTarget()]), {
           cache: "force-cache",
         });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         const rows = data.performances as EnrichedPerformance[] | undefined;
         if (!rows?.[0] || cancelled) return;
-        setClientResolvedFeatured(buildWeeklyFeaturedHero(weeklyConfig, rows[0]));
+        setClientResolvedFeatured(buildFixedLandingHero(rows[0]));
       } catch {
         /* silent */
       }
@@ -749,10 +745,11 @@ export default function HomePageClient({
     return () => {
       cancelled = true;
     };
-  }, [featuredHeroProp.rateHref, weeklyConfig]);
+  }, [featuredHeroProp.rateHref]);
 
   useEffect(() => {
-    if (railPool.length >= 8) return;
+    const needed = allLandingRailLookupTargets().length;
+    if (railPool.length >= needed) return;
     let cancelled = false;
     const targets = allLandingRailLookupTargets();
     (async () => {
@@ -779,6 +776,17 @@ export default function HomePageClient({
   const legendary = orderByTargets(railPool, LEGENDARY_PERFORMANCE_TARGETS);
   const recent = orderByTargets(railPool, RECENT_FAVORITES_TARGETS);
 
+  // Prefer DB rows when complete; otherwise use static targets so missing
+  // catalog entries never drop posters from a rail (common on production).
+  const popularItems =
+    popular.length === POPULAR_RIGHT_NOW_TARGETS.length ? null : FALLBACK_POPULAR;
+  const legendaryItems =
+    legendary.length === LEGENDARY_PERFORMANCE_TARGETS.length
+      ? null
+      : FALLBACK_LEGENDARY;
+  const recentItems =
+    recent.length === RECENT_FAVORITES_TARGETS.length ? null : FALLBACK_RECENT;
+
   const featuredJoker =
     railPool.find(
       (p) =>
@@ -791,7 +799,7 @@ export default function HomePageClient({
       <HeroSection featured={activeFeatured} />
 
       <div className="bg-black pt-4 sm:pt-6 pb-4">
-        {popular.length ? (
+        {!popularItems ? (
           <PosterRail
             title="Popular Right Now"
             performances={popular}
@@ -800,10 +808,10 @@ export default function HomePageClient({
         ) : (
           <StaticPosterRail
             title="Popular Right Now"
-            items={FALLBACK_POPULAR}
+            items={popularItems}
           />
         )}
-        {legendary.length ? (
+        {!legendaryItems ? (
           <PosterRail
             title="Legendary Performances"
             performances={legendary}
@@ -812,10 +820,10 @@ export default function HomePageClient({
         ) : (
           <StaticPosterRail
             title="Legendary Performances"
-            items={FALLBACK_LEGENDARY}
+            items={legendaryItems}
           />
         )}
-        {recent.length ? (
+        {!recentItems ? (
           <PosterRail
             title="Recent Favorites"
             performances={recent}
@@ -824,7 +832,7 @@ export default function HomePageClient({
         ) : (
           <StaticPosterRail
             title="Recent Favorites"
-            items={FALLBACK_RECENT}
+            items={recentItems}
           />
         )}
       </div>

@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma"
 export interface LookupTarget {
   actor: string
   movie: string
+  /** Disambiguates duplicate titles (e.g. multiple "Elvis" rows) */
+  year?: number
 }
 
 export interface EnrichedPerformance {
@@ -62,24 +64,12 @@ export async function getPerformancesByLookup(
     }),
   ])
 
-  const actorMap = new Map(actors.map((a) => [a.name, a]))
-  const movieMap = new Map(movies.map((m) => [m.title, m]))
-
-  const actorMoviePairs: Array<{ actorId: string; movieId: string }> = []
-  for (const target of targets) {
-    const actor = actorMap.get(target.actor)
-    const movie = movieMap.get(target.movie)
-    if (actor && movie) actorMoviePairs.push({ actorId: actor.id, movieId: movie.id })
-  }
-
-  if (actorMoviePairs.length === 0) return []
+  if (actors.length === 0 || movies.length === 0) return []
 
   const performances = await prisma.performance.findMany({
     where: {
-      OR: actorMoviePairs.map((pair) => ({
-        actorId: pair.actorId,
-        movieId: pair.movieId,
-      })),
+      actorId: { in: actors.map((a) => a.id) },
+      movieId: { in: movies.map((m) => m.id) },
     },
     include: {
       actor: { select: { id: true, name: true, imageUrl: true, slug: true } },
@@ -87,20 +77,29 @@ export async function getPerformancesByLookup(
     },
   })
 
-  const performanceMap = new Map(
-    performances.map((p) => [`${p.actorId}:${p.movieId}`, p])
-  )
-
-  const allPerformances: typeof performances = []
-  for (const pair of actorMoviePairs) {
-    const p = performanceMap.get(`${pair.actorId}:${pair.movieId}`)
-    if (p) allPerformances.push(p)
+  // Match each target to a real performance (handles duplicate movie titles via year / actor link)
+  const matched: typeof performances = []
+  const seen = new Set<string>()
+  for (const target of targets) {
+    const candidates = performances.filter(
+      (p) =>
+        p.actor?.name === target.actor &&
+        p.movie?.title === target.movie &&
+        (target.year == null || p.movie.year === target.year),
+    )
+    const p =
+      candidates.find((c) => target.year != null && c.movie.year === target.year) ??
+      candidates[0]
+    if (!p) continue
+    const key = `${p.actorId}:${p.movieId}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    matched.push(p)
   }
 
-  const valid = allPerformances.filter((p) => p.actor && p.movie)
-  if (valid.length === 0) return []
+  if (matched.length === 0) return []
 
-  const ratingPairs = valid.map((p) => ({ actorId: p.actorId, movieId: p.movieId }))
+  const ratingPairs = matched.map((p) => ({ actorId: p.actorId, movieId: p.movieId }))
   const ratings = await prisma.rating.findMany({
     where: { OR: ratingPairs },
     select: {
@@ -121,7 +120,7 @@ export async function getPerformancesByLookup(
     ratingsMap.get(key)!.push(r)
   }
 
-  return valid.map((p) => {
+  return matched.map((p) => {
     const key = `${p.actorId}:${p.movieId}`
     const perfRatings = ratingsMap.get(key) ?? []
     const ratingCount = perfRatings.length

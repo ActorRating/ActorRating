@@ -41,7 +41,7 @@ export const RECENT_FAVORITES_TARGETS: PerformanceTarget[] = [
   { actor: "Austin Butler", movie: "Elvis", character: "Elvis Presley", year: 2022, posterPath: "/qBOKWqAFbveZ4ryjJJwbie6tXkQ.jpg" },
   { actor: "Leonardo DiCaprio", movie: "Killers of the Flower Moon", character: "Ernest Burkhart", year: 2023, posterPath: "/dB6Krk806zeqd0YNp2ngQ9zXteH.jpg" },
   { actor: "Timothée Chalamet", movie: "Dune: Part Two", character: "Paul Atreides", year: 2024, posterPath: "/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" },
-  { actor: "Greta Lee", movie: "Past Lives", character: "Nora Moon", year: 2023, posterPath: "/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg" },
+  { actor: "Zendaya", movie: "Challengers", character: "Tashi Duncan", year: 2024, posterPath: "/H6vke7zGiuLsz4v4RPeReb9rsv.jpg" },
 ]
 
 /** @deprecated Prefer POPULAR_RIGHT_NOW_TARGETS — kept for existing imports */
@@ -63,16 +63,16 @@ export const RECENT_PERFORMANCE_TARGETS = RECENT_FAVORITES_TARGETS.map(
   ({ actor, movie }) => ({ actor, movie }),
 )
 
-export function homeLeaderboardLookupTargets(): { actor: string; movie: string }[] {
-  return POPULAR_RIGHT_NOW_TARGETS.map(({ actor, movie }) => ({ actor, movie }))
+export function homeLeaderboardLookupTargets(): { actor: string; movie: string; year?: number }[] {
+  return POPULAR_RIGHT_NOW_TARGETS.map(({ actor, movie, year }) => ({ actor, movie, year }))
 }
 
-export function allLandingRailLookupTargets(): { actor: string; movie: string }[] {
+export function allLandingRailLookupTargets(): { actor: string; movie: string; year?: number }[] {
   return [
     ...POPULAR_RIGHT_NOW_TARGETS,
     ...LEGENDARY_PERFORMANCE_TARGETS,
     ...RECENT_FAVORITES_TARGETS,
-  ].map(({ actor, movie }) => ({ actor, movie }))
+  ].map(({ actor, movie, year }) => ({ actor, movie, year }))
 }
 
 type LookupTarget = { actor: string; movie: string }

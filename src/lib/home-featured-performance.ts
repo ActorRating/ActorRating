@@ -1,6 +1,6 @@
 import type { EnrichedPerformance } from '@/lib/performances-by-lookup'
 import { getRateUrl } from '@/lib/slugHelper'
-import type { WeeklyHeroConfig } from '@/lib/weekly-hero-performance'
+import { createActorSlug, createMovieSlug } from '@/lib/createSlug'
 
 /** Serializable props for hero + conversion CTAs (server or client). */
 export type FeaturedHeroPayload = {
@@ -13,6 +13,30 @@ export type FeaturedHeroPayload = {
   moviePosterUrl?: string | null
   headline: string
   subline: string
+}
+
+/** Fixed landing hero — change this when you want a new featured still. */
+export const FIXED_LANDING_HERO = {
+  actor: 'Matt Damon',
+  movie: 'The Odyssey',
+  year: 2026,
+  headline: 'How do you rate Matt Damon in The Odyssey?',
+  subline:
+    'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
+  /** Wide cinematic still (not the vertical poster) */
+  backdropUrl: 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg',
+} as const
+
+export function fixedLandingHeroLookupTarget(): {
+  actor: string
+  movie: string
+  year: number
+} {
+  return {
+    actor: FIXED_LANDING_HERO.actor,
+    movie: FIXED_LANDING_HERO.movie,
+    year: FIXED_LANDING_HERO.year,
+  }
 }
 
 export function enrichedToFeaturedPayload(
@@ -43,36 +67,49 @@ export function enrichedToFeaturedPayload(
   }
 }
 
-/** Merge weekly copy with lookup row (hero + nav Rate Now). */
-export function buildWeeklyFeaturedHero(
-  config: WeeklyHeroConfig,
+/** Fixed Odyssey landing hero (not weekly rotation). */
+export function buildFixedLandingHero(
   perf: EnrichedPerformance | null | undefined,
 ): FeaturedHeroPayload {
-  const base = perf ? enrichedToFeaturedPayload(perf, config) : null
+  const copy = {
+    headline: FIXED_LANDING_HERO.headline,
+    subline: FIXED_LANDING_HERO.subline,
+  }
+  const base = perf ? enrichedToFeaturedPayload(perf, copy) : null
   if (base) {
-    // Prefer a wide still when we only have a poster path locally for The Odyssey week
-    if (!base.moviePosterUrl && config.movie === 'The Odyssey') {
-      return {
-        ...base,
-        moviePosterUrl: 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg',
-      }
-    }
-    return base
+    return { ...base, moviePosterUrl: FIXED_LANDING_HERO.backdropUrl }
   }
   return {
-    rateHref: '/performances',
-    actorName: config.actor,
-    movieTitle: config.movie,
-    year: config.year,
+    rateHref: getRateUrl(
+      {
+        id: createActorSlug(FIXED_LANDING_HERO.actor),
+        name: FIXED_LANDING_HERO.actor,
+        slug: createActorSlug(FIXED_LANDING_HERO.actor),
+      },
+      {
+        id: createMovieSlug(FIXED_LANDING_HERO.movie, FIXED_LANDING_HERO.year),
+        title: FIXED_LANDING_HERO.movie,
+        year: FIXED_LANDING_HERO.year,
+        slug: createMovieSlug(FIXED_LANDING_HERO.movie, FIXED_LANDING_HERO.year),
+      },
+    ),
+    actorName: FIXED_LANDING_HERO.actor,
+    movieTitle: FIXED_LANDING_HERO.movie,
+    year: String(FIXED_LANDING_HERO.year),
     communityScore: null,
     actorImageUrl: null,
-    moviePosterUrl:
-      config.movie === 'The Odyssey'
-        ? 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg'
-        : null,
-    headline: config.headline,
-    subline: config.subline,
+    moviePosterUrl: FIXED_LANDING_HERO.backdropUrl,
+    headline: FIXED_LANDING_HERO.headline,
+    subline: FIXED_LANDING_HERO.subline,
   }
+}
+
+/** @deprecated Use buildFixedLandingHero — kept for older call sites */
+export function buildWeeklyFeaturedHero(
+  _config: { actor: string; movie: string; year: string; headline: string; subline: string },
+  perf: EnrichedPerformance | null | undefined,
+): FeaturedHeroPayload {
+  return buildFixedLandingHero(perf)
 }
 
 /** Pick highest community-rated performance from lookup results (legacy fallback). */

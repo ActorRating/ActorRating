@@ -16,6 +16,14 @@ export type WeeklyHeroConfig = {
 /** Order matters: slot = weekIndex % length */
 export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
   {
+    actor: 'Matt Damon',
+    movie: 'The Odyssey',
+    year: '2026',
+    headline: 'How do you rate Matt Damon in The Odyssey?',
+    subline:
+      'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
+  },
+  {
     actor: 'Heath Ledger',
     movie: 'The Dark Knight',
     year: '2008',
@@ -68,14 +76,6 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     movie: 'Taxi Driver',
     year: '1976',
     headline: 'How do you rate Robert De Niro in Taxi Driver?',
-    subline:
-      'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
-  },
-  {
-    actor: 'Matt Damon',
-    movie: 'The Odyssey',
-    year: '2026',
-    headline: 'How do you rate Matt Damon in The Odyssey?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
   },
