@@ -803,49 +803,63 @@ export default function MoviePageClient({
                   Scores
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
-                      Critic Aggregate (Film)
-                    </p>
-                    {criticAggregateScore != null ? (
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl sm:text-4xl font-black tabular-nums text-white">
-                          {Number(criticAggregateScore.toFixed(1))}
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
-                        Not yet rated
-                      </p>
-                    )}
-                    <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
-                      via TMDB — film audience score, not ActorRating users
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5" style={{ color: '#71717a' }}>
-                      Community Rating
+                  {/* Community first — product score */}
+                  <div
+                    className={`rounded-md p-4 ${
+                      movieScore != null && communityStats.totalRatings > 0
+                        ? 'border border-[#FFD700]/30 bg-[#FFD700]/10'
+                        : 'border border-white/[0.06] bg-transparent'
+                    }`}
+                  >
+                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5 text-[#FFD700]/80">
+                      Community
                     </p>
                     {movieScore != null && communityStats.totalRatings > 0 ? (
                       <>
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-3xl sm:text-4xl font-black tabular-nums" style={{ color: '#FFD700' }}>
+                          <span
+                            className="text-4xl sm:text-5xl font-black tabular-nums text-[#FFD700] leading-none"
+                            style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+                          >
                             {(movieScore / 10).toFixed(1)}
                           </span>
-                          <span className="text-sm font-semibold" style={{ color: '#52525b' }}>/10</span>
+                          <span className="text-sm font-semibold text-[#FFD700]/50">/10</span>
                         </div>
-                        <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#52525b' }}>
-                          Based on{' '}
-                          <span className="text-white font-semibold tabular-nums">{communityStats.totalRatings}</span>{' '}
-                          {communityStats.totalRatings === 1 ? 'ActorRating rating' : 'ActorRating ratings'}
+                        <p className="text-[11px] mt-2 leading-snug text-zinc-500">
+                          From{' '}
+                          <span className="text-zinc-300 font-semibold tabular-nums">
+                            {communityStats.totalRatings}
+                          </span>{' '}
+                          {communityStats.totalRatings === 1
+                            ? 'ActorRating rating'
+                            : 'ActorRating ratings'}
                         </p>
                       </>
                     ) : (
-                      <p className="text-sm sm:text-base font-medium" style={{ color: '#a1a1aa' }}>
+                      <p className="text-sm sm:text-base font-medium text-zinc-500">
                         Not yet rated
                       </p>
                     )}
+                  </div>
+                  <div className="rounded-md p-4 border border-white/[0.06]">
+                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-1.5 text-zinc-500">
+                      TMDB film score
+                    </p>
+                    {criticAggregateScore != null ? (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black tabular-nums text-zinc-200 leading-none">
+                          {Number(criticAggregateScore.toFixed(1))}
+                        </span>
+                        <span className="text-sm font-semibold text-zinc-600">/10</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm sm:text-base font-medium text-zinc-500">
+                        Not available
+                      </p>
+                    )}
+                    <p className="text-[11px] mt-2 leading-snug text-zinc-600">
+                      External film audience average — not ActorRating users
+                    </p>
                   </div>
                 </div>
 
@@ -1011,7 +1025,7 @@ export default function MoviePageClient({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search for actors and movies..."
+                        placeholder="Search for actor or character name"
                         className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-md bg-[#1a1a1a] border border-white/10 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 focus:border-white/20 transition-all text-base"
                         
                       />
@@ -1188,14 +1202,13 @@ export default function MoviePageClient({
                               communityRatingCount={communityCount}
                               userScore10={hasUserRated && userScore != null ? userScore / 10 : null}
                             />
-                            <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
-                              <span className="text-[#a3a3a3] text-base font-medium">{performance.movie.year}</span>
-                              {hasUserRated && (
+                            {hasUserRated && (
+                              <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-[#FFD700]/60 px-2 py-0.5 rounded-full border border-[#FFD700]/20">
                                   ✓ Rated
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Actor Name */}

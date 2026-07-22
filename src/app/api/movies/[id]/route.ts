@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter"
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
-import { hydratePerformanceBillingOrder } from "@/lib/hydrate-performance-billing"
+import { hydratePerformanceBillingOrder, pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
 
 export async function GET(
   request: NextRequest,
@@ -150,6 +150,7 @@ export async function GET(
     
     // One performance per actor: DB can return multiple rows per actor (system + per-user).
     // Prefer: has community rating → better tier → lower billing order → latest update.
+    // Always keep the best available character name from either row (system often has TMDB name).
     const byActor = new Map<string, any>()
     const prefersOver = (candidate: any, existing: any) => {
       const candHasRating = ratingMap.has(`${candidate.actorId}:${candidate.movieId}`)
@@ -166,8 +167,30 @@ export async function GET(
     performances.forEach(perf => {
       const aid = perf.actorId
       const existing = byActor.get(aid)
-      if (!existing || prefersOver(perf, existing)) {
+      if (!existing) {
         byActor.set(aid, perf)
+        return
+      }
+      if (prefersOver(perf, existing)) {
+        byActor.set(aid, {
+          ...perf,
+          character: pickBetterCharacter(perf.character, existing.character),
+          comment: hasUsableCharacter(perf.character)
+            ? perf.comment
+            : (existing.comment ?? perf.comment),
+          order: perf.order ?? existing.order,
+          tier: perf.tier ?? existing.tier,
+        })
+      } else {
+        byActor.set(aid, {
+          ...existing,
+          character: pickBetterCharacter(existing.character, perf.character),
+          comment: hasUsableCharacter(existing.character)
+            ? existing.comment
+            : (perf.comment ?? existing.comment),
+          order: existing.order ?? perf.order,
+          tier: existing.tier ?? perf.tier,
+        })
       }
     })
     const uniquePerformances = Array.from(byActor.values())

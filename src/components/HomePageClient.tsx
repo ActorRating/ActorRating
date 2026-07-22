@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
+import { BarChart3, Layers, List, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -29,6 +30,7 @@ import {
   buildFixedLandingHero,
   fixedLandingHeroLookupTarget,
 } from "@/lib/home-featured-performance";
+import { resolveCharacterDisplay } from "@/lib/character";
 import {
   PosterRail,
   StaticPosterRail,
@@ -276,34 +278,64 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
   );
 }
 
-// ─── "LETS YOU" — Letterboxd-style short capability list ─────────────────────
+// ─── "LETS YOU" — Letterboxd-style icon cards ────────────────────────────────
 
-const LETS_YOU = [
-  "Score any performance with one slider — or five Oscar-inspired dimensions",
-  "Separate great acting from mediocre movies (always)",
-  "Compare your take with the community average",
-  "Explore curated lists of iconic and underrated turns",
+const LETS_YOU: {
+  title: string;
+  body: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    title: "Rate any performance",
+    body: "One slider — or five Oscar-inspired dimensions.",
+    icon: SlidersHorizontal,
+  },
+  {
+    title: "Separate acting from the film",
+    body: "Great turns in mediocre movies finally get their due.",
+    icon: Layers,
+  },
+  {
+    title: "Compare with the community",
+    body: "See how your take stacks up against the average.",
+    icon: BarChart3,
+  },
+  {
+    title: "Explore curated lists",
+    body: "Iconic and underrated performances, ready to rate.",
+    icon: List,
+  },
 ];
 
 function LetsYouSection() {
   return (
-    <section className="max-w-3xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
+    <section className="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
       <h2
-        className="text-xl sm:text-2xl font-bold text-white mb-6 text-center"
+        className="text-2xl sm:text-3xl font-bold text-white mb-8 sm:mb-10 text-center"
         style={DISPLAY}
       >
         ActorRating lets you…
       </h2>
-      <ul className="mx-auto w-full max-w-xl space-y-3.5">
-        {LETS_YOU.map((line) => (
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        {LETS_YOU.map(({ title, body, icon: Icon }) => (
           <li
-            key={line}
-            className="grid grid-cols-[1rem_1fr] gap-x-3 text-sm sm:text-base text-zinc-400 leading-snug text-left"
+            key={title}
+            className="rounded-md border border-white/[0.1] bg-white/[0.04] px-6 py-6 sm:px-7 sm:py-7 text-left"
           >
-            <span className="text-[#FFD700] text-center" aria-hidden>
-              ●
-            </span>
-            <span>{line}</span>
+            <Icon
+              className="w-6 h-6 mb-4 text-[#FFD700]"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <h3
+              className="text-lg sm:text-xl font-semibold text-white leading-snug mb-2"
+              style={DISPLAY}
+            >
+              {title}
+            </h3>
+            <p className="text-[15px] sm:text-base text-zinc-300 leading-relaxed">
+              {body}
+            </p>
           </li>
         ))}
       </ul>
@@ -314,9 +346,9 @@ function LetsYouSection() {
 function ClosingStrip({ primaryRateHref }: { primaryRateHref: string }) {
   const router = useRouter();
   return (
-    <section className="border-t border-white/[0.06] py-14 sm:py-16 text-center px-5">
+    <section className="border-t border-white/[0.06] py-14 sm:py-20 text-center px-5">
       <p
-        className="text-lg sm:text-xl text-white font-medium mb-6 max-w-md mx-auto leading-snug"
+        className="text-2xl sm:text-3xl md:text-4xl text-white font-semibold mb-8 max-w-2xl mx-auto leading-snug"
         style={DISPLAY}
       >
         Rate acting. Share your take. Build the performance canon.
@@ -337,10 +369,10 @@ function ClosingStrip({ primaryRateHref }: { primaryRateHref: string }) {
           <FaArrowRight className="w-3.5 h-3.5" />
         </span>
       </Link>
-      <div className="mt-5">
+      <div className="mt-6">
         <Link
           href="/lists"
-          className="text-sm text-zinc-600 hover:text-[#FFD700] transition-colors"
+          className="text-base sm:text-lg text-zinc-400 hover:text-[#FFD700] transition-colors"
         >
           Or browse curated lists →
         </Link>
@@ -354,6 +386,12 @@ function FeaturedPerformanceSection({
 }: {
   performance: EnrichedPerformance | null;
 }) {
+  const actorName = performance?.actor?.name ?? "Heath Ledger";
+  const movieTitle = performance?.movie?.title ?? "The Dark Knight";
+  const movieYear = performance?.movie?.year ?? 2008;
+  const character = performance
+    ? resolveCharacterDisplay(performance)
+    : "Joker";
   const poster =
     upgradePosterThumbRes(performance?.movie?.posterUrl)?.replace(
       "/t/p/w342/",
@@ -368,13 +406,13 @@ function FeaturedPerformanceSection({
     ? getRateUrl(
         {
           id: performance.actorId,
-          name: performance.actor?.name ?? "Heath Ledger",
+          name: actorName,
           slug: performance.actor?.slug,
         },
         {
           id: performance.movieId,
-          title: performance.movie?.title ?? "The Dark Knight",
-          year: performance.movie?.year ?? 2008,
+          title: movieTitle,
+          year: movieYear,
           slug: performance.movie?.slug,
         },
       )
@@ -393,77 +431,61 @@ function FeaturedPerformanceSection({
       );
 
   return (
-    <section className="bg-black px-5 sm:px-8 lg:px-10 py-14 sm:py-20">
-      <div className="max-w-5xl mx-auto">
+    <section className="border-t border-white/[0.06] bg-black px-5 sm:px-8 py-14 sm:py-20">
+      <div className="max-w-4xl mx-auto">
         <p
-          className="text-center text-xs sm:text-sm tracking-[0.22em] uppercase text-[#FFD700]/80 mb-6 sm:mb-8"
+          className="text-center text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-8 sm:mb-10"
           style={HERO_SANS}
         >
           Featured Performance
         </p>
 
-        <div
-          className="relative grid grid-cols-1 lg:grid-cols-[minmax(0,280px)_1fr] gap-8 lg:gap-12 items-center rounded-3xl border border-white/10 p-6 sm:p-8 lg:p-10 overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(145deg, rgba(26,26,26,0.92) 0%, rgba(10,10,10,0.96) 55%, rgba(0,0,0,0.98) 100%)",
-            boxShadow:
-              "0 30px 80px -20px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,215,0,0.06), inset 0 1px 0 rgba(255,255,255,0.06)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
-          }}
-        >
-          <div
-            className="pointer-events-none absolute -top-24 -right-16 w-72 h-72 rounded-full opacity-30"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,215,0,0.18) 0%, transparent 70%)",
-            }}
-            aria-hidden
-          />
-
-          <div className="relative mx-auto lg:mx-0 w-[180px] sm:w-[220px] lg:w-full aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/15 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.9)]">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] lg:grid-cols-[minmax(0,240px)_1fr] gap-8 sm:gap-10 lg:gap-12 items-center">
+          <div className="relative mx-auto sm:mx-0 w-[160px] sm:w-full aspect-[2/3] overflow-hidden rounded-md border border-white/[0.1] bg-zinc-950">
             {poster ? (
               <Image
                 src={poster}
-                alt="Heath Ledger as Joker in The Dark Knight"
+                alt={`${actorName} as ${character} in ${movieTitle}`}
                 fill
                 className="object-cover"
-                sizes="280px"
+                sizes="240px"
                 priority={false}
               />
             ) : null}
           </div>
 
-          <div className="relative text-center lg:text-left">
-            <div className="flex items-center justify-center lg:justify-start gap-3.5 sm:gap-4">
-              <div className="relative w-14 sm:w-16 lg:w-[4.5rem] aspect-[2/3] rounded-md overflow-hidden ring-1 ring-white/15 shadow-[0_8px_24px_rgba(0,0,0,0.55)] shrink-0 bg-zinc-900">
+          <div className="text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start gap-3.5">
+              <div className="relative w-12 sm:w-14 aspect-[2/3] overflow-hidden rounded-sm border border-white/[0.1] bg-zinc-950 shrink-0">
                 <Image
                   src={actorImage}
-                  alt="Heath Ledger"
+                  alt={actorName}
                   fill
-                  className="object-contain"
-                  sizes="72px"
+                  className="object-cover"
+                  sizes="56px"
                 />
               </div>
               <h2
-                className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-tight tracking-tight"
+                className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-[1.1] tracking-tight"
                 style={DISPLAY}
               >
-                Heath Ledger
+                {actorName}
               </h2>
             </div>
-            <p className="mt-2 text-base sm:text-lg text-zinc-300">
-              as <span className="text-[#FFD700]">Joker</span>
+
+            <p className="mt-3 text-base sm:text-lg text-zinc-300">
+              as <span className="text-[#FFD700] font-medium">{character}</span>
             </p>
             <p className="mt-1 text-sm sm:text-base text-zinc-500">
-              The Dark Knight
+              {movieTitle}
+              {movieYear ? ` · ${movieYear}` : ""}
             </p>
-            <p className="mt-5 sm:mt-6 text-sm sm:text-base text-zinc-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              One of the most unforgettable performances in cinema history. Rate
-              Heath Ledger&apos;s Oscar-winning portrayal of the Joker and see how
-              it ranks among thousands of performances.
+
+            <p className="mt-5 sm:mt-6 text-[15px] sm:text-base text-zinc-400 leading-relaxed max-w-lg mx-auto sm:mx-0">
+              One of the most unforgettable performances in cinema. Rate it and
+              see how it stacks up with the community.
             </p>
+
             <Link
               href={rateHref}
               prefetch={false}
@@ -473,7 +495,7 @@ function FeaturedPerformanceSection({
                 className="inline-flex items-center gap-2 px-7 sm:px-8 py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
                 style={{ background: GOLD }}
               >
-                Rate This Performance
+                Rate this performance
                 <FaArrowRight className="w-3.5 h-3.5" />
               </span>
             </Link>

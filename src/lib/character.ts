@@ -14,10 +14,10 @@ export interface CharacterResolvable {
  */
 export function resolveCharacterDisplay(source: CharacterResolvable): string {
   const val = (source.character ?? '').trim()
-  if (val && val.toLowerCase() !== 'unknown') return val
+  if (val && !isPlaceholderCharacter(val)) return val
 
   const role = (source.roleName ?? '').trim()
-  if (role) return role
+  if (role && !isPlaceholderCharacter(role)) return role
 
   const raw = source.comment ?? ''
   if (raw) {
@@ -30,10 +30,15 @@ export function resolveCharacterDisplay(source: CharacterResolvable): string {
     // Trim quotes
     t = t.replace(/^"|"$/g, '')
     t = t.trim()
-    if (t) return t
+    if (t && !isPlaceholderCharacter(t)) return t
   }
 
   return 'Unknown'
+}
+
+function isPlaceholderCharacter(value: string): boolean {
+  const lower = value.toLowerCase()
+  return lower === 'unknown' || lower === '—' || lower === '-' || lower === 'n/a'
 }
 
 

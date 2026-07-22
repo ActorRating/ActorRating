@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
 
 const actorApiMovieSelect = {
   id: true,
@@ -145,27 +146,39 @@ export async function GET(
 
     // One row per movie: Performance has @@unique([userId, actorId, movieId]). Dedupe by movieId.
     // Prefer the performance that has ratings (userId in ratings for this movie), then system, then latest.
+    // Always keep the best available character (system rows usually carry the TMDB name).
     const performanceMap = new Map<string, any>()
     const SYSTEM_USER_ID = "uuid-from-auth-users"
+    const mergePerf = (preferred: any, other: any) => ({
+      ...preferred,
+      character: pickBetterCharacter(preferred.character, other.character),
+      comment: hasUsableCharacter(preferred.character)
+        ? preferred.comment
+        : (other.comment ?? preferred.comment),
+      order: preferred.order ?? other.order,
+      tier: preferred.tier ?? other.tier,
+    })
     performances.forEach(perf => {
         const existing = performanceMap.get(perf.movieId)
         const ratedUserIds = userIdsWhoRatedByMovie.get(perf.movieId)
-        const perfHasRating = ratedUserIds?.has(perf.userId)
-        const existingHasRating = existing && ratedUserIds?.has(existing.userId)
+        const perfHasRating = !!(perf.userId && ratedUserIds?.has(perf.userId))
+        const existingHasRating = !!(existing?.userId && ratedUserIds?.has(existing.userId))
         const perfIsSystem = perf.userId === SYSTEM_USER_ID
         const existingIsSystem = existing?.userId === SYSTEM_USER_ID
         if (!existing) {
           performanceMap.set(perf.movieId, perf)
         } else if (perfHasRating && !existingHasRating) {
-          performanceMap.set(perf.movieId, perf)
+          performanceMap.set(perf.movieId, mergePerf(perf, existing))
         } else if (!perfHasRating && existingHasRating) {
-          // keep existing (it has ratings)
+          performanceMap.set(perf.movieId, mergePerf(existing, perf))
         } else if (perfIsSystem && !existingIsSystem) {
-          performanceMap.set(perf.movieId, perf)
+          performanceMap.set(perf.movieId, mergePerf(perf, existing))
         } else if (!perfIsSystem && existingIsSystem) {
-          // keep existing system
+          performanceMap.set(perf.movieId, mergePerf(existing, perf))
         } else if (perf.updatedAt > (existing.updatedAt || '')) {
-          performanceMap.set(perf.movieId, perf)
+          performanceMap.set(perf.movieId, mergePerf(perf, existing))
+        } else {
+          performanceMap.set(perf.movieId, mergePerf(existing, perf))
         }
       })
 
