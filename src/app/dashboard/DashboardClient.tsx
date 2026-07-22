@@ -271,97 +271,42 @@ export default function DashboardClient({
         />
         <main className="min-h-screen bg-black">
           {/* Hero Section */}
-          <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
-            <motion.div 
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="text-center mb-12"
-            >
-              <h1 
-                className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 md:mb-10 lg:mb-12"
-                style={{ 
-                  fontFamily: 'var(--font-cinzel), serif',
-                  textShadow: '0 10px 40px rgba(0,0,0,0.7)',
-                  letterSpacing: '0.08em',
-                  lineHeight: '1.1',
+          <header className="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 pt-[6.5rem] sm:pt-[7.5rem] pb-8 sm:pb-10">
+            <div className="text-center mb-8">
+              <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-3">
+                Dashboard
+              </p>
+              <h1
+                className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold text-white tracking-tight leading-[1.15] mb-3"
+                style={{
+                  fontFamily:
+                    'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                 }}
               >
-                <span className="text-white">Welcome </span>
-                <span 
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-                  }}
-                >
-                  {welcomeName}
-                </span>
+                Welcome, {welcomeName}
               </h1>
-              
-              {/* Gold Divider - Cinematic */}
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: "180px", opacity: 1 }}
-                transition={{ duration: 2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="h-[2px] mx-auto mb-6 sm:mb-8 md:mb-10 lg:mb-12 relative"
+              <p className="text-[15px] sm:text-base text-zinc-500 leading-relaxed max-w-xl mx-auto">
+                Rate performances, discover actors, share your taste.
+              </p>
+            </div>
+
+            <nav aria-label="Search navigation" className="max-w-xl mx-auto text-left relative z-30">
+              <div
+                className="relative rounded-[2rem] border border-white/[0.06] bg-[#1a1a1a] overflow-hidden"
+                style={{
+                  boxShadow:
+                    "0 20px 50px -18px rgba(0,0,0,0.85), inset 0 1px 0 0 rgba(255,255,255,0.06)",
+                }}
               >
-                <div 
-                  className="h-full w-full"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,229,92,0.4) 15%, rgba(255,215,0,0.9) 40%, rgba(255,215,0,1) 50%, rgba(255,215,0,0.9) 60%, rgba(255,229,92,0.4) 85%, transparent 100%)',
-                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)',
-                  }}
+                <SearchBar
+                  placeholder="Search actors and films…"
+                  showClear
+                  showSuggestions
+                  autoFocus={false}
+                  className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[52px]"
                 />
-              </motion.div>
-
-              {/* Subtitle - Clear & Compelling */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1.2, delay: 0.9, ease: 'easeOut' }}
-                className="text-base sm:text-lg md:text-xl lg:text-2xl w-full max-w-4xl mx-auto leading-relaxed text-[#a3a3a3] font-light text-center px-4"
-                style={{ letterSpacing: '0.005em' }}
-              >
-                Rate performances, discover actors, share your taste
-              </motion.p>
-            </motion.div>
-
-            {/* Search Bar */}
-            <nav aria-label="Search navigation">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="max-w-3xl mx-auto mb-16"
-            >
-              <div className="relative group">
-                <div 
-                  className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
-                  style={{
-                    boxShadow: `
-                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                      0 0 0 1px rgba(255, 255, 255, 0.05),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                    `,
-                    transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
-                    transformStyle: 'preserve-3d',
-                  }}
-                >
-                  <SearchBar
-                    placeholder="Search for actors and movies..."
-                    showClear
-                    autoFocus={false}
-                    className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-lg"
-                  />
-                </div>
               </div>
-            </motion.div>
-          </nav>
+            </nav>
           </header>
 
           {/* Brief Loading State on Navigation - Subtle glitch effect */}
@@ -391,24 +336,15 @@ export default function DashboardClient({
               <div className="max-w-5xl mx-auto">
                 <div className="flex items-center gap-3 mb-8 justify-start">
                   <TrendingUp className="w-6 h-6 text-[#FFD700]" />
-                  <h2 
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
-                    style={{ 
-                      fontFamily: 'var(--font-cinzel), serif',
-                      letterSpacing: '0.02em',
+                  <h2
+                    id="popular-actors-heading"
+                    className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-center sm:text-left"
+                    style={{
+                      fontFamily:
+                        'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                     }}
                   >
-                    <span 
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      Popular
-                    </span>{' '}
-                    <span className="text-white">Actors</span>
+                    Popular Actors
                   </h2>
                 </div>
               </div>
@@ -445,18 +381,7 @@ export default function DashboardClient({
                           href={getActorUrl({ id: apiActor?.id || actor.id, name: actor.name, slug: apiActor?.slug || actor.id })}
                           className="group block h-full"
                         >
-                            <div 
-                            className="relative h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)] cursor-pointer"
-                            style={{
-                              boxShadow: `
-                                0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                                0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                                0 0 0 1px rgba(255, 255, 255, 0.05),
-                                inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                                inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                              `,
-                            }}
-                          >
+                            <div className="relative h-full p-5 sm:p-6 rounded-md border border-white/[0.08] bg-[#141414] overflow-hidden transition-colors duration-200 group-hover:border-white/20 cursor-pointer">
 
                             {/* Content */}
                             <div className="relative z-10 flex flex-col h-full">
@@ -466,11 +391,18 @@ export default function DashboardClient({
                                   imageUrl={upgradeActorImageRes(apiActor?.imageUrl)}
                                   size="lg"
                                   loading="lazy"
+                                  rounded="rounded-md"
                                 />
                               </div>
                               {/* Actor Name */}
                               <div className="mb-6">
-                                <h3 className="font-bold text-white text-xl sm:text-2xl mb-3 transition-colors duration-200">
+                                <h3
+                                  className="font-bold text-white text-xl sm:text-2xl mb-3 tracking-tight transition-colors duration-200"
+                                  style={{
+                                    fontFamily:
+                                      'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
+                                  }}
+                                >
                                   {actor.name}
                                 </h3>
                                 {/* Performance Count - Always visible */}
@@ -494,7 +426,7 @@ export default function DashboardClient({
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-gray-400 mb-2">Career Score</p>
                                     {apiActor?.careerScore !== null && apiActor?.careerScore !== undefined ? (
-                                      <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
                                         <Star className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />
                                         <span 
                                           className="text-2xl font-bold text-[#FFD700]"
@@ -507,7 +439,7 @@ export default function DashboardClient({
                                         </span>
                                       </div>
                                     ) : (
-                                      <div className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/5 border border-white/10">
                                         <Star className="w-5 h-5 text-[#666]" />
                                         <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                                       </div>
@@ -515,7 +447,7 @@ export default function DashboardClient({
                                   </div>
                                   {/* Round button with arrow - Mobile accessible */}
                                   <div 
-                                    className="flex-shrink-0 w-14 h-14 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation"
+                                    className="flex-shrink-0 w-11 h-11 rounded-md flex items-center justify-center transition-transform duration-200 active:scale-95 touch-manipulation"
                                     style={{
                                       background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                                     }}
@@ -545,25 +477,15 @@ export default function DashboardClient({
               <div className="max-w-5xl mx-auto">
                 <div className="flex items-center gap-3 mb-8 justify-start">
                   <Star className="w-6 h-6 text-[#FFD700]" />
-                  <h2 
+                  <h2
                     id="recent-ratings-heading"
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-center sm:text-left"
-                    style={{ 
-                      fontFamily: 'var(--font-cinzel), serif',
-                      letterSpacing: '0.02em',
+                    className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-center sm:text-left"
+                    style={{
+                      fontFamily:
+                        'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                     }}
                   >
-                    <span 
-                      style={{
-                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      Recent
-                    </span>{' '}
-                    <span className="text-white">Ratings</span>
+                    Recent Ratings
                   </h2>
                 </div>
               </div>
@@ -621,7 +543,7 @@ export default function DashboardClient({
                   <div className="flex justify-center mt-8">
                     <button
                       onClick={() => setVisibleRatingsCount(prev => Math.min(prev + 6, ratings.length))}
-                      className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
+                      className="px-7 py-3.5 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[44px]"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}
@@ -639,29 +561,12 @@ export default function DashboardClient({
                   <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                   <p className="text-xl text-gray-400 mb-6">You haven't rated any performances yet</p>
                   <Link href="/search" className="inline-block relative">
-                    <button className="group px-10 sm:px-12 md:px-16 py-6 sm:py-7 rounded-full text-black text-lg sm:text-xl font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[48px] relative overflow-hidden"
+                    <button className="group px-8 py-3.5 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] min-h-[44px] relative overflow-hidden"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                        transform: 'scale(1)',
-                        boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.03)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)'
                       }}
                     >
-                      {/* White light sweep effect */}
-                      <span 
-                        className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      />
-                      <span className="flex items-center justify-center gap-3 whitespace-nowrap relative z-10">
+<span className="flex items-center justify-center gap-3 whitespace-nowrap relative z-10">
                         Start Rating
                         <Star className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                       </span>

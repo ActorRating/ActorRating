@@ -120,10 +120,10 @@ export default async function HomeSeoLinkSections() {
       </div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 text-center">
         <Link
-          href="/performances"
+          href="/discover"
           className="text-sm text-gray-500 hover:text-[#FFD700] transition-colors underline underline-offset-4 decoration-gray-700 hover:decoration-[#FFD700]/50"
         >
-          Explore all performances →
+          Discover performances →
         </Link>
       </div>
     </section>

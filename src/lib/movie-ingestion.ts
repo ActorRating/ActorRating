@@ -162,8 +162,8 @@ export async function syncMovieCast(
   let actorsCreated = 0;
   let performancesUpserted = 0;
 
-  for (let order = 0; order < credits.cast.length; order++) {
-    const member = credits.cast[order];
+  for (const member of credits.cast) {
+    const order = member.order
     const name = member.name?.trim();
     if (!name) {
       log(`syncMovieCast: skipping cast member at order ${order} (no name)`);
@@ -251,10 +251,11 @@ export async function ingestMovieCast(
   const cast = credits.cast;
 
   const eligibleCast = cast
-    .map((member, order) => ({ member, order }))
-    .filter(
-      ({ member }) => !!member.name?.trim() && member.id != null
-    ) as { member: (typeof cast)[number]; order: number }[];
+    .filter((member) => !!member.name?.trim() && member.id != null)
+    .map((member) => ({ member, order: member.order })) as {
+    member: (typeof cast)[number]
+    order: number
+  }[];
 
   if (eligibleCast.length === 0) {
     await prisma.movie.update({

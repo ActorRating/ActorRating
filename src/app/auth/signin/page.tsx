@@ -177,7 +177,7 @@ function SignInContent() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 sm:p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
+          className="mb-4 p-3 sm:p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-md"
         >
           <p className="text-sm text-emerald-300 text-center">{successMessage}</p>
         </motion.div>
@@ -187,7 +187,7 @@ function SignInContent() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 sm:p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
+          className="mb-4 p-3 sm:p-4 bg-red-500/10 border border-red-500/20 rounded-md"
         >
           <p className="text-sm text-red-400 text-center">{apiError}</p>
         </motion.div>
@@ -198,10 +198,10 @@ function SignInContent() {
           <GoogleSignInButton />
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#FFD700]/15" />
+              <div className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 px-3 text-gray-500 uppercase tracking-wider">
+              <span className="bg-[#141414] px-3 text-zinc-600 uppercase tracking-wider">
                 or continue with email
               </span>
             </div>
@@ -209,22 +209,7 @@ function SignInContent() {
         </div>
       ) : null}
 
-      <div
-        className="relative bg-[rgba(10,10,10,0.85)] backdrop-blur-xl border border-transparent rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-7 transition-all duration-300"
-        style={{
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-          transform: "translateY(-6px) perspective(1000px) rotateX(1.5deg)",
-          transformStyle: "preserve-3d",
-        }}
-      >
+      <div className="relative rounded-md border border-white/[0.06] bg-[#0a0a0a] p-4 sm:p-5">
         <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-5">
           <div>
             <div className="relative">
@@ -238,7 +223,7 @@ function SignInContent() {
                 required
                 disabled={isSubmitting}
                 autoComplete="email"
-                className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 sm:pt-5 sm:pb-2 bg-black/50 border rounded-xl text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 sm:pt-5 sm:pb-2 bg-[#0a0a0a] border rounded-md text-base text-white outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                   email ? "has-value" : ""
                 } ${
                   errors.email ? "border-red-500 focus:border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
@@ -268,19 +253,9 @@ function SignInContent() {
           <button
             type="submit"
             disabled={isSubmitting || cooldownRemaining > 0}
-            className="w-full group px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-black text-base sm:text-lg font-bold tracking-wide sm:tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full group px-6 sm:px-8 py-3.5 rounded-md text-black text-[15px] sm:text-base font-bold transition-transform duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-h-[48px]"
             style={{
               background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
-              transform: "scale(1)",
-              boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.disabled) {
-                e.currentTarget.style.transform = "scale(1.03)"
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)"
             }}
           >
             {isSubmitting ? (
@@ -302,7 +277,7 @@ function SignInContent() {
         </form>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-[#FFD700]/10 text-center">
+      <div className="mt-5 pt-4 border-t border-white/[0.06] text-center">
         <p className="text-sm text-gray-400">
           New here?{" "}
           <Link href="/auth/register" className="text-[#FFD700] font-semibold hover:underline">

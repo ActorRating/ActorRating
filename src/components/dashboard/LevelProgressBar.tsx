@@ -60,16 +60,7 @@ export function LevelProgressBar() {
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-12"
     >
       <div
-        className="relative rounded-3xl border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-5 sm:p-6"
-        style={{
-          boxShadow: `
-            0 25px 70px -15px rgba(0, 0, 0, 0.9),
-            0 15px 40px -10px rgba(0, 0, 0, 0.7),
-            0 0 0 1px rgba(255, 255, 255, 0.05),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-            inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-          `,
-        }}
+        className="relative rounded-md border border-white/[0.06] bg-[#141414] overflow-hidden p-5 sm:p-6"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -78,7 +69,7 @@ export function LevelProgressBar() {
             <div>
               <h3 
                 className="text-lg font-bold text-white"
-                style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                style={{ fontFamily: 'var(--font-heading), serif' }}
               >
                 {progressData.level}
               </h3>
@@ -89,11 +80,10 @@ export function LevelProgressBar() {
           </div>
           <button
             onClick={() => setIsProgressModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-sm"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-md transition-transform hover:scale-[1.02] active:scale-95 font-semibold text-sm"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               color: '#000000',
-              boxShadow: '0 0 15px rgba(255, 215, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2)',
             }}
             aria-label="View progress details"
           >

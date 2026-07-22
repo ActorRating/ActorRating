@@ -57,6 +57,17 @@ const nextConfig = {
     assetPrefix: process.env.CDN_BASE_URL.replace(/\/$/, ''),
   }),
 
+  async redirects() {
+    return [
+      // Hub renamed Discover; keep /performances/[id] detail routes intact
+      {
+        source: "/performances",
+        destination: "/discover",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     // Avoid breaking local dev with strict policies. Apply in production only.
     if (process.env.NODE_ENV !== 'production') return []

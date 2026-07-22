@@ -103,10 +103,10 @@ export function Sidebar({ isOpen, onToggle, variant = 'desktop' }: SidebarProps)
   ]
 
   const quickActions = [
-    { id: 'trending', label: 'Trending Now', icon: TrendingUp, href: '/performances?filter=trending' },
-    { id: 'top-rated', label: 'Top Rated', icon: Star, href: '/performances?filter=top-rated' },
-    { id: 'recent', label: 'Recently Added', icon: Clock, href: '/performances?filter=recent' },
-    { id: 'favorites', label: 'My Favorites', icon: Heart, href: '/performances?filter=favorites' },
+    { id: 'trending', label: 'Trending Now', icon: TrendingUp, href: '/discover' },
+    { id: 'top-rated', label: 'Top Rated', icon: Star, href: '/discover' },
+    { id: 'recent', label: 'Recently Added', icon: Clock, href: '/discover' },
+    { id: 'favorites', label: 'My Favorites', icon: Heart, href: '/discover' },
   ]
 
   // Toggle section collapse

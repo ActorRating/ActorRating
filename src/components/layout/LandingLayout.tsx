@@ -8,7 +8,7 @@ interface LandingLayoutProps {
   primaryRateHref?: string
 }
 
-export function LandingLayout({ children, primaryRateHref = '/performances' }: LandingLayoutProps) {
+export function LandingLayout({ children, primaryRateHref = '/discover' }: LandingLayoutProps) {
   return (
     <div className="min-h-screen bg-black flex flex-col relative">
       {/* Navbar overlays hero — scrolls with page, not sticky */}

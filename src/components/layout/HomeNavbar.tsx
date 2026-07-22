@@ -11,12 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { prefetchPerformancesPageData } from '@/lib/performances-page-targets'
 
 const NAV_LINKS = [
-  { label: 'Discover', href: '/performances' },
+  { label: 'Discover', href: '/discover' },
   { label: 'Lists', href: '/lists' },
   { label: 'About', href: '/about' },
 ] as const
 
-export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateHref?: string }) {
+export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?: string }) {
   const { user, loading, isInitialized } = useSession()
   const router = useRouter()
 
@@ -25,7 +25,7 @@ export function HomeNavbar({ primaryRateHref = '/performances' }: { primaryRateH
       router.prefetch(primaryRateHref)
     } else {
       prefetchPerformancesPageData()
-      router.prefetch('/performances')
+      router.prefetch('/discover')
     }
   }
   const homeHref = user ? '/dashboard' : '/'

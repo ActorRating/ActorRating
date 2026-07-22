@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
 <svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&amp;display=swap');
     </style>
     <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:${goldLight};stop-opacity:1" />
@@ -124,21 +124,21 @@ export async function GET(req: NextRequest) {
   <!-- Radial spotlight from bottom right -->
   <rect width="100%" height="100%" fill="url(#bottomRightSpotlight)"/>
   <!-- Actor Name (Primary) - Moved lower, gold gradient like section headings -->
-  <text x="${dims.w/2}" y="320" font-family="Playfair Display, Georgia, serif" font-size="76" font-weight="900" fill="url(#goldGradient)" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
+  <text x="${dims.w/2}" y="320" font-family="Cormorant Garamond, Georgia, serif" font-size="76" font-weight="700" fill="url(#goldGradient)" text-anchor="middle" letter-spacing="1">${escapedActorName}</text>
   <!-- Movie Name (Secondary) - Below Actor, with "in" prefix -->
   <text x="${dims.w/2}" y="380" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="36" font-weight="500" fill="${fg}" opacity="0.85" text-anchor="middle">in ${escapedMovieTitle}</text>
   <!-- Decorative divider - dashboard style, longer -->
   <rect x="${dims.w/2 - 140}" y="419" width="280" height="2" fill="url(#dividerGradient)"/>
   <!-- Score (Primary) - Large and prominent, no glow, moved lower -->
-  <text x="${dims.w/2}" y="620" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
+  <text x="${dims.w/2}" y="620" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="120" font-weight="700" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10} / 10</text>
   <!-- "What's your rating?" text - Below score, white -->
-  <text x="${dims.w/2}" y="690" font-family="Playfair Display, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
+  <text x="${dims.w/2}" y="690" font-family="Cormorant Garamond, Georgia, serif" font-size="42" font-weight="600" fill="${fg}" text-anchor="middle" opacity="0.9">What&apos;s your rating?</text>
   <!-- Decorative divider - dashboard style, longer -->
   <rect x="${dims.w/2 - 140}" y="739" width="280" height="2" fill="url(#dividerGradient)"/>
   <!-- "Rated on ActorRating" - Bottom -->
   <text x="${dims.w/2}" y="1250" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${fg}" opacity="0.7" text-anchor="middle">Rated on ActorRating</text>
   <!-- Logo placeholder (small, bottom) -->
-  <text x="${dims.w/2}" y="1320" font-family="Playfair Display, Georgia, serif" font-size="22" fill="${gold}" opacity="0.5" text-anchor="middle">actorrating.com</text>
+  <text x="${dims.w/2}" y="1320" font-family="Cormorant Garamond, Georgia, serif" font-size="22" fill="${gold}" opacity="0.5" text-anchor="middle">actorrating.com</text>
 </svg>`
       return new Response(svg, { status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' } })
     }
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
 <svg width="${dims.w}" height="${dims.h}" viewBox="0 0 ${dims.w} ${dims.h}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&amp;display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&amp;display=swap');
     </style>
     <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:${goldLight};stop-opacity:1" />
@@ -158,12 +158,12 @@ export async function GET(req: NextRequest) {
     </linearGradient>
   </defs>
   <rect width="100%" height="100%" fill="${bg}"/>
-  <text x="${dims.w/2}" y="${centerY - 180}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?56:40}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">I rated</text>
-  <text x="${dims.w/2}" y="${centerY - 100}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?96:64}" font-weight="800" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
-  <text x="${dims.w/2}" y="${centerY - 20}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?64:48}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">a <tspan fill="${goldLight}">${scoreOutOf10}/10</tspan> in</text>
-  <text x="${dims.w/2}" y="${centerY + 60}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?80:56}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedMovieTitle}</text>
-  <text x="${dims.w/2}" y="${centerY + 160}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?120:80}" font-weight="900" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10}/10</text>
-  <text x="${dims.w/2}" y="${centerY + 220}" font-family="Playfair Display, Georgia, serif" font-size="${size==='story'?28:24}" fill="${fg}" opacity="0.6" text-anchor="middle">actorrating.com</text>
+  <text x="${dims.w/2}" y="${centerY - 180}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?56:40}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">I rated</text>
+  <text x="${dims.w/2}" y="${centerY - 100}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?96:64}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedActorName}</text>
+  <text x="${dims.w/2}" y="${centerY - 20}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?64:48}" font-weight="600" fill="${fg}" opacity="0.9" text-anchor="middle">a <tspan fill="${goldLight}">${scoreOutOf10}/10</tspan> in</text>
+  <text x="${dims.w/2}" y="${centerY + 60}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?80:56}" font-weight="700" fill="${goldLight}" text-anchor="middle">${escapedMovieTitle}</text>
+  <text x="${dims.w/2}" y="${centerY + 160}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?120:80}" font-weight="700" fill="url(#goldGradient)" text-anchor="middle">${scoreOutOf10}/10</text>
+  <text x="${dims.w/2}" y="${centerY + 220}" font-family="Cormorant Garamond, Georgia, serif" font-size="${size==='story'?28:24}" fill="${fg}" opacity="0.6" text-anchor="middle">actorrating.com</text>
 </svg>`
 
     return new Response(svg, { status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400' } })

@@ -136,7 +136,7 @@ export function ProgressModal({ isOpen, onClose, ratingCount }: ProgressModalPro
               <div className="mb-6">
                 <h2
                   className="text-2xl font-bold text-white mb-2"
-                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                  style={{ fontFamily: 'var(--font-heading), serif' }}
                 >
                   Your Progress
                 </h2>

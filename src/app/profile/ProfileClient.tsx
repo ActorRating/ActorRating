@@ -176,73 +176,32 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
   return (
     <SignedInLayout>
       <div className="min-h-screen bg-black relative overflow-hidden">
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-8 sm:pb-12">
+        <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 pt-[6.5rem] sm:pt-[7.5rem] pb-16 sm:pb-20">
           {/* Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center mb-8 sm:mb-12"
-          >
-            <h1 
-              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-3 sm:mb-4"
-              style={{ 
-                fontFamily: 'var(--font-cinzel), serif',
-                textShadow: '0 10px 40px rgba(0,0,0,0.7)',
-                letterSpacing: '0.08em',
-                lineHeight: '1.1',
+          <div className="text-center mb-8 sm:mb-10">
+            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-3">
+              Account
+            </p>
+            <h1
+              className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold text-white tracking-tight leading-[1.15] mb-3"
+              style={{
+                fontFamily:
+                  'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
               }}
             >
-              <span 
-                style={{
-                  background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 0 40px rgba(255, 215, 0, 0.3))',
-                }}
-              >
-                Your{' '}
-              </span>
-              <span className="text-white">
-                Profile
-              </span>
+              Your profile
             </h1>
-            
-            {/* Gold Divider */}
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "180px", opacity: 1 }}
-              transition={{ duration: 2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="h-[2px] mx-auto mb-6 sm:mb-8"
-            >
-              <div 
-                className="h-full w-full"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,229,92,0.4) 15%, rgba(255,215,0,0.9) 40%, rgba(255,215,0,1) 50%, rgba(255,215,0,0.9) 60%, rgba(255,229,92,0.4) 85%, transparent 100%)',
-                  boxShadow: '0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3)',
-                }}
-              />
-            </motion.div>
+            <p className="text-[15px] sm:text-base text-zinc-500 leading-relaxed max-w-xl mx-auto mb-8">
+              Manage your account settings and data.
+            </p>
 
-            {/* Progress Bar with Badge */}
             <div className="mb-8">
               <UserProgressBar />
             </div>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.2, delay: 0.9, ease: 'easeOut' }}
-              className="text-base sm:text-lg md:text-xl text-[#a3a3a3] font-light max-w-2xl mx-auto"
-              style={{ letterSpacing: '0.005em' }}
-            >
-              Manage your account settings and data
-            </motion.p>
-
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link href="/performances" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
-                Browse Performances
+              <Link href="/discover" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
+                Discover
               </Link>
               <Link href="/search" className="text-sm text-gray-400 hover:text-[#FFD700] transition-colors">
                 Search Actors & Movies
@@ -256,7 +215,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                 </Link>
               ) : null}
             </div>
-          </motion.div>
+          </div>
 
           <div className="space-y-6 sm:space-y-8">
             {/* Profile Card */}
@@ -267,30 +226,24 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
               className="relative group"
             >
               <div 
-                className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)]"
-                style={{
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                }}
+                className="relative bg-[#141414] rounded-md p-5 sm:p-6 border border-white/[0.08] overflow-hidden"
               >
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 relative z-10">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-2xl flex items-center justify-center">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-md flex items-center justify-center">
                       <User className="w-10 h-10 sm:w-12 sm:h-12 text-black" />
                     </div>
                   </div>
                   
                   {/* User Info */}
                   <div className="flex-1 min-w-0 text-center sm:text-left w-full sm:w-auto">
-                    <h2 
-                      className="text-2xl sm:text-2xl font-bold text-white mb-2 sm:mb-1"
-                      style={{ fontFamily: 'var(--font-cinzel), serif' }}
+                    <h2
+                      className="text-2xl font-bold text-white mb-2 sm:mb-1 tracking-tight"
+                      style={{
+                        fontFamily:
+                          'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
+                      }}
                     >
                       {profile.email?.split('@')[0] || 'User'}
                     </h2>
@@ -316,16 +269,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
               {/* Download Data Card */}
               <div className="relative group">
                 <div 
-                  className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl p-4 sm:p-6 rounded-[2rem] border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)] h-full flex flex-col"
-                  style={{
-                    boxShadow: `
-                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                      0 0 0 1px rgba(255, 255, 255, 0.05),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                    `,
-                  }}
+                  className="relative bg-[#141414] p-4 sm:p-5 rounded-md border border-white/[0.08] overflow-hidden h-full flex flex-col"
                 >
                   <div className="flex items-center gap-3 mb-3 relative z-10">
                     <div className="w-10 h-10 bg-[#FFD700]/20 rounded-lg flex items-center justify-center">
@@ -338,7 +282,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                   </p>
                   <button
                     onClick={handleExportData}
-                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex items-center justify-center gap-2 relative z-10"
+                    className="relative w-full h-12 px-4 rounded-md border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-colors duration-200 flex items-center justify-center gap-2 relative z-10"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -349,16 +293,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
               {/* Sign Out Card */}
               <div className="relative group">
                 <div 
-                  className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl p-4 sm:p-6 rounded-[2rem] border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)] h-full flex flex-col"
-                  style={{
-                    boxShadow: `
-                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                      0 0 0 1px rgba(255, 255, 255, 0.05),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                    `,
-                  }}
+                  className="relative bg-[#141414] p-4 sm:p-5 rounded-md border border-white/[0.08] overflow-hidden h-full flex flex-col"
                 >
                   <div className="flex items-center gap-3 mb-3 relative z-10">
                     <div className="w-10 h-10 bg-[#FFD700]/20 rounded-lg flex items-center justify-center">
@@ -371,7 +306,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                   </p>
                   <button
                     onClick={() => handleLogout(router)}
-                    className="relative w-full h-12 px-4 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex items-center justify-center gap-2 relative z-10"
+                    className="relative w-full h-12 px-4 rounded-md border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-colors duration-200 flex items-center justify-center gap-2 relative z-10"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out
@@ -388,16 +323,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
               className="relative group"
             >
               <div 
-                className="relative bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.95)]"
-                style={{
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                }}
+                className="relative bg-[#141414] rounded-md p-5 sm:p-6 border border-white/[0.08] overflow-hidden"
               >
                 <div className="flex items-center gap-3 mb-4 relative z-10">
                   <div className="w-10 h-10 bg-gray-500/20 rounded-lg flex items-center justify-center">
@@ -414,7 +340,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                   <div className="flex justify-center sm:justify-start">
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="relative px-4 py-3 rounded-full border border-gray-500/30 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 font-medium transition-all duration-300 flex items-center justify-center gap-2 h-12 relative z-10"
+                      className="relative px-4 py-3 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 font-medium transition-colors duration-200 flex items-center justify-center gap-2 h-12 relative z-10"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete Account
@@ -422,7 +348,7 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                   </div>
                 ) : (
                   <div className="space-y-4 relative z-10">
-                    <div className="p-4 bg-gray-500/10 border border-gray-500/30 rounded-[2rem]">
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-md">
                       <h4 className="font-medium text-white mb-2">Confirm Account Deletion</h4>
                       <p className="text-sm text-gray-400 mb-4">
                         This will permanently delete your account, all ratings, and profile data. This action cannot be undone.
@@ -431,13 +357,13 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
                     <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={handleDeleteAccount}
-                        className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-full transition-all duration-300 flex-1 h-12 flex items-center justify-center"
+                        className="px-4 py-3 bg-zinc-700 hover:bg-zinc-600 text-white font-medium rounded-md transition-colors duration-200 flex-1 h-12 flex items-center justify-center"
                       >
                         Yes, Delete My Account
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-4 py-3 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-all duration-300 flex-1 h-12 flex items-center justify-center"
+                        className="px-4 py-3 rounded-md border border-[#FFD700]/30 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] font-medium transition-colors duration-200 flex-1 h-12 flex items-center justify-center"
                       >
                         Cancel
                       </button>

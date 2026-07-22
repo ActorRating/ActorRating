@@ -27,7 +27,7 @@ Separate great performances from mediocre movies and vice versa by focusing excl
 ## Key Pages
 - Homepage: https://actorrating.com
 - About: https://actorrating.com/about
-- Performances: https://actorrating.com/performances
+- Discover: https://actorrating.com/discover
 - Search: https://actorrating.com/search
 - Dashboard: https://actorrating.com/dashboard
 

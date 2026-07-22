@@ -136,9 +136,9 @@ export function FeaturedPerformancesCarousel() {
         className="mb-8"
       >
         <h2 
-          className="text-3xl sm:text-4xl md:text-5xl font-bold text-center"
+          className="text-2xl sm:text-3xl md:text-4xl font-semibold text-center tracking-tight"
           style={{ 
-            fontFamily: 'var(--font-cinzel), serif',
+            fontFamily: 'var(--font-heading), serif',
             letterSpacing: '0.02em',
           }}
         >
@@ -173,21 +173,8 @@ export function FeaturedPerformancesCarousel() {
             >
               {/* Premium Card - Clean & Cinematic - Matching actor pages */}
               <div 
-                className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                style={{
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                }}
+                className="relative h-full p-6 sm:p-8 rounded-md border border-white/[0.06] bg-[#141414] overflow-hidden transition-colors duration-200 hover:border-white/10"
               >
-                {/* Glow effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                </div>
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col h-full">
@@ -195,7 +182,7 @@ export function FeaturedPerformancesCarousel() {
                     {/* Top Row: Rating Badge and Year */}
                     <div className="flex items-center justify-between mb-6">
                       {/* Score Pill - Top Left */}
-                      <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
                         <FaStar className="w-5 h-5 text-[#FFD700]" />
                         <span className="text-2xl font-bold text-[#FFD700]">
                           N/A
@@ -227,7 +214,7 @@ export function FeaturedPerformancesCarousel() {
                   <div className="mt-auto pt-4">
                     <Link href={rateUrl} className="block">
                       <div 
-                        className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 text-center cursor-pointer"
+                        className="w-full px-8 py-3.5 rounded-md text-black text-base font-bold tracking-wider transition-transform duration-200 hover:scale-[1.02] text-center cursor-pointer"
                         style={{
                           background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                         }}
@@ -240,9 +227,6 @@ export function FeaturedPerformancesCarousel() {
                     </Link>
                   </div>
                 </div>
-
-                {/* Decorative accent */}
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
               </div>
             </motion.div>
           )
@@ -282,21 +266,8 @@ export function FeaturedPerformancesCarousel() {
               >
                 {/* Premium Card - Clean & Cinematic - Matching actor pages */}
                 <div 
-                  className="relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-                  style={{
-                    boxShadow: `
-                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                      0 0 0 1px rgba(255, 255, 255, 0.05),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                    `,
-                  }}
+                  className="relative h-full p-8 sm:p-10 md:p-12 rounded-md border border-white/[0.06] bg-[#141414] overflow-hidden transition-colors duration-200 hover:border-white/10"
                 >
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                  </div>
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col h-full">
@@ -304,7 +275,7 @@ export function FeaturedPerformancesCarousel() {
                       {/* Top Row: Rating Badge and Year */}
                       <div className="flex items-center justify-between mb-6">
                         {/* Score Pill - Top Left */}
-                        <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
                           <FaStar className="w-5 h-5 text-[#FFD700]" />
                           <span className="text-2xl font-bold text-[#FFD700]">
                             N/A
@@ -336,7 +307,7 @@ export function FeaturedPerformancesCarousel() {
                     <div className="mt-auto pt-4">
                       <Link href={rateUrl} className="block">
                         <div 
-                          className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 text-center cursor-pointer"
+                          className="w-full px-8 py-3.5 rounded-md text-black text-base font-bold tracking-wider transition-transform duration-200 hover:scale-[1.02] text-center cursor-pointer"
                           style={{
                             background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                           }}
@@ -350,8 +321,6 @@ export function FeaturedPerformancesCarousel() {
                     </div>
                   </div>
 
-                  {/* Decorative accent */}
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                 </div>
               </div>
             )
@@ -360,13 +329,8 @@ export function FeaturedPerformancesCarousel() {
 
         {/* Navigation Dots - Mobile Only - Same as performances page */}
         <div className="relative flex justify-center items-center mt-8 px-4">
-          <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
+          <div className="relative rounded-md bg-[#141414] border border-white/[0.06]"
             style={{
-              boxShadow: `
-                0 10px 30px -5px rgba(0, 0, 0, 0.7),
-                0 0 0 1px rgba(255, 255, 255, 0.03),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
-              `,
               padding: '6px 12px',
             }}
           >

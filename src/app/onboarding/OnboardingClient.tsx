@@ -6,7 +6,7 @@ import { useUser } from "@/components/providers/SessionProvider"
 import { Button } from "@/components/ui/Button"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
 import { containsBadWord } from "@/lib/validation/sanitizeName"
-import { Sparkles, UserRound } from "lucide-react"
+import { UserRound } from "lucide-react"
 
 type UsernameStatus = "idle" | "invalid" | "checking" | "available" | "taken"
 
@@ -221,32 +221,27 @@ export default function OnboardingClient() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4">
-      <div
-        className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#121212]/95 to-black/95 p-6 sm:p-8"
-        style={{
-          boxShadow:
-            "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-        }}
-      >
-          <div className="pointer-events-none absolute -right-14 -top-12 h-56 w-56 rounded-full bg-[#FFD700]/10 blur-3xl" />
-          <div className="relative z-10 mb-6 text-center sm:mb-8">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 px-3 py-1 text-xs text-[#FFE082]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Public profile setup
-            </div>
-            <h2
-              className="text-3xl font-bold text-white sm:text-4xl"
-              style={{ fontFamily: "var(--font-cinzel), serif" }}
-            >
-              Create Your Identity
-            </h2>
-            <p className="mt-2 text-sm text-[#a1a1aa] sm:text-base">
-              Choose how your ratings appear publicly on ActorRating.
-            </p>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-black px-5 sm:px-8 py-16">
+      <div className="relative w-full max-w-md overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] p-6 sm:p-8">
+        <div className="mb-6 text-center sm:mb-8">
+          <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-3">
+            Public profile
+          </p>
+          <h1
+            className="text-3xl sm:text-[2.5rem] font-bold text-white tracking-tight leading-[1.15]"
+            style={{
+              fontFamily:
+                'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
+            }}
+          >
+            Create your identity
+          </h1>
+          <p className="mt-3 text-[15px] sm:text-base text-zinc-500 leading-relaxed">
+            Choose how your ratings appear publicly on ActorRating.
+          </p>
+        </div>
 
-          <div className="space-y-5">
+        <div className="space-y-5">
           <input
             type="text"
             name="username"
@@ -257,7 +252,7 @@ export default function OnboardingClient() {
             readOnly
           />
           <div>
-            <label className="mb-2 block text-sm text-[#d4d4d8]">Display name</label>
+            <label className="mb-2 block text-sm text-zinc-400">Display name</label>
             <input
               value={name}
               onChange={(e) => {
@@ -268,13 +263,13 @@ export default function OnboardingClient() {
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}
-              className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
+              className="h-12 w-full rounded-md border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/50"
               placeholder="Your name"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-[#d4d4d8]">Username</label>
+            <label className="mb-2 block text-sm text-zinc-400">Username</label>
             <input
               value={username}
               onChange={(e) => {
@@ -287,53 +282,60 @@ export default function OnboardingClient() {
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}
-              className="h-12 w-full rounded-xl border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/60"
+              className="h-12 w-full rounded-md border border-white/10 bg-[#0a0a0a] px-4 text-white outline-none transition focus:border-[#FFD700]/50"
               placeholder="username"
             />
-            <p className="mt-1 text-xs text-[#71717a]">3-20 chars, lowercase letters, numbers, underscore</p>
-            {usernameStatus === "available" ? <p className="mt-1 text-xs text-emerald-400">Available</p> : null}
-            {usernameStatus === "taken" ? <p className="mt-1 text-xs text-rose-400">Already taken</p> : null}
+            <p className="mt-1.5 text-xs text-zinc-600">
+              3–20 chars, lowercase letters, numbers, underscore
+            </p>
+            {usernameStatus === "available" ? (
+              <p className="mt-1 text-xs text-emerald-400">Available</p>
+            ) : null}
+            {usernameStatus === "taken" ? (
+              <p className="mt-1 text-xs text-rose-400">Already taken</p>
+            ) : null}
             {usernameStatus === "invalid" && usernameError ? (
               <p className="mt-1 text-xs text-amber-400">{usernameError}</p>
             ) : null}
-            {usernameStatus === "checking" ? <p className="mt-1 text-xs text-[#71717a]">Checking availability...</p> : null}
+            {usernameStatus === "checking" ? (
+              <p className="mt-1 text-xs text-zinc-600">Checking availability…</p>
+            ) : null}
             {normalizedUsername ? (
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#d4d4d8]">
+              <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-zinc-500">
                 <UserRound className="h-3.5 w-3.5" />
                 <span>/u/{normalizedUsername}</span>
-              </div>
+              </p>
             ) : null}
           </div>
 
-            {inlineError ? <p className="text-sm text-rose-400">{inlineError}</p> : null}
-            {!hasStartedOnboarding ? (
-              <div className="flex justify-center">
-                <Button
-                  onClick={ensureOnboardingStarted}
-                  disabled={isStarting}
-                  className="h-14 min-w-[340px] px-14 rounded-full font-bold text-black transition hover:scale-[1.02] disabled:hover:scale-100"
-                  style={{
-                    background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
-                    boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
-                  }}
-                >
-                  {isStarting ? "Starting..." : "Start Setup"}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={!isValid || isSubmitting}
-                className="h-12 w-full rounded-full text-base font-bold tracking-wide text-black transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
-                style={{
-                  background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
-                  boxShadow: "0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)",
-                }}
-              >
-                {isSubmitting ? "Saving..." : "Complete Setup"}
-              </Button>
-            )}
-          </div>
+          {inlineError ? <p className="text-sm text-rose-400">{inlineError}</p> : null}
+
+          {!hasStartedOnboarding ? (
+            <Button
+              onClick={ensureOnboardingStarted}
+              disabled={isStarting}
+              className="h-12 w-full rounded-md font-bold text-black transition-transform hover:scale-[1.02] disabled:hover:scale-100 min-h-[48px]"
+              style={{
+                background:
+                  "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+              }}
+            >
+              {isStarting ? "Starting…" : "Start setup"}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={!isValid || isSubmitting}
+              className="h-12 w-full rounded-md text-[15px] font-bold text-black transition-transform hover:scale-[1.02] disabled:hover:scale-100 min-h-[48px]"
+              style={{
+                background:
+                  "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+              }}
+            >
+              {isSubmitting ? "Saving…" : "Complete setup"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )

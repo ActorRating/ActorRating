@@ -2701,7 +2701,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       <h3
                         className="text-white font-bold leading-tight"
                         style={{
-                          fontFamily: 'var(--font-heading, "Playfair Display", serif)',
+                          fontFamily: 'var(--font-heading), Georgia, serif',
                           fontSize: 'clamp(15px, 5vw, 22px)',
                         }}
                       >

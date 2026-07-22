@@ -39,11 +39,13 @@ export interface MovieCredits {
   cast: Actor[];
 }
 
-/** Cast member with TMDB id for ingestion (actor upsert by tmdbId). Billing order = array index. */
+/** Cast member with TMDB id for ingestion (actor upsert by tmdbId). */
 export interface CastMemberForIngestion {
   id: number | null;
   name: string;
   character: string;
+  /** TMDB billing order (0-based). Prefer this over array index after filters. */
+  order: number;
   /** TMDB profile_path (e.g. "/abc.jpg") for Actor.imageUrl. */
   profilePath?: string | null;
 }
@@ -193,9 +195,10 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
     const director = crew?.find((member: { job?: string; name?: string }) => member.job === 'Director')?.name ?? 'Unknown';
 
     // Guard: skip cast member with no name (no write for nameless entry).
+    // Prefer TMDB's billing `order` field; fall back to raw array index before filters.
     const fullCast: CastMemberForIngestion[] = (cast ?? [])
-      .filter((member: { name?: string; character?: string }) => !!member?.name)
-      .map((member: { id?: number; name: string; character?: string; profile_path?: string }) => {
+      .map((member: { id?: number; name?: string; character?: string; profile_path?: string; order?: number }, index: number) => {
+        if (!member?.name) return null;
         const character = member.character ?? '';
         const characterLower = character.toLowerCase();
         const excludedTerms = ['uncredited', 'himself', 'herself', 'background', 'crowd', '#'];
@@ -205,10 +208,12 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
           id: typeof member.id === 'number' ? member.id : null,
           name: member.name,
           character,
+          order: typeof member.order === 'number' ? member.order : index,
           profilePath: typeof member.profile_path === 'string' ? member.profile_path : null,
         };
       })
-      .filter((m: CastMemberForIngestion | null): m is CastMemberForIngestion => m != null);
+      .filter((m: CastMemberForIngestion | null): m is CastMemberForIngestion => m != null)
+      .sort((a: CastMemberForIngestion, b: CastMemberForIngestion) => a.order - b.order);
 
     return { director, cast: fullCast };
   } catch (error) {

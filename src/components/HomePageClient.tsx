@@ -2,7 +2,7 @@
 "use client";
 
 /**
- * Letterboxd-shaped landing: short manifesto + one CTA over a film still,
+ * Cormorant manifesto + one CTA over a film still,
  * with a dense poster strip bleeding into the first viewport. No marketing essays.
  */
 
@@ -19,33 +19,40 @@ import {
   LEGENDARY_PERFORMANCE_TARGETS,
   RECENT_FAVORITES_TARGETS,
   allLandingRailLookupTargets,
-  type PerformanceTarget,
 } from "@/lib/performances-page-targets";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
-import { getMovieUrl, getRateUrl } from "@/lib/slugHelper";
+import { getRateUrl } from "@/lib/slugHelper";
 import { createActorSlug, createMovieSlug } from "@/lib/createSlug";
 import {
   type FeaturedHeroPayload,
   buildFixedLandingHero,
   fixedLandingHeroLookupTarget,
 } from "@/lib/home-featured-performance";
+import {
+  PosterRail,
+  StaticPosterRail,
+  orderByTargets,
+  upgradePosterThumbRes,
+} from "@/components/poster/PosterRails";
 
 const GOLD =
   "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)";
-const PLAYFAIR: React.CSSProperties = {
-  fontFamily: 'var(--font-playfair-display), "Playfair Display", Georgia, serif',
+const DISPLAY: React.CSSProperties = {
+  fontFamily:
+    'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
 };
 const HERO_SANS: React.CSSProperties = {
   fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
 };
-/** Letterboxd homepage manifesto: Tiempos Headline optical weight ≈ Playfair 800–900 */
+/** Cinematic hero manifesto — site display font (Cormorant) */
 const HERO_MANIFESTO: React.CSSProperties = {
-  ...PLAYFAIR,
-  fontWeight: 900,
+  fontFamily:
+    'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
+  fontWeight: 600,
   fontSize: "2.25rem",
   lineHeight: 1.33333,
-  letterSpacing: "normal",
+  letterSpacing: "0.01em",
   textAlign: "center",
   textShadow: "none",
   margin: 0,
@@ -59,13 +66,6 @@ function upgradePosterBackdropRes(url?: string | null): string | null {
   return url
     .replace(/\/t\/p\/w\d+\//, "/t/p/w1920/")
     .replace(/\/t\/p\/original\//, "/t/p/w1920/");
-}
-
-function upgradePosterThumbRes(url?: string | null): string | null {
-  if (!url) return null;
-  return url
-    .replace("/t/p/w92/", "/t/p/w342/")
-    .replace("/t/p/w185/", "/t/p/w342/");
 }
 
 function usePrefersReducedMotion() {
@@ -85,248 +85,13 @@ function usePrefersReducedMotion() {
 
 // ─── Static fallbacks when DB/posters unavailable (local / cold start) ────────
 
-type StaticRailItem = PerformanceTarget;
-
-const FALLBACK_POPULAR: StaticRailItem[] = POPULAR_RIGHT_NOW_TARGETS;
-const FALLBACK_LEGENDARY: StaticRailItem[] = LEGENDARY_PERFORMANCE_TARGETS;
-const FALLBACK_RECENT: StaticRailItem[] = RECENT_FAVORITES_TARGETS;
-
-function tmdbPoster(path?: string): string | null {
-  if (!path) return null;
-  return `https://image.tmdb.org/t/p/w342${path}`;
-}
+const FALLBACK_POPULAR = POPULAR_RIGHT_NOW_TARGETS;
+const FALLBACK_LEGENDARY = LEGENDARY_PERFORMANCE_TARGETS;
+const FALLBACK_RECENT = RECENT_FAVORITES_TARGETS;
 
 function performanceKey(p: EnrichedPerformance): string | null {
   if (!p.actor?.name || !p.movie?.title) return null;
   return `${p.actor.name}:${p.movie.title}`;
-}
-
-function characterFallback(
-  actor: string,
-  movie: string,
-  targets: PerformanceTarget[],
-): string | null {
-  return targets.find((t) => t.actor === actor && t.movie === movie)?.character ?? null;
-}
-
-function movieHrefFromStatic(item: StaticRailItem): string {
-  return getMovieUrl({
-    id: createMovieSlug(item.movie, item.year),
-    title: item.movie,
-    year: item.year ?? 0,
-    slug: createMovieSlug(item.movie, item.year),
-  });
-}
-
-const POSTER_TILE =
-  "group flex-shrink-0 w-[86px] sm:w-[92px] md:w-[100px] lg:w-[110px] block";
-
-/** Clean Letterboxd-style poster — art first; actor / character / movie on hover */
-function CleanPosterLink({
-  href,
-  poster,
-  face,
-  actorName,
-  characterName,
-  movieTitle,
-  priority,
-  onPrefetch,
-}: {
-  href: string;
-  poster: string | null;
-  face?: string | null;
-  actorName: string;
-  characterName?: string | null;
-  movieTitle: string;
-  priority?: boolean;
-  onPrefetch?: () => void;
-}) {
-  const a11yLabel = characterName
-    ? `${actorName} as ${characterName} — ${movieTitle}`
-    : `${actorName} — ${movieTitle}`;
-
-  return (
-    <Link
-      href={href}
-      prefetch={false}
-      onMouseEnter={onPrefetch}
-      className={POSTER_TILE}
-      title={a11yLabel}
-    >
-      <div className="relative aspect-[2/3] overflow-hidden bg-[#141414] ring-1 ring-white/[0.08]">
-        {poster ? (
-          <Image
-            src={poster}
-            alt={a11yLabel}
-            fill
-            className="object-cover"
-            sizes="140px"
-            priority={priority}
-            loading={priority ? "eager" : "lazy"}
-          />
-        ) : face ? (
-          <Image
-            src={face}
-            alt={a11yLabel}
-            fill
-            className="object-cover"
-            sizes="140px"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-zinc-900 flex items-end p-2">
-            <span className="text-[10px] text-zinc-500 line-clamp-3">{a11yLabel}</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-1 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-          <p className="text-[11px] font-semibold text-white leading-tight line-clamp-1">
-            {actorName}
-          </p>
-          {characterName ? (
-            <p className="text-[10px] text-zinc-300 leading-tight line-clamp-1 mt-0.5">
-              as {characterName}
-            </p>
-          ) : null}
-          <p className="text-[10px] text-zinc-400 leading-tight line-clamp-1 mt-0.5">
-            {movieTitle}
-          </p>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function RailTitle({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="text-center mb-3 sm:mb-3.5">
-      <h2
-        className="text-lg sm:text-xl font-semibold text-white tracking-tight"
-        style={HERO_SANS}
-      >
-        {title}
-      </h2>
-      {subtitle ? (
-        <p className="text-xs sm:text-sm text-zinc-500 mt-1" style={HERO_SANS}>
-          {subtitle}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function StaticPosterRail({
-  title,
-  subtitle,
-  items,
-  flush,
-}: {
-  title?: string;
-  subtitle?: string;
-  items: StaticRailItem[];
-  flush?: boolean;
-}) {
-  return (
-    <div className={flush ? "pb-1" : "mb-10 sm:mb-14"}>
-      <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
-        <div className="mx-auto flex w-fit max-w-7xl flex-col items-center">
-          {!flush && title ? <RailTitle title={title} subtitle={subtitle} /> : null}
-          {!flush && title ? (
-            <div className="mb-4 h-px w-full bg-zinc-700 sm:mb-5" aria-hidden />
-          ) : null}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
-            {items.map((item, i) => {
-              const poster = tmdbPoster(item.posterPath);
-              const href = movieHrefFromStatic(item);
-              return (
-                <CleanPosterLink
-                  key={`${item.actor}:${item.movie}`}
-                  href={href}
-                  poster={poster}
-                  actorName={item.actor}
-                  characterName={item.character}
-                  movieTitle={item.movie}
-                  priority={i < 4}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PosterRail({
-  title,
-  subtitle,
-  performances,
-  characterTargets,
-  flush,
-}: {
-  title?: string;
-  subtitle?: string;
-  performances: EnrichedPerformance[];
-  characterTargets: PerformanceTarget[];
-  flush?: boolean;
-}) {
-  const router = useRouter();
-
-  if (!performances.length) return null;
-
-  return (
-    <div className={flush ? "pb-1" : "mb-10 sm:mb-14"}>
-      <div className={flush ? "px-4 sm:px-6 lg:px-8" : "px-5 sm:px-8 lg:px-10"}>
-        <div className="mx-auto flex w-fit max-w-7xl flex-col items-center">
-          {!flush && title ? <RailTitle title={title} subtitle={subtitle} /> : null}
-          {!flush && title ? (
-            <div className="mb-4 h-px w-full bg-zinc-700 sm:mb-5" aria-hidden />
-          ) : null}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
-            {performances.map((perf, i) => {
-              const actor = perf.actor!;
-              const movie = perf.movie!;
-              const href = getMovieUrl({
-                id: perf.movieId,
-                title: movie.title,
-                year: movie.year,
-                slug: movie.slug,
-              });
-              const poster =
-                upgradePosterThumbRes(movie.posterUrl) ?? movie.posterUrl ?? null;
-              const face = upgradeActorImageRes(actor.imageUrl);
-              const character =
-                perf.character?.trim() ||
-                characterFallback(actor.name, movie.title, characterTargets);
-
-              return (
-                <div
-                  key={performanceKey(perf) ?? `${perf.actorId}-${perf.movieId}`}
-                  className="flex-shrink-0"
-                >
-                  <CleanPosterLink
-                    href={href}
-                    poster={poster}
-                    face={face}
-                    actorName={actor.name}
-                    characterName={character}
-                    movieTitle={movie.title}
-                    priority={i < 4}
-                    onPrefetch={() => router.prefetch(href)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── HERO ────────────────────────────────────────────────────────────────────
@@ -465,7 +230,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
-            className="max-w-3xl text-white"
+            className="hero-manifesto-cinematic max-w-3xl text-white"
             style={HERO_MANIFESTO}
           >
             Rate performances you&apos;ve&nbsp;seen.
@@ -491,7 +256,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
-            className="w-full max-w-2xl px-8 pb-7 text-center text-white"
+            className="hero-manifesto-cinematic w-full max-w-3xl px-8 pb-7 text-center text-white"
             style={HERO_MANIFESTO}
           >
             Rate performances you&apos;ve&nbsp;seen.
@@ -525,7 +290,7 @@ function LetsYouSection() {
     <section className="max-w-3xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
       <h2
         className="text-xl sm:text-2xl font-bold text-white mb-6 text-center"
-        style={PLAYFAIR}
+        style={DISPLAY}
       >
         ActorRating lets you…
       </h2>
@@ -552,7 +317,7 @@ function ClosingStrip({ primaryRateHref }: { primaryRateHref: string }) {
     <section className="border-t border-white/[0.06] py-14 sm:py-16 text-center px-5">
       <p
         className="text-lg sm:text-xl text-white font-medium mb-6 max-w-md mx-auto leading-snug"
-        style={PLAYFAIR}
+        style={DISPLAY}
       >
         Rate acting. Share your take. Build the performance canon.
       </p>
@@ -683,7 +448,7 @@ function FeaturedPerformanceSection({
               </div>
               <h2
                 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-tight tracking-tight"
-                style={PLAYFAIR}
+                style={DISPLAY}
               >
                 Heath Ledger
               </h2>
@@ -719,20 +484,6 @@ function FeaturedPerformanceSection({
   );
 }
 
-function orderByTargets(
-  rows: EnrichedPerformance[],
-  targets: Array<{ actor: string; movie: string }>,
-): EnrichedPerformance[] {
-  const map = new Map<string, EnrichedPerformance>();
-  for (const p of rows) {
-    const k = performanceKey(p);
-    if (k) map.set(k, p);
-  }
-  return targets
-    .map((t) => map.get(`${t.actor}:${t.movie}`))
-    .filter((p): p is EnrichedPerformance => !!p);
-}
-
 export default function HomePageClient({
   initialLeaderboardPerformances = [],
   initialRailPerformances = [],
@@ -759,7 +510,7 @@ export default function HomePageClient({
   });
 
   useEffect(() => {
-    if (featuredHeroProp.rateHref !== "/performances") return;
+    if (featuredHeroProp.rateHref !== "/discover" && featuredHeroProp.rateHref !== "/performances") return;
     let cancelled = false;
     (async () => {
       try {

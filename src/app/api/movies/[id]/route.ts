@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter"
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
+import { hydratePerformanceBillingOrder } from "@/lib/hydrate-performance-billing"
 
 export async function GET(
   request: NextRequest,
@@ -62,6 +63,8 @@ export async function GET(
       return res
     }
 
+    const TIER_RANK: Record<string, number> = { LEAD: 0, SUPPORTING: 1, MINOR: 2 }
+
     // Fetch performances and ratings in parallel for better performance
     const [performances, ratings] = await Promise.all([
       prisma.performance.findMany({
@@ -73,13 +76,16 @@ export async function GET(
           movieId: true,
           comment: true,
           character: true,
+          order: true,
+          tier: true,
           seededAggregateScore: true,
           createdAt: true,
           updatedAt: true,
           movie: { select: { id: true, title: true, year: true, director: true, tmdbId: true, slug: true } },
-          actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
+          actor: { select: { id: true, name: true, slug: true, imageUrl: true, tmdbId: true } },
         },
-        orderBy: { updatedAt: "desc" },
+        // Prefer billing order so early rows are leads when we hit the take limit.
+        orderBy: [{ order: "asc" }, { updatedAt: "desc" }],
         take: 200,
       }),
       prisma.rating.findMany({
@@ -142,26 +148,25 @@ export async function GET(
       })
     }
     
-    // One performance per actor: DB can return multiple rows per actor (system + per-user). Prefer one with rating, then latest.
+    // One performance per actor: DB can return multiple rows per actor (system + per-user).
+    // Prefer: has community rating → better tier → lower billing order → latest update.
     const byActor = new Map<string, any>()
+    const prefersOver = (candidate: any, existing: any) => {
+      const candHasRating = ratingMap.has(`${candidate.actorId}:${candidate.movieId}`)
+      const existingHasRating = ratingMap.has(`${existing.actorId}:${existing.movieId}`)
+      if (candHasRating !== existingHasRating) return candHasRating
+      const candTier = TIER_RANK[candidate.tier] ?? 2
+      const existingTier = TIER_RANK[existing.tier] ?? 2
+      if (candTier !== existingTier) return candTier < existingTier
+      const candOrder = candidate.order ?? Number.POSITIVE_INFINITY
+      const existingOrder = existing.order ?? Number.POSITIVE_INFINITY
+      if (candOrder !== existingOrder) return candOrder < existingOrder
+      return new Date(candidate.updatedAt).getTime() > new Date(existing.updatedAt).getTime()
+    }
     performances.forEach(perf => {
       const aid = perf.actorId
-      const hasRating = ratingMap.has(`${aid}:${perf.movieId}`)
       const existing = byActor.get(aid)
-      if (!existing) {
-        byActor.set(aid, perf)
-        return
-      }
-      const existingHasRating = ratingMap.has(`${existing.actorId}:${existing.movieId}`)
-      if (hasRating && !existingHasRating) {
-        byActor.set(aid, perf)
-        return
-      }
-      if (hasRating && existingHasRating && new Date(perf.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
-        byActor.set(aid, perf)
-        return
-      }
-      if (!hasRating && !existingHasRating && new Date(perf.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+      if (!existing || prefersOver(perf, existing)) {
         byActor.set(aid, perf)
       }
     })
@@ -214,6 +219,8 @@ export async function GET(
               movieId: movie.id,
               comment: null,
               character: firstRating.roleName || null,
+              order: null,
+              tier: "MINOR",
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               movie: movie,
@@ -236,10 +243,27 @@ export async function GET(
       })
     }
 
+    const billedPerformances = await hydratePerformanceBillingOrder(
+      prisma,
+      { id: movie.id, tmdbId: movie.tmdbId },
+      enrichedPerformances,
+      { persist: true }
+    )
+
+    billedPerformances.sort((a: any, b: any) => {
+      const tierA = TIER_RANK[a.tier] ?? 2
+      const tierB = TIER_RANK[b.tier] ?? 2
+      if (tierA !== tierB) return tierA - tierB
+      const orderA = a.order ?? Number.POSITIVE_INFINITY
+      const orderB = b.order ?? Number.POSITIVE_INFINITY
+      if (orderA !== orderB) return orderA - orderB
+      return String(a.actor?.name || "").localeCompare(String(b.actor?.name || ""))
+    })
+
     // Combine the data
     const movieData = {
       ...movie,
-      performances: enrichedPerformances,
+      performances: billedPerformances,
       ratings
     }
 

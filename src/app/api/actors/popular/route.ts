@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { cacheGet, cacheSet, makeCacheKey } from "@/lib/cache"
+import { getPopularActors } from "@/lib/popular-actors"
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +22,6 @@ export async function GET(request: NextRequest) {
         return res
       }
 
-      // Fetch actors by specific names using Prisma
       const actors = await prisma.actor.findMany({
         where: {
           name: { in: actorNames }
@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // Get stats for each actor
       const actorsWithStats = await Promise.all(actors.map(async (actor) => {
         const [performanceCount, ratings] = await Promise.all([
           prisma.performance.count({
@@ -70,7 +69,6 @@ export async function GET(request: NextRequest) {
         }
       }))
 
-      // Sort by original order
       const nameOrder = new Map(actorNames.map((name, idx) => [name, idx]))
       const actorsSorted = actorsWithStats.sort((a, b) => {
         const aIdx = nameOrder.get(a.name) ?? 999
@@ -84,59 +82,7 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    // Default: Get popular actors by rating count
-    const cacheKey = makeCacheKey('actors:popular', [limit.toString()])
-    const cached = await cacheGet<any[]>(cacheKey)
-    if (cached) {
-      const res = NextResponse.json(cached)
-      res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800')
-      return res
-    }
-
-    // Get actors with their performance counts and average career scores
-    // Order by number of ratings (popularity) and then by career score
-    const actorsWithStats = await prisma.$queryRaw<Array<{
-      id: string
-      name: string
-      imageUrl: string | null
-      slug: string | null
-      performanceCount: bigint
-      careerScore: number | null
-      ratingCount: bigint
-    }>>`
-      SELECT 
-        a.id,
-        a.name,
-        a."imageUrl",
-        a.slug,
-        COUNT(DISTINCT p.id)::bigint as "performanceCount",
-        AVG(
-          (r."emotionalRangeDepth" + 
-           r."characterBelievability" + 
-           r."technicalSkill" + 
-           r."screenPresence" + 
-           r."chemistryInteraction") / 5.0
-        ) as "careerScore",
-        COUNT(DISTINCT r.id)::bigint as "ratingCount"
-      FROM "Actor" a
-      LEFT JOIN "Performance" p ON p."actorId" = a.id
-      LEFT JOIN "Rating" r ON r."actorId" = a.id
-      GROUP BY a.id, a.name, a."imageUrl", a.slug
-      HAVING COUNT(DISTINCT p.id) > 0
-      ORDER BY "ratingCount" DESC, "careerScore" DESC NULLS LAST
-      LIMIT ${limit}
-    `
-
-    const actors = actorsWithStats.map(actor => ({
-      id: actor.id,
-      name: actor.name,
-      imageUrl: actor.imageUrl,
-      slug: actor.slug,
-      performanceCount: Number(actor.performanceCount),
-      careerScore: actor.careerScore ? parseFloat(actor.careerScore.toFixed(1)) : null,
-    }))
-
-    await cacheSet(cacheKey, actors, 300)
+    const actors = await getPopularActors(limit)
     const res = NextResponse.json(actors)
     res.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800')
     return res
@@ -148,4 +94,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

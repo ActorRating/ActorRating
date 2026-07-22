@@ -86,7 +86,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000
 
 /**
  * Prefetch performances page data and store in sessionStorage.
- * Call on hover over "Start Rating Now" so the page loads instantly.
+ * Call on hover over Discover / Start rating so the page loads instantly.
  */
 export function prefetchPerformancesPageData(): void {
   if (typeof window === 'undefined') return
@@ -100,23 +100,33 @@ export function prefetchPerformancesPageData(): void {
     // ignore
   }
 
-  const targets = [...RECENT_PERFORMANCE_TARGETS, ...ICONIC_PERFORMANCE_TARGETS]
+  const targets = allLandingRailLookupTargets()
   fetch(buildByLookupUrl(targets), {
     cache: "force-cache",
   })
     .then((r) => (r.ok ? r.json() : null))
     .then((data: { performances?: Array<{ actor?: { name: string }; movie?: { title: string } }> } | null) => {
       if (!data?.performances) return
-      const recent = RECENT_PERFORMANCE_TARGETS
-        .map((t) => data.performances?.find((p: any) => p.actor?.name === t.actor && p.movie?.title === t.movie))
-        .filter((p): p is NonNullable<typeof p> => p !== undefined)
-      const iconic = ICONIC_PERFORMANCE_TARGETS
-        .map((t) => data.performances?.find((p: any) => p.actor?.name === t.actor && p.movie?.title === t.movie))
-        .filter((p): p is NonNullable<typeof p> => p !== undefined)
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-        data: { recent, iconic },
-        timestamp: Date.now(),
-      }))
+      const match = (list: PerformanceTarget[]) =>
+        list
+          .map((t) =>
+            data.performances?.find(
+              (p) => p.actor?.name === t.actor && p.movie?.title === t.movie,
+            ),
+          )
+          .filter((p): p is NonNullable<typeof p> => p !== undefined)
+
+      sessionStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          data: {
+            popular: match(POPULAR_RIGHT_NOW_TARGETS),
+            legendary: match(LEGENDARY_PERFORMANCE_TARGETS),
+            recent: match(RECENT_FAVORITES_TARGETS),
+          },
+          timestamp: Date.now(),
+        }),
+      )
     })
     .catch(() => {})
 }

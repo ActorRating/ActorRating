@@ -54,11 +54,8 @@ export function Footer() {
               Explore
             </h4>
             <nav className="flex flex-col gap-3.5">
-              <Link href="/performances" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
-                All Performances
-              </Link>
-              <Link href="/performances?sort=top" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
-                Top Rated
+              <Link href="/discover" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Discover
               </Link>
               <Link href="/search" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Search

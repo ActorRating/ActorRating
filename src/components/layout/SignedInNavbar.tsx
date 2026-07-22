@@ -34,9 +34,9 @@ export function SignedInNavbar() {
     return (
       <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Logo />
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            <div className="flex items-center flex-shrink-0">
+              <Logo showText />
             </div>
             <div className="flex items-center space-x-3">
               <Button disabled size="sm" noMotion>
@@ -53,9 +53,9 @@ export function SignedInNavbar() {
     return (
       <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Logo />
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            <div className="flex items-center flex-shrink-0">
+              <Logo showText />
             </div>
             <div className="flex items-center space-x-3">
               <Button disabled size="sm" noMotion>
@@ -75,8 +75,8 @@ export function SignedInNavbar() {
     return (
       <nav className="sticky top-0 z-50 isolate" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Logo href="/" />
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            <Logo href="/" showText />
             <PrefetchLink href="/auth/signin">
               <button className="px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-[#FFD700] bg-[#1a1a1a] border border-white/10 transition-colors duration-200 min-h-[40px]">
                 Sign In
@@ -95,9 +95,9 @@ export function SignedInNavbar() {
     <nav className="sticky top-0 z-50 isolate text-foreground" style={{ backgroundColor: 'rgb(0, 0, 0)', borderBottom: '1px solid rgba(255, 215, 0, 0.1)' }} suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Logo */}
-          <div className="flex items-center">
-              <Logo href="/dashboard" />
+          {/* Logo — same mark + wordmark as guest HomeNavbar */}
+          <div className="flex items-center flex-shrink-0">
+              <Logo href="/dashboard" showText />
           </div>
 
           {/* Navigation Links */}

@@ -701,7 +701,7 @@ export default function ActorPageClient({
               exit={{ opacity: 0, y: -20 }}
               className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4"
             >
-              <div className="bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 rounded-[1.5rem] p-6 shadow-2xl backdrop-blur-2xl">
+              <div className="bg-[#141414] border border-white/[0.08] rounded-md p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-white mb-2">Rating saved</h3>
@@ -758,7 +758,7 @@ export default function ActorPageClient({
                     }
                   >
                     <button
-                      className="w-full px-4 py-2 rounded-full text-black text-sm font-bold tracking-wider transition-all duration-200 hover:scale-105"
+                      className="w-full px-4 py-2 rounded-md text-black text-sm font-bold transition-transform duration-200 hover:scale-[1.02]"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}
@@ -786,7 +786,7 @@ export default function ActorPageClient({
           >
             <Link
               href={user ? "/dashboard" : "/"}
-              className="inline-flex items-center justify-center w-10 h-10 sm:w-10 sm:h-10 rounded-full border border-gray-600/50 text-gray-400 hover:text-[#FFD700] hover:bg-[#FFD700]/10 hover:border-[#FFD700]/50 transition-colors"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-md border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
@@ -809,11 +809,10 @@ export default function ActorPageClient({
               >
                 {/* Portrait crop at 2:3 — matches TMDB photo shape, no aggressive squaring */}
                 <div
-                  className="relative overflow-hidden rounded-2xl"
+                  className="relative overflow-hidden rounded-md ring-1 ring-white/[0.08]"
                   style={{
                     width: 'clamp(140px, 30vw, 220px)',
                     aspectRatio: '2/3',
-                    boxShadow: '0 0 60px rgba(255,215,0,0.22), 0 30px 80px rgba(0,0,0,0.7)',
                   }}
                 >
                   <HeroActorPhoto
@@ -823,13 +822,11 @@ export default function ActorPageClient({
                 </div>
               </motion.div>
             )}
-            <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 text-white"
-              style={{ 
-                fontFamily: 'var(--font-cinzel), serif',
-                textShadow: '0 10px 40px rgba(0,0,0,0.7)',
-                letterSpacing: '0.08em',
-                lineHeight: '1.1',
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 text-white tracking-tight leading-[1.15]"
+              style={{
+                fontFamily:
+                  'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
               }}
             >
               {actor.name}
@@ -848,14 +845,14 @@ export default function ActorPageClient({
                   onClick={() => {
                     (document.getElementById('first-performance-card') ?? document.getElementById('performances-section'))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                   }}
-                  className="px-8 py-4 sm:px-10 sm:py-5 rounded-full text-black text-base sm:text-lg font-bold tracking-wider transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                  className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-md text-black text-[15px] sm:text-base font-bold transition-transform duration-200 hover:scale-[1.02] flex items-center justify-center gap-2 mx-auto min-h-[44px]"
                   style={{
                     background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                     color: 'black'
                   }}
                 >
-                  <FaStar className="w-5 h-5 sm:w-6 sm:h-6" />
-                  Rate A Performance
+                  <FaStar className="w-4 h-4" />
+                  Rate a performance
                 </button>
               </motion.div>
             )}
@@ -956,8 +953,7 @@ export default function ActorPageClient({
               className="mb-8 max-w-2xl mx-auto"
             >
               <div
-                className="rounded-2xl p-5 sm:p-6 text-left"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                className="rounded-md p-5 sm:p-6 text-left border border-white/[0.08] bg-white/[0.03]"
               >
                 <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4 text-center" style={{ color: '#52525b' }}>
                   Scores
@@ -1057,7 +1053,7 @@ export default function ActorPageClient({
                             initial={{ opacity: 0, x: -12 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.4, delay: 1.05 + index * 0.06 }}
-                            className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 px-4 py-3 sm:px-5 sm:py-4"
+                            className="rounded-md border border-white/[0.08] bg-[#141414] px-4 py-3 sm:px-5 sm:py-4"
                           >
                             <div className="flex items-center justify-between gap-3 mb-2">
                               <div className="flex items-center gap-2.5 min-w-0">
@@ -1093,7 +1089,7 @@ export default function ActorPageClient({
                   </>
                 ) : (
                   <div
-                    className="p-5 sm:p-6 rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 text-center"
+                    className="p-5 sm:p-6 rounded-md border border-white/[0.08] bg-[#141414] text-center"
                   >
                     <TrendingUp className="w-5 h-5 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm sm:text-base text-gray-400">
@@ -1129,26 +1125,13 @@ export default function ActorPageClient({
               </p>
             </div>
             
-            <div 
-              className="relative p-6 sm:p-8 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(15, 15, 15, 0.90) 50%, rgba(0, 0, 0, 0.95) 100%)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                boxShadow: `
-                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                  0 0 0 1px rgba(255, 255, 255, 0.05),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                `,
-              }}
-            >
+            <div className="relative p-5 sm:p-6 rounded-md border border-white/[0.08] bg-[#141414] overflow-hidden">
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex-1">
                   {/* Top Row: Rating Badge and Year */}
                   <div className="flex items-center justify-between mb-4">
                     {/* Score Pill - Top Left */}
-                    <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
                       <FaStar className="w-5 h-5 text-[#FFD700]" />
                       <span 
                         className="text-2xl sm:text-3xl font-bold text-[#FFD700]"
@@ -1210,7 +1193,7 @@ export default function ActorPageClient({
                     )}
                   >
                     <button 
-                      className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
+                      className="w-full px-8 py-4 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[44px]"
                       style={{
                         background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
                       }}
@@ -1262,10 +1245,9 @@ export default function ActorPageClient({
               <div className="flex items-center gap-3 mb-6">
                 <Award className="w-6 h-6 text-gray-400" />
                 <h2 
-                  className="text-3xl sm:text-4xl font-bold text-white"
+                  className="text-2xl sm:text-3xl font-bold text-white tracking-tight"
                   style={{ 
-                    fontFamily: 'var(--font-geist-sans), sans-serif',
-                    letterSpacing: '0.02em',
+                    fontFamily: 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                   }}
                 >
                   Awards & Recognition
@@ -1278,16 +1260,11 @@ export default function ActorPageClient({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 1.3 + index * 0.1 }}
-                    className={`p-6 rounded-2xl border backdrop-blur-2xl ${
+                    className={`p-5 rounded-md border ${
                       award.result === 'won' 
-                        ? 'bg-gradient-to-br from-[#FFD700]/10 via-[#FFA500]/5 to-transparent border-[#FFD700]/30' 
-                        : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-white/10'
+                        ? 'bg-[#FFD700]/10 border-[#FFD700]/30' 
+                        : 'bg-[#141414] border-white/[0.08]'
                     }`}
-                    style={{
-                      boxShadow: award.result === 'won' 
-                        ? `0 8px 32px rgba(255, 215, 0, 0.1), 0 0 0 1px rgba(255, 215, 0, 0.15)`
-                        : `0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)`,
-                    }}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-lg ${
@@ -1358,10 +1335,9 @@ export default function ActorPageClient({
                 <div className="flex items-center gap-3 sm:gap-4 flex-nowrap justify-center sm:justify-start flex-shrink-0 min-w-0">
                   <Film className="w-7 h-7 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" />
                   <h2 
-                    className="text-4xl sm:text-5xl md:text-6xl font-bold text-white text-center sm:text-left flex-shrink-0 min-w-0"
+                    className="text-2xl sm:text-3xl font-bold text-white text-center sm:text-left flex-shrink-0 min-w-0 tracking-tight"
                     style={{ 
-                      fontFamily: 'var(--font-geist-sans), sans-serif',
-                      letterSpacing: '0.02em',
+                      fontFamily: 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                     }}
                   >
                     Filmography
@@ -1383,8 +1359,8 @@ export default function ActorPageClient({
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search for actors and movies..."
-                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-all text-base"
-                        style={{ borderRadius: '9999px' }}
+                        className="w-full pl-12 pr-10 py-4 sm:py-3 rounded-md bg-[#1a1a1a] border border-white/10 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0 focus:border-white/20 transition-all text-base"
+                        
                       />
                       {searchQuery && (
                         <button
@@ -1403,7 +1379,7 @@ export default function ActorPageClient({
                   <div className="relative">
                     <button
                       onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                      className="flex items-center gap-2 px-4 py-4 sm:py-3 rounded-full bg-[#1a1a1a] border border-white/10 text-white hover:border-[#FFD700]/50 transition-all text-sm font-medium whitespace-nowrap"
+                      className="flex items-center gap-2 px-4 py-4 sm:py-3 rounded-md bg-[#1a1a1a] border border-white/10 text-white hover:border-white/20 transition-all text-sm font-medium whitespace-nowrap"
                     >
                       <span>
                         {sortBy === 'relevance' ? (searchQuery.trim() ? 'Relevance' : 'Year') : 
@@ -1422,7 +1398,7 @@ export default function ActorPageClient({
                           className="fixed inset-0 z-40" 
                           onClick={() => setSortDropdownOpen(false)}
                         />
-                        <div className="absolute right-0 mt-2 z-50 w-64 sm:w-56 rounded-[1.5rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05),inset_0_1px_0_0_rgba(255,255,255,0.1),inset_0_-1px_0_0_rgba(0,0,0,0.3)] overflow-hidden">
+                        <div className="absolute right-0 mt-2 z-50 w-64 sm:w-56 rounded-md bg-[#1a1a1a] border border-white/[0.08] overflow-hidden shadow-lg">
                           <button
                             onClick={() => {
                               setSortBy('rating')
@@ -1460,7 +1436,7 @@ export default function ActorPageClient({
                                 : 'text-gray-300 hover:text-white hover:bg-white/5'
                             }`}
                           >
-                            Controversial 🔥
+                            Controversial
                           </button>
                           <button
                             onClick={() => {
@@ -1532,35 +1508,13 @@ export default function ActorPageClient({
                     {/* Premium Card - Clean & Cinematic - Matching performances page */}
                     {/* Highest Rated Card - Subtle distinction */}
                     <div 
-                      className={`relative h-full p-8 sm:p-10 md:p-12 rounded-[2rem] border backdrop-blur-2xl overflow-hidden transition-all duration-300 ${
-                        isHighestRated 
-                          ? 'bg-gradient-to-br from-[#1a1a1a]/98 via-[#0f0f0f]/95 to-black/98 border-[#FFD700]/30 hover:shadow-[0_0_50px_rgba(255,215,0,0.15)]' 
-                          : 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border-transparent hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]'
+                      className={`relative h-full p-5 sm:p-6 rounded-md border overflow-hidden transition-colors duration-200 ${
+                        isHighestRated
+                          ? 'bg-[#141414] border-[#FFD700]/35'
+                          : 'bg-[#141414] border-white/[0.08] hover:border-white/20'
                       }`}
-                      style={{
-                        boxShadow: isHighestRated ? `
-                          0 30px 80px -15px rgba(0, 0, 0, 0.95),
-                          0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                          0 0 0 1px rgba(255, 215, 0, 0.15),
-                          inset 0 1px 0 0 rgba(255, 215, 0, 0.2),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                        ` : `
-                          0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                          0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                          0 0 0 1px rgba(255, 255, 255, 0.05),
-                          inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                          inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                        `,
-                      }}
                     >
-                      {/* Glow effect - Enhanced for highest rated */}
-                      <div className={`absolute inset-0 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none ${
-                        isHighestRated ? 'opacity-30' : 'opacity-0 group-hover:opacity-100'
-                      }`}>
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                      </div>
-
-                        {/* Content */}
+                      {/* Content */}
                       <div className="relative z-10 flex flex-col h-full">
                         <div className="flex-1">
                           {/* Movie poster + actor badge: bottom-right, minimal overlap with poster */}
@@ -1570,6 +1524,7 @@ export default function ActorPageClient({
                               posterUrl={(performance.movie as any).posterUrl}
                               size="lg"
                               loading="lazy"
+                              rounded="rounded-md"
                             />
                             <div className="absolute -bottom-3 -right-3 z-10 pointer-events-none">
                               <FilmographyPosterBadge name={actor.name} imageUrl={actor.imageUrl} />
@@ -1626,7 +1581,7 @@ export default function ActorPageClient({
                         <div className="mt-auto pt-4">
                           <Link href={rateUrl}>
                             <button 
-                              className="w-full px-8 py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer"
+                              className="w-full px-8 py-4 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[44px]"
                               style={{
                                 background: userRatedMovies.has(performance.movie.id)
                                   ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
@@ -1656,7 +1611,7 @@ export default function ActorPageClient({
                 transition={{ duration: 0.5 }}
                 className="text-center py-16"
               >
-                <div className="inline-block p-8 rounded-[2rem] bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05),inset_0_1px_0_0_rgba(255,255,255,0.1),inset_0_-1px_0_0_rgba(0,0,0,0.3)]">
+                <div className="inline-block p-8 rounded-md bg-[#141414] border border-white/[0.08]">
                   <Film className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-300 mb-2">No performances found</h3>
                   <p className="text-gray-500">
@@ -1676,20 +1631,9 @@ export default function ActorPageClient({
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-center py-16"
           >
-            <div 
-              className="relative mx-auto w-fit p-8 sm:p-10 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl"
-              style={{
-                boxShadow: `
-                  0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                  0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                  0 0 0 1px rgba(255, 255, 255, 0.05),
-                  inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                  inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                `,
-              }}
-            >
-              <Film className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <p className="text-xl text-gray-400">No performances found for this actor yet.</p>
+            <div className="relative mx-auto w-fit p-8 sm:p-10 rounded-md border border-white/[0.08] bg-[#141414]">
+              <Film className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+              <p className="text-base text-zinc-500">No performances found for this actor yet.</p>
             </div>
           </motion.div>
         )}

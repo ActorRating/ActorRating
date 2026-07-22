@@ -56,14 +56,14 @@ export default function NotFound() {
           </Link>
           
           <Link
-            href="/performances"
+            href="/discover"
             className="px-8 py-4 rounded-full text-black text-lg font-bold tracking-wider transition-all duration-400 hover:shadow-[0_0_40px_rgba(255,215,0,0.4)] min-h-[56px] inline-flex items-center justify-center gap-3"
             style={{
               background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
               boxShadow: '0 0 20px rgba(255, 215, 0, 0.25), 0 0 40px rgba(255, 215, 0, 0.15)',
             }}
           >
-            <span>Performances</span>
+            <span>Discover</span>
             <FaArrowRight className="w-5 h-5" />
           </Link>
         </div>

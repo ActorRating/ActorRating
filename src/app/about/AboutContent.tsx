@@ -6,8 +6,9 @@ import { RATING_CRITERIA } from "@/lib/rating";
 
 const GOLD =
   "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)";
-const PLAYFAIR: React.CSSProperties = {
-  fontFamily: 'var(--font-playfair-display), "Playfair Display", Georgia, serif',
+const DISPLAY: React.CSSProperties = {
+  fontFamily:
+    'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
 };
 const SANS: React.CSSProperties = {
   fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
@@ -65,7 +66,7 @@ function Question({ id, children }: { id?: string; children: React.ReactNode }) 
     <h3
       id={id}
       className="text-[1.5rem] sm:text-[1.75rem] md:text-[1.875rem] font-bold text-white leading-[1.25] tracking-tight"
-      style={PLAYFAIR}
+      style={DISPLAY}
     >
       {children}
     </h3>
@@ -207,10 +208,10 @@ export function AboutContent() {
                 <p>
                   Find an actor&apos;s role in a film — from{" "}
                   <Link
-                    href="/performances"
+                    href="/discover"
                     className="text-[#FFD700] hover:underline underline-offset-2"
                   >
-                    All Performances
+                    Discover
                   </Link>
                   , search, or the homepage — then score it with a quick 0–10 slider,
                   or open the five optional dimensions for a fuller take. Most
@@ -302,7 +303,7 @@ export function AboutContent() {
             <section className="pt-10 sm:pt-12 border-t border-white/[0.08]">
               <h2
                 className="text-2xl sm:text-[1.75rem] font-bold text-white tracking-tight"
-                style={PLAYFAIR}
+                style={DISPLAY}
               >
                 Ready to start?
               </h2>
@@ -310,7 +311,7 @@ export function AboutContent() {
                 Rate performances you&apos;ve seen. It&apos;s free.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link href="/performances" className="inline-flex">
+                <Link href="/discover" className="inline-flex">
                   <span
                     className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-black text-[15px] font-bold min-h-[44px] transition-transform hover:scale-[1.02]"
                     style={{ background: GOLD }}

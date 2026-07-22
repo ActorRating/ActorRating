@@ -437,16 +437,7 @@ export default function OnboardingRatePage() {
             >
               {/* Success Card */}
               <div
-                className="relative rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden p-8 sm:p-10"
-                style={{
-                  boxShadow: `
-                    0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                    0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                  `,
-                }}
+                className="relative rounded-md border border-white/[0.08] bg-[#141414] overflow-hidden p-8 sm:p-10"
               >
                 {/* Close Button */}
                 <button
@@ -455,15 +446,10 @@ export default function OnboardingRatePage() {
                   style={{ pointerEvents: 'auto' }}
                   aria-label="Close and go to dashboard"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gray-500/20 flex items-center justify-center hover:bg-gray-500/30 transition-colors pointer-events-auto">
+                  <div className="w-8 h-8 rounded-md bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors pointer-events-auto">
                     <X className="w-4 h-4 pointer-events-none" />
                   </div>
                 </button>
-
-                {/* Glow effect */}
-                <div className="absolute inset-0 opacity-30 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/20 rounded-full blur-3xl" />
-                </div>
 
                 {/* Content */}
                 <div className="relative z-10">
@@ -476,10 +462,9 @@ export default function OnboardingRatePage() {
                   >
                     <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-[#FFD700] mx-auto mb-4" />
                     <h2
-                      className="text-2xl sm:text-3xl font-bold text-white"
+                      className="text-2xl sm:text-3xl font-bold text-white tracking-tight"
                       style={{
-                        fontFamily: 'var(--font-cinzel), serif',
-                        letterSpacing: '0.02em',
+                        fontFamily: 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                       }}
                     >
                       Rating submitted
@@ -581,13 +566,16 @@ export default function OnboardingRatePage() {
                   >
                     <button
                       onClick={() => router.push('/onboarding/rate')}
-                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-white bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 hover:from-purple-500 hover:via-violet-500 hover:to-purple-500 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
+                      className="flex-1 px-6 py-3.5 rounded-md font-semibold text-base text-zinc-300 border border-white/10 bg-white/5 hover:bg-white/10 hover:text-white transition-colors duration-200 min-h-[44px]"
                     >
                       Rate Another
                     </button>
                     <button
                       onClick={() => router.replace('/dashboard')}
-                      className="flex-1 px-6 py-3.5 rounded-full font-semibold text-base text-black bg-gradient-to-r from-[#FFE55C] via-[#FFD700] to-[#FFA500] hover:from-[#FFD700] hover:via-[#FFA500] hover:to-[#FF8C00] transition-all duration-300 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:scale-[1.02] active:scale-[0.98]"
+                      className="flex-1 px-6 py-3.5 rounded-md font-semibold text-base text-black transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      }}
                     >
                       Dashboard
                     </button>
@@ -665,74 +653,49 @@ export default function OnboardingRatePage() {
     <AuthGuard requireAuth>
       <SignedInLayout>
         <div className="min-h-screen bg-black">
-          <div className="w-full max-w-[1280px] mx-auto px-4 py-16 sm:py-20">
-            {/* Welcome Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-8"
-            >
+          <header className="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 pt-[6.5rem] sm:pt-[7.5rem] pb-8 sm:pb-10">
+            <div className="text-center mb-8">
+              <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-3">
+                First rating
+              </p>
               <h1
-                className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3"
+                className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold text-white tracking-tight leading-[1.15] mb-3"
                 style={{
-                  fontFamily: 'var(--font-cinzel), serif',
-                  letterSpacing: '0.02em',
+                  fontFamily:
+                    'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
                 }}
               >
-                <span className="text-white">Welcome, </span>
-                <span
+                Welcome, {welcomeName}
+              </h1>
+              <p className="text-[15px] sm:text-base text-zinc-500 leading-relaxed max-w-xl mx-auto mb-7 sm:mb-8">
+                Choose a performance you&apos;ve seen — or search any actor or film.
+              </p>
+
+              <nav aria-label="Search" className="max-w-xl mx-auto text-left relative z-30 mb-10">
+                <div
+                  className="relative rounded-[2rem] border border-white/[0.06] bg-[#1a1a1a] overflow-hidden"
                   style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 35%, #FFA500 80%, #FF8C00 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    boxShadow:
+                      "0 20px 50px -18px rgba(0,0,0,0.85), inset 0 1px 0 0 rgba(255,255,255,0.06)",
                   }}
                 >
-                  {welcomeName}!
-                </span>
-              </h1>
-              <p className="text-lg sm:text-xl text-[#a3a3a3] font-light mb-8">
-                Choose a performance you've seen to rate
-              </p>
-
-              {/* Search Bar - Exact same as search page */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="max-w-3xl mx-auto mb-12"
-              >
-                <div className="relative group">
-                  <div
-                    className="relative rounded-[2rem] border border-transparent bg-[#1a1a1a] backdrop-blur-2xl overflow-hidden transition-all duration-300"
-                    style={{
-                      boxShadow: `
-                        0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                        0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                      `,
-                      transform: 'translateY(-4px) perspective(1000px) rotateX(1deg)',
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    <SearchBar
-                      placeholder="Search for actors and movies..."
-                      showClear
-                      autoFocus={false}
-                      className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-lg"
-                    />
-                  </div>
+                  <SearchBar
+                    placeholder="Search actors and films…"
+                    showClear
+                    showSuggestions
+                    autoFocus={false}
+                    className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[52px]"
+                  />
                 </div>
-              </motion.div>
+              </nav>
 
-              {/* Divider Text */}
-              <p className="text-base sm:text-lg text-[#a3a3a3] font-light mb-8">
-                Or start with these classics:
+              <p className="text-sm text-zinc-500 tracking-wide">
+                Or start with these classics
               </p>
-            </motion.div>
+            </div>
+          </header>
+
+          <div className="w-full max-w-[1280px] mx-auto px-4 pb-16 sm:pb-20">
 
             {/* Desktop: Grid layout */}
             <div className="hidden lg:grid lg:grid-cols-3 gap-6 w-full items-stretch">
@@ -791,15 +754,9 @@ export default function OnboardingRatePage() {
 
               {/* Navigation Dots - Mobile Only */}
               <div className="relative flex justify-center items-center mt-8 px-4">
-                <div className="relative rounded-xl bg-gradient-to-br from-[#1a1a1a]/80 via-[#0f0f0f]/70 to-black/80 backdrop-blur-xl border border-white/5"
-                  style={{
-                    boxShadow: `
-                    0 10px 30px -5px rgba(0, 0, 0, 0.7),
-                    0 0 0 1px rgba(255, 255, 255, 0.03),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.05)
-                  `,
-                    padding: '6px 12px',
-                  }}
+                <div
+                  className="relative rounded-md bg-[#141414] border border-white/[0.06]"
+                  style={{ padding: '6px 12px' }}
                 >
                   <div className="relative z-10 flex justify-center items-center" style={{ gap: '6px' }}>
                     {(performancesWithRatings.length > 0 ? performancesWithRatings : CURATED_PERFORMANCES.map(p => ({ ...p, averageRating: null, ratingCount: 0 }))).map((_, index) => (
@@ -865,13 +822,7 @@ function OnboardingPerformanceCard({
 
   return (
     <div className="group relative h-full">
-      <div
-        className="relative h-full min-h-[620px] sm:min-h-[640px] p-6 sm:p-8 md:p-10 lg:p-12 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)]"
-        style={{ boxShadow: "0 25px 70px -15px rgba(0, 0, 0, 0.9), 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)" }}
-      >
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-        </div>
+      <div className="relative h-full min-h-[560px] sm:min-h-[580px] p-5 sm:p-6 md:p-8 rounded-md border border-white/[0.08] bg-[#141414] overflow-hidden transition-colors duration-200 group-hover:border-white/20">
         <div className="relative z-10 flex flex-col h-full">
           <div className="flex-1">
             <div className="flex justify-center items-end gap-4 sm:gap-5 mb-6">
@@ -880,6 +831,7 @@ function OnboardingPerformanceCard({
                 imageUrl={performance.actorImageUrl}
                 size="lg"
                 loading="lazy"
+                rounded="rounded-md"
               />
               <MoviePoster
                 title={performance.movieTitle}
@@ -888,35 +840,61 @@ function OnboardingPerformanceCard({
                 loading="lazy"
               />
             </div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5">
               {rating ? (
-                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
-                  <FaStar className="w-6 h-6 text-[#FFD700]" />
-                  <span className="text-3xl font-bold text-[#FFD700]" style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontVariantNumeric: "tabular-nums" }}>{rating}</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
+                  <FaStar className="w-5 h-5 text-[#FFD700]" />
+                  <span
+                    className="text-2xl font-bold text-[#FFD700]"
+                    style={{ fontFamily: "var(--font-geist-sans), sans-serif", fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {rating}
+                  </span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-gradient-to-r from-[#1a1a1a]/80 to-[#0f0f0f]/80 border border-[#666]/40">
-                  <FaStar className="w-6 h-6 text-[#666]" />
-                  <span className="text-3xl font-bold text-[#a3a3a3]">N/A</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/5 border border-white/10">
+                  <FaStar className="w-5 h-5 text-[#666]" />
+                  <span className="text-2xl font-bold text-[#a3a3a3]">N/A</span>
                 </div>
               )}
-              <div className="text-[#a3a3a3] text-base font-medium">{performance.year}</div>
+              <div className="text-zinc-500 text-sm font-medium">{performance.year}</div>
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-cinzel), serif" }}>{performance.actorName}</h3>
-            <div className="mb-4">
-              <span className="text-lg text-[#FFD700] font-semibold tracking-wide">{performance.movieTitle}</span>
+            <h3
+              className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight"
+              style={{
+                fontFamily:
+                  'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif',
+              }}
+            >
+              {performance.actorName}
+            </h3>
+            <div className="mb-3">
+              <span className="text-base sm:text-lg text-[#FFD700] font-semibold tracking-wide">
+                {performance.movieTitle}
+              </span>
             </div>
             <div className="mb-6">
-              <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">as {character}</p>
+              <p className="text-base sm:text-lg text-zinc-400 leading-relaxed italic">
+                as {character}
+              </p>
             </div>
           </div>
           <div className="mt-auto pt-4">
-            <button onClick={onRate} className="w-full px-6 py-4 sm:px-8 sm:py-4 rounded-full text-black text-base font-bold tracking-wider transition-all duration-200 hover:scale-105 cursor-pointer min-h-[56px] touch-manipulation" style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)" }}>
-              <span className="flex items-center justify-center gap-2">Rate <FaStar className="w-5 h-5" /></span>
+            <button
+              onClick={onRate}
+              className="w-full px-6 py-3.5 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[48px] touch-manipulation"
+              style={{
+                background:
+                  "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+              }}
+            >
+              <span className="flex items-center justify-center gap-2">
+                Rate
+                <FaStar className="w-4 h-4" />
+              </span>
             </button>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
       </div>
     </div>
   )

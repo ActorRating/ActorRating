@@ -62,13 +62,13 @@ export const designTokens = {
   typography: {
     fonts: {
       heading: {
-        family: "'Playfair Display', serif",
+        family: "var(--font-heading), 'Cormorant Garamond', Georgia, serif",
         fallback: "Georgia, 'Times New Roman', serif",
         weights: {
           regular: 400,
+          medium: 500,
           semibold: 600,
           bold: 700,
-          black: 900,
         },
       },
       body: {

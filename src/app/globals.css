@@ -55,11 +55,13 @@
   --popover: #0a0a0a;
   --popover-foreground: #f5f5f5;
 
-  /* Typography — display font loaded via next/font on body as --font-playfair-display */
-  --font-heading: var(--font-playfair-display), "Playfair Display", Georgia, serif;
+  /* Typography — display/heading = Cormorant Garamond (loaded as --font-cormorant-garamond) */
+  --font-display: var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif;
+  --font-heading: var(--font-display);
   --font-body: 'Inter', sans-serif;
-  /* Legacy alias: headings used var(--font-cinzel); keep in sync with Playfair */
-  --font-cinzel: var(--font-playfair-display), "Playfair Display", Georgia, serif;
+  /* Legacy aliases — prefer --font-heading / --font-display in new code */
+  --font-cinzel: var(--font-display);
+  --font-playfair-display: var(--font-display);
 
   /* Gradients */
   --gradient-gold-primary: linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%);
@@ -97,8 +99,10 @@
   --color-popover-foreground: var(--popover-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-cinzel: var(--font-playfair-display), "Playfair Display", Georgia, serif;
-  --font-playfair-display: var(--font-playfair-display), "Playfair Display", Georgia, serif;
+  --font-display: var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif;
+  --font-heading: var(--font-display);
+  --font-cinzel: var(--font-display);
+  --font-playfair-display: var(--font-display);
   --font-dm-serif-display: var(--font-dm-serif-display);
 }
 
@@ -151,7 +155,7 @@ body {
   color: #D4AF37 !important;
   padding: 14px 32px !important;
   border-radius: 8px !important;
-  font-family: 'Playfair Display', serif !important;
+  font-family: var(--font-heading), Georgia, serif !important;
   font-weight: 600 !important;
   font-size: 17px !important;
   letter-spacing: 2px !important;
@@ -764,7 +768,7 @@ video {
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-/* Letterboxd-matched stacked manifesto breakpoints (inline HERO_MANIFESTO is the desktop base) */
+/* Stacked manifesto size tweaks (font from HERO_MANIFESTO / Cormorant) */
 @media (max-width: 767px) {
   .hero-manifesto-stacked {
     font-size: 1.875rem !important; /* 30px */
@@ -774,10 +778,30 @@ video {
 
 @media (max-width: 460px) {
   .hero-manifesto-stacked {
-    font-family: var(--font-geist-sans), var(--font-sans), system-ui, sans-serif !important;
-    font-weight: 400 !important;
-    font-size: 1.375rem !important; /* 22px */
-    line-height: 1.4 !important;
+    font-size: 1.5rem !important; /* 24px */
+    line-height: 1.35 !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* Cinematic hero: larger Cormorant on wide screens */
+@media (min-width: 1024px) {
+  .hero-manifesto-cinematic {
+    font-size: 2.75rem !important; /* 44px */
+    line-height: 1.28 !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-manifesto-cinematic {
+    font-size: 3.25rem !important; /* 52px */
+    line-height: 1.25 !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .hero-manifesto-cinematic {
+    font-size: 3.5rem !important; /* 56px */
   }
 }
 
@@ -799,6 +823,14 @@ video {
       rgba(0, 0, 0, 0.22) 0%,
       rgba(0, 0, 0, 0.08) 40%,
       transparent 75%
+    ),
+    /* Soft bottom fade into page black */
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 55%,
+      rgba(0, 0, 0, 0.28) 82%,
+      rgba(0, 0, 0, 0.5) 100%
     );
 }
 
