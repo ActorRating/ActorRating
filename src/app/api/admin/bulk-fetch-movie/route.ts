@@ -6,6 +6,7 @@ import { searchMovie, getMovieCreditsForIngestion } from "@/lib/tmdb";
 import { isJokePerformance } from "@/lib/joke-performance-filter";
 import { validateContent } from "@/lib/content-validator";
 import { SYSTEM_USER_ID, syncMovieCast } from "@/lib/movie-ingestion";
+import { parseTmdbReleaseDate } from "@/lib/movie-release";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const year = new Date(movieData.release_date).getFullYear();
+    const releaseDate = parseTmdbReleaseDate(movieData.release_date);
     const currentYear = new Date().getFullYear();
     if (isNaN(year) || year < 1900 || year > currentYear) {
       return NextResponse.json(
@@ -69,12 +71,17 @@ export async function POST(request: NextRequest) {
           director: credits.director,
           tmdbId: movieData.id,
           overview: movieData.overview,
+          ...(releaseDate && { releaseDate }),
         },
       });
-    } else if (movie.tmdbId === null) {
+    } else {
       movie = await prisma.movie.update({
         where: { id: movie.id },
-        data: { tmdbId: movieData.id, director: credits.director },
+        data: {
+          ...(movie.tmdbId === null ? { tmdbId: movieData.id } : {}),
+          director: credits.director,
+          ...(releaseDate && !movie.releaseDate ? { releaseDate } : {}),
+        },
       });
     }
 

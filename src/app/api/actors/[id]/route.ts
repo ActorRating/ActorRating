@@ -15,6 +15,7 @@ const actorApiMovieSelect = {
   slug: true,
   posterUrl: true,
   isFeaturette: true,
+  releaseDate: true,
 } as Prisma.MovieSelect
 
 export async function GET(

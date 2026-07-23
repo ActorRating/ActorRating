@@ -77,6 +77,8 @@ export type TmdbMovieDetails = {
   posterPath: string | null
   voteAverage: number | null
   voteCount: number | null
+  /** TMDB primary release_date as YYYY-MM-DD, when present. */
+  releaseDate: string | null
 }
 
 /**
@@ -89,11 +91,15 @@ export async function getMovieDetails(tmdbMovieId: number): Promise<TmdbMovieDet
   try {
     const url = `${TMDB_BASE_URL}/movie/${tmdbMovieId}?api_key=${API_KEY}&language=en-US`;
     const response = await axios.get(url, { timeout: 15000 });
-    const { poster_path, vote_average, vote_count } = response.data;
+    const { poster_path, vote_average, vote_count, release_date } = response.data;
     return {
       posterPath: typeof poster_path === 'string' ? poster_path : null,
       voteAverage: typeof vote_average === 'number' && Number.isFinite(vote_average) ? vote_average : null,
       voteCount: typeof vote_count === 'number' && Number.isFinite(vote_count) ? Math.trunc(vote_count) : null,
+      releaseDate:
+        typeof release_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(release_date)
+          ? release_date.slice(0, 10)
+          : null,
     };
   } catch {
     return null;

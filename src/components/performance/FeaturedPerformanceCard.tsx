@@ -9,6 +9,7 @@ import { Button } from '../ui/Button'
 import { RatingVisualization } from './RatingVisualization'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { getRateUrl } from '@/lib/slugHelper'
+import { isMovieComingSoon } from '@/lib/movie-release'
 
 interface FeaturedPerformanceCardProps {
   performance: Performance
@@ -235,22 +236,33 @@ export function FeaturedPerformanceCard({
 
         {/* Single Action Button: Rate */}
         <div className="flex gap-3">
-          <Button
-            asChild
-            variant="premium"
-            size="lg"
-            className="flex-1 text-base font-semibold"
-          >
-            <Link href={performance.actor && performance.movie
-              ? getRateUrl(
-                  { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
-                  { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
-                )
-              : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`}>
-              <Play className="w-5 h-5 mr-2" />
-              {ratingCount > 0 ? 'Rate This' : 'Be the first to rate'}
-            </Link>
-          </Button>
+          {isMovieComingSoon(performance.movie) ? (
+            <Button
+              variant="premium"
+              size="lg"
+              className="flex-1 text-base font-semibold cursor-not-allowed opacity-70"
+              disabled
+            >
+              Coming soon
+            </Button>
+          ) : (
+            <Button
+              asChild
+              variant="premium"
+              size="lg"
+              className="flex-1 text-base font-semibold"
+            >
+              <Link href={performance.actor && performance.movie
+                ? getRateUrl(
+                    { id: performance.actorId, name: performance.actor.name, slug: (performance.actor as any).slug },
+                    { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
+                  )
+                : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`}>
+                <Play className="w-5 h-5 mr-2" />
+                {ratingCount > 0 ? 'Rate This' : 'Be the first to rate'}
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

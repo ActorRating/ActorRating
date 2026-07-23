@@ -13,6 +13,7 @@ import {
   isSelfOrArchiveCredit,
   matchesFeaturetteTitle,
 } from '@/lib/non-rateable'
+import { isMovieComingSoon } from '@/lib/movie-release'
 import RatePageClient from './RatePageClient'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
@@ -77,6 +78,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
         isFeaturette: true,
         genre: true,
         overview: true,
+        releaseDate: true,
       },
     }),
     prisma.actor.findFirst({
@@ -101,6 +103,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
         isFeaturette: true,
         genre: true,
         overview: true,
+        releaseDate: true,
       },
     }))
   const actorRow =
@@ -126,6 +129,11 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
       movieRow.overview ?? null,
     )
   ) {
+    return null
+  }
+
+  // Coming-soon titles stay browsable on hubs but cannot be rated yet.
+  if (isMovieComingSoon(movieRow)) {
     return null
   }
 

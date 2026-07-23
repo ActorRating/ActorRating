@@ -122,6 +122,8 @@ model Movie {
   tmdbVoteCount  Int?
   /// When tmdbRating / tmdbVoteCount were last fetched from TMDB.
   tmdbDataFetchedAt DateTime?
+  /// Theatrical / primary TMDB release date (date-only). Used to gate rating until release day.
+  releaseDate    DateTime?     @db.Date
   /// SEO indexing rollout cohort (0 = not in a gated cohort; 1 = cohort-1, etc.).
   indexingCohort Int           @default(0)
   performances   Performance[]

@@ -37,6 +37,8 @@ export interface Movie {
   /** TMDB vote_average (0–10). Critic Aggregate source for movie hubs — not community. */
   tmdbRating?: number | null
   tmdbVoteCount?: number | null
+  /** Primary release day (ISO date). Rating gated until this day inclusive. */
+  releaseDate?: string | Date | null
   indexingCohort?: number | null
   performances?: Performance[]
   ratings?: Rating[]

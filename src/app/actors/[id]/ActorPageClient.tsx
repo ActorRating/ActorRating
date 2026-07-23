@@ -17,6 +17,8 @@ import { MoviePoster } from '@/components/ui/MoviePoster'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardScoreSplit'
+import { RateOrComingSoonButton } from '@/components/rating/RateOrComingSoonButton'
+import { isMovieComingSoon } from '@/lib/movie-release'
 
 interface Award {
   title?: string
@@ -74,6 +76,7 @@ interface Performance {
     director?: string
     slug?: string | null
     posterUrl?: string | null
+    releaseDate?: string | Date | null
   }
 }
 
@@ -1593,23 +1596,11 @@ export default function ActorPageClient({
 
                         {/* Rate Button */}
                         <div className="mt-auto pt-4">
-                          <Link href={rateUrl}>
-                            <button 
-                              className="w-full px-8 py-4 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[44px]"
-                              style={{
-                                background: userRatedMovies.has(performance.movie.id)
-                                  ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
-                                  : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                                color: userRatedMovies.has(performance.movie.id) ? '#FFD700' : 'black',
-                                border: userRatedMovies.has(performance.movie.id) ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
-                              }}
-                            >
-                              <span className="flex items-center justify-center gap-2">
-                                {userRatedMovies.has(performance.movie.id) ? 'Edit' : 'Rate'}
-                                <FaStar className="w-4 h-4" />
-                              </span>
-                            </button>
-                          </Link>
+                          <RateOrComingSoonButton
+                            rateUrl={rateUrl}
+                            comingSoon={isMovieComingSoon(performance.movie)}
+                            alreadyRated={userRatedMovies.has(performance.movie.id)}
+                          />
                         </div>
                       </div>
 

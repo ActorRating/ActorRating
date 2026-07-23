@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { nanoid } from "nanoid"
 import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
+import { isMovieComingSoon } from "@/lib/movie-release"
 
 export async function GET() {
   try {
@@ -146,6 +147,13 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       }
       return NextResponse.json(
         { error: "This title is not available for rating" },
+        { status: 400 }
+      )
+    }
+
+    if (isMovieComingSoon(movie)) {
+      return NextResponse.json(
+        { error: "This movie is not out yet — rating opens on release day" },
         { status: 400 }
       )
     }

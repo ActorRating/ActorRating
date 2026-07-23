@@ -15,9 +15,11 @@ import { getRateUrl, getActorUrl } from '@/lib/slugHelper'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { MoviePoster } from '@/components/ui/MoviePoster'
 import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
-import { upgradeActorImageRes } from '@/lib/tmdb'
-import { resolveCharacterDisplay } from '@/lib/character'
 import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardScoreSplit'
+import { RateOrComingSoonButton } from '@/components/rating/RateOrComingSoonButton'
+import { isMovieComingSoon } from '@/lib/movie-release'
+import { resolveCharacterDisplay } from '@/lib/character'
+import { upgradeActorImageRes } from '@/lib/tmdb'
 
 interface Rating {
   userId: string
@@ -43,6 +45,7 @@ interface Movie {
   tmdbId?: number
   posterUrl?: string | null
   tmdbRating?: number | null
+  releaseDate?: string | Date | null
   ratings?: Rating[]
 }
 
@@ -533,6 +536,11 @@ export default function MoviePageClient({
 
   const Layout = user ? SignedInLayout : HomeLayout
 
+  const movieComingSoon = useMemo(
+    () => (movie ? isMovieComingSoon(movie) : false),
+    [movie]
+  )
+
   const targetPerformance = useMemo(() => {
     return communityStats.highestRated || performances[0] || null
   }, [communityStats.highestRated, performances])
@@ -760,20 +768,30 @@ export default function MoviePageClient({
                 transition={{ duration: 0.6, delay: 0.6 }}
                 className="mb-8 sm:mb-10"
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    (document.getElementById('first-performance-card') ?? document.getElementById('performances-section'))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  }}
-                  className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-md text-black text-[15px] sm:text-base font-bold transition-transform duration-200 hover:scale-[1.02] flex items-center justify-center gap-2 mx-auto min-h-[44px]"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                    color: 'black'
-                  }}
-                >
-                  <FaStar className="w-4 h-4" />
-                  Rate a performance
-                </button>
+                {movieComingSoon ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-md text-[15px] sm:text-base font-bold flex items-center justify-center gap-2 mx-auto min-h-[44px] cursor-not-allowed text-zinc-400 border border-white/10 bg-white/[0.04]"
+                  >
+                    Coming soon
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      (document.getElementById('first-performance-card') ?? document.getElementById('performances-section'))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }}
+                    className="px-7 py-3.5 sm:px-8 sm:py-4 rounded-md text-black text-[15px] sm:text-base font-bold transition-transform duration-200 hover:scale-[1.02] flex items-center justify-center gap-2 mx-auto min-h-[44px]"
+                    style={{
+                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
+                      color: 'black'
+                    }}
+                  >
+                    <FaStar className="w-4 h-4" />
+                    Rate a performance
+                  </button>
+                )}
               </motion.div>
             )}
 
@@ -885,7 +903,7 @@ export default function MoviePageClient({
         </div>
 
         {/* Onboarding Card - Rate Your First Performance */}
-        {user && !userHasRatedMovie && communityStats.highestRated && (
+        {user && !userHasRatedMovie && !movieComingSoon && communityStats.highestRated && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1235,23 +1253,11 @@ export default function MoviePageClient({
 
                         {/* Rate Button */}
                         <div className="mt-auto pt-4">
-                          <Link href={rateUrl}>
-                            <button 
-                              className="w-full px-8 py-4 rounded-md text-black text-[15px] font-bold transition-transform duration-200 hover:scale-[1.02] cursor-pointer min-h-[44px]"
-                              style={{
-                                background: userRatedActors.has(performance.actorId)
-                                  ? 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)'
-                                  : 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
-                                color: userRatedActors.has(performance.actorId) ? '#FFD700' : 'black',
-                                border: userRatedActors.has(performance.actorId) ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'
-                              }}
-                            >
-                              <span className="flex items-center justify-center gap-2">
-                                {userRatedActors.has(performance.actorId) ? 'Edit' : 'Rate'}
-                                <FaStar className="w-4 h-4" />
-                              </span>
-                            </button>
-                          </Link>
+                          <RateOrComingSoonButton
+                            rateUrl={rateUrl}
+                            comingSoon={movieComingSoon}
+                            alreadyRated={userRatedActors.has(performance.actorId)}
+                          />
                         </div>
                       </div>
 

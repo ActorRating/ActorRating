@@ -33,6 +33,7 @@ import { createActorSlug } from "@/lib/createSlug";
 import { computePerformanceTier } from "@/lib/performance-tier";
 import { getMovieCreditsForIngestion, getMovieDetails, buildPosterUrl } from "@/lib/tmdb";
 import { isFeaturetteMovie, matchesFeaturetteTitle } from "@/lib/non-rateable";
+import { parseTmdbReleaseDate } from "@/lib/movie-release";
 import type { MovieCreditsForIngestion } from "@/lib/tmdb";
 
 /** User id used for system-ingested performances (admin/bulk/seed). One performance per (userId, actorId, movieId). */
@@ -254,6 +255,7 @@ export async function ingestMovieCast(
     getMovieDetails(movie.tmdbId),
   ]);
   const posterUrl = buildPosterUrl(movieDetails?.posterPath ?? null);
+  const releaseDate = parseTmdbReleaseDate(movieDetails?.releaseDate ?? null);
   const cast = credits.cast;
 
   const eligibleCast = cast
@@ -266,7 +268,10 @@ export async function ingestMovieCast(
   if (eligibleCast.length === 0) {
     await prisma.movie.update({
       where: { id: movieId },
-      data: { castIngestedAt: new Date() },
+      data: {
+        castIngestedAt: new Date(),
+        ...(releaseDate && { releaseDate }),
+      },
     });
     return { actorsCreated: 0, performancesCreated: 0, performancesUpdated: 0 };
   }
@@ -338,6 +343,7 @@ export async function ingestMovieCast(
     data: {
       castIngestedAt: new Date(),
       ...(posterUrl && { posterUrl }),
+      ...(releaseDate && { releaseDate }),
     },
   });
 

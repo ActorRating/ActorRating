@@ -6,6 +6,8 @@ import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-fil
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
 import { hydratePerformanceBillingOrder, pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
 import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
+import { getMovieDetails } from "@/lib/tmdb"
+import { parseTmdbReleaseDate } from "@/lib/movie-release"
 
 export async function GET(
   request: NextRequest,
@@ -39,6 +41,22 @@ export async function GET(
           .catch(() => {})
       }
       return NextResponse.json({ error: "Movie not found" }, { status: 410 })
+    }
+
+    // Lazy-fill releaseDate from TMDB so coming-soon gating works without a full backfill.
+    if (!movie.releaseDate && movie.tmdbId != null) {
+      try {
+        const details = await getMovieDetails(movie.tmdbId)
+        const releaseDate = parseTmdbReleaseDate(details?.releaseDate ?? null)
+        if (releaseDate) {
+          movie = await prisma.movie.update({
+            where: { id: movie.id },
+            data: { releaseDate },
+          })
+        }
+      } catch {
+        /* non-blocking */
+      }
     }
 
     const slug = movie.slug ?? id

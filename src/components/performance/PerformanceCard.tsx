@@ -44,6 +44,7 @@ import { Button } from '../ui/Button'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { fadeInUp, getMotionProps, scaleIn } from '@/lib/animations'
 import { getActorUrl, getRateUrl } from '@/lib/slugHelper'
+import { isMovieComingSoon } from '@/lib/movie-release'
 
 interface PerformanceCardProps {
   performance: Performance
@@ -95,6 +96,10 @@ export function PerformanceCard({
       { id: performance.movieId, title: performance.movie.title, year: performance.movie.year, slug: (performance.movie as any).slug }
     )
     : `/rate?actor=${performance.actorId}&movie=${performance.movieId}`
+
+  const comingSoon = performance.movie
+    ? isMovieComingSoon(performance.movie)
+    : false
 
   // Edit URL with rating ID
   const editUrl = ratingId
@@ -410,16 +415,27 @@ export function PerformanceCard({
       {/* Action Button (Rate only) - Hidden if user has already rated */}
       {!showEditButton && (
         <div className="flex mt-auto">
-          <Button
-            asChild
-            variant="premium"
-            size={variant === 'compact' ? 'sm' : 'md'}
-            className="flex-1"
-          >
-            <Link href={rateUrl}>
-              Rate This
-            </Link>
-          </Button>
+          {comingSoon ? (
+            <Button
+              variant="premium"
+              size={variant === 'compact' ? 'sm' : 'md'}
+              className="flex-1 cursor-not-allowed opacity-70"
+              disabled
+            >
+              Coming soon
+            </Button>
+          ) : (
+            <Button
+              asChild
+              variant="premium"
+              size={variant === 'compact' ? 'sm' : 'md'}
+              className="flex-1"
+            >
+              <Link href={rateUrl}>
+                Rate This
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </motion.div>
