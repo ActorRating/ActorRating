@@ -20,6 +20,9 @@ import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatin
 import { fetchGuestSuccessRecommendations, type SuccessCarouselPerf } from '@/lib/guest-success-recommendations'
 import { SuccessRateAnotherCarousel } from '@/components/rating/SuccessRateAnotherCarousel'
 
+const GOLD = 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
+const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
+
 // Lotto-style number roll hook - shows rolling numbers like a slot machine
 function useNumberRoll(startValue: number, endValue: number, duration: number = 300) {
   const [currentValue, setCurrentValue] = useState(startValue)
@@ -232,6 +235,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   touched = false,
   spotlightActive = false,
   hideScore = false,
+  hideLabel = false,
 }: {
   label: string
   value: number
@@ -242,6 +246,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
   touched?: boolean
   spotlightActive?: boolean
   hideScore?: boolean
+  hideLabel?: boolean
 }) {
   const [isActive, setIsActive] = useState(false)
   const [localValue, setLocalValue] = useState(value)
@@ -464,19 +469,25 @@ const RatingSliderCard = memo(function RatingSliderCard({
       }}
     >
       {/* Label with Value */}
+      {(!hideLabel || !hideScore) && (
       <div className="flex items-center justify-between mb-2 sm:mb-3">
-        <h3
-          className="text-sm sm:text-xl font-semibold text-white"
-          style={{ fontFamily: 'Inter, sans-serif' }}
-        >
-          {label}
-        </h3>
+        {!hideLabel ? (
+          <h3
+            className="text-sm sm:text-xl font-semibold text-white"
+            style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}
+          >
+            {label}
+          </h3>
+        ) : (
+          <span />
+        )}
         {!hideScore && (
           <span className="text-sm sm:text-xl font-bold text-[#FFD700]">
             {Math.round(localValue / 10)} / 10
           </span>
         )}
       </div>
+      )}
 
       {/* Slider Container */}
       {/* Increased vertical padding for easier mobile touch (invisible padding) */}
@@ -1706,14 +1717,6 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         contain: 'none',
       }}
     >
-      {/* Ambient background glow */}
-      <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#FFC800]/20 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[#FFB000]/15 rounded-full blur-[150px]" />
-      </div>
-
-
-
       <motion.div
         className={`relative max-w-[900px] mx-auto px-3 sm:px-6 pb-8 sm:pb-20 md:pb-24 ${
           user
@@ -1747,7 +1750,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             id="actor-name-header"
             className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-1.5 sm:mb-4 tracking-tight px-1 text-white"
             style={{
-              fontFamily: 'var(--font-cinzel), serif',
+              fontFamily: DISPLAY,
             }}
           >
             {performance.actor.name}
@@ -1755,20 +1758,16 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Movie Title - Clean, non-italic styling */}
           <div className="px-1">
             <h2
-              className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-0.5 sm:mb-1.5 tracking-tight"
+              className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-semibold mb-0.5 sm:mb-1.5 tracking-tight text-[#FFD700]"
               style={{
-                background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontFamily: 'var(--font-geist-sans), sans-serif',
+                fontFamily: DISPLAY,
                 lineHeight: '1.3',
               }}
             >
               {performance.movie.title}
             </h2>
             <p
-              className="text-sm sm:text-xl md:text-2xl text-[#a1a1aa] font-medium"
+              className="text-sm sm:text-xl md:text-2xl text-zinc-400 font-medium"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1776,7 +1775,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.year}
             </p>
             <p
-              className="text-sm sm:text-base md:text-lg text-[#d4d4d8] font-medium mt-3 sm:mt-4 px-2 max-w-xl mx-auto leading-snug"
+              className="text-sm sm:text-base md:text-lg text-zinc-500 font-medium mt-3 sm:mt-4 px-2 max-w-xl mx-auto leading-snug"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1817,11 +1816,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
               >
                   <div
-                    className="relative backdrop-blur-xl rounded-[1.5rem] sm:rounded-[2.5rem] px-3 sm:px-6 md:px-7 py-2 sm:py-5 md:py-6 shadow-2xl transition-all duration-150 overflow-hidden border border-white/10"
+                    className="relative rounded-md px-3 sm:px-6 md:px-7 py-2 sm:py-5 md:py-6 transition-all duration-150 overflow-hidden border border-white/[0.08] bg-[#141414]"
                     style={{
                       width: '100%',
-                      background: 'rgba(26, 26, 26, 0.95)',
-                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
                     }}
                   >
                     <div className="relative text-center z-10">
@@ -1836,7 +1833,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           <span
                             className="inline-block text-2xl sm:text-5xl md:text-6xl transition-all duration-75 ease-linear"
                             style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                              background: GOLD,
                               WebkitBackgroundClip: 'text',
                               WebkitTextFillColor: 'transparent',
                               backgroundClip: 'text',
@@ -1890,18 +1887,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 }}
               >
                   <div
-                    className="relative backdrop-blur-xl rounded-[2rem] sm:rounded-[3rem] px-5 sm:px-8 md:px-10 py-4 sm:py-7 md:py-8 shadow-2xl transition-all duration-700 overflow-hidden"
+                    className="relative rounded-md border border-white/[0.08] bg-[#141414] px-5 sm:px-8 md:px-10 py-4 sm:py-7 md:py-8 transition-all duration-700 overflow-hidden"
                     style={{
                       width: '100%',
                       minHeight: '100px',
-                      background: 'rgba(26, 26, 26, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
-                      transform: 'perspective(1000px) rotateX(2deg) translateZ(20px)',
-                      transformStyle: 'preserve-3d',
                     }}
                   >
-                    {/* Score pulse effect - quick pulse animation */}
+                    {/* Score pulse effect - subtle */}
                     <AnimatePresence>
                       {spotlightPhase === 'score' && (
                         <motion.div
@@ -1910,8 +1902,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             opacity: 0,
                           }}
                           animate={{
-                            scale: [0.9, 1.15, 1.0],
-                            opacity: [0, 0.5, 0],
+                            scale: [0.9, 1.08, 1.0],
+                            opacity: [0, 0.25, 0],
                           }}
                           exit={{
                             opacity: 0,
@@ -1921,10 +1913,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             times: [0, 0.5, 1],
                             ease: ['easeOut', 'easeIn'],
                           }}
-                          className="absolute inset-0 pointer-events-none rounded-[2.5rem] sm:rounded-[3rem]"
+                          className="absolute inset-0 pointer-events-none rounded-md"
                           style={{
-                            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 200, 0, 0.2) 40%, transparent 70%)',
-                            filter: 'blur(40px)',
+                            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%)',
                             zIndex: 0,
                           }}
                         />
@@ -1944,7 +1935,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           <span
                             className="inline-block text-4xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-75 ease-linear"
                             style={{
-                              background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                              background: GOLD,
                               WebkitBackgroundClip: 'text',
                               WebkitTextFillColor: 'transparent',
                               backgroundClip: 'text',
@@ -1971,18 +1962,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </div>
               )}
 
-            {/* Rating Card - Extra round corners, mobile optimized - No animations on iOS Safari */}
+            {/* Rating Card - Discover surface language */}
             {submitPhase !== 'success' && (
               <div
-                className="relative rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[3rem] p-4 sm:p-6 md:p-8 lg:p-12 py-4 sm:py-10 md:py-12 space-y-3 sm:space-y-6 md:space-y-8 lg:space-y-10 border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/95 to-black/95 backdrop-blur-2xl overflow-visible w-full max-w-full mx-auto"
+                className="relative rounded-md border border-white/[0.08] bg-[#141414] p-4 sm:p-6 md:p-8 lg:p-12 py-4 sm:py-10 md:py-12 space-y-3 sm:space-y-6 md:space-y-8 lg:space-y-10 overflow-visible w-full max-w-full mx-auto"
                 style={{
-                  boxShadow: `
-                    0 35px 90px -20px rgba(0, 0, 0, 0.95),
-                    0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                    0 0 0 1px rgba(255, 255, 255, 0.06),
-                    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-                    inset 0 -1px 0 0 rgba(0, 0, 0, 0.4)
-                  `,
                   contentVisibility: 'visible',
                   contain: 'none',
                   opacity: 1, // Force visible on iOS
@@ -1990,31 +1974,21 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   marginTop: '-0.75rem', // Allow score pill to overlap slightly
                 }}
               >
-                  {/* Decorative corner accent - top left only */}
+                  {/* Instructions — extra top space on mobile so sticky score doesn’t cover the prompt */}
                   <div
-                    className="absolute pointer-events-none"
-                    style={{
-                      top: '-1px',
-                      left: '-1px',
-                      width: '120px',
-                      height: '120px',
-                      background: 'radial-gradient(ellipse at top left, rgba(255, 165, 0, 0.05) 0%, transparent 60%)',
-                      clipPath: 'polygon(0 0, 100% 0, 0 100%)',
-                    }}
-                  />
-
-                  {/* Instructions */}
-                  <div className="text-center mb-3 sm:mb-6 max-w-[600px] mx-auto">
+                    className={`text-center mb-3 sm:mb-6 max-w-[600px] mx-auto ${
+                      isSticky ? 'pt-16 sm:pt-2' : 'pt-8 sm:pt-0'
+                    }`}
+                  >
                     {showInDepthSliders ? (
                       <p className="text-xs sm:text-base text-[#a3a3a3] font-light">
                         Each criterion is scored individually. Final score is the average of all five.
                       </p>
                     ) : (
                       <p
-                        className="text-lg sm:text-xl md:text-2xl text-white font-semibold italic tracking-tight px-1"
+                        className="text-lg sm:text-xl md:text-2xl text-white font-medium tracking-tight px-1"
                         style={{
-                          textShadow: '0 0 28px rgba(255,255,255,0.12), 0 2px 12px rgba(0,0,0,0.45)',
-                          fontFamily: 'var(--font-geist-sans), var(--font-sans), system-ui, sans-serif',
+                          fontFamily: DISPLAY,
                         }}
                       >
                         How good was this Performance?
@@ -2052,6 +2026,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             touched={singleSliderTouched}
                             spotlightActive={spotlightPhase !== 'none'}
                             hideScore
+                            hideLabel
                           />
                         </div>
                         <p className="text-center text-xs sm:text-sm text-[#71717a] font-medium -mt-2 sm:-mt-1 px-1">
@@ -2061,10 +2036,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           <button
                             type="button"
                             onClick={handleExpandInDepth}
-                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/60 text-amber-200 hover:text-amber-100 font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
+                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-md border border-white/[0.1] bg-white/[0.03] text-zinc-300 hover:border-[#FFD700]/30 hover:text-white font-semibold text-sm sm:text-base transition-all"
                           >
                             <span>Break it down</span>
-                            <span className="text-xs font-normal text-amber-300/90">(optional)</span>
+                            <span className="text-xs font-normal text-zinc-500">(optional)</span>
                             <ChevronDown className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
                           </button>
                         </div>
@@ -2144,7 +2119,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                               setOverallScore(avg)
                               setShowInDepthSliders(false)
                             }}
-                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/35 text-[#d4d4d8] hover:text-white font-semibold text-sm sm:text-base transition-all shadow-sm hover:shadow-md"
+                            className="flex items-center justify-center gap-2.5 w-full px-5 py-3.5 sm:py-4 rounded-md border border-white/[0.1] bg-white/[0.03] text-zinc-300 hover:border-[#FFD700]/30 hover:text-white font-semibold text-sm sm:text-base transition-all"
                           >
                             <ChevronUp className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
                             <span>Back to simple</span>
@@ -2178,14 +2153,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
                         padding: submitPhase === 'loading' ? '0' : '0.875rem 0',
-                        borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
+                        borderRadius: submitPhase === 'loading' ? '50%' : '0.375rem',
                         background: (canSubmit && !submitting) || submitPhase === 'loading'
-                          ? 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
+                          ? GOLD
                           : '#1a1a1a',
                         color: (canSubmit && !submitting) || submitPhase === 'loading' ? '#000000' : '#525252',
-                        boxShadow: (canSubmit && !submitting) || submitPhase === 'loading'
-                          ? '0 0 20px rgba(255, 215, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.3)'
-                          : 'none',
+                        boxShadow: 'none',
                         border: (canSubmit && !submitting) || submitPhase === 'loading' ? 'none' : '1px solid #333',
                         display: 'flex',
                         alignItems: 'center',
@@ -2195,7 +2168,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
                         padding: submitPhase === 'loading' ? '0' : '1.25rem 0',
-                        borderRadius: submitPhase === 'loading' ? '50%' : '9999px',
+                        borderRadius: submitPhase === 'loading' ? '50%' : '0.375rem',
                       }}
                       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                       whileHover={canSubmit && !submitting && submitPhase === 'idle' ? {
@@ -2516,7 +2489,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   }}
                   className="rounded-full p-2"
                   style={{
-                    boxShadow: '0 0 0 4px rgba(255,215,0,0.2), 0 0 60px rgba(255,215,0,0.25)',
+                    boxShadow: '0 0 0 3px rgba(255,215,0,0.15)',
                   }}
                 >
                   <CheckCircle
@@ -2528,7 +2501,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35, duration: 0.3 }}
-                  className="mt-4 text-sm font-semibold text-[#FFD700]/90 tracking-wide"
+                  className="mt-4 text-xs font-semibold uppercase tracking-widest text-[#FFD700]/70"
                 >
                   Your rating is saved
                 </motion.p>
@@ -2544,15 +2517,14 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Rating saved label + feedback ─────────────────────────────── */}
             <div className="text-center pt-2 space-y-2">
               <p
-                className="text-base sm:text-lg font-bold tracking-wide"
-                style={{ color: '#FFD700' }}
+                className="text-xs font-semibold uppercase tracking-widest text-[#FFD700]/70"
               >
                 Your rating is saved
               </p>
               {successHeadline && (
                 <p
-                  className="text-xl sm:text-2xl font-semibold italic leading-snug"
-                  style={{ color: 'rgba(255,255,255,0.9)' }}
+                  className="text-xl sm:text-2xl font-semibold leading-snug text-white"
+                  style={{ fontFamily: DISPLAY }}
                 >
                   &ldquo;{successHeadline}&rdquo;
                 </p>
@@ -2569,11 +2541,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="rounded-2xl px-4 py-3 text-center mx-auto max-w-sm"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
+                    className="rounded-md bg-[#141414] border border-white/[0.08] px-4 py-3 text-center mx-auto max-w-sm"
                   >
                     <p className="text-[11px] font-bold tracking-widest uppercase mb-1" style={{ color: '#52525b' }}>
                       Your score · {finalScore}/10
@@ -2672,8 +2640,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             maxWidth: '58%',
                             width: 'auto',
                             height: 'auto',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.12)',
-                            border: '1px solid rgba(255,215,0,0.2)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                            border: '1px solid rgba(255,215,0,0.15)',
                           }}
                         />
                       ) : (
@@ -2682,7 +2650,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           style={{
                             width: '60%',
                             aspectRatio: '2/3',
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                            background: GOLD,
                           }}
                         >
                           {performance.actor.name.charAt(0)}
@@ -2722,7 +2690,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           className="font-black tabular-nums leading-none"
                           style={{
                             fontSize: 'clamp(2rem, 10vw, 3rem)',
-                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
+                            background: GOLD,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
@@ -2754,9 +2722,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-black transition-all duration-200 hover:opacity-90 active:scale-95"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-bold text-black transition-all duration-200 hover:scale-[1.02] active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 100%)',
+                      background: GOLD,
                     }}
                   >
                     <Share2 className="w-4 h-4" />
@@ -2915,11 +2883,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="rounded-2xl p-4 sm:p-5 space-y-3"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
-                      border: '1px solid rgba(255,215,0,0.18)',
-                    }}
+                    className="rounded-md bg-[#141414] border border-[#FFD700]/25 p-4 sm:p-5 space-y-3"
                   >
                     <p
                       className="text-center text-xl sm:text-2xl font-black tabular-nums flex justify-center gap-3 sm:gap-4"
@@ -2953,11 +2917,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Actor completion: X / Y performances rated (prominent) ─────────── */}
             {user && actorProgress != null && (
               <div
-                className="rounded-2xl sm:rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-center"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
+                className="rounded-md bg-[#141414] border border-white/[0.08] px-4 py-4 sm:px-6 sm:py-5 text-center"
               >
                 <p className="text-xs sm:text-sm font-bold text-white mb-0.5 sm:mb-1">
                   {performance.actor.name} progress
@@ -2976,7 +2936,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
                         className="h-full rounded-full"
                         style={{
-                          background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
+                          background: GOLD,
                         }}
                       />
                     </div>
@@ -3039,7 +2999,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                         onClick={() =>
                           router.push(getActorUrl({ id: actor.slug, name: actor.name, slug: actor.slug }))
                         }
-                        className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 sm:pl-2 sm:pr-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-white border border-white/15 hover:bg-white/10 hover:border-white/30 transition-colors"
+                        className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 sm:pl-2 sm:pr-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-white border border-white/[0.08] bg-[#141414] hover:bg-white/10 hover:border-white/20 transition-colors"
                       >
                         <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full overflow-hidden flex items-center justify-center bg-[#111] border border-white/10">
                           {actor.imageUrl ? (
@@ -3068,11 +3028,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             {/* ── Progress bar + badges ────────────────────────────────────────── */}
             {user && progressData != null && (
               <div
-                className="rounded-2xl sm:rounded-2xl px-4 py-3 sm:px-5 sm:py-4 space-y-2 sm:space-y-3"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(255,165,0,0.03) 100%)',
-                  border: '1px solid rgba(255,215,0,0.12)',
-                }}
+                className="rounded-md bg-[#141414] border border-white/[0.08] px-4 py-3 sm:px-5 sm:py-4 space-y-2 sm:space-y-3"
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
@@ -3105,8 +3061,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{
-                      background: 'linear-gradient(90deg, #FFE55C 0%, #FFD700 50%, #FFA500 100%)',
-                      boxShadow: '0 0 12px rgba(255,215,0,0.4)',
+                      background: GOLD,
                     }}
                   />
                 </div>
@@ -3151,16 +3106,11 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     earlySaveCtaPulse
                       ? {
                           scale: [1, 1.02, 1],
-                          boxShadow: [
-                            '0 0 0 0 rgba(255,215,0,0)',
-                            '0 0 18px rgba(255,215,0,0.2)',
-                            '0 0 0 0 rgba(255,215,0,0)',
-                          ],
                         }
                       : {}
                   }
                   transition={{ duration: 0.68, ease: 'easeOut' }}
-                  className="inline-flex items-center justify-center max-w-[min(100%,20rem)] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-white/[0.1] bg-white/[0.02] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#FFD700]/22 hover:bg-white/[0.04] active:scale-[0.99]"
+                  className="inline-flex items-center justify-center max-w-[min(100%,20rem)] px-4 py-2.5 rounded-md text-xs sm:text-sm font-medium transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black border border-white/[0.1] bg-white/[0.02] text-[#71717a] hover:text-[#a1a1aa] hover:border-[#FFD700]/22 hover:bg-white/[0.04] active:scale-[0.99]"
                 >
                   Create an account to save your ratings forever
                 </motion.button>

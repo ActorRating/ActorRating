@@ -8,6 +8,9 @@ import { ActorHeadshot } from "@/components/ui/ActorHeadshot"
 import { upgradeActorImageRes } from "@/lib/tmdb"
 import type { SuccessCarouselPerf } from "@/lib/guest-success-recommendations"
 
+const GOLD = 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
+const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
+
 export type SuccessCarouselVariant = "auth" | "guest"
 
 type Props = {
@@ -92,7 +95,7 @@ export function SuccessRateAnotherCarousel({
           {headerAbove ? <motion.div className="mb-1">{headerAbove}</motion.div> : null}
           <h2
             className="text-base sm:text-lg font-semibold text-white tracking-tight"
-            style={{ fontFamily: "var(--font-cinzel, serif)" }}
+            style={{ fontFamily: DISPLAY }}
           >
             {headerTitle}
           </h2>
@@ -119,7 +122,7 @@ export function SuccessRateAnotherCarousel({
                 initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: prefersReducedMotion ? 0 : i * 0.06 }}
-                className="flex-shrink-0 w-[80vw] sm:w-[300px] rounded-[2rem] border border-white/5 bg-gradient-to-br from-[#1a1a1a]/80 to-black/80 p-6 animate-pulse"
+                className="flex-shrink-0 w-[80vw] sm:w-[300px] rounded-md border border-white/[0.08] bg-[#141414] p-6 animate-pulse"
                 style={{ minHeight: 360 }}
               />
             ))}
@@ -167,11 +170,7 @@ export function SuccessRateAnotherCarousel({
                       <motion.div
                         role="button"
                         tabIndex={0}
-                        className="relative h-full p-6 sm:p-8 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,215,0,0.12)] cursor-pointer"
-                        style={{
-                          boxShadow:
-                            "0 25px 70px -15px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1)",
-                        }}
+                        className="relative h-full p-6 sm:p-8 rounded-md border border-white/[0.08] bg-[#141414] overflow-hidden transition-all duration-300 cursor-pointer"
                         onClick={() => onRate(p)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
@@ -182,10 +181,6 @@ export function SuccessRateAnotherCarousel({
                         whileHover={prefersReducedMotion ? undefined : { scale: 1.01 }}
                         whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
                       >
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[2rem] overflow-hidden pointer-events-none">
-                          <motion.div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD700]/10 rounded-full blur-3xl" />
-                        </div>
-
                         <div className="relative z-10 flex flex-col h-full">
                           <div className="flex justify-center items-end gap-4 mb-5">
                             <ActorHeadshot
@@ -208,7 +203,7 @@ export function SuccessRateAnotherCarousel({
 
                           <div className="flex items-center justify-between mb-4">
                             {variant === "auth" ? (
-                              <motion.div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/15 border border-[#FFD700]/40">
+                              <motion.div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#FFD700]/10 border border-[#FFD700]/25">
                                 <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#FFD700]" />
                                 <span className="text-xs font-bold text-[#FFD700]">Unrated by you</span>
                               </motion.div>
@@ -221,7 +216,7 @@ export function SuccessRateAnotherCarousel({
                           <div className="flex-1">
                             <h3
                               className="text-xl sm:text-2xl font-bold text-white mb-1"
-                              style={{ fontFamily: "var(--font-cinzel, serif)" }}
+                              style={{ fontFamily: DISPLAY }}
                             >
                               {variant === "auth" ? headlineActorName : p.actorName}
                             </h3>
@@ -232,18 +227,15 @@ export function SuccessRateAnotherCarousel({
 
                           <div className="mt-auto">
                             <div
-                              className="w-full px-6 py-4 rounded-full text-black text-sm font-bold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 group-hover:scale-105"
+                              className="w-full px-6 py-4 rounded-md text-black text-sm font-bold tracking-wider flex items-center justify-center gap-2 transition-all duration-200 group-hover:scale-[1.02]"
                               style={{
-                                background:
-                                  "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)",
+                                background: GOLD,
                               }}
                             >
                               Rate <Star className="w-4 h-4 fill-current" />
                             </div>
                           </div>
                         </div>
-
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#FFD700]/5 to-transparent rounded-tr-[80px]" />
                       </motion.div>
                     </motion.div>
                   </motion.div>
@@ -290,15 +282,14 @@ export function SuccessRateAnotherCarousel({
           </div>
         ) : (
           <div
-            className="rounded-2xl sm:rounded-[2rem] border border-white/8 p-5 sm:p-8 text-center"
-            style={{ background: "linear-gradient(to bottom right, rgba(26,26,26,0.9), rgba(0,0,0,0.9))" }}
+            className="rounded-md border border-white/[0.08] bg-[#141414] p-5 sm:p-8 text-center"
           >
             <p className="text-[#a1a1aa] text-xs sm:text-sm mb-4 sm:mb-5">{emptyMessage}</p>
             {onViewFilmography && (
               <button
                 type="button"
                 onClick={onViewFilmography}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors"
               >
                 View Filmography
               </button>

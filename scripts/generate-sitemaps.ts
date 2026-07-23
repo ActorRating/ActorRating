@@ -18,6 +18,8 @@ import {
   ICONIC_PERFORMANCE_TARGETS,
   HOME_LEADERBOARD_ROWS,
 } from "../src/lib/performances-page-targets"
+import { isFeaturetteMovie, isSelfOrArchiveCredit } from "../src/lib/non-rateable"
+import { isMovieComingSoon, parseTmdbReleaseDate } from "../src/lib/movie-release"
 
 const REPO_ROOT = path.join(__dirname, "..")
 const LIVE_DIR = path.join(REPO_ROOT, "public", "sitemaps")
@@ -135,6 +137,43 @@ function shouldIncludeMovie(movie: {
   return true
 }
 
+/** Rate sitemap: junk/adult + never featurette / coming-soon titles. */
+function shouldIncludeRateMovie(movie: {
+  slug: string | null
+  id: string
+  title: string
+  genre: string | null
+  overview: string | null
+  isFeaturette?: boolean | null
+  releaseDate?: Date | string | null
+  year?: number | null
+}): boolean {
+  if (isFeaturetteMovie(movie)) return false
+  if (isMovieComingSoon(movie)) return false
+  // Same calendar year without a concrete releaseDate: keep out of the rate sitemap
+  // until TMDB date is stored (avoids shipping noindex / unreleased /rate URLs).
+  const year = typeof movie.year === "number" ? movie.year : null
+  if (
+    year != null &&
+    year === new Date().getUTCFullYear() &&
+    !parseTmdbReleaseDate(movie.releaseDate ?? null)
+  ) {
+    return false
+  }
+  return shouldIncludeMovie(movie)
+}
+
+/** Exclude pairs whose only character credits are Self / archive footage. */
+function isSelfOnlyCreditPair(characters: Array<string | null | undefined>): boolean {
+  const usable = characters
+    .map((c) => (typeof c === "string" ? c.trim() : ""))
+    .filter(Boolean)
+  if (usable.length === 0) return false
+  const hasRealRole = usable.some((c) => !isSelfOrArchiveCredit(c))
+  if (hasRealRole) return false
+  return usable.some((c) => isSelfOrArchiveCredit(c))
+}
+
 function rmrf(dir: string): void {
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true })
 }
@@ -164,7 +203,23 @@ function curatedLookupTargets(): { actor: string; movie: string }[] {
  * Mirrors performances-by-lookup resolution (requires a Performance row).
  */
 async function resolveCuratedPerformancePairs(): Promise<
-  Array<{ actorId: string; movieId: string; maxUpd: Date; movie: { slug: string | null; id: string; title: string; genre: string | null; overview: string | null }; actor: { slug: string | null; id: string } }>
+  Array<{
+    actorId: string
+    movieId: string
+    maxUpd: Date
+    movie: {
+      slug: string | null
+      id: string
+      title: string
+      genre: string | null
+      overview: string | null
+      isFeaturette: boolean
+      releaseDate: Date | null
+      year: number
+    }
+    actor: { slug: string | null; id: string }
+    characters: Array<string | null>
+  }>
 > {
   const targets = curatedLookupTargets()
   if (targets.length === 0) return []
@@ -179,7 +234,16 @@ async function resolveCuratedPerformancePairs(): Promise<
     }),
     prisma.movie.findMany({
       where: { title: { in: movieTitles } },
-      select: { id: true, title: true, slug: true, genre: true, overview: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        genre: true,
+        overview: true,
+        isFeaturette: true,
+        releaseDate: true,
+        year: true,
+      },
     }),
   ])
 
@@ -199,9 +263,21 @@ async function resolveCuratedPerformancePairs(): Promise<
     select: {
       actorId: true,
       movieId: true,
+      character: true,
       updatedAt: true,
       actor: { select: { id: true, slug: true } },
-      movie: { select: { id: true, slug: true, title: true, genre: true, overview: true } },
+      movie: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          genre: true,
+          overview: true,
+          isFeaturette: true,
+          releaseDate: true,
+          year: true,
+        },
+      },
     },
   })
 
@@ -214,13 +290,26 @@ async function resolveCuratedPerformancePairs(): Promise<
     ratingMax.map((r) => [`${r.actorId}:${r.movieId}`, r._max.updatedAt]),
   )
 
-  const out: Array<{
-    actorId: string
-    movieId: string
-    maxUpd: Date
-    movie: { slug: string | null; id: string; title: string; genre: string | null; overview: string | null }
-    actor: { slug: string | null; id: string }
-  }> = []
+  const byPair = new Map<
+    string,
+    {
+      actorId: string
+      movieId: string
+      maxUpd: Date
+      movie: {
+        slug: string | null
+        id: string
+        title: string
+        genre: string | null
+        overview: string | null
+        isFeaturette: boolean
+        releaseDate: Date | null
+        year: number
+      }
+      actor: { slug: string | null; id: string }
+      characters: Array<string | null>
+    }
+  >()
 
   for (const p of performances) {
     const key = `${p.actorId}:${p.movieId}`
@@ -228,15 +317,22 @@ async function resolveCuratedPerformancePairs(): Promise<
     const maxUpd = new Date(
       Math.max(p.updatedAt.getTime(), rUp?.getTime() ?? 0),
     )
-    out.push({
-      actorId: p.actorId,
-      movieId: p.movieId,
-      maxUpd,
-      movie: p.movie,
-      actor: p.actor,
-    })
+    const existing = byPair.get(key)
+    if (!existing) {
+      byPair.set(key, {
+        actorId: p.actorId,
+        movieId: p.movieId,
+        maxUpd,
+        movie: p.movie,
+        actor: p.actor,
+        characters: [p.character],
+      })
+    } else {
+      existing.characters.push(p.character)
+      if (maxUpd > existing.maxUpd) existing.maxUpd = maxUpd
+    }
   }
-  return out
+  return Array.from(byPair.values())
 }
 
 function generateStatic(outDir: string): void {
@@ -395,7 +491,8 @@ async function generatePerformances(outDir: string): Promise<number> {
 
   const curated = await resolveCuratedPerformancePairs()
   for (const c of curated) {
-    if (!shouldIncludeMovie(c.movie)) continue
+    if (!shouldIncludeRateMovie(c.movie)) continue
+    if (isSelfOnlyCreditPair(c.characters)) continue
     const key = `${c.actorId}:${c.movieId}`
     if (seen.has(key)) continue
     seen.add(key)
@@ -419,7 +516,9 @@ async function generatePerformances(outDir: string): Promise<number> {
         SELECT r."actorId", r."movieId", MAX(r."updatedAt") AS "maxUpd"
         FROM "Rating" r
         INNER JOIN "Movie" m ON m.id = r."movieId" AND NOT m."isFeaturette"
-        WHERE EXISTS (
+        WHERE (m."releaseDate" IS NULL OR m."releaseDate" <= CURRENT_DATE)
+          AND m.year <= EXTRACT(YEAR FROM CURRENT_DATE)::int
+          AND EXISTS (
           SELECT 1 FROM "Performance" p
           WHERE p."actorId" = r."actorId"
             AND p."movieId" = r."movieId"
@@ -434,6 +533,8 @@ async function generatePerformances(outDir: string): Promise<number> {
           AND m."indexingCohort" = 1
         WHERE p."seededAggregateScore" IS NOT NULL
           AND p.tier <> 'MINOR'
+          AND (m."releaseDate" IS NULL OR m."releaseDate" <= CURRENT_DATE)
+          AND m.year <= EXTRACT(YEAR FROM CURRENT_DATE)::int
         GROUP BY p."actorId", p."movieId"
       ) t
       WHERE (
@@ -447,19 +548,41 @@ async function generatePerformances(outDir: string): Promise<number> {
     const actorIds = [...new Set(pairs.map((p) => p.actorId))]
     const movieIds = [...new Set(pairs.map((p) => p.movieId))]
 
-    const [actors, movies] = await Promise.all([
+    const [actors, movies, pairPerformances] = await Promise.all([
       prisma.actor.findMany({
         where: { id: { in: actorIds } },
         select: { id: true, slug: true },
       }),
       prisma.movie.findMany({
         where: { id: { in: movieIds } },
-        select: { id: true, slug: true, title: true, genre: true, overview: true, isFeaturette: true },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          genre: true,
+          overview: true,
+          isFeaturette: true,
+          releaseDate: true,
+          year: true,
+        },
+      }),
+      prisma.performance.findMany({
+        where: {
+          OR: pairs.map((p) => ({ actorId: p.actorId, movieId: p.movieId })),
+        },
+        select: { actorId: true, movieId: true, character: true },
       }),
     ])
 
     const actorMap = new Map(actors.map((a) => [a.id, a]))
     const movieMap = new Map(movies.map((m) => [m.id, m]))
+    const charactersByPair = new Map<string, Array<string | null>>()
+    for (const perf of pairPerformances) {
+      const key = `${perf.actorId}:${perf.movieId}`
+      const list = charactersByPair.get(key) ?? []
+      list.push(perf.character)
+      charactersByPair.set(key, list)
+    }
 
     for (const pair of pairs) {
       const key = `${pair.actorId}:${pair.movieId}`
@@ -467,8 +590,9 @@ async function generatePerformances(outDir: string): Promise<number> {
 
       const actor = actorMap.get(pair.actorId)
       const movie = movieMap.get(pair.movieId)
-      if (!actor || !movie || movie.isFeaturette) continue
-      if (!shouldIncludeMovie(movie)) continue
+      if (!actor || !movie) continue
+      if (!shouldIncludeRateMovie(movie)) continue
+      if (isSelfOnlyCreditPair(charactersByPair.get(key) ?? [])) continue
 
       seen.add(key)
       writer.push({

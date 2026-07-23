@@ -52,7 +52,7 @@ class RateFormErrorBoundary extends React.Component<RateFormBoundaryProps, RateF
             <p className="text-white text-xl mb-4">Couldn&apos;t load the rating form.</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-[#FFD700] text-black rounded-lg hover:bg-[#FFC700] transition"
+              className="px-6 py-3 bg-[#FFD700] text-black rounded-md hover:bg-[#FFC700] transition"
             >
               Try again
             </button>
@@ -318,7 +318,7 @@ export default function RatePageClient({
           <p className="text-white text-xl mb-4">{error || 'Performance not found'}</p>
           <button
             onClick={() => router.push('/search')}
-            className="px-6 py-3 bg-[#FFD700] text-black rounded-lg hover:bg-[#FFC700] transition"
+            className="px-6 py-3 bg-[#FFD700] text-black rounded-md hover:bg-[#FFC700] transition"
           >
             Back to Search
           </button>
