@@ -4,10 +4,15 @@
  * Uses Prisma first; on failure falls back to internal HTTP APIs (same-origin).
  */
 
-import { notFound, permanentRedirect } from 'next/navigation'
+import { permanentRedirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { toIsoDate } from '@/lib/dateUtils'
 import { isPublicSeoBlockedMovie } from '@/lib/public-movie-seo-block'
+import {
+  isFeaturetteMovie,
+  isSelfOrArchiveCredit,
+  matchesFeaturetteTitle,
+} from '@/lib/non-rateable'
 import RatePageClient from './RatePageClient'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
@@ -105,7 +110,14 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
       select: { id: true, name: true, imageUrl: true, slug: true, createdAt: true, updatedAt: true },
     }))
 
-  if (!movieRow || !actorRow || movieRow.isFeaturette) return null
+  if (!movieRow || !actorRow || isFeaturetteMovie(movieRow)) {
+    if (movieRow && !movieRow.isFeaturette && matchesFeaturetteTitle(movieRow.title)) {
+      void prisma.movie
+        .update({ where: { id: movieRow.id }, data: { isFeaturette: true } })
+        .catch(() => {})
+    }
+    return null
+  }
   if (
     isPublicSeoBlockedMovie(
       movieRow.slug ?? movieRow.id,
@@ -119,9 +131,13 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
 
   const performance = await prisma.performance.findFirst({
     where: { actorId: actorRow.id, movieId: movieRow.id },
-    select: { seededAggregateScore: true },
+    select: { seededAggregateScore: true, character: true, comment: true },
     orderBy: { createdAt: 'asc' },
   })
+
+  if (isSelfOrArchiveCredit(performance?.character)) {
+    return null
+  }
 
   return {
     movieRow,

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from '@/lib/non-rateable'
 
 /**
  * GET /api/movies/[id]/cast?excludeActorId=X&limit=6
@@ -22,9 +23,14 @@ export async function GET(
   try {
     const movie = await prisma.movie.findFirst({
       where: { OR: [{ id: movieId }, { slug: movieId }] },
-      select: { id: true, slug: true, isFeaturette: true },
+      select: { id: true, slug: true, title: true, isFeaturette: true },
     })
-    if (!movie || movie.isFeaturette) {
+    if (!movie || isFeaturetteMovie(movie)) {
+      if (movie && !movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
+        void prisma.movie
+          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+          .catch(() => {})
+      }
       return NextResponse.json({ cast: [] })
     }
 
@@ -34,20 +40,24 @@ export async function GET(
         ...(excludeActorId ? { actorId: { not: excludeActorId } } : {}),
       },
       select: {
+        character: true,
         actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
         movie: { select: { slug: true } },
       },
       distinct: ['actorId'],
-      take: limit,
+      take: limit * 3,
     })
 
-    const cast = performances.map((p) => ({
-      actorId: p.actor.id,
-      actorName: p.actor.name,
-      actorSlug: p.actor.slug,
-      actorImageUrl: p.actor.imageUrl,
-      movieSlug: p.movie.slug ?? movie.slug,
-    }))
+    const cast = performances
+      .filter((p) => !isSelfOrArchiveCredit(p.character))
+      .slice(0, limit)
+      .map((p) => ({
+        actorId: p.actor.id,
+        actorName: p.actor.name,
+        actorSlug: p.actor.slug,
+        actorImageUrl: p.actor.imageUrl,
+        movieSlug: p.movie.slug ?? movie.slug,
+      }))
 
     const res = NextResponse.json({ cast })
     res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')

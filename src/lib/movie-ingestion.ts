@@ -32,6 +32,7 @@ import type { Actor, Performance } from "@prisma/client";
 import { createActorSlug } from "@/lib/createSlug";
 import { computePerformanceTier } from "@/lib/performance-tier";
 import { getMovieCreditsForIngestion, getMovieDetails, buildPosterUrl } from "@/lib/tmdb";
+import { isFeaturetteMovie, matchesFeaturetteTitle } from "@/lib/non-rateable";
 import type { MovieCreditsForIngestion } from "@/lib/tmdb";
 
 /** User id used for system-ingested performances (admin/bulk/seed). One performance per (userId, actorId, movieId). */
@@ -234,7 +235,12 @@ export async function ingestMovieCast(
   if (!movie) {
     throw new Error(`Movie not found: ${movieId}`);
   }
-  if (movie.isFeaturette) {
+  if (isFeaturetteMovie(movie)) {
+    if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
+      void prisma.movie
+        .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+        .catch(() => {});
+    }
     log(`Skipping featurette movie: ${movie.title}`);
     return { actorsCreated: 0, performancesCreated: 0, performancesUpdated: 0 };
   }

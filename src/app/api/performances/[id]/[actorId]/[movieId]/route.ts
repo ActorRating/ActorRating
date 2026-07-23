@@ -2,6 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  isFeaturetteMovie,
+  isSelfOrArchiveCredit,
+  matchesFeaturetteTitle,
+} from "@/lib/non-rateable";
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +21,7 @@ export async function GET(
       where: {
         actorId: actorId,
         movieId: movieId,
-      movie: { is: { isFeaturette: false } },
+        movie: { is: { isFeaturette: false } },
       },
       include: {
         actor: {
@@ -31,13 +36,38 @@ export async function GET(
             id: true,
             title: true,
             year: true,
-            director: true
+            director: true,
+            isFeaturette: true,
           }
         }
       }
     });
 
     if (!performance) {
+      return NextResponse.json(
+        {
+          error: "Performance not found",
+          message: `No performance found for actor ${actorId} in movie ${movieId}`
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      isSelfOrArchiveCredit(performance.character) ||
+      isFeaturetteMovie(performance.movie)
+    ) {
+      if (
+        !performance.movie.isFeaturette &&
+        matchesFeaturetteTitle(performance.movie.title)
+      ) {
+        void prisma.movie
+          .update({
+            where: { id: performance.movie.id },
+            data: { isFeaturette: true },
+          })
+          .catch(() => {});
+      }
       return NextResponse.json(
         {
           error: "Performance not found",

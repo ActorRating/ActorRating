@@ -3,6 +3,31 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
+import {
+  isFeaturetteMovie,
+  isSelfOrArchiveCredit,
+  matchesFeaturetteTitle,
+} from "@/lib/non-rateable"
+
+async function assertRateablePerformance(movieId: string, character?: string | null) {
+  if (isSelfOrArchiveCredit(character)) {
+    return false
+  }
+  const movieMeta = await prisma.movie.findUnique({
+    where: { id: movieId },
+    select: { id: true, title: true, isFeaturette: true },
+  })
+  if (!movieMeta) return false
+  if (isFeaturetteMovie(movieMeta)) {
+    if (!movieMeta.isFeaturette && matchesFeaturetteTitle(movieMeta.title)) {
+      void prisma.movie
+        .update({ where: { id: movieMeta.id }, data: { isFeaturette: true } })
+        .catch(() => {})
+    }
+    return false
+  }
+  return true
+}
 
 export async function GET(
   request: NextRequest,
@@ -17,6 +42,7 @@ export async function GET(
       select: {
         id: true,
         movieId: true,
+        character: true,
         comment: true,
         createdAt: true,
         updatedAt: true,
@@ -36,11 +62,7 @@ export async function GET(
         { status: 404 }
       )
     }
-    const movieMeta = await prisma.movie.findUnique({
-      where: { id: performance.movieId },
-      select: { isFeaturette: true },
-    })
-    if (movieMeta?.isFeaturette) {
+    if (!(await assertRateablePerformance(performance.movieId, performance.character))) {
       return NextResponse.json(
         { error: "Performance not found" },
         { status: 404 }
@@ -72,16 +94,12 @@ export async function PUT(
     const { id } = await params
     const existing = await prisma.performance.findUnique({
       where: { id },
-      select: { movieId: true, userId: true },
+      select: { movieId: true, userId: true, character: true },
     })
     if (!existing || existing.userId !== userId) {
       return NextResponse.json({ error: "Performance not found" }, { status: 404 })
     }
-    const movieMeta = await prisma.movie.findUnique({
-      where: { id: existing.movieId },
-      select: { isFeaturette: true },
-    })
-    if (movieMeta?.isFeaturette) {
+    if (!(await assertRateablePerformance(existing.movieId, existing.character))) {
       return NextResponse.json(
         { error: "Performance not found" },
         { status: 404 }
@@ -163,16 +181,12 @@ export async function DELETE(
     const { id } = await params
     const existing = await prisma.performance.findUnique({
       where: { id },
-      select: { movieId: true, userId: true },
+      select: { movieId: true, userId: true, character: true },
     })
     if (!existing || existing.userId !== userId) {
       return NextResponse.json({ error: "Performance not found" }, { status: 404 })
     }
-    const movieMeta = await prisma.movie.findUnique({
-      where: { id: existing.movieId },
-      select: { isFeaturette: true },
-    })
-    if (movieMeta?.isFeaturette) {
+    if (!(await assertRateablePerformance(existing.movieId, existing.character))) {
       return NextResponse.json(
         { error: "Performance not found" },
         { status: 404 }
@@ -191,4 +205,4 @@ export async function DELETE(
       { status: 500 }
     )
   }
-} 
+}

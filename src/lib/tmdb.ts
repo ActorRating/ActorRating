@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isSelfOrArchiveCredit } from '@/lib/non-rateable';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = process.env.TMDB_API_KEY;
@@ -154,10 +155,10 @@ export async function getMovieCredits(movieId: number): Promise<MovieCredits> {
       ?.filter((member: { order?: number; character?: string; name?: string; id?: number }) => {
         // Allow a broader set of credited cast (raise order threshold significantly)
         if (typeof member.order === 'number' && member.order >= 50) return false;
-        // Check character is defined
+        // Exclude generic/uncredited / Self / archive credits
         if (!member.character) return false;
-        // Exclude generic/uncredited entries
         const characterLower = String(member.character).toLowerCase();
+        if (isSelfOrArchiveCredit(member.character)) return false;
         const excludedTerms = ['uncredited', 'himself', 'herself', 'background', 'crowd', '#'];
         return !excludedTerms.some(term => characterLower.includes(term));
       })
@@ -200,6 +201,7 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
       .map((member: { id?: number; name?: string; character?: string; profile_path?: string; order?: number }, index: number) => {
         if (!member?.name) return null;
         const character = member.character ?? '';
+        if (isSelfOrArchiveCredit(character)) return null;
         const characterLower = character.toLowerCase();
         const excludedTerms = ['uncredited', 'himself', 'herself', 'background', 'crowd', '#'];
         const skip = excludedTerms.some((term) => characterLower.includes(term));

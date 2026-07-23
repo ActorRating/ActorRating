@@ -5,7 +5,10 @@
 
 export const revalidate = 60
 
+import { notFound } from 'next/navigation'
 import { withIsoDates } from '@/lib/dateUtils'
+import { prisma } from '@/lib/prisma'
+import { isFeaturetteMovie, matchesFeaturetteTitle } from '@/lib/non-rateable'
 import MoviePageClient from './MoviePageClient'
 
 function buildMovieJsonLd(data: any, baseUrl: string) {
@@ -57,6 +60,20 @@ export default async function MoviePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+
+  const movieMeta = await prisma.movie.findFirst({
+    where: { OR: [{ slug }, { id: slug }] },
+    select: { id: true, title: true, isFeaturette: true },
+  })
+  if (movieMeta && isFeaturetteMovie(movieMeta)) {
+    if (!movieMeta.isFeaturette && matchesFeaturetteTitle(movieMeta.title)) {
+      void prisma.movie
+        .update({ where: { id: movieMeta.id }, data: { isFeaturette: true } })
+        .catch(() => {})
+    }
+    notFound()
+  }
+
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
   if (isUUID) return <MoviePageClient />
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
@@ -65,6 +82,7 @@ export default async function MoviePage({
       next: { revalidate: 21600 },
       headers: { 'Content-Type': 'application/json' },
     })
+    if (res.status === 410) notFound()
     if (!res.ok) return <MoviePageClient />
     const data = await res.json()
     const jsonLd = buildMovieJsonLd(data, baseUrl)

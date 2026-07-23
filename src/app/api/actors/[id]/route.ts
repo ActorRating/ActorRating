@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
+import { isNonRateablePerformance, matchesFeaturetteTitle } from "@/lib/non-rateable"
 
 const actorApiMovieSelect = {
   id: true,
@@ -13,6 +14,7 @@ const actorApiMovieSelect = {
   tmdbId: true,
   slug: true,
   posterUrl: true,
+  isFeaturette: true,
 } as Prisma.MovieSelect
 
 export async function GET(
@@ -59,7 +61,10 @@ export async function GET(
 
     const [performances, ratings] = await Promise.all([
       prisma.performance.findMany({
-        where: { actorId: actor.id },
+        where: {
+          actorId: actor.id,
+          movie: { is: { isFeaturette: false } },
+        },
         select: {
           id: true,
           userId: true,
@@ -74,7 +79,7 @@ export async function GET(
           actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
         },
         orderBy: { updatedAt: "desc" },
-        take: 200,
+        take: 300,
       }),
       prisma.rating.findMany({
         where: { actorId: actor.id },
@@ -133,7 +138,10 @@ export async function GET(
     // Fetch movie details for rated movies that might not have performances
     const ratedMovies = ratedMovieIds.size > 0
       ? await prisma.movie.findMany({
-          where: { id: { in: Array.from(ratedMovieIds) } },
+          where: {
+            id: { in: Array.from(ratedMovieIds) },
+            isFeaturette: false,
+          },
           select: actorApiMovieSelect,
         })
       : []
@@ -249,15 +257,47 @@ export async function GET(
       }
     })
 
+    // Soft-gate: hide Self / archive credits and unmarked featurette titles (stay in DB).
+    const rateablePerformances = enrichedPerformances.filter(
+      (p) =>
+        !isNonRateablePerformance({
+          character: p.character ?? p.roleName,
+          movie: p.movie,
+        })
+    )
+
+    // Lazily persist title-matched featurettes so later queries skip them via isFeaturette.
+    const featuretteIdsToFlag = [
+      ...new Set(
+        enrichedPerformances
+          .filter(
+            (p) =>
+              p.movie &&
+              !p.movie.isFeaturette &&
+              matchesFeaturetteTitle(p.movie.title)
+          )
+          .map((p) => p.movieId)
+          .filter(Boolean)
+      ),
+    ]
+    if (featuretteIdsToFlag.length > 0) {
+      void prisma.movie
+        .updateMany({
+          where: { id: { in: featuretteIdsToFlag } },
+          data: { isFeaturette: true },
+        })
+        .catch(() => {})
+    }
+
     // Combine the data
     const actorData = {
       ...actor,
-      performances: enrichedPerformances,
+      performances: rateablePerformances,
       ratings
     }
 
     if (!isProd) {
-      console.log("🎭 Returning actor data:", actorData.name, "with", enrichedPerformances.length, "performances (deduped by movie)")
+      console.log("🎭 Returning actor data:", actorData.name, "with", rateablePerformances.length, "performances (deduped by movie)")
     }
 
     const res = NextResponse.json(actorData)

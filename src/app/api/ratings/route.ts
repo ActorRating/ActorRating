@@ -7,6 +7,7 @@ import { getAuthenticatedUserId } from "@/lib/authUser"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { nanoid } from "nanoid"
+import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
 
 export async function GET() {
   try {
@@ -135,6 +136,30 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
     if (!movie) {
       console.error("Movie not found:", movieId)
       return NextResponse.json({ error: "Movie not found" }, { status: 400 })
+    }
+
+    if (isFeaturetteMovie(movie)) {
+      if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
+        void prisma.movie
+          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+          .catch(() => {})
+      }
+      return NextResponse.json(
+        { error: "This title is not available for rating" },
+        { status: 400 }
+      )
+    }
+
+    const existingPerf = await prisma.performance.findFirst({
+      where: { actorId, movieId },
+      select: { character: true },
+      orderBy: { createdAt: "asc" },
+    })
+    if (isSelfOrArchiveCredit(existingPerf?.character)) {
+      return NextResponse.json(
+        { error: "This credit is not available for rating" },
+        { status: 400 }
+      )
     }
     
     console.log("Actor and movie validated:", { actorName: actor.name, movieTitle: movie.title })

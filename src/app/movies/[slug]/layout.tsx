@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isPublicSeoBlockedMovie } from "@/lib/public-movie-seo-block";
+import { isFeaturetteMovie, matchesFeaturetteTitle } from "@/lib/non-rateable";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -33,7 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
 
-    if (movie.isFeaturette) {
+    if (isFeaturetteMovie(movie)) {
+      if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
+        void prisma.movie
+          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+          .catch(() => {});
+      }
       notFound();
     }
 

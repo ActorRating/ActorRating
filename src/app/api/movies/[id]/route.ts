@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { isAdultContentMovie, isAdultContentSlug } from "@/lib/adult-content-filter"
 import { isJunkMovieSlug, isAllowedMovieSlug } from "@/lib/junk-movie-slugs"
 import { hydratePerformanceBillingOrder, pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
+import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
 
 export async function GET(
   request: NextRequest,
@@ -27,6 +28,16 @@ export async function GET(
     }
     if (!movie) {
       console.error("❌ Movie fetch error: movie not found", id)
+      return NextResponse.json({ error: "Movie not found" }, { status: 410 })
+    }
+
+    // Featurettes stay in DB but have no public movie page / cast UI.
+    if (isFeaturetteMovie(movie)) {
+      if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
+        void prisma.movie
+          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+          .catch(() => {})
+      }
       return NextResponse.json({ error: "Movie not found" }, { status: 410 })
     }
 
@@ -283,15 +294,19 @@ export async function GET(
       return String(a.actor?.name || "").localeCompare(String(b.actor?.name || ""))
     })
 
+    const rateableCast = billedPerformances.filter(
+      (p: any) => !isSelfOrArchiveCredit(p.character ?? p.roleName)
+    )
+
     // Combine the data
     const movieData = {
       ...movie,
-      performances: billedPerformances,
+      performances: rateableCast,
       ratings
     }
 
     if (!isProd) {
-      console.log("🎬 Returning movie data:", movieData.title, "with", enrichedPerformances.length, "performances")
+      console.log("🎬 Returning movie data:", movieData.title, "with", rateableCast.length, "performances")
     }
     
     const res = NextResponse.json(movieData)
