@@ -38,8 +38,8 @@ COPY . .
 # `npm run build` runs `prisma generate && next build` (see package.json)
 RUN npm run build
 
-# Bundle the sitemap generator into a single Node.js-compatible file so the
-# runner image can execute it with plain `node` (no tsx / full node_modules).
+# Bundle ops scripts into single Node.js files so the runner image can execute
+# them with plain `node` (no tsx / full node_modules / app TypeScript sources).
 # @prisma/client is externalised because it already lives in the standalone output.
 RUN ./node_modules/.bin/esbuild scripts/generate-sitemaps.ts \
     --bundle \
@@ -47,6 +47,13 @@ RUN ./node_modules/.bin/esbuild scripts/generate-sitemaps.ts \
     --target=node20 \
     --external:@prisma/client \
     --outfile=scripts/generate-sitemaps.js
+RUN ./node_modules/.bin/esbuild scripts/ingest-all-movies-cast.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --alias:@=./src \
+    --outfile=scripts/ingest-all-movies-cast.js
 
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
@@ -76,8 +83,10 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
 # Bundled sitemap generator — runs at container start via docker-entrypoint.sh.
+# Cast ingest is optional (Coolify Terminal): `node scripts/ingest-all-movies-cast.js`
 # @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./scripts/generate-sitemaps.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/ingest-all-movies-cast.js ./scripts/ingest-all-movies-cast.js
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp

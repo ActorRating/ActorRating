@@ -10,6 +10,10 @@
  *        npx tsx scripts/ingest-all-movies-cast.ts --limit 100
  *        npx tsx scripts/ingest-all-movies-cast.ts --dry
  *
+ * Docker / Coolify (standalone image has no .ts sources or tsx):
+ *        node scripts/ingest-all-movies-cast.js
+ *        node scripts/ingest-all-movies-cast.js --limit 100
+ *
  * Rate-limited via getMovieCreditsForIngestion. Sequential; no parallel TMDB calls.
  */
 
