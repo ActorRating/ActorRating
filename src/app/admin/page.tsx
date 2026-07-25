@@ -179,7 +179,7 @@ export default async function AdminDashboardPage({
         <StatCard
           title="Guest / anonymous ratings"
           value={data.guestRatings}
-          subtitle={`${data.guestRatingsToday} today · DB rows with no user`}
+          subtitle={`${data.guestRatingsToday} today · saved from unsigned visitors`}
         />
         <StatCard
           title="Ratings per User"
@@ -228,7 +228,7 @@ export default async function AdminDashboardPage({
       <PageViewAnalyticsSection
         data={pageViewAnalytics}
         hrefForDays={(days) =>
-          createQueryString(resolvedSearchParams, { pv: String(days) })
+          createQueryString(resolvedSearchParams, { pv: String(days === 1 ? 24 : days) })
         }
       />
 

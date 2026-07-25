@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const ratings = await prisma.rating.findMany({
-      where: { actorId, movieId },
+      where: { actorId, movieId, userId: { not: null } },
       select: {
         emotionalRangeDepth: true,
         characterBelievability: true,

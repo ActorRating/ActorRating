@@ -1,12 +1,16 @@
 import Link from "next/link"
 import GrowthChart from "@/components/admin/GrowthChart"
 import StatCard from "@/components/admin/StatCard"
-import type { PageViewAnalytics } from "@/lib/admin/getPageViewAnalytics"
+import {
+  analyticsWindowLabel,
+  type PageViewAnalytics,
+  type PageViewAnalyticsDays,
+} from "@/lib/admin/getPageViewAnalytics"
 
 type Props = {
   data: PageViewAnalytics
-  /** Current query string builder for 7/30 toggle */
-  hrefForDays: (days: 7 | 30) => string
+  /** Current query string builder for window toggle */
+  hrefForDays: (days: PageViewAnalyticsDays) => string
 }
 
 function RankTable({
@@ -60,9 +64,10 @@ function RankTable({
 }
 
 export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
-  const total7 = data.botVsHuman.human + data.botVsHuman.bot
-  const humanPct = total7 > 0 ? (data.botVsHuman.human / total7) * 100 : 0
-  const botPct = total7 > 0 ? (data.botVsHuman.bot / total7) * 100 : 0
+  const windowLabel = analyticsWindowLabel(data.days)
+  const total = data.botVsHuman.human + data.botVsHuman.bot
+  const humanPct = total > 0 ? (data.botVsHuman.human / total) * 100 : 0
+  const botPct = total > 0 ? (data.botVsHuman.bot / total) * 100 : 0
   const knownPct =
     data.botVsHuman.bot > 0
       ? (data.botVsHuman.knownCrawler / data.botVsHuman.bot) * 100
@@ -71,6 +76,12 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
     data.botVsHuman.bot > 0
       ? (data.botVsHuman.unidentified / data.botVsHuman.bot) * 100
       : 0
+
+  const windows: Array<{ days: PageViewAnalyticsDays; label: string }> = [
+    { days: 1, label: "24h" },
+    { days: 7, label: "7 days" },
+    { days: 30, label: "30 days" },
+  ]
 
   return (
     <section className="mt-6 space-y-6">
@@ -82,52 +93,45 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
           </p>
         </div>
         <div className="flex gap-2 text-sm">
-          <Link
-            href={hrefForDays(7)}
-            className={`rounded-lg border px-3 py-2 ${
-              data.days === 7
-                ? "border-primary bg-primary/15 text-foreground"
-                : "border-border text-muted-foreground hover:bg-background"
-            }`}
-          >
-            7 days
-          </Link>
-          <Link
-            href={hrefForDays(30)}
-            className={`rounded-lg border px-3 py-2 ${
-              data.days === 30
-                ? "border-primary bg-primary/15 text-foreground"
-                : "border-border text-muted-foreground hover:bg-background"
-            }`}
-          >
-            30 days
-          </Link>
+          {windows.map((w) => (
+            <Link
+              key={w.days}
+              href={hrefForDays(w.days)}
+              className={`rounded-lg border px-3 py-2 ${
+                data.days === w.days
+                  ? "border-primary bg-primary/15 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-background"
+              }`}
+            >
+              {w.label}
+            </Link>
+          ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          title={`Unique humans (${data.days}d)`}
+          title={`Unique humans (${windowLabel})`}
           value={data.uniqueHumanVisitors}
           subtitle="Distinct IPs, non-bot pageviews"
         />
         <StatCard
-          title="Human pageviews (7d)"
+          title={`Human pageviews (${windowLabel})`}
           value={data.botVsHuman.human}
           subtitle={`${humanPct.toFixed(1)}% of traffic`}
         />
         <StatCard
-          title="Bot total (7d)"
+          title={`Bot total (${windowLabel})`}
           value={data.botVsHuman.bot}
           subtitle={`${botPct.toFixed(1)}% of traffic`}
         />
         <StatCard
-          title="Known crawlers (7d)"
+          title={`Known crawlers (${windowLabel})`}
           value={data.botVsHuman.knownCrawler}
           subtitle={`${knownPct.toFixed(1)}% of bots — Applebot, Googlebot, Meta, etc.`}
         />
         <StatCard
-          title="Unidentified bots (7d)"
+          title={`Unidentified bots (${windowLabel})`}
           value={data.botVsHuman.unidentified}
           subtitle={`${unidentifiedPct.toFixed(1)}% of bots — worth investigating`}
         />
@@ -135,12 +139,16 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
 
       <GrowthChart
         data={data.humanPageviewsByDay}
-        title={`Real Pageviews — last ${data.days} days (human only)`}
+        title={
+          data.days === 1
+            ? "Real Pageviews — last 24 hours (human only, by hour)"
+            : `Real Pageviews — last ${data.days} days (human only)`
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankTable
-          title={`Top Referrers (${data.days}d, human)`}
+          title={`Top Referrers (${windowLabel}, human)`}
           columns={["Domain", "Views"]}
           rows={data.topReferrers.map((r) => ({
             key: r.domain,
@@ -150,7 +158,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
           empty="No referrers yet — waiting for pageview data."
         />
         <RankTable
-          title={`UTM Source Breakdown (${data.days}d, human)`}
+          title={`UTM Source Breakdown (${windowLabel}, human)`}
           columns={["utm_source", "Views"]}
           rows={data.utmSourceBreakdown.map((r) => ({
             key: r.source,
@@ -162,7 +170,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
       </div>
 
       <RankTable
-        title={`Top Pages (${data.days}d, human)`}
+        title={`Top Pages (${windowLabel}, human)`}
         columns={["Path", "Views"]}
         rows={data.topPages.map((r) => ({
           key: r.path,
