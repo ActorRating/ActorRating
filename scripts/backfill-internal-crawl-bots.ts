@@ -1,26 +1,25 @@
 /**
- * Backfill: flag PageView rows that match the internal-referrer path-crawl pattern.
- *
- * Same ipHash, >15 distinct paths in any 10-minute window, every view in that
- * window has an actorrating.com referrer and no UTM params.
+ * Backfill: flag PageView rows matching internal-crawl patterns:
+ *  1) Per-IP: >15 distinct paths / 10m, all internal referrer + no UTM
+ *  2) Fleet: >25 IPs + >25 paths + >40 views / 10m of fleet-eligible traffic
+ *     (internal + no UTM + anonymous + not /admin)
  *
  * Usage:
- *   npx tsx scripts/backfill-internal-crawl-bots.ts
  *   npx tsx scripts/backfill-internal-crawl-bots.ts --hours 48
  *   npx tsx scripts/backfill-internal-crawl-bots.ts --hours 48 --dry
  *
- * Coolify after redeploy (bundled into the image):
+ * Coolify after redeploy:
  *   node scripts/backfill-internal-crawl-bots.js --hours 48
  *   node scripts/backfill-internal-crawl-bots.js --hours 48 --dry
- *
- * Local:
- *   npx tsx scripts/backfill-internal-crawl-bots.ts --hours 48
  */
 import dotenv from "dotenv"
 dotenv.config()
 
 import { PrismaClient } from "@prisma/client"
-import { collectInternalCrawlIds } from "../src/lib/analytics/internal-crawl"
+import {
+  collectInternalCrawlIds,
+  collectInternalFleetIds,
+} from "../src/lib/analytics/internal-crawl"
 
 const prisma = new PrismaClient()
 
@@ -47,8 +46,9 @@ async function main() {
       utmCampaign: true,
       createdAt: true,
       isLikelyBot: true,
+      userId: true,
     },
-    orderBy: [{ ipHash: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ createdAt: "asc" }],
   })
 
   console.log(`Loaded ${rows.length} rows`)
@@ -60,13 +60,14 @@ async function main() {
     else byIp.set(row.ipHash, [row])
   }
 
-  const toFlag = new Set<string>()
+  const perIpIds = new Set<string>()
   for (const [, group] of byIp) {
-    for (const id of collectInternalCrawlIds(group)) {
-      toFlag.add(id)
-    }
+    for (const id of collectInternalCrawlIds(group)) perIpIds.add(id)
   }
 
+  const fleetIds = collectInternalFleetIds(rows)
+
+  const toFlag = new Set<string>([...perIpIds, ...fleetIds])
   const byId = new Map(rows.map((r) => [r.id, r]))
   let alreadyBot = 0
   const needUpdate: string[] = []
@@ -77,7 +78,9 @@ async function main() {
     else needUpdate.push(id)
   }
 
-  console.log(`Matching crawl pattern: ${toFlag.size} rows`)
+  console.log(`Per-IP crawl matches: ${perIpIds.size}`)
+  console.log(`Fleet crawl matches: ${fleetIds.size}`)
+  console.log(`Union to flag: ${toFlag.size}`)
   console.log(`  already isLikelyBot: ${alreadyBot}`)
   console.log(`  to update: ${needUpdate.length}`)
   console.log(

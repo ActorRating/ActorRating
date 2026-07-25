@@ -4,8 +4,10 @@
  */
 import {
   collectInternalCrawlIds,
+  collectInternalFleetIds,
   isInternalOnlyNoUtm,
   isInternalSiteReferrer,
+  matchesInternalFleetCrawl,
   matchesInternalPathCrawl,
 } from "../src/lib/analytics/internal-crawl"
 
@@ -72,3 +74,36 @@ console.log(
 )
 
 console.log("collectInternalCrawlIds count", collectInternalCrawlIds(crawlRows).size)
+
+const fleetRows = Array.from({ length: 50 }, (_, i) => ({
+  id: `f-${i}`,
+  path: `/rate/movie-${i}/actor-${i}`,
+  referrer: "https://actorrating.com/",
+  utmSource: null as string | null,
+  utmMedium: null as string | null,
+  utmCampaign: null as string | null,
+  createdAt: new Date(base.getTime() + i * 5_000),
+  ipHash: `ip-${i}`,
+  userId: null as string | null,
+}))
+console.log(
+  "\n50 IPs / 50 paths / 50 views in ~4 min → fleet?",
+  matchesInternalFleetCrawl(fleetRows.map((r) => ({ path: r.path, ipHash: r.ipHash }))),
+)
+console.log("collectInternalFleetIds count", collectInternalFleetIds(fleetRows).size)
+
+const smallFleet = Array.from({ length: 20 }, (_, i) => ({
+  id: `s-${i}`,
+  path: `/p-${i}`,
+  referrer: "https://actorrating.com/",
+  utmSource: null as string | null,
+  utmMedium: null as string | null,
+  utmCampaign: null as string | null,
+  createdAt: new Date(base.getTime() + i * 5_000),
+  ipHash: `sip-${i}`,
+  userId: null as string | null,
+}))
+console.log(
+  "20 IPs (below threshold) → fleet?",
+  matchesInternalFleetCrawl(smallFleet.map((r) => ({ path: r.path, ipHash: r.ipHash }))),
+)

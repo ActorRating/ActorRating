@@ -3,7 +3,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
-import { detectInternalPathCrawl } from "@/lib/analytics/internal-crawl"
+import { detectInternalFleetCrawl, detectInternalPathCrawl } from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
   normalizePageViewPath,
@@ -100,6 +100,14 @@ export async function POST(request: NextRequest) {
     let isLikelyBot = bot.isLikelyBot
     let siblingIds: string[] = []
 
+    let userId: string | null = null
+    try {
+      const session = await auth()
+      userId = session?.user?.id ?? null
+    } catch {
+      userId = null
+    }
+
     try {
       const crawl = await detectInternalPathCrawl(prisma, ipHash, {
         path,
@@ -116,12 +124,22 @@ export async function POST(request: NextRequest) {
       // Crawl detection must not block logging
     }
 
-    let userId: string | null = null
     try {
-      const session = await auth()
-      userId = session?.user?.id ?? null
+      const fleet = await detectInternalFleetCrawl(prisma, {
+        path,
+        referrer,
+        utmSource: storedUtmSource,
+        utmMedium,
+        utmCampaign,
+        ipHash,
+        userId,
+      })
+      if (fleet.isFleet) {
+        isLikelyBot = true
+        siblingIds = [...new Set([...siblingIds, ...fleet.siblingIds])]
+      }
     } catch {
-      userId = null
+      // Fleet detection must not block logging
     }
 
     await prisma.pageView.create({
