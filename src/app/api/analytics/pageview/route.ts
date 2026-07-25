@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { BotCategory } from "@prisma/client"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
+import { resolveBotCategory } from "@/lib/analytics/bot-category"
 import { detectInternalFleetCrawl, detectInternalPathCrawl } from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
@@ -32,6 +34,31 @@ function emptyOk(cookieSource?: string | null) {
     res.cookies.set(AR_SRC_COOKIE, cookieSource, arSrcCookieOptions())
   }
   return res
+}
+
+async function flagSiblingsAsBots(siblingIds: string[]) {
+  if (siblingIds.length === 0) return
+
+  const siblings = await prisma.pageView.findMany({
+    where: { id: { in: siblingIds }, isLikelyBot: false },
+    select: { id: true, userAgent: true },
+  })
+  if (siblings.length === 0) return
+
+  const byCategory = new Map<BotCategory, string[]>()
+  for (const s of siblings) {
+    const cat = resolveBotCategory(true, s.userAgent) ?? "UNIDENTIFIED"
+    const list = byCategory.get(cat)
+    if (list) list.push(s.id)
+    else byCategory.set(cat, [s.id])
+  }
+
+  for (const [botCategory, ids] of byCategory) {
+    await prisma.pageView.updateMany({
+      where: { id: { in: ids } },
+      data: { isLikelyBot: true, botCategory },
+    })
+  }
 }
 
 /**
@@ -142,6 +169,8 @@ export async function POST(request: NextRequest) {
       // Fleet detection must not block logging
     }
 
+    const botCategory = resolveBotCategory(isLikelyBot, userAgent)
+
     await prisma.pageView.create({
       data: {
         path,
@@ -153,18 +182,14 @@ export async function POST(request: NextRequest) {
         ipHash,
         userAgent,
         isLikelyBot,
+        botCategory,
       },
     })
 
-    if (siblingIds.length > 0) {
-      try {
-        await prisma.pageView.updateMany({
-          where: { id: { in: siblingIds }, isLikelyBot: false },
-          data: { isLikelyBot: true },
-        })
-      } catch {
-        // Non-fatal
-      }
+    try {
+      await flagSiblingsAsBots(siblingIds)
+    } catch {
+      // Non-fatal
     }
   } catch {
     // Swallow — analytics must never break the product

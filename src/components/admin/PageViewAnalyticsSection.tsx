@@ -63,6 +63,14 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
   const total7 = data.botVsHuman.human + data.botVsHuman.bot
   const humanPct = total7 > 0 ? (data.botVsHuman.human / total7) * 100 : 0
   const botPct = total7 > 0 ? (data.botVsHuman.bot / total7) * 100 : 0
+  const knownPct =
+    data.botVsHuman.bot > 0
+      ? (data.botVsHuman.knownCrawler / data.botVsHuman.bot) * 100
+      : 0
+  const unidentifiedPct =
+    data.botVsHuman.bot > 0
+      ? (data.botVsHuman.unidentified / data.botVsHuman.bot) * 100
+      : 0
 
   return (
     <section className="mt-6 space-y-6">
@@ -97,25 +105,26 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Human pageviews (7d)"
           value={data.botVsHuman.human}
           subtitle={`${humanPct.toFixed(1)}% of traffic`}
         />
         <StatCard
-          title="Bot-flagged (7d)"
+          title="Bot total (7d)"
           value={data.botVsHuman.bot}
           subtitle={`${botPct.toFixed(1)}% of traffic`}
         />
         <StatCard
-          title="Bot vs human"
-          value={
-            data.botVsHuman.human === 0 && data.botVsHuman.bot === 0
-              ? "—"
-              : `${Math.round(botPct)}% / ${Math.round(humanPct)}%`
-          }
-          subtitle="bot% / human% last 7 days"
+          title="Known crawlers (7d)"
+          value={data.botVsHuman.knownCrawler}
+          subtitle={`${knownPct.toFixed(1)}% of bots — Applebot, Googlebot, Meta, etc.`}
+        />
+        <StatCard
+          title="Unidentified bots (7d)"
+          value={data.botVsHuman.unidentified}
+          subtitle={`${unidentifiedPct.toFixed(1)}% of bots — worth investigating`}
         />
       </div>
 

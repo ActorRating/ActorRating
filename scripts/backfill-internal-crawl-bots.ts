@@ -4,9 +4,7 @@
  *  2) Fleet: >25 IPs + >25 paths + >40 views / 10m of fleet-eligible traffic
  *     (internal + no UTM + anonymous + not /admin)
  *
- * Usage:
- *   npx tsx scripts/backfill-internal-crawl-bots.ts --hours 48
- *   npx tsx scripts/backfill-internal-crawl-bots.ts --hours 48 --dry
+ * Sets botCategory from userAgent (KNOWN_CRAWLER vs UNIDENTIFIED).
  *
  * Coolify after redeploy:
  *   node scripts/backfill-internal-crawl-bots.js --hours 48
@@ -15,7 +13,8 @@
 import dotenv from "dotenv"
 dotenv.config()
 
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, type BotCategory } from "@prisma/client"
+import { resolveBotCategory } from "../src/lib/analytics/bot-category"
 import {
   collectInternalCrawlIds,
   collectInternalFleetIds,
@@ -47,6 +46,7 @@ async function main() {
       createdAt: true,
       isLikelyBot: true,
       userId: true,
+      userAgent: true,
     },
     orderBy: [{ createdAt: "asc" }],
   })
@@ -94,15 +94,28 @@ async function main() {
     return
   }
 
+  const byCategory = new Map<BotCategory, string[]>()
+  for (const id of needUpdate) {
+    const row = byId.get(id)
+    if (!row) continue
+    const cat = resolveBotCategory(true, row.userAgent) ?? "UNIDENTIFIED"
+    const list = byCategory.get(cat)
+    if (list) list.push(id)
+    else byCategory.set(cat, [id])
+  }
+
   const BATCH = 500
   let updated = 0
-  for (let i = 0; i < needUpdate.length; i += BATCH) {
-    const chunk = needUpdate.slice(i, i + BATCH)
-    const result = await prisma.pageView.updateMany({
-      where: { id: { in: chunk }, isLikelyBot: false },
-      data: { isLikelyBot: true },
-    })
-    updated += result.count
+  for (const [botCategory, ids] of byCategory) {
+    console.log(`  writing ${botCategory}: ${ids.length}`)
+    for (let i = 0; i < ids.length; i += BATCH) {
+      const chunk = ids.slice(i, i + BATCH)
+      const result = await prisma.pageView.updateMany({
+        where: { id: { in: chunk }, isLikelyBot: false },
+        data: { isLikelyBot: true, botCategory },
+      })
+      updated += result.count
+    }
   }
 
   console.log(`Updated: ${updated}`)

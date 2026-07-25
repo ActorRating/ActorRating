@@ -36,21 +36,24 @@ model User {
 /// First-party pageview log for admin analytics (human + bot-flagged).
 /// Prune rows older than 90 days (see scripts/prune-pageviews.ts).
 model PageView {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   path        String
   referrer    String?
-  utmSource   String?  @db.VarChar(100)
-  utmMedium   String?  @db.VarChar(100)
-  utmCampaign String?  @db.VarChar(200)
+  utmSource   String?      @db.VarChar(100)
+  utmMedium   String?      @db.VarChar(100)
+  utmCampaign String?      @db.VarChar(200)
   userId      String?
   ipHash      String
-  userAgent   String   @db.Text
-  isLikelyBot Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userAgent   String       @db.Text
+  isLikelyBot Boolean      @default(false)
+  /// Set only when isLikelyBot: disclosed crawler vs unidentified/spoofed.
+  botCategory BotCategory?
+  createdAt   DateTime     @default(now())
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([isLikelyBot, createdAt])
+  @@index([botCategory, createdAt])
   @@index([path, createdAt])
   @@index([utmSource, createdAt])
   @@index([ipHash, createdAt])
@@ -331,4 +334,10 @@ enum UserStatus {
   NEW
   ONBOARDING
   ACTIVE
+}
+
+/// Bot slice for PageView: disclosed crawler UA vs unidentified/spoofed.
+enum BotCategory {
+  KNOWN_CRAWLER
+  UNIDENTIFIED
 }

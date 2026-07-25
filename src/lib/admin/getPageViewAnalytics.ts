@@ -14,6 +14,8 @@ export type PageViewAnalytics = {
   botVsHuman: {
     human: number
     bot: number
+    knownCrawler: number
+    unidentified: number
     /** Always last 7 days for a stable noise signal */
     windowDays: 7
   }
@@ -65,7 +67,7 @@ function emptyAnalytics(days: PageViewAnalyticsDays): PageViewAnalytics {
     topReferrers: [],
     utmSourceBreakdown: [],
     topPages: [],
-    botVsHuman: { human: 0, bot: 0, windowDays: 7 },
+    botVsHuman: { human: 0, bot: 0, knownCrawler: 0, unidentified: 0, windowDays: 7 },
   }
 }
 
@@ -88,7 +90,7 @@ export async function getPageViewAnalytics(
   const interval = days === 30 ? Prisma.sql`INTERVAL '29 days'` : Prisma.sql`INTERVAL '6 days'`
 
   try {
-    const [dailyRows, referrerRows, utmRows, pageRows, botHumanRows] =
+    const [dailyRows, referrerRows, utmRows, pageRows, botHumanRows, botCategoryRows] =
       await Promise.all([
         prisma.$queryRaw<DayCountRow[]>(Prisma.sql`
           SELECT DATE_TRUNC('day', "createdAt") AS day, COUNT(*)::bigint AS count
@@ -148,6 +150,13 @@ export async function getPageViewAnalytics(
           WHERE "createdAt" >= NOW() - INTERVAL '6 days'
           GROUP BY "isLikelyBot"
         `),
+        prisma.$queryRaw<Array<{ botCategory: string | null; count: bigint | number }>>(Prisma.sql`
+          SELECT "botCategory"::text AS "botCategory", COUNT(*)::bigint AS count
+          FROM "PageView"
+          WHERE "isLikelyBot" = true
+            AND "createdAt" >= NOW() - INTERVAL '6 days'
+          GROUP BY "botCategory"
+        `),
       ])
 
     let human = 0
@@ -155,6 +164,15 @@ export async function getPageViewAnalytics(
     for (const row of botHumanRows) {
       if (row.isLikelyBot) bot = toNumber(row.count)
       else human = toNumber(row.count)
+    }
+
+    let knownCrawler = 0
+    let unidentified = 0
+    for (const row of botCategoryRows) {
+      const n = toNumber(row.count)
+      if (row.botCategory === "KNOWN_CRAWLER") knownCrawler = n
+      else if (row.botCategory === "UNIDENTIFIED") unidentified = n
+      else unidentified += n // null category on older bot rows until backfill
     }
 
     const data: PageViewAnalytics = {
@@ -172,7 +190,7 @@ export async function getPageViewAnalytics(
         path: r.name,
         count: toNumber(r.count),
       })),
-      botVsHuman: { human, bot, windowDays: 7 },
+      botVsHuman: { human, bot, knownCrawler, unidentified, windowDays: 7 },
     }
 
     setCache(cacheKey, data, 30_000)
