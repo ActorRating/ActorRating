@@ -4,30 +4,44 @@ import Link from 'next/link'
 import { useSession } from '@/components/providers/SessionProvider'
 import { handleLogout } from '@/lib/auth'
 import { Logo } from '../ui/Logo'
-import { useState, useEffect, useRef, FormEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent, type ReactNode } from 'react'
 import { FaSearch, FaTimes, FaBars } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { prefetchPerformancesPageData } from '@/lib/performances-page-targets'
 
 const NAV_LINKS = [
   { label: 'Discover', href: '/discover' },
   { label: 'Lists', href: '/lists' },
-  { label: 'About', href: '/about' },
+  { label: 'Stories', href: '/stories' },
+  { label: 'News', href: '/news' },
 ] as const
 
+const DESKTOP_LINK_CLASS =
+  'navbar-link-desktop group relative px-3 py-2 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200'
+
+function DesktopNavLink({
+  href,
+  children,
+}: {
+  href: string
+  children: ReactNode
+}) {
+  return (
+    <Link href={href} className={DESKTOP_LINK_CLASS}>
+      {children}
+      <span
+        className="absolute bottom-0 left-3 right-3 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
+        style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
+      />
+    </Link>
+  )
+}
+
 export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?: string }) {
+  // primaryRateHref kept for LandingLayout API compat; Rate Now CTA removed from nav.
+  void primaryRateHref
   const { user, loading, isInitialized } = useSession()
   const router = useRouter()
-
-  const prefetchRateHref = () => {
-    if (primaryRateHref.startsWith('/rate/')) {
-      router.prefetch(primaryRateHref)
-    } else {
-      prefetchPerformancesPageData()
-      router.prefetch('/discover')
-    }
-  }
   const homeHref = user ? '/dashboard' : '/'
   const navKey = `${user?.id || 'anon'}`
   const [mounted, setMounted] = useState(false)
@@ -65,113 +79,83 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
     setMobileSearchOpen(false)
   }
 
+  const desktopSearch = (
+    <form
+      onSubmit={handleSearch}
+      className="hidden lg:flex items-center navbar-search-form"
+      role="search"
+    >
+      <label htmlFor="navbar-search" className="sr-only">
+        Search actors and films
+      </label>
+      <div className="relative flex items-center">
+        <input
+          id="navbar-search"
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder=""
+          className="navbar-search-input w-48 h-9 pl-3 pr-9 rounded-full text-sm text-white outline-none transition-colors duration-200"
+          autoComplete="off"
+        />
+        <button
+          type="submit"
+          className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-white pointer-events-none"
+          aria-label="Search"
+          tabIndex={-1}
+        >
+          <FaSearch className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </form>
+  )
+
   return (
     <div className="navbar-cinematic">
       <nav className="relative w-full z-[1]" suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex justify-between items-center h-16 sm:h-20">
 
-            {/* Logo */}
             <div className="flex items-center flex-shrink-0">
               <Logo href={homeHref} showText />
             </div>
 
-            {/* Center nav — desktop only */}
-            <div className="hidden lg:flex items-center gap-1">
+            {/* One continuous link row — equal size + spacing for every item */}
+            <div className="hidden lg:flex items-center gap-1 pointer-events-auto navbar-content">
               {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="navbar-link-desktop group relative px-4 py-2 text-sm font-bold text-white hover:text-[#FFD700] transition-colors duration-200"
-                >
+                <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
-                  <span
-                    className="absolute bottom-0 left-4 right-4 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
-                    style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
-                  />
-                </Link>
+                </DesktopNavLink>
               ))}
+              {!mounted || !isInitialized || loading ? (
+                <div className="h-8 w-28 rounded-md bg-[#1a1a1a] animate-pulse" />
+              ) : user ? (
+                <>
+                  <DesktopNavLink href="/dashboard">Dashboard</DesktopNavLink>
+                  <button
+                    type="button"
+                    onClick={() => handleLogout()}
+                    className={DESKTOP_LINK_CLASS}
+                  >
+                    Sign Out
+                    <span
+                      className="absolute bottom-0 left-3 right-3 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
+                      style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
+                    />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <DesktopNavLink href="/auth/signin">Sign In</DesktopNavLink>
+                  <DesktopNavLink href="/auth/signin">Join Free</DesktopNavLink>
+                </>
+              )}
             </div>
 
-            {/* Right side: search + auth + hamburger */}
+            {/* Search farthest right on desktop */}
             <div className="flex items-center gap-3 sm:gap-4">
+              {desktopSearch}
 
-              {/* Letterboxd-style mini search — desktop only (lg+) */}
-              <form
-                onSubmit={handleSearch}
-                className="hidden lg:flex items-center navbar-search-form"
-                role="search"
-              >
-                <label htmlFor="navbar-search" className="sr-only">
-                  Search actors and films
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="navbar-search"
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder=""
-                    className="navbar-search-input w-48 h-9 pl-3 pr-9 rounded-full text-sm text-white outline-none transition-colors duration-200"
-                    autoComplete="off"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-white pointer-events-none"
-                    aria-label="Search"
-                    tabIndex={-1}
-                  >
-                    <FaSearch className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </form>
-
-              {/* Auth — desktop only (lg+) so tablet keeps clean hamburger chrome */}
-              <div className="hidden lg:flex items-center gap-2 min-w-[100px] justify-end pointer-events-auto navbar-content">
-                {!mounted || !isInitialized || loading ? (
-                  <div className="h-8 w-20 rounded-md bg-[#1a1a1a] animate-pulse" />
-                ) : user ? (
-                  <>
-                    <Link href="/dashboard">
-                      <button className="px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-[#FFD700] bg-[#111] border border-white/5 hover:border-[#FFD700]/20 transition-all duration-200 min-h-[40px]">
-                        Dashboard
-                      </button>
-                    </Link>
-                    <button
-                      onClick={() => handleLogout()}
-                      className="px-4 py-2 rounded-xl text-sm text-gray-300 hover:text-[#FFD700] bg-[#111] border border-white/5 hover:border-[#FFD700]/20 transition-all duration-200 min-h-[40px]"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/auth/signin"
-                      className="navbar-auth-link text-sm font-bold text-white hover:text-[#FFD700] transition-colors duration-200 px-2"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/auth/signin"
-                      className="navbar-auth-link text-sm font-bold text-white hover:text-[#FFD700] transition-colors duration-200 px-2"
-                    >
-                      Join Free
-                    </Link>
-                    <Link href={primaryRateHref} onMouseEnter={prefetchRateHref}>
-                      <button
-                        className="px-5 py-2 rounded-full text-sm font-bold text-black hover:scale-105 transition-transform duration-200 min-h-[40px]"
-                        style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
-                        aria-label="Rate now"
-                      >
-                        Rate Now
-                      </button>
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile + tablet search toggle — beside hamburger */}
               <button
                 type="button"
                 className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
@@ -185,7 +169,6 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
                 {mobileSearchOpen ? <FaTimes className="w-5 h-5" /> : <FaSearch className="w-5 h-5" />}
               </button>
 
-              {/* Mobile + tablet hamburger */}
               <button
                 className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
@@ -196,13 +179,11 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               >
                 {mobileMenuOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
               </button>
-
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Mobile search bar — expands under navbar */}
       <AnimatePresence>
         {mobileSearchOpen && (
           <motion.div
@@ -234,7 +215,6 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
         )}
       </AnimatePresence>
 
-      {/* Mobile slide-down menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -251,19 +231,17 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
             }}
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
-              {/* Nav links */}
               {NAV_LINKS.map((link) => (
                 <Link
                   key={`mobile-${link.href}`}
                   href={link.href}
-                  className="px-4 py-3 text-sm font-bold text-white hover:text-[#FFD700] transition-colors duration-200 rounded-lg hover:bg-white/5"
+                  className="px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200 rounded-lg hover:bg-white/5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
 
-              {/* Mobile auth */}
               {mounted && (
                 <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   {user ? (
@@ -280,37 +258,22 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
                       </button>
                     </>
                   ) : (
-                    <>
+                    <div className="flex w-full gap-3">
                       <Link
-                        href={primaryRateHref}
+                        href="/auth/signin"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="w-full mb-2"
-                        onMouseEnter={prefetchRateHref}
+                        className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
                       >
-                        <button
-                          className="w-full px-4 py-3 rounded-xl text-sm font-bold text-black"
-                          style={{ background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)' }}
-                        >
-                          Rate Now
-                        </button>
+                        Sign In
                       </Link>
-                      <div className="flex w-full gap-3">
-                        <Link
-                          href="/auth/signin"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
-                        >
-                          Sign In
-                        </Link>
-                        <Link
-                          href="/auth/signin"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
-                        >
-                          Join Free
-                        </Link>
-                      </div>
-                    </>
+                      <Link
+                        href="/auth/signin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
+                      >
+                        Join Free
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}

@@ -12,6 +12,8 @@ interface Manifest {
   movieSitemapCount: number
   performanceSitemapCount: number
   listSitemapCount?: number
+  storySitemapCount?: number
+  newsSitemapCount?: number
 }
 
 function escapeXml(str: string): string {
@@ -66,6 +68,14 @@ export async function GET() {
 
   if ((manifest.listSitemapCount ?? 0) > 0) {
     entries.push(sitemapEntry(`${BASE_URL}/sitemaps/lists.xml`, genDate))
+  }
+
+  if ((manifest.storySitemapCount ?? 0) > 0) {
+    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/stories.xml`, genDate))
+  }
+
+  if ((manifest.newsSitemapCount ?? 0) > 0) {
+    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/news.xml`, genDate))
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

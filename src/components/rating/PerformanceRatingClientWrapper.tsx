@@ -1157,11 +1157,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           movieYear: number
           moviePosterUrl?: string | null
           actorImageUrl?: string | null
+          actorName?: string
         }>
         setNextPerfs(
           rows.map((p) => ({
             ...p,
-            actorName: performance.actor.name,
+            actorName: p.actorName || performance.actor.name,
           }))
         )
         if (typeof data.totalPerformances === 'number' && typeof data.userRatedCount === 'number') {
@@ -1748,7 +1749,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Actor Name - Primary Focus, Largest Text, White */}
           <h1
             id="actor-name-header"
-            className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-1.5 sm:mb-4 tracking-tight px-1 text-white"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-2 sm:mb-4 tracking-tight px-1 text-white leading-tight"
             style={{
               fontFamily: DISPLAY,
             }}
@@ -1758,16 +1759,15 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           {/* Movie Title - Clean, non-italic styling */}
           <div className="px-1">
             <h2
-              className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-semibold mb-0.5 sm:mb-1.5 tracking-tight text-[#FFD700]"
+              className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold mb-1 sm:mb-1.5 tracking-tight text-[#FFD700] leading-snug"
               style={{
                 fontFamily: DISPLAY,
-                lineHeight: '1.3',
               }}
             >
               {performance.movie.title}
             </h2>
             <p
-              className="text-sm sm:text-xl md:text-2xl text-zinc-400 font-medium"
+              className="text-lg sm:text-xl md:text-2xl text-zinc-400 font-medium"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1775,7 +1775,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               {performance.movie.year}
             </p>
             <p
-              className="text-sm sm:text-base md:text-lg text-zinc-500 font-medium mt-3 sm:mt-4 px-2 max-w-xl mx-auto leading-snug"
+              className="text-base sm:text-base md:text-lg text-zinc-400 font-medium mt-3 sm:mt-4 px-2 max-w-xl mx-auto leading-snug"
               style={{
                 fontFamily: 'var(--font-geist-sans), sans-serif',
               }}
@@ -1986,7 +1986,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       </p>
                     ) : (
                       <p
-                        className="text-lg sm:text-xl md:text-2xl text-white font-medium tracking-tight px-1"
+                        className="text-2xl sm:text-2xl md:text-2xl text-white font-semibold tracking-tight px-1 leading-snug"
                         style={{
                           fontFamily: DISPLAY,
                         }}

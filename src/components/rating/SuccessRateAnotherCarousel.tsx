@@ -39,7 +39,7 @@ export function SuccessRateAnotherCarousel({
   actorProgress,
   onRate,
   onViewFilmography,
-  emptyMessage = "You've rated every performance for this actor. Try another actor.",
+  emptyMessage = "No more performances to suggest right now. Try search or Discover.",
   showSectionHeader = true,
   headerAbove,
 }: Props) {
@@ -187,7 +187,10 @@ export function SuccessRateAnotherCarousel({
                               name={p.actorName}
                               imageUrl={upgradeActorImageRes(
                                 p.actorImageUrl ??
-                                  (variant === "auth" ? headlineActorImageUrl : null) ??
+                                  (variant === "auth" &&
+                                  p.actorName === headlineActorName
+                                    ? headlineActorImageUrl
+                                    : null) ??
                                   null,
                               )}
                               size="lg"
@@ -218,7 +221,7 @@ export function SuccessRateAnotherCarousel({
                               className="text-xl sm:text-2xl font-bold text-white mb-1"
                               style={{ fontFamily: DISPLAY }}
                             >
-                              {variant === "auth" ? headlineActorName : p.actorName}
+                              {p.actorName}
                             </h3>
                             <p className="text-base text-[#FFD700] font-semibold tracking-wide mb-4 line-clamp-2">
                               {p.movieTitle}

@@ -5,12 +5,18 @@ import { Metadata } from "next";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
+import { HomeEditorialRails } from "@/components/editorial/HomeEditorialRails";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { buildFixedLandingHero, fixedLandingHeroLookupTarget } from "@/lib/home-featured-performance";
 import {
   homeLeaderboardLookupTargets,
   allLandingRailLookupTargets,
 } from "@/lib/performances-page-targets";
+import {
+  loadAllNews,
+  loadAllStories,
+} from "@/lib/editorial/load-editorial";
+import { withEditorialCovers } from "@/lib/editorial/enrich-covers";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -61,6 +67,10 @@ export default async function Home() {
     /* DB/API unavailable during build or deploy — client still fetches */
   }
   const primaryRateHref = featuredHero.rateHref;
+  const [recentStories, recentNews] = await Promise.all([
+    withEditorialCovers(loadAllStories().slice(0, 7)),
+    withEditorialCovers(loadAllNews().slice(0, 5)),
+  ]);
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
@@ -164,6 +174,7 @@ export default async function Home() {
           featuredHero={featuredHero}
           primaryRateHref={primaryRateHref}
         />
+        <HomeEditorialRails stories={recentStories} news={recentNews} />
         <HomeSeoLinkSections />
       </LandingLayout>
     </>

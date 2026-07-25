@@ -63,6 +63,12 @@ export function Footer() {
               <Link href="/lists" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Lists
               </Link>
+              <Link href="/stories" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Stories
+              </Link>
+              <Link href="/news" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                News
+              </Link>
               {mounted && user && (
                 <Link href="/dashboard" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                   My Dashboard
