@@ -117,10 +117,12 @@ export function analyticsWindowLabel(days: PageViewAnalyticsDays): string {
   return `${days}d`
 }
 
-function intervalForDays(days: PageViewAnalyticsDays) {
-  if (days === 1) return Prisma.sql`INTERVAL '24 hours'`
-  if (days === 30) return Prisma.sql`INTERVAL '29 days'`
-  return Prisma.sql`INTERVAL '6 days'`
+function intervalForDays(days: PageViewAnalyticsDays): Prisma.Sql {
+  // Must be Prisma.raw — nesting Prisma.sql`INTERVAL …` becomes a bound
+  // parameter and breaks `NOW() - $1` in Postgres (all traffic stats → 0).
+  if (days === 1) return Prisma.raw(`INTERVAL '24 hours'`)
+  if (days === 30) return Prisma.raw(`INTERVAL '29 days'`)
+  return Prisma.raw(`INTERVAL '6 days'`)
 }
 
 /**
@@ -229,8 +231,6 @@ export async function getPageViewAnalytics(
           AND "createdAt" >= NOW() - ${interval}
       `),
     ])
-
-    void trunc // reserved if we unify queries later
 
     let human = 0
     let bot = 0
