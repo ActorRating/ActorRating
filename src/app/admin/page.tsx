@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/Button"
 import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
+import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
 import { getAdminData } from "@/lib/admin/getAdminData"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
+import {
+  getPageViewAnalytics,
+  parseAnalyticsDays,
+} from "@/lib/admin/getPageViewAnalytics"
 import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
@@ -20,6 +25,8 @@ type AdminSearchParams = {
   actor?: string
   movie?: string
   page?: string
+  /** Pageview analytics window: 7 or 30 */
+  pv?: string
 }
 
 const RATINGS_PAGE_SIZE = 50
@@ -119,10 +126,12 @@ export default async function AdminDashboardPage({
   const resolvedSearchParams = await searchParams
   const usersPage = Number(resolvedSearchParams.usersPage ?? "0")
   const safeUsersPage = Number.isFinite(usersPage) && usersPage >= 0 ? usersPage : 0
-  const [data, users, globalRatings] = await Promise.all([
+  const pvDays = parseAnalyticsDays(resolvedSearchParams.pv)
+  const [data, users, globalRatings, pageViewAnalytics] = await Promise.all([
     getAdminData(),
     getUsersWithStats({ search: resolvedSearchParams.usersQ, page: safeUsersPage, take: 50 }),
     getGlobalRatings(resolvedSearchParams),
+    getPageViewAnalytics(pvDays),
   ])
 
   return (
@@ -188,6 +197,13 @@ export default async function AdminDashboardPage({
         <GrowthChart data={data.growthLast7Days} />
       </div>
 
+      <PageViewAnalyticsSection
+        data={pageViewAnalytics}
+        hrefForDays={(days) =>
+          createQueryString(resolvedSearchParams, { pv: String(days) })
+        }
+      />
+
       <div className="mt-6">
         <RecentRatings ratings={data.recentRatings} />
       </div>
@@ -209,6 +225,7 @@ export default async function AdminDashboardPage({
             <input type="hidden" name="movie" value={resolvedSearchParams.movie ?? ""} />
             <input type="hidden" name="page" value={resolvedSearchParams.page ?? "0"} />
             <input type="hidden" name="usersPage" value="0" />
+            <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
             <Button type="submit" variant="outline">
               Search
             </Button>
@@ -354,6 +371,7 @@ export default async function AdminDashboardPage({
             <input type="hidden" name="usersQ" value={resolvedSearchParams.usersQ ?? ""} />
             <input type="hidden" name="usersPage" value={resolvedSearchParams.usersPage ?? "0"} />
             <input type="hidden" name="page" value="0" />
+            <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
             <Button type="submit" variant="outline">
               Apply
             </Button>

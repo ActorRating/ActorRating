@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server"
+import {
+  AR_SRC_COOKIE,
+  arSrcCookieOptions,
+  normalizeAcquisitionSource,
+} from "@/lib/tracking/source"
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
-  const src = url.searchParams.get("src")
+  const src = normalizeAcquisitionSource(url.searchParams.get("src"))
 
   const response = NextResponse.redirect(new URL("/", req.url))
 
-  if (src && ["tiktok", "instagram", "youtube"].includes(src)) {
-    response.cookies.set("ar_src", src, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: true,
-      maxAge: 60 * 60 * 24 * 7,
-    })
+  if (src) {
+    response.cookies.set(AR_SRC_COOKIE, src, arSrcCookieOptions())
   }
 
   return response
 }
-

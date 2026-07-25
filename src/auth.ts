@@ -9,7 +9,7 @@ import { getRequestIp, isDisposableEmail, validateMagicLinkRequest } from "@/lib
 import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 import { authConfig } from "./auth.config"
 import { cookies } from "next/headers"
-import { isValidSource } from "@/lib/tracking/source"
+import { AR_SRC_COOKIE, isValidSource } from "@/lib/tracking/source"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -40,7 +40,7 @@ const runtimeAuthEnv = validateAuthEnv()
 
 function getAcquisitionSourceFromCookie(): string | null {
   try {
-    const raw = cookies().get("ar_src")?.value ?? null
+    const raw = cookies().get(AR_SRC_COOKIE)?.value ?? null
     return isValidSource(raw) ? raw : null
   } catch {
     // cookies() may not be available in certain non-request contexts (e.g. build)

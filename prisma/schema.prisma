@@ -26,10 +26,34 @@ model User {
   sessions      Session[]
   performances  Performance[]
   ratings       Rating[]
+  pageViews     PageView[]
 
   @@index([createdAt])
   @@index([email])
   @@index([username])
+}
+
+/// First-party pageview log for admin analytics (human + bot-flagged).
+/// Prune rows older than 90 days (see scripts/prune-pageviews.ts).
+model PageView {
+  id          String   @id @default(cuid())
+  path        String
+  referrer    String?
+  utmSource   String?  @db.VarChar(100)
+  utmMedium   String?  @db.VarChar(100)
+  utmCampaign String?  @db.VarChar(200)
+  userId      String?
+  ipHash      String
+  userAgent   String   @db.Text
+  isLikelyBot Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([isLikelyBot, createdAt])
+  @@index([path, createdAt])
+  @@index([utmSource, createdAt])
+  @@index([ipHash, createdAt])
 }
 
 model Account {

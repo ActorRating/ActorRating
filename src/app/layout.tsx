@@ -14,6 +14,7 @@ import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
 import { GaPageViewTracker } from "@/components/analytics/GaPageViewTracker";
+import { FirstPartyPageViewTracker } from "@/components/analytics/FirstPartyPageViewTracker";
 
 /** Production GA4 property — override via NEXT_PUBLIC_GA_ID when needed. */
 const GA_MEASUREMENT_ID =
@@ -172,6 +173,9 @@ export default async function RootLayout({
                 </Suspense>
                 <Suspense fallback={null}>
                   <GaPageViewTracker measurementId={GA_MEASUREMENT_ID} />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <FirstPartyPageViewTracker />
                 </Suspense>
                 <SearchPreloadTrigger />
                 <ChunkErrorReload />
