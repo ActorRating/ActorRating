@@ -27,6 +27,8 @@ type AdminSearchParams = {
   page?: string
   /** Pageview analytics window: 7 or 30 */
   pv?: string
+  /** Ratings list filter: all | signed | guest */
+  auth?: string
 }
 
 const RATINGS_PAGE_SIZE = 50
@@ -38,9 +40,18 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
   const actor = searchParams.actor?.trim()
   const movie = searchParams.movie?.trim()
   const ratingsQ = searchParams.ratingsQ?.trim()
+  const authFilter =
+    searchParams.auth === "signed" || searchParams.auth === "guest"
+      ? searchParams.auth
+      : "all"
 
   const where: Prisma.RatingWhereInput = {
     AND: [
+      authFilter === "signed"
+        ? { userId: { not: null } }
+        : authFilter === "guest"
+          ? { userId: null }
+          : {},
       user ? { user: { username: { contains: user, mode: "insensitive" } } } : {},
       actor ? { actor: { name: { contains: actor, mode: "insensitive" } } } : {},
       movie ? { movie: { title: { contains: movie, mode: "insensitive" } } } : {},
@@ -55,13 +66,14 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
     ],
   }
 
-  const cacheKey = `admin:ratings:${safePage}:${user ?? "all"}:${actor ?? "all"}:${movie ?? "all"}:${ratingsQ ?? "all"}`
+  const cacheKey = `admin:ratings:${safePage}:${authFilter}:${user ?? "all"}:${actor ?? "all"}:${movie ?? "all"}:${ratingsQ ?? "all"}`
   if (safePage === 0) {
     const cached = getCache<{
       ratings: Awaited<ReturnType<typeof prisma.rating.findMany>>
       page: number
       totalCount: number
       hasNext: boolean
+      authFilter: string
     }>(cacheKey)
     if (cached) return cached
   }
@@ -78,6 +90,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
           id: true,
           weightedScore: true,
           createdAt: true,
+          userId: true,
           user: { select: { id: true, username: true } },
           actor: { select: { name: true } },
           movie: { select: { title: true } },
@@ -90,6 +103,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
       page: safePage,
       totalCount,
       hasNext: (safePage + 1) * RATINGS_PAGE_SIZE < totalCount,
+      authFilter,
     }
     if (safePage === 0) {
       setCache(cacheKey, result, 60_000)
@@ -102,6 +116,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
       page: safePage,
       totalCount: 0,
       hasNext: false,
+      authFilter,
     }
   }
 }
@@ -155,7 +170,17 @@ export default async function AdminDashboardPage({
         <StatCard title="Users Today" value={data.usersToday} />
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Signed-in ratings"
+          value={data.signedInRatings}
+          subtitle={`${data.signedInRatingsToday} today`}
+        />
+        <StatCard
+          title="Guest / anonymous ratings"
+          value={data.guestRatings}
+          subtitle={`${data.guestRatingsToday} today · DB rows with no user`}
+        />
         <StatCard
           title="Ratings per User"
           value={data.ratingsPerUser.toFixed(2)}
@@ -166,14 +191,14 @@ export default async function AdminDashboardPage({
           value={`${data.conversionRate.toFixed(1)}%`}
           subtitle="users who rated"
         />
+      </section>
+
+      <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           title="Users Who Rated"
           value={data.usersWithRatings}
           subtitle="at least 1 rating"
         />
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <StatCard
           title="Total Performances"
           value={data.totalPerformances}
@@ -184,6 +209,9 @@ export default async function AdminDashboardPage({
           value={data.avgRatingToday !== null ? data.avgRatingToday.toFixed(2) : "0.00"}
           subtitle="Average weighted score for today"
         />
+      </section>
+
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-1">
         <StatCard
           title="Top Actor Today"
           value={data.topActorToday?.name ?? "N/A"}
@@ -226,6 +254,15 @@ export default async function AdminDashboardPage({
             <input type="hidden" name="page" value={resolvedSearchParams.page ?? "0"} />
             <input type="hidden" name="usersPage" value="0" />
             <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
+            <input
+              type="hidden"
+              name="auth"
+              value={
+                resolvedSearchParams.auth === "signed" || resolvedSearchParams.auth === "guest"
+                  ? resolvedSearchParams.auth
+                  : ""
+              }
+            />
             <Button type="submit" variant="outline">
               Search
             </Button>
@@ -339,7 +376,32 @@ export default async function AdminDashboardPage({
       <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">All Ratings</h2>
-          <form method="get" className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {(
+              [
+                { key: "all", label: `All (${data.totalRatings})` },
+                { key: "signed", label: `Signed-in (${data.signedInRatings})` },
+                { key: "guest", label: `Guest (${data.guestRatings})` },
+              ] as const
+            ).map((tab) => (
+              <Link
+                key={tab.key}
+                href={createQueryString(resolvedSearchParams, {
+                  auth: tab.key === "all" ? undefined : tab.key,
+                  page: "0",
+                })}
+                className={`rounded-lg border px-3 py-2 ${
+                  globalRatings.authFilter === tab.key
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border text-muted-foreground hover:bg-background"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <form method="get" className="mt-4 flex flex-wrap items-center gap-2">
             <input
               type="text"
               name="ratingsQ"
@@ -372,11 +434,11 @@ export default async function AdminDashboardPage({
             <input type="hidden" name="usersPage" value={resolvedSearchParams.usersPage ?? "0"} />
             <input type="hidden" name="page" value="0" />
             <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
+            <input type="hidden" name="auth" value={globalRatings.authFilter === "all" ? "" : globalRatings.authFilter} />
             <Button type="submit" variant="outline">
               Apply
             </Button>
-          </form>
-        </div>
+        </form>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left">
@@ -398,7 +460,7 @@ export default async function AdminDashboardPage({
                         {rating.user.username ?? "Anonymous"}
                       </Link>
                     ) : (
-                      "Anonymous"
+                      <span className="text-muted-foreground">Guest</span>
                     )}
                   </td>
                   <td className="border-b border-border/60 px-3 py-3">{rating.actor.name}</td>

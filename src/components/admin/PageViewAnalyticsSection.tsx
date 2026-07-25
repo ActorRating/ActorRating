@@ -105,7 +105,12 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard
+          title={`Unique humans (${data.days}d)`}
+          value={data.uniqueHumanVisitors}
+          subtitle="Distinct IPs, non-bot pageviews"
+        />
         <StatCard
           title="Human pageviews (7d)"
           value={data.botVsHuman.human}

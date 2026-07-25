@@ -36,12 +36,18 @@ export type AdminRecentRating = {
 export type AdminDashboardData = {
   totalUsers: number
   totalRatings: number
+  /** Ratings with a linked user account */
+  signedInRatings: number
+  /** Ratings with no userId (guest / orphaned after user delete) */
+  guestRatings: number
   totalPerformances: number
   ratingsPerUser: number
   usersWithRatings: number
   conversionRate: number
   usersToday: number
   ratingsToday: number
+  signedInRatingsToday: number
+  guestRatingsToday: number
   avgRatingToday: number | null
   topActorToday: { id: string; name: string; count: number } | null
   growthLast7Days: AdminGrowthPoint[]
@@ -74,10 +80,14 @@ export async function getAdminData(): Promise<AdminDashboardData> {
     const [
       totalUsers,
       totalRatings,
+      signedInRatings,
+      guestRatings,
       totalPerformances,
       usersWithRatings,
       usersToday,
       ratingsToday,
+      signedInRatingsToday,
+      guestRatingsToday,
       todayAgg,
       growthRows,
       topActorRows,
@@ -87,6 +97,8 @@ export async function getAdminData(): Promise<AdminDashboardData> {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.rating.count(),
+      prisma.rating.count({ where: { userId: { not: null } } }),
+      prisma.rating.count({ where: { userId: null } }),
       prisma.performance.count(),
       prisma.user.count({
         where: {
@@ -100,6 +112,12 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       }),
       prisma.rating.count({
         where: { createdAt: { gte: todayStart } },
+      }),
+      prisma.rating.count({
+        where: { createdAt: { gte: todayStart }, userId: { not: null } },
+      }),
+      prisma.rating.count({
+        where: { createdAt: { gte: todayStart }, userId: null },
       }),
       prisma.rating.aggregate({
         where: { createdAt: { gte: todayStart } },
@@ -202,12 +220,16 @@ export async function getAdminData(): Promise<AdminDashboardData> {
     const data: AdminDashboardData = {
       totalUsers,
       totalRatings,
+      signedInRatings,
+      guestRatings,
       totalPerformances,
       ratingsPerUser,
       usersWithRatings,
       conversionRate,
       usersToday,
       ratingsToday,
+      signedInRatingsToday,
+      guestRatingsToday,
       avgRatingToday: todayAgg._avg.weightedScore ?? null,
       topActorToday,
       growthLast7Days,
@@ -228,12 +250,16 @@ export async function getAdminData(): Promise<AdminDashboardData> {
     return {
       totalUsers: 0,
       totalRatings: 0,
+      signedInRatings: 0,
+      guestRatings: 0,
       totalPerformances: 0,
       ratingsPerUser: 0,
       usersWithRatings: 0,
       conversionRate: 0,
       usersToday: 0,
       ratingsToday: 0,
+      signedInRatingsToday: 0,
+      guestRatingsToday: 0,
       avgRatingToday: null,
       topActorToday: null,
       growthLast7Days: Array.from({ length: 7 }).map((_, idx) => {

@@ -8,6 +8,8 @@ export type PageViewAnalyticsDays = 7 | 30
 export type PageViewAnalytics = {
   days: PageViewAnalyticsDays
   humanPageviewsByDay: AdminGrowthPoint[]
+  /** Distinct ipHash among human (non-bot) pageviews in the selected window */
+  uniqueHumanVisitors: number
   topReferrers: Array<{ domain: string; count: number }>
   utmSourceBreakdown: Array<{ source: string; count: number }>
   topPages: Array<{ path: string; count: number }>
@@ -64,6 +66,7 @@ function emptyAnalytics(days: PageViewAnalyticsDays): PageViewAnalytics {
   return {
     days,
     humanPageviewsByDay: fillDailySeries([], days, todayStart),
+    uniqueHumanVisitors: 0,
     topReferrers: [],
     utmSourceBreakdown: [],
     topPages: [],
@@ -90,7 +93,15 @@ export async function getPageViewAnalytics(
   const interval = days === 30 ? Prisma.sql`INTERVAL '29 days'` : Prisma.sql`INTERVAL '6 days'`
 
   try {
-    const [dailyRows, referrerRows, utmRows, pageRows, botHumanRows, botCategoryRows] =
+    const [
+      dailyRows,
+      referrerRows,
+      utmRows,
+      pageRows,
+      botHumanRows,
+      botCategoryRows,
+      uniqueHumanRows,
+    ] =
       await Promise.all([
         prisma.$queryRaw<DayCountRow[]>(Prisma.sql`
           SELECT DATE_TRUNC('day', "createdAt") AS day, COUNT(*)::bigint AS count
@@ -157,6 +168,12 @@ export async function getPageViewAnalytics(
             AND "createdAt" >= NOW() - INTERVAL '6 days'
           GROUP BY "botCategory"
         `),
+        prisma.$queryRaw<Array<{ count: bigint | number }>>(Prisma.sql`
+          SELECT COUNT(DISTINCT "ipHash")::bigint AS count
+          FROM "PageView"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+        `),
       ])
 
     let human = 0
@@ -175,9 +192,12 @@ export async function getPageViewAnalytics(
       else unidentified += n // null category on older bot rows until backfill
     }
 
+    const uniqueHumanVisitors = toNumber(uniqueHumanRows[0]?.count ?? 0)
+
     const data: PageViewAnalytics = {
       days,
       humanPageviewsByDay: fillDailySeries(dailyRows, days, todayStart),
+      uniqueHumanVisitors,
       topReferrers: referrerRows.map((r) => ({
         domain: r.name,
         count: toNumber(r.count),
