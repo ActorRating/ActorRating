@@ -95,18 +95,18 @@ export async function POST(request: NextRequest) {
     )
     const { utmSource, utmMedium, utmCampaign } = parseUtmParams(params)
 
-    // Prefer utm_source; allow legacy ?src=tiktok on any landing URL
-    const candidate = normalizeAcquisitionSource(
-      utmSource ?? params.get("src"),
-    )
+    // Prefer utm_source; allow ?src=tiktok|instagram|youtube on any landing URL
+    const srcParam = normalizeAcquisitionSource(params.get("src"))
+    const candidate = normalizeAcquisitionSource(utmSource) ?? srcParam
     const existing = request.cookies.get(AR_SRC_COOKIE)?.value
     if (candidate && !isValidSource(existing)) {
       attributionToSet = candidate
     }
 
-    // Store normalized source on the pageview when it's a known channel
+    // Persist acquisition channel on the pageview (dashboard UTM breakdown).
+    // ?src=tiktok counts the same as ?utm_source=tiktok.
     const storedUtmSource =
-      normalizeAcquisitionSource(utmSource) ?? utmSource
+      normalizeAcquisitionSource(utmSource) ?? srcParam ?? utmSource
 
     const referrer = truncateReferrer(
       typeof body.referrer === "string"
