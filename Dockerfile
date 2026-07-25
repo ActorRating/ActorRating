@@ -54,6 +54,13 @@ RUN ./node_modules/.bin/esbuild scripts/ingest-all-movies-cast.ts \
     --external:@prisma/client \
     --alias:@=./src \
     --outfile=scripts/ingest-all-movies-cast.js
+RUN ./node_modules/.bin/esbuild scripts/backfill-internal-crawl-bots.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --alias:@=./src \
+    --outfile=scripts/backfill-internal-crawl-bots.js
 
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
@@ -87,6 +94,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 # @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./scripts/generate-sitemaps.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/ingest-all-movies-cast.js ./scripts/ingest-all-movies-cast.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-internal-crawl-bots.js ./scripts/backfill-internal-crawl-bots.js
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp

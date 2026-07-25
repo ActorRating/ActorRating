@@ -3,6 +3,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
+import { detectInternalPathCrawl } from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
   normalizePageViewPath,
@@ -96,6 +97,25 @@ export async function POST(request: NextRequest) {
       ipHash,
     })
 
+    let isLikelyBot = bot.isLikelyBot
+    let siblingIds: string[] = []
+
+    try {
+      const crawl = await detectInternalPathCrawl(prisma, ipHash, {
+        path,
+        referrer,
+        utmSource: storedUtmSource,
+        utmMedium,
+        utmCampaign,
+      })
+      if (crawl.isCrawl) {
+        isLikelyBot = true
+        siblingIds = crawl.siblingIds
+      }
+    } catch {
+      // Crawl detection must not block logging
+    }
+
     let userId: string | null = null
     try {
       const session = await auth()
@@ -114,9 +134,20 @@ export async function POST(request: NextRequest) {
         userId,
         ipHash,
         userAgent,
-        isLikelyBot: bot.isLikelyBot,
+        isLikelyBot,
       },
     })
+
+    if (siblingIds.length > 0) {
+      try {
+        await prisma.pageView.updateMany({
+          where: { id: { in: siblingIds }, isLikelyBot: false },
+          data: { isLikelyBot: true },
+        })
+      } catch {
+        // Non-fatal
+      }
+    }
   } catch {
     // Swallow — analytics must never break the product
   }
