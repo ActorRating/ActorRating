@@ -13,7 +13,7 @@ declare global {
 
 export function GoogleAnalytics() {
   const { consent, isLoading } = useCookieConsentContext()
-  const gaId = process.env.NEXT_PUBLIC_GA_ID
+  const gaId = process.env.NEXT_PUBLIC_GA_ID?.trim() || "G-C3JQQH5F83"
 
   // Initialize dataLayer
   useEffect(() => {
@@ -22,8 +22,13 @@ export function GoogleAnalytics() {
     }
   }, [])
 
-  // Don't render until consent is loaded, and only load GA if analytics consent is given and GA ID is configured
-  if (isLoading || !gaId || !consent?.analytics) {
+  // Root layout already loads GA4 for all routes. This component is kept for
+  // optional consent-gated re-init; skip duplicate injection when scripts exist.
+  if (isLoading || !consent?.analytics) {
+    return null
+  }
+
+  if (typeof window !== "undefined" && typeof window.gtag === "function") {
     return null
   }
 
@@ -56,7 +61,7 @@ export function GoogleAnalytics() {
 // Helper function to track page views (can be used in other components)
 export function trackPageView(url: string) {
   if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('config', process.env.NEXT_PUBLIC_GA_ID || '', {
+    window.gtag('config', process.env.NEXT_PUBLIC_GA_ID?.trim() || 'G-C3JQQH5F83', {
       page_path: url,
     })
   }

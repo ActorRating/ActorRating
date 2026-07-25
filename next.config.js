@@ -81,12 +81,11 @@ const nextConfig = {
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      // If reCAPTCHA uses an iframe internally, allow it.
-      "frame-src 'self' https://www.google.com",
 
-      // Scripts: Google Analytics, reCAPTCHA, Vercel Analytics/Speed Insights
+      // Scripts: Google Analytics / gtag, reCAPTCHA, Vercel Analytics/Speed Insights
       // 'unsafe-eval' helps some Next/runtime tooling and packages; keep with 'unsafe-inline' for Next bootstrap
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com https://www.gstatic.com https://va.vercel-scripts.com https://cloud.umami.is",
+      // GA4 needs *.googletagmanager.com (not only www) — see https://developers.google.com/tag-platform/security/guides/csp
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com https://va.vercel-scripts.com https://cloud.umami.is",
 
       // Styles: inline for Next + Google Fonts CSS
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -94,14 +93,17 @@ const nextConfig = {
       // Fonts: self/data + Google Fonts
       "font-src 'self' data: https://fonts.gstatic.com",
 
-      // Images: blob: for generated previews; self/data + TMDB + S3/CDN
-      "img-src 'self' data: blob: https://image.tmdb.org https://actorrating.com https://*.amazonaws.com",
+      // Images: blob for generated previews; TMDB + S3/CDN + GA beacons/pixels
+      "img-src 'self' data: blob: https://image.tmdb.org https://actorrating.com https://*.amazonaws.com https://*.google-analytics.com https://www.google-analytics.com https://*.googletagmanager.com https://www.googletagmanager.com https://*.g.doubleclick.net https://www.google.com",
 
       // Video/audio previews if ever used
       "media-src 'self' blob: data:",
 
-      // XHR/fetch/WebSocket: GA + reCAPTCHA + Formspree + Vercel telemetry + S3
-      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://cloud.umami.is https://api-gateway.umami.dev https://*.amazonaws.com",
+      // XHR/fetch/WebSocket: GA4 collect endpoints + reCAPTCHA + Formspree + Vercel telemetry + S3
+      "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://*.google-analytics.com https://www.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://*.googletagmanager.com https://www.googletagmanager.com https://*.g.doubleclick.net https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://cloud.umami.is https://api-gateway.umami.dev https://*.amazonaws.com",
+
+      // reCAPTCHA + GA/GTM preview iframes
+      "frame-src 'self' https://www.google.com https://www.googletagmanager.com",
 
       "worker-src 'self'",
     ].join('; ')

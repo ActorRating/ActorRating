@@ -31,7 +31,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { Actor, Performance } from "@prisma/client";
 import { createActorSlug } from "@/lib/createSlug";
 import { computePerformanceTier } from "@/lib/performance-tier";
-import { getMovieCreditsForIngestion, getMovieDetails, buildPosterUrl } from "@/lib/tmdb";
+import { getMovieCreditsForIngestion, getMovieDetails, buildPosterUrl, TmdbNotFoundError } from "@/lib/tmdb";
 import { isFeaturetteMovie, matchesFeaturetteTitle } from "@/lib/non-rateable";
 import { parseTmdbReleaseDate } from "@/lib/movie-release";
 import type { MovieCreditsForIngestion } from "@/lib/tmdb";
@@ -239,7 +239,15 @@ export async function ingestMovieCast(
   if (isFeaturetteMovie(movie)) {
     if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
       void prisma.movie
-        .update({ where: { id: movie.id }, data: { isFeaturette: true } })
+        .update({ where: { id: movie.id }, data: { isFeaturette: true, castIngestedAt: new Date() } })
+        .catch(() => {});
+    } else {
+      // Mark done so bulk ingest does not re-queue featurettes forever.
+      void prisma.movie
+        .update({
+          where: { id: movie.id },
+          data: { castIngestedAt: new Date() },
+        })
         .catch(() => {});
     }
     log(`Skipping featurette movie: ${movie.title}`);
@@ -250,10 +258,25 @@ export async function ingestMovieCast(
   }
 
   // Fetch credits + movie details (for poster) concurrently
-  const [credits, movieDetails] = await Promise.all([
-    getMovieCreditsForIngestion(movie.tmdbId),
-    getMovieDetails(movie.tmdbId),
-  ]);
+  let credits: Awaited<ReturnType<typeof getMovieCreditsForIngestion>>
+  let movieDetails: Awaited<ReturnType<typeof getMovieDetails>>
+  try {
+    ;[credits, movieDetails] = await Promise.all([
+      getMovieCreditsForIngestion(movie.tmdbId),
+      getMovieDetails(movie.tmdbId),
+    ])
+  } catch (err) {
+    if (err instanceof TmdbNotFoundError) {
+      // Dead / deleted TMDB id — mark ingested so bulk jobs stop polling.
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: { castIngestedAt: new Date() },
+      })
+      log(`TMDB 404 for "${movie.title}" (tmdbId=${movie.tmdbId}) — marked castIngestedAt`)
+      return { actorsCreated: 0, performancesCreated: 0, performancesUpdated: 0 }
+    }
+    throw err
+  }
   const posterUrl = buildPosterUrl(movieDetails?.posterPath ?? null);
   const releaseDate = parseTmdbReleaseDate(movieDetails?.releaseDate ?? null);
   const cast = credits.cast;

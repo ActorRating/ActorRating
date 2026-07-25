@@ -13,6 +13,11 @@ import { MixpanelAnalyticsProvider } from "@/components/providers/MixpanelAnalyt
 import RouteChangeScroll from "@/components/layout/RouteChangeScroll";
 import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
+import { GaPageViewTracker } from "@/components/analytics/GaPageViewTracker";
+
+/** Production GA4 property — override via NEXT_PUBLIC_GA_ID when needed. */
+const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_ID?.trim() || "G-C3JQQH5F83";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -131,23 +136,25 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${cormorantGaramond.variable}`}
     >
       <head>
-        {/* Google Analytics */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-C3JQQH5F83"
+        {/*
+          GA4 in the root layout so every route inherits it (rate/movie/actor/
+          stories/news included). Loaded via next/script afterInteractive.
+        */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-C3JQQH5F83', {
-                page_path: window.location.pathname,
-              });
-            `,
-          }}
-        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}', {
+              page_path: window.location.pathname,
+              send_page_view: true,
+            });
+          `}
+        </Script>
         <Script
           src="https://cloud.umami.is/script.js"
           data-website-id="6ceba783-497c-448d-ba13-4ae2ff2872a1"
@@ -162,6 +169,9 @@ export default async function RootLayout({
               <NavigationProgressProvider>
                 <Suspense fallback={null}>
                   <RouteChangeScroll />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <GaPageViewTracker measurementId={GA_MEASUREMENT_ID} />
                 </Suspense>
                 <SearchPreloadTrigger />
                 <ChunkErrorReload />

@@ -17,7 +17,10 @@ export async function GET(
 
   // Safety: only allow simple XML filenames, no path traversal.
   if (!/^[\w-]+\.xml$/.test(filename)) {
-    return new NextResponse('Not found', { status: 404 })
+    return new NextResponse('Not found', {
+      status: 404,
+      headers: { 'Cache-Control': 'no-store' },
+    })
   }
 
   const filePath = path.join(process.cwd(), 'public', 'sitemaps', filename)
@@ -27,11 +30,15 @@ export async function GET(
     return new NextResponse(content, {
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        // Align closer to index TTL so chunk set / index don't drift for a week.
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
       },
     })
-  } catch (error) {
-    console.warn(`[sitemaps] Sitemap file not found or unreadable: ${filePath}`, error)
-    return new NextResponse('Sitemap not found', { status: 404 })
+  } catch {
+    // Missing high-N chunks after a rebuild are expected while Google retries old URLs.
+    return new NextResponse('Sitemap not found', {
+      status: 404,
+      headers: { 'Cache-Control': 'no-store' },
+    })
   }
 }

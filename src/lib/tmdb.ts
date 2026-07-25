@@ -184,6 +184,18 @@ export async function getMovieCredits(movieId: number): Promise<MovieCredits> {
   }
 }
 
+/** Thrown when TMDB returns 404 for a movie id (deleted / wrong id). */
+export class TmdbNotFoundError extends Error {
+  readonly tmdbId: number
+  readonly status = 404
+
+  constructor(tmdbId: number) {
+    super(`TMDB movie not found: ${tmdbId}`)
+    this.name = 'TmdbNotFoundError'
+    this.tmdbId = tmdbId
+  }
+}
+
 /**
  * Fetch full credited cast for ingestion. Rate-limited (do not parallelize).
  * We store the full cast so re-runs and tiering stay correct; ensemble detection uses cast size.
@@ -225,7 +237,11 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
 
     return { director, cast: fullCast };
   } catch (error) {
-    console.error('Error fetching movie credits for ingestion:', error);
-    throw new Error('Failed to fetch movie credits');
+    const status = (error as { response?: { status?: number } })?.response?.status
+    if (status === 404) {
+      throw new TmdbNotFoundError(movieId)
+    }
+    console.error(`Error fetching movie credits for ingestion (tmdbId=${movieId}):`, error);
+    throw new Error(`Failed to fetch movie credits (tmdbId=${movieId})`);
   }
 } 

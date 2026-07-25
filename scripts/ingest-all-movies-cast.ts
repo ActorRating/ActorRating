@@ -2,8 +2,8 @@
  * Bulk full-cast ingestion: run ingestMovieCast for movies that need it.
  * Fetches FULL TMDB credits per movie and creates/updates performances. Idempotent.
  *
- * Default: only movies with tmdbId that have ZERO system-ingested performances.
- * So after a partial run or restart, re-running only processes the remaining movies (much faster).
+ * Default: movies with tmdbId that have never completed cast ingest (castIngestedAt null),
+ * excluding featurettes. TMDB 404s and empty casts set castIngestedAt so they leave the queue.
  *
  * Usage: npx tsx scripts/ingest-all-movies-cast.ts           # only missing cast
  *        npx tsx scripts/ingest-all-movies-cast.ts --all    # every movie (full refresh)
@@ -17,7 +17,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { PrismaClient } from "@prisma/client";
-import { ingestMovieCast, SYSTEM_USER_ID } from "../src/lib/movie-ingestion";
+import { ingestMovieCast } from "../src/lib/movie-ingestion";
 
 const prisma = new PrismaClient();
 
@@ -30,21 +30,22 @@ async function main() {
   const fullRefresh = process.argv.includes("--all");
 
   const where = fullRefresh
-    ? { tmdbId: { not: null } }
+    ? { tmdbId: { not: null }, isFeaturette: false }
     : {
         tmdbId: { not: null },
-        performances: { none: { userId: SYSTEM_USER_ID } },
+        isFeaturette: false,
+        castIngestedAt: null,
       };
 
   const movies = await prisma.movie.findMany({
     where,
-    select: { id: true, title: true, year: true },
+    select: { id: true, title: true, year: true, tmdbId: true },
     orderBy: { year: "asc" },
     ...(limit ? { take: limit } : {}),
   });
 
   console.log(
-    `Movies to process: ${movies.length}${limit ? ` (limit ${limit})` : ""}${fullRefresh ? " [--all full refresh]" : " [only missing cast]"}`
+    `Movies to process: ${movies.length}${limit ? ` (limit ${limit})` : ""}${fullRefresh ? " [--all full refresh]" : " [castIngestedAt null, non-featurette]"}`
   );
   if (dryRun) {
     console.log("DRY RUN — no writes");
@@ -55,11 +56,19 @@ async function main() {
   let totalPerformancesCreated = 0;
   let totalPerformancesUpdated = 0;
   let errors = 0;
+  let tmdb404s = 0;
 
   for (let i = 0; i < movies.length; i++) {
     const m = movies[i];
     try {
-      const result = await ingestMovieCast(prisma, m.id);
+      const result = await ingestMovieCast(prisma, m.id, {
+        log: (msg) => {
+          if (msg.includes("TMDB 404")) {
+            tmdb404s += 1;
+            console.warn(`[${i + 1}/${movies.length}] ${msg}`);
+          }
+        },
+      });
       totalActorsCreated += result.actorsCreated;
       totalPerformancesCreated += result.performancesCreated;
       totalPerformancesUpdated += result.performancesUpdated;
@@ -68,7 +77,10 @@ async function main() {
       }
     } catch (e) {
       errors += 1;
-      console.error(`[${i + 1}/${movies.length}] ${m.title} (${m.year}):`, (e as Error).message);
+      console.error(
+        `[${i + 1}/${movies.length}] ${m.title} (${m.year}) tmdbId=${m.tmdbId}:`,
+        (e as Error).message,
+      );
     }
   }
 
@@ -76,6 +88,7 @@ async function main() {
   console.log("  Actors created:", totalActorsCreated);
   console.log("  Performances created:", totalPerformancesCreated);
   console.log("  Performances updated:", totalPerformancesUpdated);
+  if (tmdb404s) console.log("  TMDB 404s marked done:", tmdb404s);
   if (errors) console.log("  Errors:", errors);
 }
 

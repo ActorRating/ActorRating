@@ -5,6 +5,12 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { pickBetterCharacter, hasUsableCharacter } from "@/lib/hydrate-performance-billing"
 import { isNonRateablePerformance, matchesFeaturetteTitle } from "@/lib/non-rateable"
+import {
+  checkMemoryIpRateLimit,
+  getClientIp,
+  isInvalidResourceParam,
+  isLikelyAbusiveBot,
+} from "@/lib/requestProtection"
 
 const actorApiMovieSelect = {
   id: true,
@@ -18,6 +24,10 @@ const actorApiMovieSelect = {
   releaseDate: true,
 } as Prisma.MovieSelect
 
+const ACTOR_FETCH_WINDOW_MS = 60 * 1000
+const ACTOR_FETCH_MAX_PER_IP = 90
+const actorFetchIpWindow = new Map<string, { count: number; resetAt: number }>()
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -25,6 +35,26 @@ export async function GET(
   try {
     const isProd = process.env.NODE_ENV === "production"
     const { id } = await params
+
+    // Cheap reject: scrapers / buggy clients hitting /api/actors/null
+    if (isInvalidResourceParam(id)) {
+      return NextResponse.json({ error: "Invalid actor id" }, { status: 400 })
+    }
+
+    if (isLikelyAbusiveBot(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const clientIp = getClientIp(request)
+    if (
+      !checkMemoryIpRateLimit(actorFetchIpWindow, clientIp, {
+        windowMs: ACTOR_FETCH_WINDOW_MS,
+        maxRequests: ACTOR_FETCH_MAX_PER_IP,
+      })
+    ) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+    }
+
     const { searchParams } = new URL(request.url)
     const minimal = searchParams.get('minimal') === 'true'
 
@@ -38,7 +68,10 @@ export async function GET(
       actor = await prisma.actor.findUnique({ where: { id } })
     }
     if (!actor) {
-      console.error("❌ Actor fetch error: actor not found", id)
+      // Avoid error-log storms for junk IDs; 410 for real missing slugs/ids.
+      if (!isProd) {
+        console.warn("Actor not found:", id)
+      }
       return NextResponse.json({ error: "Actor not found" }, { status: 410 })
     }
 
