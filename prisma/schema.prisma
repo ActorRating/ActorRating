@@ -15,6 +15,8 @@ model User {
   onboardingCompleted Boolean @default(false)
   status        UserStatus @default(NEW)
   onboardingStartedAt DateTime?
+  /// Set when user agrees to Terms during signup / finish-account.
+  termsAcceptedAt DateTime?
   email         String    @unique
   emailVerified DateTime?
   image         String?

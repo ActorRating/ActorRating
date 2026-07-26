@@ -10,6 +10,12 @@ import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 import { authConfig } from "./auth.config"
 import { cookies } from "next/headers"
 import { AR_SRC_COOKIE, isValidSource } from "@/lib/tracking/source"
+import {
+  clearPendingSignupCookie,
+  readPendingSignupCookie,
+} from "@/lib/auth/pendingSignup"
+import { isValidUsername } from "@/lib/validation/username"
+import { containsBadWord } from "@/lib/validation/sanitizeName"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -38,13 +44,59 @@ function validateAuthEnv(): {
 }
 const runtimeAuthEnv = validateAuthEnv()
 
-function getAcquisitionSourceFromCookie(): string | null {
+async function getAcquisitionSourceFromCookie(): Promise<string | null> {
   try {
-    const raw = cookies().get(AR_SRC_COOKIE)?.value ?? null
+    const store = await cookies()
+    const raw = store.get(AR_SRC_COOKIE)?.value ?? null
     return isValidSource(raw) ? raw : null
   } catch {
-    // cookies() may not be available in certain non-request contexts (e.g. build)
     return null
+  }
+}
+
+async function resolvePendingSignupFields(email: string | null | undefined) {
+  const pending = await readPendingSignupCookie()
+  if (!pending) {
+    return {
+      username: null as string | null,
+      termsAcceptedAt: null as Date | null,
+      onboardingCompleted: false,
+    }
+  }
+
+  const normalizedEmail = email?.trim().toLowerCase() ?? ""
+  if (pending.email && pending.email !== normalizedEmail) {
+    return {
+      username: null as string | null,
+      termsAcceptedAt: null as Date | null,
+      onboardingCompleted: false,
+    }
+  }
+
+  if (!isValidUsername(pending.username) || containsBadWord(pending.username)) {
+    return {
+      username: null as string | null,
+      termsAcceptedAt: null as Date | null,
+      onboardingCompleted: false,
+    }
+  }
+
+  const taken = await prisma.user.findUnique({
+    where: { username: pending.username },
+    select: { id: true },
+  })
+  if (taken) {
+    return {
+      username: null as string | null,
+      termsAcceptedAt: null as Date | null,
+      onboardingCompleted: false,
+    }
+  }
+
+  return {
+    username: pending.username,
+    termsAcceptedAt: new Date(),
+    onboardingCompleted: true,
   }
 }
 
@@ -53,16 +105,37 @@ function createAdapter() {
   return {
     ...base,
     async createUser(data: any) {
-      const cookieSource = getAcquisitionSourceFromCookie()
+      const cookieSource = await getAcquisitionSourceFromCookie()
       const finalSource = isValidSource(cookieSource) ? cookieSource : null
-      // Only set on first creation; never override existing users (createUser is new-user only).
-      return prisma.user.create({
-        data: {
-          ...data,
-          source: finalSource,
-          firstSeenAt: new Date(),
-        },
-      })
+      const pendingFields = await resolvePendingSignupFields(data?.email)
+
+      try {
+        const user = await prisma.user.create({
+          data: {
+            ...data,
+            username: pendingFields.username ?? undefined,
+            termsAcceptedAt: pendingFields.termsAcceptedAt ?? undefined,
+            onboardingCompleted: pendingFields.onboardingCompleted,
+            name: data?.name || pendingFields.username || null,
+            source: finalSource,
+            firstSeenAt: new Date(),
+          },
+        })
+        if (pendingFields.onboardingCompleted) {
+          await clearPendingSignupCookie()
+        }
+        return user
+      } catch (error) {
+        // Username race: create without pending fields so auth still succeeds.
+        console.error("[auth] createUser with pending signup failed, retrying bare:", error)
+        return prisma.user.create({
+          data: {
+            ...data,
+            source: finalSource,
+            firstSeenAt: new Date(),
+          },
+        })
+      }
     },
   }
 }

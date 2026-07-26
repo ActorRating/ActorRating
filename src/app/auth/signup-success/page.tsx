@@ -143,8 +143,8 @@ export default function SignupSuccessPage() {
           setIsSubmittingRating(false)
         }
       } else {
-        // No pending rating, redirect to forced first rating
-        router.push('/onboarding/rate')
+        // No pending rating — go to dashboard (finish-account gate runs there if needed).
+        router.push('/dashboard')
       }
     }
 

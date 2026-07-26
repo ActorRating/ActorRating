@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic"
  * point the session cookie has already been set in the HTTP response from
  * /api/auth/callback/* — it is present in every subsequent server request.
  *
- * All routing decisions (unauthenticated → signin, needsOnboarding → /onboarding,
- * no ratings → /onboarding/rate, else → render) live in the /dashboard server
+ * All routing decisions (unauthenticated → signin, incomplete account →
+ * /auth/finish-account, else → render) live in the /dashboard server
  * component which calls auth() + resolveUser() on the server where the cookie
  * is always available.
  *

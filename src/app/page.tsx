@@ -2,6 +2,7 @@ export const revalidate = 60;
 
 // src/app/page.tsx (Server Component)
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
@@ -17,6 +18,7 @@ import {
   loadAllStories,
 } from "@/lib/editorial/load-editorial";
 import { withEditorialCovers } from "@/lib/editorial/enrich-covers";
+import { auth } from "@/auth";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -51,6 +53,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const session = await auth()
+  if (session?.user?.email) {
+    redirect("/dashboard")
+  }
+
   let initialLeaderboardPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
   let initialRailPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
   let featuredHero = buildFixedLandingHero(null);

@@ -55,9 +55,9 @@ export default async function DashboardPage() {
   if (result.status !== "authenticated") {
     redirect('/auth/signin')
   }
-  // Only authenticated users who haven't finished onboarding go to onboarding.
+  // Only authenticated users who haven't finished account setup go to finish-account.
   if (result.needsOnboarding) {
-    redirect('/onboarding')
+    redirect('/auth/finish-account')
   }
 
   let ratings: Awaited<ReturnType<typeof getDashboardData>>['ratings']
@@ -70,9 +70,6 @@ export default async function DashboardPage() {
     console.error('Dashboard getDashboardData failed:', err)
     const digest = err instanceof Error && 'digest' in err ? String((err as Error & { digest?: string }).digest) : undefined
     return <DashboardDataUnavailable digest={digest} />
-  }
-  if (ratings.length === 0) {
-    redirect('/onboarding/rate')
   }
   return (
     <DashboardClient

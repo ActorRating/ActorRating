@@ -1,7 +1,8 @@
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthenticatedUserId } from "@/lib/authUser"
+import { prisma } from "@/lib/prisma"
 
 export async function POST(_request: NextRequest) {
   try {
@@ -10,18 +11,21 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Since terms fields were removed, just return success
-    // This endpoint can be used for future terms logic if needed
-    return NextResponse.json({ 
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { termsAcceptedAt: new Date() },
+      select: { termsAcceptedAt: true },
+    })
+
+    return NextResponse.json({
       success: true,
-      message: "Terms acceptance recorded"
+      acceptedTerms: true,
+      acceptedAt: updated.termsAcceptedAt?.toISOString() ?? null,
+      termsVersion: "1.0",
     })
   } catch (error) {
     console.error("Terms acceptance update error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -32,17 +36,18 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Since terms fields were removed, return default values
-    return NextResponse.json({ 
-      acceptedTerms: true,
-      acceptedAt: new Date().toISOString(),
-      termsVersion: "1.0"
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { termsAcceptedAt: true },
+    })
+
+    return NextResponse.json({
+      acceptedTerms: Boolean(user?.termsAcceptedAt),
+      acceptedAt: user?.termsAcceptedAt?.toISOString() ?? null,
+      termsVersion: "1.0",
     })
   } catch (error) {
-    console.error("Terms acceptance get error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    console.error("Terms acceptance fetch error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -25,9 +25,9 @@ export default async function ProfilePage() {
     redirect('/auth/signin')
   }
 
-  // If the user hasn't finished onboarding yet, send them there first.
+  // If the user hasn't finished account setup yet, send them there first.
   if (result.needsOnboarding) {
-    redirect('/onboarding')
+    redirect('/auth/finish-account')
   }
 
   return (

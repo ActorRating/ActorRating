@@ -7,7 +7,18 @@ import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/aut
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
-export function GoogleSignInButton() {
+type Props = {
+  disabled?: boolean
+  /** Return false to abort the Google sign-in (e.g. validation / pending cookie failed). */
+  beforeSignIn?: () => Promise<boolean>
+  callbackUrl?: string
+}
+
+export function GoogleSignInButton({
+  disabled = false,
+  beforeSignIn,
+  callbackUrl = "/post-auth",
+}: Props) {
   const [busy, setBusy] = useState(false)
 
   if (!googleEnabled) return null
@@ -15,8 +26,9 @@ export function GoogleSignInButton() {
   return (
     <button
       type="button"
-      disabled={busy}
+      disabled={busy || disabled}
       onClick={() => {
+        if (busy || disabled) return
         if (!acquireAuthLock("google-signin")) {
           const seconds = Math.ceil(authLockRemainingMs() / 1000)
           console.warn(`[auth] Google auth blocked: another auth flow in progress (${seconds}s)`)
@@ -25,6 +37,14 @@ export function GoogleSignInButton() {
         setBusy(true)
         void (async () => {
           try {
+            if (beforeSignIn) {
+              const ok = await beforeSignIn()
+              if (!ok) {
+                releaseAuthLock()
+                setBusy(false)
+                return
+              }
+            }
             if (typeof window !== "undefined") {
               const isRegisterFlow = window.location.pathname === "/auth/register"
               if (isRegisterFlow) {
@@ -38,12 +58,12 @@ export function GoogleSignInButton() {
           } catch (err) {
             console.warn("[auth][google] pre-signout failed", err)
           }
-          await signIn("google", { callbackUrl: "/post-auth" })
+          await signIn("google", { callbackUrl })
           setTimeout(() => releaseAuthLock(), 15_000)
         })().catch(() => {
           releaseAuthLock()
           setBusy(false)
-        })()
+        })
       }}
       className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-md border border-white/10 bg-white/[0.04] text-white text-sm sm:text-base font-semibold hover:border-[#FFD700]/40 hover:bg-[#FFD700]/10 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
     >

@@ -17,7 +17,7 @@ import type { NextAuthConfig } from "next-auth"
  * NOTE: /post-auth is intentionally NOT listed — it just server-redirects to
  * /dashboard, which is already protected here.
  */
-const PROTECTED = ["/dashboard", "/profile", "/onboarding"]
+const PROTECTED = ["/dashboard", "/profile", "/auth/finish-account"]
 
 /** Auth-flow pages that authenticated users should be redirected away from. */
 const AUTH_PAGES = ["/auth/signin", "/auth/register"]

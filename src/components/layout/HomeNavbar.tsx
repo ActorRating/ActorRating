@@ -147,7 +147,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               ) : (
                 <>
                   <DesktopNavLink href="/auth/signin">Sign In</DesktopNavLink>
-                  <DesktopNavLink href="/auth/signin">Join Free</DesktopNavLink>
+                  <DesktopNavLink href="/auth/register">Join Free</DesktopNavLink>
                 </>
               )}
             </div>
@@ -267,7 +267,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
                         Sign In
                       </Link>
                       <Link
-                        href="/auth/signin"
+                        href="/auth/register"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
                       >
