@@ -6,6 +6,7 @@ import {
   type PageViewAnalytics,
   type PageViewAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
+import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
 
 type Props = {
   data: PageViewAnalytics
@@ -179,6 +180,56 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
         }))}
         empty="No pageviews yet — apply the PageView migration and browse the site."
       />
+
+      <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground">Last human viewed pages</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Latest non-bot pageviews site-wide (not limited to the selected window).
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">Path</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Referrer</th>
+                <th className="border-b border-border px-3 py-3 font-medium">UTM</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Visitor</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recentHumanPageviews.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-4 text-sm text-muted-foreground">
+                    No human pageviews yet.
+                  </td>
+                </tr>
+              ) : (
+                data.recentHumanPageviews.map((view) => (
+                  <tr key={view.id} className="text-sm text-foreground/95">
+                    <td className="border-b border-border/60 px-3 py-3 font-medium break-all">
+                      {view.path}
+                    </td>
+                    <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
+                      {view.referrerDomain}
+                    </td>
+                    <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
+                      {view.utmSource ?? "—"}
+                    </td>
+                    <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
+                      {view.signedIn ? "Signed-in" : "Guest"} · {view.ipHashShort}
+                    </td>
+                    <td className="border-b border-border/60 px-3 py-3 text-muted-foreground">
+                      <div>{formatAdminDateTime(view.createdAt)}</div>
+                      <div className="text-xs">{formatRelativeTime(view.createdAt)}</div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </section>
   )
 }

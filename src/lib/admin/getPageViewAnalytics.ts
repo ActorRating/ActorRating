@@ -5,6 +5,16 @@ import type { AdminGrowthPoint } from "@/lib/admin/getAdminData"
 
 export type PageViewAnalyticsDays = 1 | 7 | 30
 
+export type RecentHumanPageView = {
+  id: string
+  path: string
+  referrerDomain: string
+  utmSource: string | null
+  signedIn: boolean
+  ipHashShort: string
+  createdAt: Date
+}
+
 export type PageViewAnalytics = {
   days: PageViewAnalyticsDays
   humanPageviewsByDay: AdminGrowthPoint[]
@@ -13,6 +23,8 @@ export type PageViewAnalytics = {
   topReferrers: Array<{ domain: string; count: number }>
   utmSourceBreakdown: Array<{ source: string; count: number }>
   topPages: Array<{ path: string; count: number }>
+  /** Most recent human pageviews (not limited to the selected window) */
+  recentHumanPageviews: RecentHumanPageView[]
   botVsHuman: {
     human: number
     bot: number
@@ -85,6 +97,17 @@ function fillHourlySeries(rows: DayCountRow[], now: Date): AdminGrowthPoint[] {
   })
 }
 
+function referrerDomain(referrer: string | null | undefined): string {
+  const raw = referrer?.trim()
+  if (!raw) return "(direct)"
+  try {
+    const host = new URL(raw).hostname.replace(/^www\./i, "").toLowerCase()
+    return host || "(direct)"
+  } catch {
+    return "(direct)"
+  }
+}
+
 function emptyAnalytics(days: PageViewAnalyticsDays): PageViewAnalytics {
   const todayStart = startOfToday()
   const now = new Date()
@@ -96,6 +119,7 @@ function emptyAnalytics(days: PageViewAnalyticsDays): PageViewAnalytics {
     topReferrers: [],
     utmSourceBreakdown: [],
     topPages: [],
+    recentHumanPageviews: [],
     botVsHuman: {
       human: 0,
       bot: 0,
@@ -149,6 +173,7 @@ export async function getPageViewAnalytics(
       botHumanRows,
       botCategoryRows,
       uniqueHumanRows,
+      recentHumanRows,
     ] = await Promise.all([
       days === 1
         ? prisma.$queryRaw<DayCountRow[]>(Prisma.sql`
@@ -230,6 +255,20 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
       `),
+      prisma.pageView.findMany({
+        where: { isLikelyBot: false },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+        select: {
+          id: true,
+          path: true,
+          referrer: true,
+          utmSource: true,
+          userId: true,
+          ipHash: true,
+          createdAt: true,
+        },
+      }),
     ])
 
     let human = 0
@@ -268,6 +307,15 @@ export async function getPageViewAnalytics(
       topPages: pageRows.map((r) => ({
         path: r.name,
         count: toNumber(r.count),
+      })),
+      recentHumanPageviews: recentHumanRows.map((r) => ({
+        id: r.id,
+        path: r.path,
+        referrerDomain: referrerDomain(r.referrer),
+        utmSource: r.utmSource,
+        signedIn: Boolean(r.userId),
+        ipHashShort: r.ipHash.slice(0, 10),
+        createdAt: r.createdAt,
       })),
       botVsHuman: { human, bot, knownCrawler, unidentified, windowDays: days },
     }
