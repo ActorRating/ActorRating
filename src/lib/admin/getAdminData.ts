@@ -1,7 +1,11 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
-import { isValidSource } from "@/lib/tracking/source"
+import {
+  VALID_SOURCES,
+  isValidSource,
+  type AcquisitionSource,
+} from "@/lib/tracking/source"
 
 type GrowthRow = {
   day: Date
@@ -53,7 +57,7 @@ export type AdminDashboardData = {
   growthLast7Days: AdminGrowthPoint[]
   recentRatings: AdminRecentRating[]
   sourceBreakdown: Array<{
-    source: "tiktok" | "instagram" | "youtube" | "unknown"
+    source: AcquisitionSource | "unknown"
     users: number
     usersWithRatings: number
     conversion: number
@@ -205,10 +209,8 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       raterMap.set(key, toNumber(row.usersWithRatings))
     }
 
-    const sources: Array<"tiktok" | "instagram" | "youtube" | "unknown"> = [
-      "tiktok",
-      "instagram",
-      "youtube",
+    const sources: Array<AcquisitionSource | "unknown"> = [
+      ...VALID_SOURCES,
       "unknown",
     ]
     const sourceBreakdown = sources.map((source) => {
@@ -269,10 +271,13 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       }),
       recentRatings: [],
       sourceBreakdown: [
-        { source: "tiktok", users: 0, usersWithRatings: 0, conversion: 0 },
-        { source: "instagram", users: 0, usersWithRatings: 0, conversion: 0 },
-        { source: "youtube", users: 0, usersWithRatings: 0, conversion: 0 },
-        { source: "unknown", users: 0, usersWithRatings: 0, conversion: 0 },
+        ...VALID_SOURCES.map((source) => ({
+          source,
+          users: 0,
+          usersWithRatings: 0,
+          conversion: 0,
+        })),
+        { source: "unknown" as const, users: 0, usersWithRatings: 0, conversion: 0 },
       ],
     }
   }

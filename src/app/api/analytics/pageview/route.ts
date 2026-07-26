@@ -65,7 +65,7 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
  * First-party pageview beacon. Failures never surface to the client —
  * always 204 so logging cannot break navigation.
  *
- * First-touch acquisition: if utm_source (or src) is tiktok/instagram/youtube
+ * First-touch acquisition: if utm_source (or src) is tiktok/instagram/youtube/x
  * and ar_src is not already set, set the cookie (30 days).
  */
 export async function POST(request: NextRequest) {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     )
     const { utmSource, utmMedium, utmCampaign } = parseUtmParams(params)
 
-    // Prefer utm_source; allow ?src=tiktok|instagram|youtube on any landing URL
+    // Prefer utm_source; allow ?src=tiktok|instagram|youtube|x on any landing URL
     const srcParam = normalizeAcquisitionSource(params.get("src"))
     const candidate = normalizeAcquisitionSource(utmSource) ?? srcParam
     const existing = request.cookies.get(AR_SRC_COOKIE)?.value
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Persist acquisition channel on the pageview (dashboard UTM breakdown).
-    // ?src=tiktok counts the same as ?utm_source=tiktok.
+    // ?src=x counts the same as ?utm_source=x (?src=twitter → x).
     const storedUtmSource =
       normalizeAcquisitionSource(utmSource) ?? srcParam ?? utmSource
 

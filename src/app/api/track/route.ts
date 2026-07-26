@@ -6,9 +6,10 @@ import {
 } from "@/lib/tracking/source"
 
 /**
- * Acquisition short link: /api/track?src=tiktok
- * Sets ar_src cookie and redirects to /?src=tiktok so the first pageview
+ * Acquisition short link: /api/track?src=tiktok|instagram|youtube|x
+ * Sets ar_src cookie and redirects to /?src=… so the first pageview
  * beacon records utmSource for the admin dashboard.
+ * Alias: ?src=twitter → x.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url)
