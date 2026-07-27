@@ -75,6 +75,12 @@ RUN ./node_modules/.bin/esbuild scripts/seed-forum-threads.ts \
     --target=node20 \
     --external:@prisma/client \
     --outfile=scripts/seed-forum-threads.js
+RUN ./node_modules/.bin/esbuild scripts/seed-invite-codes.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --outfile=scripts/seed-invite-codes.js
 
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
@@ -112,6 +118,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-internal-crawl-b
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-bot-category.js ./scripts/backfill-bot-category.js
 # Forum starter threads: `node scripts/seed-forum-threads.js` (or `npm run seed:forum`)
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-forum-threads.js ./scripts/seed-forum-threads.js
+# Bootstrap invites: `node scripts/seed-invite-codes.js` before INVITE_GATE_ENABLED=1
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-invite-codes.js ./scripts/seed-invite-codes.js
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp

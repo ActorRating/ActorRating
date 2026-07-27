@@ -38,3 +38,4 @@ backfill-posters.log
 /public/sitemaps-temp/
 /public/sitemaps-prev/
 scripts/seed-forum-threads.js
+scripts/seed-invite-codes.js

@@ -35,6 +35,8 @@ model User {
   forumPosts ForumPost[]
   forumPostReports ForumPostReport[] @relation("ForumPostReporter")
   resolvedForumPostReports ForumPostReport[] @relation("ForumPostReportResolver")
+  ownedInvites InviteCode[] @relation("OwnedInvites")
+  usedInvite   InviteCode?  @relation("UsedInvite")
 
   @@index([createdAt])
   @@index([email])
@@ -333,6 +335,31 @@ model ForumPostReport {
   @@unique([postId, reporterUserId])
   @@index([status, createdAt])
   @@index([postId])
+}
+
+/// Public waitlist for visitors without an invite code.
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  source    String?  @db.VarChar(50)
+
+  @@index([createdAt])
+}
+
+/// Invite codes gate new account creation when INVITE_GATE_ENABLED=1.
+model InviteCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  ownerId   String
+  owner     User      @relation("OwnedInvites", fields: [ownerId], references: [id], onDelete: Cascade)
+  usedById  String?   @unique
+  usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id], onDelete: SetNull)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([ownerId])
+  @@index([usedAt])
 }
 
 model ShareImage {
