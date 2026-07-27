@@ -24,6 +24,8 @@ const nextConfig = {
     optimizePackageImports: ['react-icons', 'framer-motion', 'lucide-react'],
     // Reduce bundle size by optimizing server components
     optimizeServerReact: true,
+    // Lower peak RAM during `next build` on small Coolify VPS (avoids OOM kills).
+    webpackMemoryOptimizations: true,
     // Ensure listicle markdown is traced into the standalone output.
     outputFileTracingIncludes: {
       '/lists': ['./content/lists/**/*'],
