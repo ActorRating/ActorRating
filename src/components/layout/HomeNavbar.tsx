@@ -18,7 +18,7 @@ const NAV_LINKS = [
 ] as const
 
 const DESKTOP_LINK_CLASS =
-  'navbar-link-desktop group relative px-3 py-2 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200'
+  'navbar-link-desktop group relative px-2.5 py-2 text-[12.5px] font-bold uppercase tracking-[0.055em] text-white hover:text-[#FFD700] transition-colors duration-200'
 
 function DesktopNavLink({
   href,
@@ -31,7 +31,7 @@ function DesktopNavLink({
     <Link href={href} className={DESKTOP_LINK_CLASS}>
       {children}
       <span
-        className="absolute bottom-0 left-3 right-3 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
+        className="absolute bottom-0 left-2.5 right-2.5 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
         style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
       />
     </Link>
@@ -100,7 +100,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder=""
-          className="navbar-search-input w-48 h-9 pl-3 pr-9 rounded-full text-sm text-white outline-none transition-colors duration-200"
+          className="navbar-search-input w-44 h-8 pl-3 pr-8 rounded-full text-sm text-white outline-none transition-colors duration-200"
           autoComplete="off"
         />
         <button
