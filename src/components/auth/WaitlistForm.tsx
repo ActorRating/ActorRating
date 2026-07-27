@@ -41,9 +41,16 @@ export function WaitlistForm({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div id="waitlist" className={compact ? "" : "scroll-mt-24"}>
+    <div
+      id="waitlist"
+      className={
+        compact
+          ? ""
+          : "scroll-mt-28 w-full max-w-md mx-auto text-center flex flex-col items-center"
+      }
+    >
       {!compact ? (
-        <div className="mb-4">
+        <div className="mb-4 w-full">
           <h2 className="text-xl font-bold text-white">Join the waitlist</h2>
           <p className="mt-1 text-sm text-zinc-400">
             ActorRating is invite-only. Leave your email, or{" "}
@@ -57,14 +64,17 @@ export function WaitlistForm({ compact = false }: { compact?: boolean }) {
       {status === "done" ? (
         <p className="text-sm text-emerald-300">{message}</p>
       ) : (
-        <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-md">
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full max-w-md mx-auto"
+        >
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
-            className="flex-1 rounded-sm border border-white/15 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600"
+            className="flex-1 rounded-sm border border-white/15 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 text-left"
             disabled={status === "sending"}
           />
           <button

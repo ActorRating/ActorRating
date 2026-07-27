@@ -161,7 +161,19 @@ function HeroCtaBlock({ featured }: { featured: FeaturedHeroPayload }) {
           Join with a code
         </Link>
         {" · "}
-        <a href="#waitlist" className="text-zinc-300 hover:text-white underline-offset-2 hover:underline">
+        <a
+          href="#waitlist"
+          className="text-zinc-300 hover:text-white underline-offset-2 hover:underline"
+          onClick={(e) => {
+            const el = document.getElementById("waitlist")
+            if (!el) return
+            e.preventDefault()
+            el.scrollIntoView({ behavior: "smooth", block: "start" })
+            if (window.location.hash !== "#waitlist") {
+              window.history.pushState(null, "", "#waitlist")
+            }
+          }}
+        >
           Waitlist
         </a>
       </p>
@@ -660,7 +672,7 @@ export default function HomePageClient({
         <LetsYouSection />
       </div>
 
-      <section className="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
+      <section className="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16 flex justify-center">
         <WaitlistForm />
       </section>
 
