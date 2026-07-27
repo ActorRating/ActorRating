@@ -26,6 +26,8 @@ const nextConfig = {
     optimizeServerReact: true,
     // Lower peak RAM during `next build` on small Coolify VPS (avoids OOM kills).
     webpackMemoryOptimizations: true,
+    // Serialise static generation workers — parallel page-data collection OOMs the VPS.
+    cpus: 1,
     // Ensure listicle markdown is traced into the standalone output.
     outputFileTracingIncludes: {
       '/lists': ['./content/lists/**/*'],

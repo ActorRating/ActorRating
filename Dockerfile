@@ -30,8 +30,9 @@ ENV NODE_ENV=production
 # Coolify injects runtime DATABASE_URL at build time; skip Prisma I/O so `next build` cannot hang on an unreachable host.
 ENV SKIP_BUILD_TIME_DB=1
 # Cap Node heap so Coolify builds don't OOM the host (running app + build share RAM).
-# 6144 previously asked for more heap than small VPS hosts can spare → kernel kill mid-compile.
-ENV NODE_OPTIONS=--max-old-space-size=4096
+# Keep heap below host free RAM while the live app is still running; page-data
+# workers are also capped via experimental.cpus=1 in next.config.js.
+ENV NODE_OPTIONS=--max-old-space-size=3072
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
