@@ -96,13 +96,18 @@ export const ratingsApi = {
     actorId: string
     movieId: string
     recaptchaToken: string
+    comment?: string | null
+    isSpoiler?: boolean
   } & PerformanceRating) =>
     fetchApi<Rating>('/ratings', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   
-  update: (id: string, data: Partial<PerformanceRating>) =>
+  update: (id: string, data: Partial<PerformanceRating> & {
+    comment?: string | null
+    isSpoiler?: boolean
+  }) =>
     fetchApi<Rating>(`/ratings/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

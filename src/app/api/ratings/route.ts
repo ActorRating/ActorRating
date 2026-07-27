@@ -9,6 +9,10 @@ import { verifyRecaptchaV3 } from "@/lib/recaptcha"
 import { nanoid } from "nanoid"
 import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
 import { isMovieComingSoon } from "@/lib/movie-release"
+import {
+  parseIsSpoiler,
+  sanitizeRatingComment,
+} from "@/lib/validation/ratingComment"
 
 export async function GET() {
   try {
@@ -54,8 +58,15 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       ratingId, actorId, movieId,
       emotionalRangeDepth, characterBelievability,
       technicalSkill, screenPresence, chemistryInteraction,
-      comment, recaptchaToken, breakdown, weightedScore: providedWeightedScore
+      comment, isSpoiler: rawIsSpoiler, recaptchaToken, breakdown, weightedScore: providedWeightedScore
     } = body
+
+    const commentResult = sanitizeRatingComment(comment)
+    if (!commentResult.ok) {
+      return NextResponse.json({ error: commentResult.error }, { status: 400 })
+    }
+    const sanitizedComment = commentResult.comment
+    const isSpoiler = sanitizedComment ? parseIsSpoiler(rawIsSpoiler) : false
 
     // Validate required fields
     if (!actorId || !movieId) {
@@ -199,7 +210,9 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
           chemistryInteraction,
           weightedScore,
           shareScore,
-          comment,
+          comment: sanitizedComment,
+          isSpoiler,
+          // Re-showing an edited comment after hide requires admin; don't auto-unhide.
           breakdown: breakdown !== undefined ? breakdown : undefined, // Update breakdown if provided
         },
         include: {
@@ -226,7 +239,8 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
             chemistryInteraction, 
             weightedScore, 
             shareScore, 
-            comment,
+            comment: sanitizedComment,
+            isSpoiler,
             breakdown: breakdown !== undefined ? breakdown : existing.breakdown // Update breakdown if provided
           },
           include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
@@ -259,7 +273,8 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
               chemistryInteraction, 
               weightedScore, 
               shareScore, 
-              comment,
+              comment: sanitizedComment,
+              isSpoiler,
               breakdown: breakdown || null // Optional breakdown field
             },
             include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },

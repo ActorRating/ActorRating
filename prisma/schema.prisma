@@ -29,6 +29,12 @@ model User {
   performances  Performance[]
   ratings       Rating[]
   pageViews     PageView[]
+  ratingCommentReports RatingCommentReport[] @relation("CommentReporter")
+  resolvedCommentReports RatingCommentReport[] @relation("CommentReportResolver")
+  forumThreads ForumThread[]
+  forumPosts ForumPost[]
+  forumPostReports ForumPostReport[] @relation("ForumPostReporter")
+  resolvedForumPostReports ForumPostReport[] @relation("ForumPostReportResolver")
 
   @@index([createdAt])
   @@index([email])
@@ -123,6 +129,7 @@ model Actor {
   slug         String?       @unique
   performances Performance[]
   ratings      Rating[]
+  forumThreads ForumThread[]
 
   @@index([name])
   @@index([slug])
@@ -157,6 +164,7 @@ model Movie {
   indexingCohort Int           @default(0)
   performances   Performance[]
   ratings        Rating[]
+  forumThreads   ForumThread[]
 
   @@unique([title, year])
   @@index([title])
@@ -209,6 +217,10 @@ model Rating {
   chemistryInteraction   Int         @db.SmallInt
   weightedScore          Float       @default(0)
   comment                String?
+  /// User marked their micro-review as containing spoilers.
+  isSpoiler              Boolean     @default(false)
+  /// Soft-hide comment after moderation; score remains.
+  commentHidden          Boolean     @default(false)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
   slug                   String?     @unique
@@ -220,6 +232,7 @@ model Rating {
   user                   User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   shareImage             ShareImage?
   shortLinks             ShortLink[]
+  commentReports         RatingCommentReport[]
 
   @@unique([userId, actorId, movieId])
   @@index([createdAt])
@@ -227,6 +240,99 @@ model Rating {
   @@index([actorId])
   @@index([movieId])
   @@index([actorId, movieId])
+  @@index([actorId, movieId, commentHidden, createdAt])
+}
+
+model RatingCommentReport {
+  id                 String                   @id @default(cuid())
+  ratingId           String
+  reporterUserId     String
+  reason             String                   @db.VarChar(40)
+  details            String?
+  status             RatingCommentReportStatus @default(OPEN)
+  createdAt          DateTime                 @default(now())
+  resolvedAt         DateTime?
+  resolvedByUserId   String?
+  rating             Rating                   @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  reporter           User                     @relation("CommentReporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  resolvedBy         User?                    @relation("CommentReportResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([ratingId, reporterUserId])
+  @@index([status, createdAt])
+  @@index([ratingId])
+}
+
+model ForumCategory {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  sortOrder   Int           @default(0)
+  threads     ForumThread[]
+  createdAt   DateTime      @default(now())
+}
+
+model ForumThread {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// Optional links back into catalog entities
+  actorId     String?
+  movieId     String?
+  actor       Actor?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  movie       Movie?        @relation(fields: [movieId], references: [id], onDelete: SetNull)
+  isLocked    Boolean       @default(false)
+  isPinned    Boolean       @default(false)
+  posts       ForumPost[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId, updatedAt])
+  @@index([actorId])
+  @@index([movieId])
+  @@index([isPinned, updatedAt])
+}
+
+model ForumPost {
+  id          String            @id @default(cuid())
+  threadId    String
+  thread      ForumThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content     String
+  isSpoiler   Boolean           @default(false)
+  isHidden    Boolean           @default(false)
+  /// First post of a thread is the OP body
+  isOriginal  Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  reports     ForumPostReport[]
+
+  @@index([threadId, createdAt])
+  @@index([authorId])
+}
+
+model ForumPostReport {
+  id               String                   @id @default(cuid())
+  postId           String
+  reporterUserId   String
+  reason           String                   @db.VarChar(40)
+  details          String?
+  status           RatingCommentReportStatus @default(OPEN)
+  createdAt        DateTime                 @default(now())
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  post             ForumPost                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter         User                     @relation("ForumPostReporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  resolvedBy       User?                    @relation("ForumPostReportResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([postId, reporterUserId])
+  @@index([status, createdAt])
+  @@index([postId])
 }
 
 model ShareImage {
@@ -342,4 +448,10 @@ enum UserStatus {
 enum BotCategory {
   KNOWN_CRAWLER
   UNIDENTIFIED
+}
+
+enum RatingCommentReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
 }

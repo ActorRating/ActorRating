@@ -277,7 +277,8 @@ function RatePageContent() {
         technicalSkill: rating.technicalSkill,
         screenPresence: rating.screenPresence,
         chemistryInteraction: rating.chemistryInteraction,
-        comment: characterName || undefined,
+        comment: rating.comment ?? null,
+        isSpoiler: Boolean(rating.isSpoiler),
         recaptchaToken,
       })
       setLastRatingId(created.id)
@@ -308,6 +309,8 @@ function RatePageContent() {
     technicalSkill: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   }): Promise<void> => {
     if (!actor || !movie) {
       return Promise.resolve()
@@ -320,6 +323,8 @@ function RatePageContent() {
       technicalSkill: ratingData.technicalSkill,
       screenPresence: ratingData.screenPresence,
       chemistryInteraction: ratingData.chemistry,
+      comment: ratingData.comment,
+      isSpoiler: ratingData.isSpoiler,
     }
 
     // ── Guest path ────────────────────────────────────────────────────────
@@ -435,7 +440,8 @@ function RatePageContent() {
             technicalSkill: apiRatingData.technicalSkill,
             screenPresence: apiRatingData.screenPresence,
             chemistryInteraction: apiRatingData.chemistryInteraction,
-            comment: characterName || undefined,
+            comment: apiRatingData.comment || undefined,
+            isSpoiler: Boolean(apiRatingData.isSpoiler),
             recaptchaToken,
           }),
         })
@@ -457,7 +463,8 @@ function RatePageContent() {
           technicalSkill: apiRatingData.technicalSkill,
           screenPresence: apiRatingData.screenPresence,
           chemistryInteraction: apiRatingData.chemistryInteraction,
-          comment: characterName || undefined,
+          comment: apiRatingData.comment || undefined,
+          isSpoiler: Boolean(apiRatingData.isSpoiler),
           recaptchaToken,
         })
       }

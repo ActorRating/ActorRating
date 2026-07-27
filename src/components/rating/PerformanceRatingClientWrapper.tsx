@@ -19,6 +19,8 @@ import { ProgressBar } from '@/components/badges/ProgressBar'
 import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatings'
 import { fetchGuestSuccessRecommendations, type SuccessCarouselPerf } from '@/lib/guest-success-recommendations'
 import { SuccessRateAnotherCarousel } from '@/components/rating/SuccessRateAnotherCarousel'
+import { COMMENT_MAX_LENGTH } from '@/lib/validation/ratingComment'
+import { PerformanceReviewsSection } from '@/components/rating/PerformanceReviewsSection'
 
 const GOLD = 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
 const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
@@ -132,6 +134,8 @@ interface PerformanceRatingClientWrapperProps {
     believability: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   }) => Promise<void>
   submitting?: boolean
   initialRating?: {
@@ -140,6 +144,8 @@ interface PerformanceRatingClientWrapperProps {
     believability?: number
     screenPresence?: number
     chemistry?: number
+    comment?: string
+    isSpoiler?: boolean
   }
   onSuccess?: (ratingData: {
     emotionalDepth: number
@@ -147,6 +153,8 @@ interface PerformanceRatingClientWrapperProps {
     believability: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   }) => void
   submittedRating?: {
     id: string
@@ -618,6 +626,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
 }: PerformanceRatingClientWrapperProps) {
   const router = useRouter()
   const user = useUser()
+  const [reviewComment, setReviewComment] = useState(initialRating?.comment ?? "")
+  const [reviewIsSpoiler, setReviewIsSpoiler] = useState(Boolean(initialRating?.isSpoiler))
 
   // Detect iOS Safari to disable animations for critical UI
   const isIOS = typeof window !== 'undefined' &&
@@ -1262,14 +1272,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           technicalSkill: Math.round(technicalSkill),
           believability: Math.round(characterBelievability),
           screenPresence: Math.round(screenPresence),
-          chemistry: Math.round(chemistryInteraction)
+          chemistry: Math.round(chemistryInteraction),
+          ...(user
+            ? {
+                comment: reviewComment.trim() || undefined,
+                isSpoiler: Boolean(reviewComment.trim() && reviewIsSpoiler),
+              }
+            : {}),
         }
       : {
           emotionalDepth: Math.round(overallScore),
           technicalSkill: Math.round(overallScore),
           believability: Math.round(overallScore),
           screenPresence: Math.round(overallScore),
-          chemistry: Math.round(overallScore)
+          chemistry: Math.round(overallScore),
+          ...(user
+            ? {
+                comment: reviewComment.trim() || undefined,
+                isSpoiler: Boolean(reviewComment.trim() && reviewIsSpoiler),
+              }
+            : {}),
         }
 
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
@@ -1317,7 +1339,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         document.body.style.touchAction = ''
       }
     }
-  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title])
+  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title, reviewComment, reviewIsSpoiler])
 
   const buildGuestMomentumPayload = useCallback(() => {
     const ratingData = showInDepthSliders
@@ -2129,6 +2151,42 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     )}
                   </div>
 
+                  {/* Optional micro-review — signed-in only */}
+                  {user ? (
+                    <div className="pt-4 sm:pt-5 max-w-[600px] mx-auto space-y-3">
+                      <div>
+                        <label
+                          htmlFor="micro-review"
+                          className="block text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2"
+                        >
+                          Why this score? <span className="normal-case tracking-normal font-normal text-zinc-600">(optional)</span>
+                        </label>
+                        <textarea
+                          id="micro-review"
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value.slice(0, COMMENT_MAX_LENGTH))}
+                          rows={3}
+                          maxLength={COMMENT_MAX_LENGTH}
+                          placeholder="e.g. Gave high Technical Skill for the dialect work in Act II…"
+                          className="w-full rounded-md border border-white/10 bg-[#0a0a0a] px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-[#FFD700]/40 resize-y min-h-[72px]"
+                        />
+                        <p className="mt-1 text-[11px] text-zinc-600 text-right">
+                          {reviewComment.length}/{COMMENT_MAX_LENGTH}
+                        </p>
+                      </div>
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={reviewIsSpoiler}
+                          onChange={(e) => setReviewIsSpoiler(e.target.checked)}
+                          disabled={!reviewComment.trim()}
+                          className="h-4 w-4 rounded border-[#2a2a2a] bg-[#0a0a0a] text-[#FFD700] focus:ring-[#FFD700]/40 disabled:opacity-40"
+                        />
+                        <span className="text-xs text-zinc-400">Contains spoilers</span>
+                      </label>
+                    </div>
+                  ) : null}
+
                   {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
                   <div
                     className="pt-2 sm:pt-6 relative max-w-[600px] mx-auto flex justify-center"
@@ -2239,6 +2297,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         {/* ─── CONTEXT / DISCOVERY SECTION (visible below rating form, hidden on success) ─── */}
         {submitPhase !== 'success' && (
           <div className="mt-10 sm:mt-14 max-w-[600px] mx-auto px-1 sm:px-0 space-y-8 pb-16">
+            <PerformanceReviewsSection
+              actorId={performance.actor.id}
+              movieId={performance.movie.id}
+            />
 
             {/* Performance description */}
             {performance.comment && (
@@ -2530,6 +2592,12 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 </p>
               )}
             </div>
+
+            <PerformanceReviewsSection
+              actorId={performance.actor.id}
+              movieId={performance.movie.id}
+              refreshKey={submitPhase === 'success' ? 'success' : 0}
+            />
 
             {/* ── Guest vs community (near score psychology) ───────────────── */}
             {!user && finalScore !== null && (

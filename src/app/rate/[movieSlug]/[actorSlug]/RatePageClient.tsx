@@ -333,6 +333,8 @@ export default function RatePageClient({
     technicalSkill: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   }): Promise<void> => {
     if (!actor || !movie) return Promise.resolve()
 
@@ -396,7 +398,7 @@ export default function RatePageClient({
       return
     }
 
-    // ── Authenticated path (unchanged) ────────────────────────────────────
+    // ── Authenticated path ────────────────────────────────────────────────
     setSubmitting(true)
     try {
       if (userExistingRating?.id) {
@@ -406,6 +408,8 @@ export default function RatePageClient({
           technicalSkill: ratingData.technicalSkill,
           screenPresence: ratingData.screenPresence,
           chemistryInteraction: ratingData.chemistry,
+          comment: ratingData.comment || undefined,
+          isSpoiler: Boolean(ratingData.isSpoiler),
         })
       } else {
         // Skip reCAPTCHA network round-trip for authenticated users — the API already
@@ -418,6 +422,8 @@ export default function RatePageClient({
           technicalSkill: ratingData.technicalSkill,
           screenPresence: ratingData.screenPresence,
           chemistryInteraction: ratingData.chemistry,
+          comment: ratingData.comment || undefined,
+          isSpoiler: Boolean(ratingData.isSpoiler),
           recaptchaToken: '',
         })
       }

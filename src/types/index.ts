@@ -91,6 +91,8 @@ export interface Rating {
   chemistryInteraction: number
   weightedScore: number
   comment?: string
+  isSpoiler?: boolean
+  commentHidden?: boolean
   user?: {
     name?: string
     email?: string
@@ -115,6 +117,7 @@ export interface PerformanceRating {
   screenPresence: number
   chemistryInteraction: number
   comment?: string
+  isSpoiler?: boolean
   recaptchaToken?: string
 }
 

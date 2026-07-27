@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
       technicalSkill,
       screenPresence,
       chemistryInteraction,
-      comment,
+      comment: _comment,
     } = body
+    void _comment // Guests cannot attach micro-reviews (signed-in only).
 
     if (!actorId || !movieId) {
       return NextResponse.json(
@@ -136,7 +137,8 @@ export async function POST(request: NextRequest) {
         chemistryInteraction,
         weightedScore,
         shareScore,
-        comment: typeof comment === "string" ? comment : null,
+        comment: null,
+        isSpoiler: false,
       },
       select: {
         id: true,

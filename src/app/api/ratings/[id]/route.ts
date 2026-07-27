@@ -3,6 +3,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
+import {
+  parseIsSpoiler,
+  sanitizeRatingComment,
+} from "@/lib/validation/ratingComment"
 
 export async function GET(
   request: NextRequest,
@@ -74,8 +78,16 @@ export async function PUT(
       technicalSkill,
       screenPresence,
       chemistryInteraction,
-      comment 
+      comment,
+      isSpoiler: rawIsSpoiler,
     } = body
+
+    const commentResult = sanitizeRatingComment(comment)
+    if (!commentResult.ok) {
+      return NextResponse.json({ error: commentResult.error }, { status: 400 })
+    }
+    const sanitizedComment = commentResult.comment
+    const isSpoiler = sanitizedComment ? parseIsSpoiler(rawIsSpoiler) : false
 
     // Validate rating values (0-100)
     const ratings = [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction]
@@ -116,7 +128,8 @@ export async function PUT(
         chemistryInteraction,
         weightedScore,
         shareScore,
-        comment,
+        comment: sanitizedComment,
+        isSpoiler,
       },
       include: {
         actor: {

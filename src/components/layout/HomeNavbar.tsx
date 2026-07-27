@@ -12,6 +12,7 @@ import { User } from 'lucide-react'
 const NAV_LINKS = [
   { label: 'Discover', href: '/discover' },
   { label: 'Lists', href: '/lists' },
+  { label: 'Forum', href: '/forum' },
   { label: 'Stories', href: '/stories' },
   { label: 'News', href: '/news' },
 ] as const

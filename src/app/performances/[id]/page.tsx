@@ -91,6 +91,8 @@ export default function PerformanceDetailPage() {
     technicalSkill: number
     screenPresence: number
     chemistryInteraction: number
+    comment?: string
+    isSpoiler?: boolean
   }) => {
     if (!performance) return
 
@@ -104,7 +106,7 @@ export default function PerformanceDetailPage() {
         actorName: performance.actor.name,
         movieTitle: performance.movie.title,
         movieYear: performance.movie.year,
-        comment: performance.comment,
+        // Don't confuse Performance.character comment with a user micro-review
         performanceId: performance.id,
         timestamp: new Date().toISOString()
       }
@@ -383,6 +385,8 @@ export default function PerformanceDetailPage() {
     technicalSkill: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   }) => {
     await handleRatingSubmit({
       emotionalRangeDepth: ratingData.emotionalDepth,
@@ -390,6 +394,8 @@ export default function PerformanceDetailPage() {
       technicalSkill: ratingData.technicalSkill,
       screenPresence: ratingData.screenPresence,
       chemistryInteraction: ratingData.chemistry,
+      comment: ratingData.comment,
+      isSpoiler: ratingData.isSpoiler,
     })
   }
   const PerformanceContent = () => (

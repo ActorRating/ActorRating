@@ -5,6 +5,7 @@ import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
+import ModerationQueue from "@/components/admin/ModerationQueue"
 import { getAdminData } from "@/lib/admin/getAdminData"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
 import {
@@ -235,6 +236,8 @@ export default async function AdminDashboardPage({
       <div className="mt-6">
         <RecentRatings ratings={data.recentRatings} />
       </div>
+
+      <ModerationQueue />
 
       <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
