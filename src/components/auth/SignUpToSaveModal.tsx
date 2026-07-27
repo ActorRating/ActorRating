@@ -7,7 +7,9 @@ import { useEffect, useState } from "react"
 import { signIn, signOut } from "next-auth/react"
 import { FcGoogle } from "react-icons/fc"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
+import { MagicLinkHoneypot } from "@/components/auth/MagicLinkHoneypot"
 import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/auth/clientAuthLock"
+import { requestMagicLink } from "@/lib/auth/requestMagicLink"
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -50,6 +52,7 @@ export function SignUpToSaveModal({
 }: SignUpToSaveModalProps) {
   const router = useRouter()
   const [email, setEmail] = useState("")
+  const [companyUrl, setCompanyUrl] = useState("")
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState("")
   const [isSendingEmail, setIsSendingEmail] = useState(false)
@@ -161,7 +164,15 @@ export function SignUpToSaveModal({
       if (typeof window !== "undefined") {
         localStorage.setItem("pending_signup_method", "email")
       }
-      await signIn("email", { email: email.trim(), callbackUrl: AUTH_CALLBACK, redirect: false })
+      const result = await requestMagicLink({
+        email: email.trim(),
+        companyUrl,
+        callbackUrl: AUTH_CALLBACK,
+      })
+      if (!result.ok) {
+        setEmailError(result.message)
+        return
+      }
       setEmailSent(true)
     } catch {
       setEmailError("Failed to send magic link. Please try again.")
@@ -416,7 +427,8 @@ function MomentumContent({
       </div>
 
       {/* Email magic link */}
-      <div className="space-y-2">
+      <div className="space-y-2 relative">
+        <MagicLinkHoneypot value={companyUrl} onChange={setCompanyUrl} />
         <input
           type="email"
           value={email}

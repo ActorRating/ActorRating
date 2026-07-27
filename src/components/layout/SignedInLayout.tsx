@@ -1,6 +1,6 @@
 "use client"
 
-import { SignedInNavbar } from './SignedInNavbar'
+import { HomeNavbar } from './HomeNavbar'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/animations'
 import { useEffect, useState } from 'react'
@@ -18,10 +18,8 @@ export function SignedInLayout({ children }: SignedInLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
-      {/* Signed In Navbar - no animation per request */}
-      <SignedInNavbar />
+      <HomeNavbar />
 
-      {/* Main content - animate on mount to avoid hidden state on navigations */}
       <motion.main 
         variants={fadeIn} 
         initial={mounted ? "hidden" : false} 
@@ -33,4 +31,4 @@ export function SignedInLayout({ children }: SignedInLayoutProps) {
 
     </div>
   )
-} 
+}

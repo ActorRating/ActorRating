@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { signIn } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
@@ -13,6 +12,8 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
+import { MagicLinkHoneypot } from "@/components/auth/MagicLinkHoneypot"
+import { requestMagicLink } from "@/lib/auth/requestMagicLink"
 
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -22,6 +23,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
+  const [companyUrl, setCompanyUrl] = useState("")
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
@@ -174,13 +176,13 @@ export default function RegisterPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("pending_signup_method", "email")
       }
-      const result = await signIn("email", {
+      const result = await requestMagicLink({
         email: normalizedEmail,
+        companyUrl,
         callbackUrl: "/auth/signup-success",
-        redirect: false,
       })
-      if (result?.error) {
-        setApiError("Unable to send magic link. Please try again.")
+      if (!result.ok) {
+        setApiError(result.message)
         return
       }
       setSuccessMessage(`Magic link sent to ${normalizedEmail}. Check your inbox.`)
@@ -318,6 +320,7 @@ export default function RegisterPage() {
         ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5">
+          <MagicLinkHoneypot value={companyUrl} onChange={setCompanyUrl} />
           <div>
             <div className="relative">
               <input

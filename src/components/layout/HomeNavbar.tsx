@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { useSession } from '@/components/providers/SessionProvider'
-import { handleLogout } from '@/lib/auth'
 import { Logo } from '../ui/Logo'
 import { useState, useEffect, useRef, FormEvent, type ReactNode } from 'react'
 import { FaSearch, FaTimes, FaBars } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { User } from 'lucide-react'
 
 const NAV_LINKS = [
   { label: 'Discover', href: '/discover' },
@@ -49,6 +49,10 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const mobileSearchRef = useRef<HTMLInputElement>(null)
+
+  const profileLabel = user?.username
+    ? `@${user.username}`
+    : user?.name?.trim() || 'Profile'
 
   useEffect(() => {
     setMounted(true)
@@ -120,7 +124,6 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            {/* One continuous link row — equal size + spacing for every item */}
             <div className="hidden lg:flex items-center gap-1 pointer-events-auto navbar-content">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
@@ -130,20 +133,12 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               {!mounted || !isInitialized || loading ? (
                 <div className="h-8 w-28 rounded-md bg-[#1a1a1a] animate-pulse" />
               ) : user ? (
-                <>
-                  <DesktopNavLink href="/dashboard">Dashboard</DesktopNavLink>
-                  <button
-                    type="button"
-                    onClick={() => handleLogout()}
-                    className={DESKTOP_LINK_CLASS}
-                  >
-                    Sign Out
-                    <span
-                      className="absolute bottom-0 left-3 right-3 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
-                      style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
-                    />
-                  </button>
-                </>
+                <DesktopNavLink href="/profile">
+                  <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
+                    <User className="w-3.5 h-3.5" aria-hidden />
+                    {profileLabel}
+                  </span>
+                </DesktopNavLink>
               ) : (
                 <>
                   <DesktopNavLink href="/auth/signin">Sign In</DesktopNavLink>
@@ -152,7 +147,6 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               )}
             </div>
 
-            {/* Search farthest right on desktop */}
             <div className="flex items-center gap-3 sm:gap-4">
               {desktopSearch}
 
@@ -245,18 +239,14 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               {mounted && (
                 <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   {user ? (
-                    <>
-                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}
-                        className="flex-1 text-center px-4 py-3 rounded-xl text-sm text-gray-300 bg-[#111] border border-white/5">
-                        Dashboard
-                      </Link>
-                      <button
-                        onClick={() => { handleLogout(); setMobileMenuOpen(false) }}
-                        className="flex-1 px-4 py-3 rounded-xl text-sm text-gray-300 bg-[#111] border border-white/5"
-                      >
-                        Sign Out
-                      </button>
-                    </>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20 inline-flex items-center justify-center gap-2"
+                    >
+                      <User className="w-4 h-4" aria-hidden />
+                      {profileLabel}
+                    </Link>
                   ) : (
                     <div className="flex w-full gap-3">
                       <Link

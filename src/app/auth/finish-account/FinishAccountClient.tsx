@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession as useNextAuthSession } from "next-auth/react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { AuthLayout } from "@/components/auth/AuthLayout"
@@ -18,6 +19,7 @@ type Props = {
 
 export default function FinishAccountClient({ initialUsername, email }: Props) {
   const router = useRouter()
+  const { update } = useNextAuthSession()
   const [username, setUsername] = useState(initialUsername)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle")
@@ -44,7 +46,6 @@ export default function FinishAccountClient({ initialUsername, email }: Props) {
       return
     }
 
-    // Keep current username as available if it's already theirs.
     if (initialUsername && normalizedUsername === normalizeUsername(initialUsername)) {
       setUsernameStatus("available")
       return
@@ -103,6 +104,7 @@ export default function FinishAccountClient({ initialUsername, email }: Props) {
         setError(data.error || "Could not finish account setup")
         return
       }
+      await update()
       router.replace("/dashboard")
       router.refresh()
     } catch (err) {

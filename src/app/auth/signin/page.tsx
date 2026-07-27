@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { signIn, signOut } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import { validateEmail } from "@/lib/validation"
 import { validateEmailDetailed } from "@/lib/authEmailValidation"
 import { motion } from "framer-motion"
@@ -11,7 +11,9 @@ import Link from "next/link"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { AuthLayout } from "@/components/auth/AuthLayout"
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
+import { MagicLinkHoneypot } from "@/components/auth/MagicLinkHoneypot"
 import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/auth/clientAuthLock"
+import { requestMagicLink } from "@/lib/auth/requestMagicLink"
 
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -20,6 +22,7 @@ function SignInContent() {
   const [cooldownRemaining, setCooldownRemaining] = useState(0)
   const [hasSentLink, setHasSentLink] = useState(false)
   const [email, setEmail] = useState("")
+  const [companyUrl, setCompanyUrl] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
@@ -123,22 +126,14 @@ function SignInContent() {
       } catch (err) {
         console.warn("[auth][email] pre-signout failed", err)
       }
-      const result = await signIn("email", {
+      const result = await requestMagicLink({
         email: normalizedEmail,
+        companyUrl,
         callbackUrl: "/post-auth",
-        redirect: false,
       })
-      if (result?.error) {
+      if (!result.ok) {
         releaseAuthLock()
-        if (result.error.includes("RATE_LIMIT")) {
-          setApiError("Too many requests, try again later.")
-        } else if (result.error.includes("DISPOSABLE_EMAIL")) {
-          setApiError("Please use a valid email provider.")
-        } else if (result.error.includes("ACCOUNT_PROVIDER_MISMATCH")) {
-          setApiError("You're trying to sign in with a different method than the one originally used for this account. Please use your original sign-in method.")
-        } else {
-          setApiError("Unable to send magic link. Please try again.")
-        }
+        setApiError(result.message)
         return
       }
       if (typeof window !== "undefined") {
@@ -211,6 +206,7 @@ function SignInContent() {
 
       <div className="relative rounded-md border border-white/[0.06] bg-[#0a0a0a] p-4 sm:p-5">
         <form onSubmit={handleSubmit} className="relative space-y-3 sm:space-y-5">
+          <MagicLinkHoneypot value={companyUrl} onChange={setCompanyUrl} />
           <div>
             <div className="relative">
               <input

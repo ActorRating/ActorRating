@@ -175,7 +175,11 @@ export const authOptions: NextAuthConfig = {
             async sendVerificationRequest(params) {
               const email = params.identifier.trim().toLowerCase()
               const ip = getRequestIp(params.request)
-              const guard = validateMagicLinkRequest({ email, ip })
+              const guard = validateMagicLinkRequest({
+                email,
+                ip,
+                request: params.request,
+              })
               if (!guard.allowed) {
                 throw new Error(guard.code)
               }
@@ -264,7 +268,7 @@ export const authOptions: NextAuthConfig = {
       }
       return true
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (user?.email) {
         token.email = user.email.toLowerCase().trim()
       }
@@ -275,6 +279,22 @@ export const authOptions: NextAuthConfig = {
         token.authProvider = account.provider
         token.authProviderAccountId = account.providerAccountId
       }
+
+      // Keep username on the JWT for the shared navbar (Profile @handle).
+      // Refresh on sign-in/update, or when still missing (e.g. just finished signup).
+      const email = typeof token.email === "string" ? token.email.toLowerCase().trim() : null
+      if (email && (user || trigger === "update" || !token.username)) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email },
+            select: { username: true },
+          })
+          token.username = dbUser?.username ?? null
+        } catch (error) {
+          console.error("[auth][jwt] username lookup failed", error)
+        }
+      }
+
       // Always log on sign-in (when user/account are present) for diagnostics.
       if (user || account) {
         console.log("[auth][jwt] ✓ token issued on sign-in", {
@@ -301,6 +321,8 @@ export const authOptions: NextAuthConfig = {
         // Preserve real names only; never force a placeholder like "User".
         session.user.name =
           (token.name as string | undefined) ?? session.user.name ?? null
+        session.user.username =
+          typeof token.username === "string" ? token.username : token.username ?? null
       }
       // Always log — this is the ground truth for "did a session get created".
       console.log("[auth][session] ✓ session created", {
