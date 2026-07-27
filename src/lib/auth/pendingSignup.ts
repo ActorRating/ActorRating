@@ -13,6 +13,8 @@ export type PendingSignupPayload = {
   termsAccepted: true
   /** When set (email magic link), only apply if it matches the new user email. */
   email?: string
+  /** Normalized invite code required when INVITE_GATE_ENABLED. */
+  inviteCode?: string
 }
 
 function cookieOptions() {
@@ -37,10 +39,15 @@ export function decodePendingSignup(raw: string | null | undefined): PendingSign
     if (!username || parsed.termsAccepted !== true) return null
     if (!isValidUsername(username) || containsBadWord(username)) return null
     const email = parsed.email?.trim().toLowerCase()
+    const inviteCode =
+      typeof parsed.inviteCode === "string"
+        ? parsed.inviteCode.trim().toUpperCase().replace(/\s+/g, "")
+        : undefined
     return {
       username,
       termsAccepted: true,
       ...(email ? { email } : {}),
+      ...(inviteCode ? { inviteCode } : {}),
     }
   } catch {
     return null
@@ -125,6 +132,23 @@ export async function applyPendingSignupToUser(user: {
       name: existing.name?.trim() || pending.username,
     },
   })
+
+  // Redeem invite + issue starter codes if not already done (finish-account path).
+  if (pending.inviteCode) {
+    const { redeemInvite, issueInvites } = await import("@/lib/invites")
+    const already = await prisma.inviteCode.findFirst({
+      where: { usedById: user.id },
+      select: { id: true },
+    })
+    if (!already) {
+      await redeemInvite({ code: pending.inviteCode, userId: user.id })
+    }
+    const owned = await prisma.inviteCode.count({ where: { ownerId: user.id } })
+    if (owned === 0) {
+      await issueInvites(user.id)
+    }
+  }
+
   await clearPendingSignupCookie()
   return true
 }

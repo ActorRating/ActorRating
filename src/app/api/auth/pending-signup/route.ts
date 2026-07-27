@@ -11,15 +11,17 @@ import {
 import { containsBadWord } from "@/lib/validation/sanitizeName"
 import { isValidUsername, normalizeUsername } from "@/lib/validation/username"
 import { validateEmail } from "@/lib/validation"
+import { assertInviteAvailable, isInviteGateEnabled, normalizeInviteCode } from "@/lib/invites"
 
 type Body = {
   username?: string
   email?: string
   termsAccepted?: boolean
+  inviteCode?: string
 }
 
 /**
- * Stash username + terms before magic-link / Google OAuth so createUser can apply them.
+ * Stash username + terms (+ invite) before magic-link / Google OAuth so createUser can apply them.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -47,9 +49,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Username already taken" }, { status: 409 })
     }
 
+    let inviteCode: string | undefined
+    if (isInviteGateEnabled()) {
+      const check = await assertInviteAvailable(body.inviteCode ?? "")
+      if (!check.ok) {
+        return NextResponse.json({ error: check.error }, { status: 400 })
+      }
+      inviteCode = check.code
+    } else if (body.inviteCode) {
+      const normalized = normalizeInviteCode(body.inviteCode)
+      if (normalized) {
+        const check = await assertInviteAvailable(normalized)
+        if (check.ok) inviteCode = check.code
+      }
+    }
+
     const payload: PendingSignupPayload = {
       username,
       termsAccepted: true,
+      ...(inviteCode ? { inviteCode } : {}),
     }
 
     const rawEmail = body.email?.trim().toLowerCase()

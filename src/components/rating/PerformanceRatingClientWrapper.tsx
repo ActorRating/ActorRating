@@ -1401,6 +1401,40 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     ? `I gave ${performance.actor.name}'s performance in "${performance.movie.title}" a ${finalScore}/10. What's your rating?${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
     : `Rate ${performance.actor.name}'s performance in "${performance.movie.title}"${isSlugFormat ? ` ${shareUrl}` : ''} — ActorRating`
 
+  const radarSquareUrl =
+    typeof window !== "undefined" && finalScore !== null
+      ? `${window.location.origin}/api/og?size=square&variant=radar` +
+        `&actorName=${encodeURIComponent(performance.actor.name)}` +
+        `&movieTitle=${encodeURIComponent(performance.movie.title)}` +
+        `&score=${finalScore}` +
+        `&roleName=${encodeURIComponent("Performance")}` +
+        `&username=${encodeURIComponent(user?.username ? `@${user.username}` : "You")}` +
+        (performance.comment?.trim()
+          ? `&quote=${encodeURIComponent(performance.comment.trim().slice(0, 120))}`
+          : "") +
+        `&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}` +
+        `&characterBelievability=${Math.round(characterBelievability)}` +
+        `&technicalSkill=${Math.round(technicalSkill)}` +
+        `&screenPresence=${Math.round(screenPresence)}` +
+        `&chemistryInteraction=${Math.round(chemistryInteraction)}` +
+        (externalSubmittedRating?.id
+          ? `&ratingId=${encodeURIComponent(externalSubmittedRating.id)}`
+          : "")
+      : ""
+
+  const downloadRadarCard = () => {
+    if (!radarSquareUrl) return
+    const a = document.createElement("a")
+    a.href = radarSquareUrl
+    a.download = `actorrating-radar-${performance.actor.slug || "rating"}.svg`
+    a.target = "_blank"
+    a.rel = "noopener"
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    trackShareRating("native")
+  }
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -1428,7 +1462,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Generate shareable image
     try {
       // Use the OG image endpoint to generate a shareable image
-      const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=og&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+      const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=og&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
 
       const encodedText = encodeURIComponent(shareText)
       const encodedUrl = encodeURIComponent(shareUrl)
@@ -1444,7 +1478,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       } else if (platform === 'instagram') {
         // Instagram doesn't support direct URL sharing, so we copy the image URL to clipboard
         // and show instructions to the user
-        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}`
         await navigator.clipboard.writeText(imageUrl)
         alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
         trackShareRating('instagram')
@@ -1461,7 +1495,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
         trackShareRating('facebook')
       } else if (platform === 'instagram') {
-        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=feed&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}`
         navigator.clipboard.writeText(imageUrl).then(() => {
           alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
           trackShareRating('instagram')
@@ -2799,6 +2833,34 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     Share your rating
                   </button>
                 </div>
+
+                {/* Radar craft card preview (1:1 share graphic) */}
+                {radarSquareUrl ? (
+                  <div className="mx-auto w-full max-w-[320px] space-y-3">
+                    <p className="text-center text-[10px] font-bold tracking-widest uppercase text-[#3f3f46]">
+                      Radar card
+                    </p>
+                    <div
+                      className="relative overflow-hidden rounded-xl border border-[rgba(255,215,0,0.15)] bg-black"
+                      style={{ aspectRatio: "1 / 1" }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={radarSquareUrl}
+                        alt="Radar rating card"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={downloadRadarCard}
+                      className="w-full rounded-md py-2.5 text-xs font-bold uppercase tracking-wide text-black"
+                      style={{ background: GOLD }}
+                    >
+                      Download radar card
+                    </button>
+                  </div>
+                ) : null}
 
                 {/* Share buttons — 2×2 grid, colorful round icons on mobile, pills with labels on desktop */}
                 <div className="grid grid-cols-4 sm:grid-cols-2 gap-3 sm:gap-3 justify-items-center sm:justify-items-stretch">

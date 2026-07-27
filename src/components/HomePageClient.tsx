@@ -13,6 +13,7 @@ import { FaArrowRight } from "react-icons/fa";
 import { BarChart3, Layers, List, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { WaitlistForm } from "@/components/auth/WaitlistForm";
 import {
   prefetchPerformancesPageData,
   buildByLookupUrl,
@@ -153,6 +154,16 @@ function HeroCtaBlock({ featured }: { featured: FeaturedHeroPayload }) {
         style={HERO_SANS}
       >
         The network for rating acting — not movies.
+      </p>
+      <p className="mt-3 text-sm text-zinc-500">
+        Have an invite?{" "}
+        <Link href="/auth/register" className="text-[#FFD700] hover:underline">
+          Join with a code
+        </Link>
+        {" · "}
+        <a href="#waitlist" className="text-zinc-300 hover:text-white underline-offset-2 hover:underline">
+          Waitlist
+        </a>
       </p>
     </>
   );
@@ -648,6 +659,10 @@ export default function HomePageClient({
       <div className="bg-[#0a0a0a] border-y border-white/[0.05]">
         <LetsYouSection />
       </div>
+
+      <section className="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16">
+        <WaitlistForm />
+      </section>
 
       <ClosingStrip primaryRateHref={primaryRateHref} />
     </>

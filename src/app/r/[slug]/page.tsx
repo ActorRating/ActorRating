@@ -14,9 +14,9 @@ async function getDataUncached(slug: string) {
   })
   if (!rating) return null
   const base = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
-  const dynamicOg = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`
+  const dynamicOg = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og&variant=radar`
   const ogUrl = rating.shareImage?.ogUrl || dynamicOg
-  const feedUrl = rating.shareImage?.feedUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=feed`
+  const feedUrl = rating.shareImage?.feedUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=square&variant=radar`
   const storyUrl = rating.shareImage?.storyUrl || `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=story`
   return { rating, ogUrl, feedUrl, storyUrl }
 }
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = `${rating.actor.name} in ${rating.movie.title}`
   const description = `See the full performance breakdown and community rating. Rate it yourself in seconds.`
   const pageUrl = `${base}/r/${slug}`
-  const ogDynamicUrl = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og`
+  const ogDynamicUrl = `${base}/api/og?ratingId=${encodeURIComponent(slug)}&size=og&variant=radar`
   return {
     title,
     description,

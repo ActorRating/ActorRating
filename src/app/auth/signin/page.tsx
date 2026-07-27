@@ -277,7 +277,11 @@ function SignInContent() {
         <p className="text-sm text-gray-400">
           New here?{" "}
           <Link href="/auth/register" className="text-[#FFD700] font-semibold hover:underline">
-            Create an account
+            Join with an invite code
+          </Link>
+          {" · "}
+          <Link href="/#waitlist" className="text-zinc-300 hover:text-white hover:underline">
+            Waitlist
           </Link>
         </p>
       </div>

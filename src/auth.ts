@@ -16,6 +16,12 @@ import {
 } from "@/lib/auth/pendingSignup"
 import { isValidUsername } from "@/lib/validation/username"
 import { containsBadWord } from "@/lib/validation/sanitizeName"
+import {
+  assertInviteAvailable,
+  isInviteGateEnabled,
+  issueInvites,
+  redeemInvite,
+} from "@/lib/invites"
 
 const emailFrom = process.env.AUTH_EMAIL_FROM || process.env.EMAIL_FROM
 const emailServer = process.env.AUTH_EMAIL_SERVER || process.env.EMAIL_SERVER
@@ -61,6 +67,7 @@ async function resolvePendingSignupFields(email: string | null | undefined) {
       username: null as string | null,
       termsAcceptedAt: null as Date | null,
       onboardingCompleted: false,
+      inviteCode: null as string | null,
     }
   }
 
@@ -70,6 +77,7 @@ async function resolvePendingSignupFields(email: string | null | undefined) {
       username: null as string | null,
       termsAcceptedAt: null as Date | null,
       onboardingCompleted: false,
+      inviteCode: null as string | null,
     }
   }
 
@@ -78,6 +86,7 @@ async function resolvePendingSignupFields(email: string | null | undefined) {
       username: null as string | null,
       termsAcceptedAt: null as Date | null,
       onboardingCompleted: false,
+      inviteCode: null as string | null,
     }
   }
 
@@ -90,6 +99,7 @@ async function resolvePendingSignupFields(email: string | null | undefined) {
       username: null as string | null,
       termsAcceptedAt: null as Date | null,
       onboardingCompleted: false,
+      inviteCode: null as string | null,
     }
   }
 
@@ -97,6 +107,7 @@ async function resolvePendingSignupFields(email: string | null | undefined) {
     username: pending.username,
     termsAcceptedAt: new Date(),
     onboardingCompleted: true,
+    inviteCode: pending.inviteCode ?? null,
   }
 }
 
@@ -108,6 +119,16 @@ function createAdapter() {
       const cookieSource = await getAcquisitionSourceFromCookie()
       const finalSource = isValidSource(cookieSource) ? cookieSource : null
       const pendingFields = await resolvePendingSignupFields(data?.email)
+
+      if (isInviteGateEnabled()) {
+        if (!pendingFields.inviteCode) {
+          throw new Error("INVITE_REQUIRED")
+        }
+        const inviteCheck = await assertInviteAvailable(pendingFields.inviteCode)
+        if (!inviteCheck.ok) {
+          throw new Error("INVITE_INVALID")
+        }
+      }
 
       try {
         const user = await prisma.user.create({
@@ -121,20 +142,38 @@ function createAdapter() {
             firstSeenAt: new Date(),
           },
         })
+
+        if (pendingFields.inviteCode) {
+          await redeemInvite({ code: pendingFields.inviteCode, userId: user.id })
+        }
+        await issueInvites(user.id)
+
         if (pendingFields.onboardingCompleted) {
           await clearPendingSignupCookie()
         }
         return user
       } catch (error) {
-        // Username race: create without pending fields so auth still succeeds.
+        if (
+          error instanceof Error &&
+          (error.message === "INVITE_REQUIRED" || error.message === "INVITE_INVALID")
+        ) {
+          throw error
+        }
+        // Username race: create without pending fields so auth still succeeds —
+        // but never when invite gate is on (would bypass redemption).
+        if (isInviteGateEnabled()) {
+          throw error
+        }
         console.error("[auth] createUser with pending signup failed, retrying bare:", error)
-        return prisma.user.create({
+        const user = await prisma.user.create({
           data: {
             ...data,
             source: finalSource,
             firstSeenAt: new Date(),
           },
         })
+        await issueInvites(user.id)
+        return user
       }
     },
   }
@@ -256,8 +295,21 @@ export const authOptions: NextAuthConfig = {
           } else {
             console.warn("[auth][signIn] user exists; allowing", { provider, userId: emailOwner.id, hasSameProvider })
           }
-        } else if (authDebug) {
-          console.log("[auth][signIn] no user for email; new sign-up path", { email, provider })
+        } else {
+          // Brand-new account path — enforce invite when gate is on.
+          if (isInviteGateEnabled()) {
+            const pending = await readPendingSignupCookie()
+            if (!pending?.inviteCode) {
+              throw new Error("INVITE_REQUIRED")
+            }
+            const inviteCheck = await assertInviteAvailable(pending.inviteCode)
+            if (!inviteCheck.ok) {
+              throw new Error("INVITE_INVALID")
+            }
+          }
+          if (authDebug) {
+            console.log("[auth][signIn] no user for email; new sign-up path", { email, provider })
+          }
         }
       } else if (authDebug) {
         console.log("[auth][signIn] no email on user; allow", { provider, providerAccountId, hasProfile: !!profile })
