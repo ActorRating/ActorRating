@@ -1,6 +1,5 @@
 import Image from "next/image"
 import Link from "next/link"
-import { upgradeActorImageRes } from "@/lib/tmdb"
 
 export type ForumThreadCardData = {
   id: string
@@ -16,12 +15,15 @@ export type ForumThreadCardData = {
   movie?: { title: string; slug: string | null; year: number; posterUrl: string | null } | null
 }
 
+function thumbUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url
+    .replace(/\/t\/p\/w\d+\//, "/t/p/w185/")
+    .replace(/\/t\/p\/h\d+\//, "/t/p/w185/")
+}
+
 function threadThumb(t: ForumThreadCardData): string | null {
-  const actorImg = upgradeActorImageRes(t.actor?.imageUrl) ?? t.actor?.imageUrl ?? null
-  if (actorImg) return actorImg
-  const poster = t.movie?.posterUrl
-  if (!poster) return null
-  return poster.replace(/\/t\/p\/w\d+\//, "/t/p/w185/") || poster
+  return thumbUrl(t.actor?.imageUrl) ?? thumbUrl(t.movie?.posterUrl)
 }
 
 export function ForumThreadCard({ thread }: { thread: ForumThreadCardData }) {
@@ -46,9 +48,7 @@ export function ForumThreadCard({ thread }: { thread: ForumThreadCardData }) {
               sizes="56px"
             />
           </div>
-        ) : (
-          <div className="w-12 sm:w-14 aspect-[2/3] shrink-0 rounded-sm bg-zinc-900/80 ring-1 ring-white/[0.06]" />
-        )}
+        ) : null}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wide text-zinc-500 mb-1.5">
             {thread.isPinned ? <span className="text-[#FFD700]">Pinned</span> : null}
