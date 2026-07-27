@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { connection } from "next/server"
 import { HomeLayout } from "@/components/layout"
+import { ForumThreadCard } from "@/components/forum/ForumThreadCard"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -47,6 +48,8 @@ export default async function ForumIndexPage() {
         updatedAt: true,
         category: { select: { name: true, slug: true } },
         author: { select: { username: true, name: true } },
+        actor: { select: { name: true, slug: true, imageUrl: true } },
+        movie: { select: { title: true, slug: true, year: true, posterUrl: true } },
         _count: { select: { posts: true } },
       },
     }),
@@ -114,36 +117,23 @@ export default async function ForumIndexPage() {
               <p className="text-zinc-600">No threads yet — start the first debate.</p>
             ) : (
               <ul className="space-y-0 border-t border-white/[0.07]">
-                {recentThreads.map((t) => {
-                  const author = t.author.username
-                    ? `@${t.author.username}`
-                    : t.author.name?.trim() || "User"
-                  return (
-                    <li key={t.id} className="border-b border-white/[0.07]">
-                      <Link
-                        href={`/forum/t/${t.slug}`}
-                        className="block py-5 hover:bg-white/[0.02] transition-colors"
-                      >
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wide text-zinc-500 mb-1.5">
-                          {t.isPinned ? <span className="text-[#FFD700]">Pinned</span> : null}
-                          <span>{t.category.name}</span>
-                          <span>·</span>
-                          <span>{t._count.posts} posts</span>
-                        </div>
-                        <div className="text-base sm:text-lg font-semibold text-white/95">
-                          {t.title}
-                        </div>
-                        <div className="mt-1 text-xs text-zinc-600">
-                          by {author} · updated{" "}
-                          {t.updatedAt.toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                      </Link>
-                    </li>
-                  )
-                })}
+                {recentThreads.map((t) => (
+                  <ForumThreadCard
+                    key={t.id}
+                    thread={{
+                      id: t.id,
+                      title: t.title,
+                      slug: t.slug,
+                      isPinned: t.isPinned,
+                      updatedAt: t.updatedAt,
+                      postCount: t._count.posts,
+                      categoryName: t.category.name,
+                      author: t.author,
+                      actor: t.actor,
+                      movie: t.movie,
+                    }}
+                  />
+                ))}
               </ul>
             )}
           </section>

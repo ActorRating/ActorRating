@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
@@ -40,8 +41,8 @@ export default async function ForumThreadPage({ params }: Props) {
       createdAt: true,
       author: { select: { username: true, name: true } },
       category: { select: { name: true, slug: true } },
-      actor: { select: { id: true, name: true, slug: true } },
-      movie: { select: { id: true, title: true, slug: true, year: true } },
+      actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
+      movie: { select: { id: true, title: true, slug: true, year: true, posterUrl: true } },
       posts: {
         where: { isHidden: false },
         orderBy: { createdAt: "asc" },
@@ -92,42 +93,58 @@ export default async function ForumThreadPage({ params }: Props) {
           </nav>
 
           <header className="mb-8 pb-6 border-b border-white/[0.07]">
-            <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-zinc-500 mb-3">
-              {thread.isPinned ? <span className="text-[#FFD700]">Pinned</span> : null}
-              {thread.isLocked ? <span>Locked</span> : null}
-              <span>{thread.category.name}</span>
+            <div className="flex gap-5 sm:gap-6 items-start">
+              {(() => {
+                const raw = thread.actor?.imageUrl || thread.movie?.posterUrl
+                if (!raw) return null
+                const src = raw
+                  .replace(/\/t\/p\/w\d+\//, "/t/p/w342/")
+                  .replace(/\/t\/p\/h\d+\//, "/t/p/w342/")
+                return (
+                  <div className="relative w-20 sm:w-24 aspect-[2/3] shrink-0 overflow-hidden rounded-sm bg-zinc-900 ring-1 ring-white/10">
+                    <Image src={src} alt="" fill className="object-cover" sizes="96px" />
+                  </div>
+                )
+              })()}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-zinc-500 mb-3">
+                  {thread.isPinned ? <span className="text-[#FFD700]">Pinned</span> : null}
+                  {thread.isLocked ? <span>Locked</span> : null}
+                  <span>{thread.category.name}</span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">{thread.title}</h1>
+                <p className="text-sm text-zinc-500">
+                  Started by {author} ·{" "}
+                  {thread.createdAt.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                {(thread.actor || thread.movie) && (
+                  <p className="mt-3 text-sm text-zinc-400">
+                    Linked:{" "}
+                    {thread.actor ? (
+                      <Link
+                        href={`/actors/${thread.actor.slug || thread.actor.id}`}
+                        className="text-[#FFD700] hover:underline"
+                      >
+                        {thread.actor.name}
+                      </Link>
+                    ) : null}
+                    {thread.actor && thread.movie ? " · " : null}
+                    {thread.movie ? (
+                      <Link
+                        href={`/movies/${thread.movie.slug || thread.movie.id}`}
+                        className="text-[#FFD700] hover:underline"
+                      >
+                        {thread.movie.title} ({thread.movie.year})
+                      </Link>
+                    ) : null}
+                  </p>
+                )}
+              </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">{thread.title}</h1>
-            <p className="text-sm text-zinc-500">
-              Started by {author} ·{" "}
-              {thread.createdAt.toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-            {(thread.actor || thread.movie) && (
-              <p className="mt-3 text-sm text-zinc-400">
-                Linked:{" "}
-                {thread.actor ? (
-                  <Link
-                    href={`/actors/${thread.actor.slug || thread.actor.id}`}
-                    className="text-[#FFD700] hover:underline"
-                  >
-                    {thread.actor.name}
-                  </Link>
-                ) : null}
-                {thread.actor && thread.movie ? " · " : null}
-                {thread.movie ? (
-                  <Link
-                    href={`/movies/${thread.movie.slug || thread.movie.id}`}
-                    className="text-[#FFD700] hover:underline"
-                  >
-                    {thread.movie.title} ({thread.movie.year})
-                  </Link>
-                ) : null}
-              </p>
-            )}
           </header>
 
           <ForumThreadClient slug={thread.slug} initialPosts={posts} isLocked={thread.isLocked} />

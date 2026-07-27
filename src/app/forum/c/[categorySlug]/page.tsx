@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
 import { HomeLayout } from "@/components/layout"
+import { ForumThreadCard } from "@/components/forum/ForumThreadCard"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
@@ -52,6 +53,8 @@ export default async function ForumCategoryPage({ params }: Props) {
       isLocked: true,
       updatedAt: true,
       author: { select: { username: true, name: true } },
+      actor: { select: { name: true, slug: true, imageUrl: true } },
+      movie: { select: { title: true, slug: true, year: true, posterUrl: true } },
       _count: { select: { posts: true } },
     },
   })
@@ -90,33 +93,23 @@ export default async function ForumCategoryPage({ params }: Props) {
             <p className="text-zinc-600">No threads in this category yet.</p>
           ) : (
             <ul className="border-t border-white/[0.07]">
-              {threads.map((t) => {
-                const author = t.author.username
-                  ? `@${t.author.username}`
-                  : t.author.name?.trim() || "User"
-                return (
-                  <li key={t.id} className="border-b border-white/[0.07]">
-                    <Link
-                      href={`/forum/t/${t.slug}`}
-                      className="block py-5 hover:bg-white/[0.02] transition-colors"
-                    >
-                      <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-zinc-500 mb-1">
-                        {t.isPinned ? <span className="text-[#FFD700]">Pinned</span> : null}
-                        {t.isLocked ? <span>Locked</span> : null}
-                        <span>{t._count.posts} posts</span>
-                      </div>
-                      <div className="text-lg font-semibold">{t.title}</div>
-                      <div className="mt-1 text-xs text-zinc-600">
-                        by {author} · updated{" "}
-                        {t.updatedAt.toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </div>
-                    </Link>
-                  </li>
-                )
-              })}
+              {threads.map((t) => (
+                <ForumThreadCard
+                  key={t.id}
+                  thread={{
+                    id: t.id,
+                    title: t.title,
+                    slug: t.slug,
+                    isPinned: t.isPinned,
+                    isLocked: t.isLocked,
+                    updatedAt: t.updatedAt,
+                    postCount: t._count.posts,
+                    author: t.author,
+                    actor: t.actor,
+                    movie: t.movie,
+                  }}
+                />
+              ))}
             </ul>
           )}
         </div>
