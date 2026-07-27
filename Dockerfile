@@ -29,8 +29,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # Coolify injects runtime DATABASE_URL at build time; skip Prisma I/O so `next build` cannot hang on an unreachable host.
 ENV SKIP_BUILD_TIME_DB=1
-# Reduce OOM kills (exit 255) during webpack compile on small build runners.
-ENV NODE_OPTIONS=--max-old-space-size=6144
+# Cap Node heap so Coolify builds don't OOM the host (running app + build share RAM).
+# 6144 previously asked for more heap than small VPS hosts can spare → kernel kill mid-compile.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
