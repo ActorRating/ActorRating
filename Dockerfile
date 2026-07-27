@@ -69,6 +69,12 @@ RUN ./node_modules/.bin/esbuild scripts/backfill-bot-category.ts \
     --external:@prisma/client \
     --alias:@=./src \
     --outfile=scripts/backfill-bot-category.js
+RUN ./node_modules/.bin/esbuild scripts/seed-forum-threads.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --outfile=scripts/seed-forum-threads.js
 
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
@@ -104,6 +110,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./sc
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/ingest-all-movies-cast.js ./scripts/ingest-all-movies-cast.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-internal-crawl-bots.js ./scripts/backfill-internal-crawl-bots.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-bot-category.js ./scripts/backfill-bot-category.js
+# Forum starter threads: `node scripts/seed-forum-threads.js` (or `npm run seed:forum`)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-forum-threads.js ./scripts/seed-forum-threads.js
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp

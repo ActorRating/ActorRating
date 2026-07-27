@@ -37,7 +37,8 @@
     "backfill:movie-tmdb-ratings:dry": "tsx scripts/backfill-movie-tmdb-ratings.ts --dry-run",
     "seed:aggregate-scores": "tsx scripts/seed-aggregate-scores.ts --cohort=1 --mark-from-tmdb-fetch",
     "seed:aggregate-scores:dry": "tsx scripts/seed-aggregate-scores.ts --cohort=1 --mark-from-tmdb-fetch --dry-run",
-    "seed:forum": "tsx scripts/seed-forum-threads.ts"
+    "seed:forum": "node scripts/seed-forum-threads.js",
+    "seed:forum:dev": "tsx scripts/seed-forum-threads.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

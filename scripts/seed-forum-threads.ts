@@ -2,13 +2,25 @@
  * Seed starter debate threads so /forum isn't empty on launch.
  * Idempotent: skips if any ForumThread already exists.
  *
- * Usage: npx tsx scripts/seed-forum-threads.ts
+ * Local:  npx tsx scripts/seed-forum-threads.ts
+ * Prod:   node scripts/seed-forum-threads.js  (bundled into the Coolify image)
  * Requires DATABASE_URL and either ADMIN_EMAIL matching a User, or FORUM_SEED_USER_EMAIL.
  */
 import { PrismaClient } from "@prisma/client"
-import { createSlug } from "../src/lib/createSlug"
 
 const prisma = new PrismaClient()
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim()
+    .replace(/^-+|-+$/g, "")
+}
 
 const STARTERS: Array<{
   categorySlug: string
@@ -131,7 +143,7 @@ async function main() {
       continue
     }
 
-    const base = createSlug(starter.title).slice(0, 60) || "thread"
+    const base = slugify(starter.title).slice(0, 60) || "thread"
     const slug = `${base}-seed`
 
     await prisma.$transaction(async (tx) => {
