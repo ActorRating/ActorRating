@@ -8,12 +8,20 @@ import { usePathname, useSearchParams } from "next/navigation"
  * - Forward / new links → top (or #hash)
  * - Back / forward (popstate) + bfcache pageshow → restore saved Y for that path
  *
- * @see history.scrollRestoration = "manual"
+ * Strict Mode remounts run mount → unmount → remount in one turn. Consuming a
+ * one-shot sessionStorage flag on the first mount made the remount treat the
+ * nav as forward and scroll to top. We keep a path-scoped restore target in
+ * module scope so the remount still restores.
  */
 
 const SCROLL_PREFIX = "ar:scroll:"
 const POP_FLAG = "ar:scroll-pop"
-const RESTORE_LOCK_MS = 1200
+const RESTORE_LOCK_MS = 1800
+
+/** Next pathname change should restore (set in popstate / pageshow). */
+let pendingPopRestore = false
+/** Path we are actively restoring; survives Strict Mode remount. */
+let restoreForPath: string | null = null
 
 function scrollKey(pathname: string) {
   return `${SCROLL_PREFIX}${pathname}`
@@ -32,10 +40,9 @@ function getScrollY(): number {
 
 function setScrollY(y: number) {
   const top = Math.max(0, Math.round(y))
-  // Prefer the scrolling element (html on modern browsers; body on some WebKits).
   const se = document.scrollingElement
   if (se) se.scrollTop = top
-  window.scrollTo(0, top)
+  window.scrollTo({ top, left: 0, behavior: "auto" })
   document.documentElement.scrollTop = top
   document.body.scrollTop = top
 }
@@ -61,6 +68,7 @@ function saveScroll(pathname: string, y?: number) {
 }
 
 function markPopNavigation() {
+  pendingPopRestore = true
   try {
     sessionStorage.setItem(POP_FLAG, "1")
   } catch {
@@ -68,13 +76,21 @@ function markPopNavigation() {
   }
 }
 
-function consumePopNavigation(): boolean {
+function peekSessionPop(): boolean {
   try {
-    const flagged = sessionStorage.getItem(POP_FLAG) === "1"
-    if (flagged) sessionStorage.removeItem(POP_FLAG)
-    return flagged
+    return sessionStorage.getItem(POP_FLAG) === "1"
   } catch {
     return false
+  }
+}
+
+function clearPopFlags() {
+  pendingPopRestore = false
+  restoreForPath = null
+  try {
+    sessionStorage.removeItem(POP_FLAG)
+  } catch {
+    /* ignore */
   }
 }
 
@@ -87,10 +103,6 @@ function scrollToHash(hash: string): boolean {
   return true
 }
 
-/**
- * Re-apply scroll after layout/images settle, and briefly resist SPA frameworks
- * that reset to Y=0 after paint (common with Next App Router + iOS).
- */
 function restoreWithRetries(y: number): () => void {
   if (y <= 0) return () => {}
 
@@ -105,13 +117,12 @@ function restoreWithRetries(y: number): () => void {
     requestAnimationFrame(apply)
   })
 
-  const delays = [50, 100, 200, 350, 550, 800, 1100]
+  const delays = [40, 100, 200, 350, 550, 800, 1100, 1600]
   const timers = delays.map((ms) => window.setTimeout(apply, ms))
 
   const onScroll = () => {
     if (cancelled) return
     const current = getScrollY()
-    // Something snapped us near the top while we expected a deep restore.
     if (current < 24 && y > 80) apply()
   }
   window.addEventListener("scroll", onScroll, { passive: true })
@@ -134,6 +145,7 @@ export default function RouteChangeScroll() {
   const searchParams = useSearchParams()
   const pathRef = useRef(pathname)
   const cancelRestoreRef = useRef<(() => void) | null>(null)
+  const prevPathRef = useRef(pathname)
 
   useEffect(() => {
     pathRef.current = pathname
@@ -153,15 +165,38 @@ export default function RouteChangeScroll() {
     const persist = () => saveScroll(pathRef.current)
 
     const onPopState = () => {
-      // URL has already changed; persist the path we're leaving isn't possible
-      // here — scroll was saved continuously / on pagehide. Mark restore.
+      saveScroll(prevPathRef.current)
       markPopNavigation()
     }
 
-    // iOS Safari bfcache: full page state restored without a normal reload.
+    /** Persist scroll before soft navigations (Link clicks) leave the page. */
+    const onPointerDownCapture = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const anchor = target.closest("a[href]")
+      if (!(anchor instanceof HTMLAnchorElement)) return
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return
+      const href = anchor.getAttribute("href")
+      if (!href || href.startsWith("#")) return
+      try {
+        const url = new URL(anchor.href, window.location.href)
+        if (url.origin !== window.location.origin) return
+        if (
+          url.pathname === window.location.pathname &&
+          url.search === window.location.search
+        ) {
+          return
+        }
+      } catch {
+        return
+      }
+      saveScroll(pathRef.current)
+    }
+
     const onPageShow = (event: PageTransitionEvent) => {
       if (!event.persisted) return
       markPopNavigation()
+      restoreForPath = pathRef.current
       cancelRestoreRef.current?.()
       cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathRef.current))
     }
@@ -170,6 +205,7 @@ export default function RouteChangeScroll() {
     window.addEventListener("pageshow", onPageShow)
     window.addEventListener("pagehide", persist)
     window.addEventListener("beforeunload", persist)
+    document.addEventListener("pointerdown", onPointerDownCapture, true)
     const onVisibility = () => {
       if (document.visibilityState === "hidden") persist()
     }
@@ -181,12 +217,11 @@ export default function RouteChangeScroll() {
       window.removeEventListener("pageshow", onPageShow)
       window.removeEventListener("pagehide", persist)
       window.removeEventListener("beforeunload", persist)
+      document.removeEventListener("pointerdown", onPointerDownCapture, true)
       document.removeEventListener("visibilitychange", onVisibility)
     }
   }, [])
 
-  // Continuously snapshot scroll for the active path (SPA Link navigations
-  // do not fire beforeunload).
   useEffect(() => {
     if (typeof window === "undefined") return
     const path = pathname
@@ -215,12 +250,29 @@ export default function RouteChangeScroll() {
     cancelRestoreRef.current = null
 
     const hash = window.location.hash
-    const restorePop = consumePopNavigation()
+    const isPop =
+      pendingPopRestore ||
+      peekSessionPop() ||
+      restoreForPath === pathname
+
+    if (isPop) {
+      restoreForPath = pathname
+      // Drop one-shot flags; path target remains for Strict Mode remount.
+      pendingPopRestore = false
+      try {
+        sessionStorage.removeItem(POP_FLAG)
+      } catch {
+        /* ignore */
+      }
+    } else if (restoreForPath && restoreForPath !== pathname) {
+      // Forward navigation while a restore window was open — cancel it.
+      clearPopFlags()
+    }
 
     const apply = () => {
       if (scrollToHash(hash)) return
 
-      if (restorePop) {
+      if (isPop || restoreForPath === pathname) {
         cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathname))
         return
       }
@@ -228,12 +280,20 @@ export default function RouteChangeScroll() {
       setScrollY(0)
     }
 
-    // Wait one frame so the new route's DOM is in the tree (SPA soft nav).
     requestAnimationFrame(apply)
+    prevPathRef.current = pathname
+
+    const clearId = window.setTimeout(() => {
+      if (restoreForPath === pathname) {
+        restoreForPath = null
+      }
+    }, RESTORE_LOCK_MS)
 
     return () => {
+      window.clearTimeout(clearId)
       cancelRestoreRef.current?.()
       cancelRestoreRef.current = null
+      // Leave restoreForPath set so Strict Mode remount still restores.
     }
   }, [pathname, searchParams])
 

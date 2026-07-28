@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { HomeLayout } from "@/components/layout"
+import { LegalDocument } from "@/components/legal/LegalDocument"
 
 export default function KVKKPage() {
-  const [language, setLanguage] = useState<"en" | "tr">("en")
-
   const content = {
     en: {
       title: "KVKK Data Processing Terms",
       lastUpdated: "Last updated:",
+      intro: "This notice explains how ActorRating Yazılım A.Ş. processes personal data under Türkiye’s Personal Data Protection Law No. 6698 (KVKK), alongside our Privacy Policy and Terms of Service.",
       sections: [
         {
           title: "1. Data Controller",
@@ -146,6 +146,7 @@ export default function KVKKPage() {
     tr: {
       title: "KVKK Aydınlatma Metni",
       lastUpdated: "Son güncelleme:",
+      intro: "Bu metin, ActorRating Yazılım A.Ş.'nin 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında kişisel verileri nasıl işlediğini; Gizlilik Politikası ve Hizmet Şartlarımızla birlikte açıklar.",
       sections: [
         {
           title: "1. Veri Sorumlusu",
@@ -282,95 +283,18 @@ export default function KVKKPage() {
     }
   }
 
-  const currentContent = content[language]
-
   return (
-    <div className="min-h-screen bg-black w-full relative" style={{ maxWidth: '100vw', overflowX: 'hidden' }}>
-      {/* Background glow */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[#FFC800]/15 rounded-full blur-[200px]" />
-      </div>
-
-      <div className="w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-24 lg:py-28 pb-16 sm:pb-24 md:pb-32 relative" style={{ maxWidth: '1280px', margin: '0 auto' }}>
-        <div className="grid grid-cols-12 gap-8">
-          {/* Header with language switcher */}
-          <div className="col-span-12 flex items-center justify-end mb-8">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setLanguage("en")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  language === "en"
-                    ? "bg-[#FFD700] text-black"
-                    : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
-                }`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLanguage("tr")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  language === "tr"
-                    ? "bg-[#FFD700] text-black"
-                    : "bg-transparent text-gray-400 hover:text-[#FFD700] border border-gray-600/50 hover:border-[#FFD700]/50"
-                }`}
-              >
-                TR
-              </button>
-            </div>
-          </div>
-
-          {/* Hero Section */}
-          <div className="col-span-12 text-center mb-16 sm:mb-24 md:mb-32">
-            <h1 
-              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-8 md:mb-12 tracking-tight leading-tight relative px-4 sm:px-0"
-            >
-              {currentContent.title}
-            </h1>
-            <p className="text-sm text-[#a3a3a3] mb-8">
-              {currentContent.lastUpdated} {new Date().toLocaleDateString(language === "tr" ? "tr-TR" : "en-US")}
-            </p>
-          </div>
-
-          {/* Content Sections */}
-          <div className="col-span-12 lg:col-span-10 lg:col-start-2">
-            <div className="space-y-6 sm:space-y-8">
-              {currentContent.sections.map((section, index) => (
-                <div
-                  key={index}
-                  className="relative p-8 xs:p-10 sm:p-12 md:p-14 rounded-[2rem] border border-transparent bg-gradient-to-br from-[#1a1a1a]/95 via-[#0f0f0f]/90 to-black/95 backdrop-blur-2xl overflow-hidden"
-                  style={{
-                    boxShadow: `
-                      0 25px 70px -15px rgba(0, 0, 0, 0.9),
-                      0 15px 40px -10px rgba(0, 0, 0, 0.7),
-                      0 0 0 1px rgba(255, 255, 255, 0.05),
-                      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-                      inset 0 -1px 0 0 rgba(0, 0, 0, 0.3)
-                    `,
-                  }}
-                >
-                  <div className="relative z-10">
-                    <h2 
-                      className="text-xl sm:text-2xl md:text-3xl font-semibold text-white mb-4 sm:mb-6"
-                    >
-                      {section.title}
-                    </h2>
-                    <p className="text-base sm:text-lg text-[#e4e4e7] leading-loose font-normal mb-4">
-                      {section.content}
-                    </p>
-                    {section.list && (
-                      <ul className="list-disc list-inside space-y-2 text-[#e4e4e7] text-base sm:text-lg leading-loose font-normal">
-                        {section.list.map((item, itemIndex) => (
-                          <li key={itemIndex}>{item}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <HomeLayout>
+      <LegalDocument
+        documents={{
+          en: content.en,
+          tr: content.tr,
+        }}
+        relatedLinks={[
+            { href: "/privacy", label: "Privacy Policy" },
+            { href: "/terms", label: "Terms of Service" }
+          ]}
+      />
+    </HomeLayout>
   )
-} 
+}

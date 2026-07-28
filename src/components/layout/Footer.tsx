@@ -5,6 +5,7 @@ import { useCookieConsentContext } from '@/components/providers/CookieConsentPro
 import { useUser } from '@/components/providers/SessionProvider'
 import { useState, useEffect } from 'react'
 import { TmdbAttribution } from '@/components/attribution/TmdbAttribution'
+import { FaInstagram, FaTiktok, FaXTwitter, FaYoutube } from 'react-icons/fa6'
 
 const GOLD_TEXT_STYLE = {
   background: 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)',
@@ -12,6 +13,29 @@ const GOLD_TEXT_STYLE = {
   WebkitTextFillColor: 'transparent' as const,
   backgroundClip: 'text' as const,
 }
+
+const SOCIALS = [
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/actorrating',
+    Icon: FaInstagram,
+  },
+  {
+    label: 'X',
+    href: 'https://x.com/actorrating',
+    Icon: FaXTwitter,
+  },
+  {
+    label: 'TikTok',
+    href: 'https://www.tiktok.com/@actorrating',
+    Icon: FaTiktok,
+  },
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@actorrating',
+    Icon: FaYoutube,
+  },
+] as const
 
 export function Footer() {
   const { openSettings } = useCookieConsentContext()
@@ -24,10 +48,8 @@ export function Footer() {
     <footer className="bg-black w-full mt-auto" style={{ borderTop: '1px solid rgba(255,215,0,0.1)' }}>
       <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 lg:px-12 py-16 sm:py-20">
 
-        {/* Top row: brand + nav columns */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
 
-          {/* Brand — wider column */}
           <div className="md:col-span-2">
             <h3
               className="text-xl font-bold mb-3"
@@ -41,16 +63,27 @@ export function Footer() {
             <p className="text-sm text-[#666] leading-relaxed mb-5 max-w-xs">
               The leading place online to rate and find great acting — from silent film to today.
             </p>
-            <p className="text-xs text-[#444] tracking-wider uppercase">
+            <p className="text-xs text-[#444] tracking-wider uppercase mb-6">
               The IMDB for Acting Performance
             </p>
+            <div className="flex items-center gap-3">
+              {SOCIALS.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/[0.08] text-[#888] hover:text-[#FFD700] hover:border-[#FFD700]/35 transition-colors"
+                >
+                  <Icon className="h-[18px] w-[18px]" aria-hidden />
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Explore */}
           <div>
-            <h4
-              className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5"
-            >
+            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5">
               Explore
             </h4>
             <nav className="flex flex-col gap-3.5">
@@ -77,7 +110,6 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Popular Actors */}
           <div>
             <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5">
               Popular Actors
@@ -98,7 +130,6 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Company */}
           <div>
             <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-[#555] mb-5">
               Company
@@ -123,15 +154,12 @@ export function Footer() {
           </div>
         </div>
 
-        {/* TMDB attribution — required by API Terms of Use */}
         <div className="mb-8">
           <TmdbAttribution variant="footer" />
         </div>
 
-        {/* Divider */}
         <div className="w-full h-px mb-8" style={{ background: 'rgba(255,215,0,0.08)' }} />
 
-        {/* Bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-xs text-[#444] font-light tracking-widest uppercase">
             © 2026 ActorRating. All rights reserved.

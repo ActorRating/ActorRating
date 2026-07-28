@@ -182,6 +182,7 @@ export function PerformanceReviewsSection({ actorId, movieId, refreshKey = 0 }: 
   const { user } = useSession()
   const [reviews, setReviews] = useState<PublicReview[]>([])
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -203,6 +204,7 @@ export function PerformanceReviewsSection({ actorId, movieId, refreshKey = 0 }: 
   }, [actorId, movieId])
 
   useEffect(() => {
+    setExpanded(false)
     void load()
   }, [load, refreshKey])
 
@@ -230,16 +232,32 @@ export function PerformanceReviewsSection({ actorId, movieId, refreshKey = 0 }: 
     )
   }
 
+  const PREVIEW = 3
+  const visible = expanded ? reviews : reviews.slice(0, PREVIEW)
+  const hiddenCount = Math.max(0, reviews.length - PREVIEW)
+
   return (
     <section className="mt-6 max-w-[600px] mx-auto space-y-3">
       <h3 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">
         Community reviews
       </h3>
       <div className="space-y-3">
-        {reviews.map((review) => (
+        {visible.map((review) => (
           <ReviewCard key={review.id} review={review} currentUserId={user?.id} />
         ))}
       </div>
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full rounded-md border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-medium text-zinc-300 hover:border-[#FFD700]/30 hover:text-white transition-colors"
+          aria-expanded={expanded}
+        >
+          {expanded
+            ? "Show less"
+            : `Show more (${hiddenCount} more review${hiddenCount === 1 ? "" : "s"})`}
+        </button>
+      ) : null}
     </section>
   )
 }
