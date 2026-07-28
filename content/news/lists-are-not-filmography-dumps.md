@@ -9,3 +9,11 @@ related:
 ---
 
 Anyone can generate a ranked table. ActorRating lists are editorial: a thesis, a few performances, and live community scores beside the argument.
+
+## What a list owes you
+
+- A point of view (not “these are popular”)
+- Performances you can open and rate
+- Enough context to disagree intelligently
+
+If a list cannot survive contact with the scoreboard, it is decoration. Ours are built to be argued with — Travis Bickle included.

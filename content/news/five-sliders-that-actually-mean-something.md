@@ -10,4 +10,16 @@ related:
 
 Quick rate is for gut checks. The five criteria are for nights when a performance won’t leave you alone.
 
-Emotional Range. Believability. Technical Skill. Screen Presence. Chemistry. Use them when a role is too sharp for one number.
+## The knives
+
+- **Emotional Range** — how many human temperatures without breaking character continuity
+- **Believability** — do you buy the person, not the plot summary
+- **Technical Skill** — voice, body, craft you can point at
+- **Screen Presence** — gravitational attention, not volume
+- **Chemistry** — the charge between people (or the meaningful lack of it)
+
+## When to open them
+
+Use them when a role is too sharp for one number — Streep’s precision comedy, Damon’s Odysseus under epic noise, Holland’s dual loneliness week, Zendaya shifting from goddess leverage to memory gap.
+
+If all five sliders are identical, you are not using them. You are decorating a quick rate. Make them disagree. That disagreement is the review.

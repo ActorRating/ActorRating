@@ -9,3 +9,11 @@ related:
 ---
 
 Without tiers, discovery becomes noise. ActorRating classifies performances using billing order and cast size. Minor stays rateable — it just isn’t the default homepage surface.
+
+## The practical version
+
+- **Lead** — the turns the movie is selling
+- **Supporting** — the cage match around the lead (often where immortality hides)
+- **Minor** — real, rateable, not the default rail
+
+Ensemble epics like *The Odyssey* make this obvious: Damon can be the center while Holland, Zendaya, Hathaway, and company still deserve separate scorecards. Tiers keep those cards findable without pretending every credit is the same problem.

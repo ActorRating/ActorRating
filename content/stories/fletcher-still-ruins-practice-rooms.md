@@ -11,3 +11,16 @@ related:
 Some supporting turns are polite. Fletcher is a gravitational anomaly.
 
 Simmons doesn’t need the frame. He *takes* it. Rate him on presence and chemistry and you’ll feel why “supporting” can still be the role people quote a decade later.
+
+## Why billing lies
+
+On paper, Fletcher is not the protagonist. In memory, he is the weather system. ActorRating’s supporting tier exists exactly for this mismatch: the turn that hijacks your nervous system without owning the poster.
+
+## What to score
+
+- **Presence** — the room changes temperature before he speaks
+- **Chemistry** — abuse as pedagogy; charisma as trap
+- **Technical Skill** — vocal weaponry, comic timing inside cruelty
+- **Believability** — a monster who thinks he is a standard
+
+Miles Teller’s Andrew is the wound. Simmons is the instrument that keeps cutting. If your film score and Fletcher score diverge wildly, good — that is the product working.

@@ -9,3 +9,11 @@ related:
 ---
 
 Not every great turn announces itself with a monologue. Mescal’s work lives in withheld weather. Quiet performances are where single-slider sites fail hardest.
+
+## Why small turns need a dedicated board
+
+A film score can shrug and say “mood piece.” A performance score has to answer: did this person make the withheld thing feel specific — depression, tenderness, the performance of being a fun dad — without underlining it?
+
+Rate **Believability** and **Emotional Range** first. Presence will be subtle. That subtlety is the point.
+
+If your platform only rewards clip-ready acting, *Aftersun* will always look smaller than it is. ActorRating is built to disagree.

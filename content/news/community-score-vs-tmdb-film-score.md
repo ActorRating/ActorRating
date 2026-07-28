@@ -8,7 +8,16 @@ related:
     movieSlug: joker-2019
 ---
 
-**Community** — how do ActorRating users score *this performance*?
+**Community** — how do ActorRating users score *this performance*?  
 **TMDB film score** — how do people feel about the *movie*?
 
 If those numbers diverge, that’s the product working.
+
+## How to read a split
+
+- High film / modest performance — the machine worked harder than the turn
+- Modest film / high performance — the reason ActorRating exists
+- Both high — enjoy it; still rate the craft on its own page
+- Both low — maybe skip the discourse cosplay
+
+Phoenix’s Joker conversations are a classic split machine: people argue the movie while the performance demands its own weather system. Keep the paints in separate cans.

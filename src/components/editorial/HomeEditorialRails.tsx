@@ -54,6 +54,7 @@ function StoriesRail({ items }: { items: EditorialCard[] }) {
         </div>
         <Link
           href="/stories"
+          scroll={false}
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All stories
@@ -91,6 +92,7 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
         </div>
         <Link
           href="/news"
+          scroll={false}
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All news
@@ -104,6 +106,7 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
             <li key={item.href}>
               <Link
                 href={item.href}
+                scroll={false}
                 className="group flex gap-4 sm:gap-6 py-5 sm:py-6 items-start"
               >
                 <div className="min-w-0 flex-1">
@@ -149,6 +152,7 @@ function FeaturedStoryCard({ item }: { item: EditorialCard }) {
   return (
     <Link
       href={item.href}
+      scroll={false}
       className="group relative block overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] min-h-[260px] sm:min-h-[340px]"
     >
       {image && (
@@ -194,6 +198,7 @@ function StoryPosterCard({ item }: { item: EditorialCard }) {
   return (
     <Link
       href={item.href}
+      scroll={false}
       className="group flex flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] hover:border-[#FFD700]/25 transition-colors h-full"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">

@@ -9,3 +9,11 @@ related:
 ---
 
 We keep making-ofs and Self/archive credits in storage for integrity, then soft-gate them out of filmographies and rating APIs. Coming-soon titles wait for release day.
+
+## Why hide anything?
+
+Because a scoreboard dies when junk credits and unreleased hype dilute the queue. You should be choosing between performances that exist as performances.
+
+Featurettes are data. They are not homework. Trailer fever is energy. It is not a rating.
+
+When *Brand New Day* (or anything else) is still Coming soon, that gate is the same philosophy: protect the board until the acting is real.

@@ -1,150 +1,185 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { useEffect, useLayoutEffect, useRef } from "react"
+import { usePathname } from "next/navigation"
 
 /**
- * App Router soft navigations + iOS Safari bfcache need manual scroll control.
- * - Forward / new links → top (or #hash)
- * - Back / forward (popstate) + bfcache pageshow → restore saved Y for that path
+ * Scroll restoration for App Router (landing → story/news → back).
  *
- * Strict Mode remounts run mount → unmount → remount in one turn. Consuming a
- * one-shot sessionStorage flag on the first mount made the remount treat the
- * nav as forward and scroll to top. We keep a path-scoped restore target in
- * module scope so the remount still restores.
+ * Root bug we hit in testing: Next scrolls the window to 0 *before* the
+ * pathname updates, and a scroll listener / effect cleanup wrote
+ * sessionStorage scroll_/=0 over the real position. Never clobber a deep
+ * saved Y with a near-zero value.
  */
 
-const SCROLL_PREFIX = "ar:scroll:"
-const POP_FLAG = "ar:scroll-pop"
-const RESTORE_LOCK_MS = 1800
+const KEY = (path: string) => `scroll_${path}`
+const RESTORE_WINDOW_MS = 2500
 
-/** Next pathname change should restore (set in popstate / pageshow). */
-let pendingPopRestore = false
-/** Path we are actively restoring; survives Strict Mode remount. */
-let restoreForPath: string | null = null
+let pendingTraverse = false
+let activeRestore: { path: string; stop: () => void } | null = null
 
-function scrollKey(pathname: string) {
-  return `${SCROLL_PREFIX}${pathname}`
-}
-
-function getScrollY(): number {
-  if (typeof window === "undefined") return 0
+function getY(): number {
+  const se = document.scrollingElement
   return (
     window.scrollY ||
-    window.pageYOffset ||
+    se?.scrollTop ||
     document.documentElement.scrollTop ||
     document.body.scrollTop ||
     0
   )
 }
 
-function setScrollY(y: number) {
+function setY(y: number) {
   const top = Math.max(0, Math.round(y))
   const se = document.scrollingElement
   if (se) se.scrollTop = top
-  window.scrollTo({ top, left: 0, behavior: "auto" })
   document.documentElement.scrollTop = top
   document.body.scrollTop = top
+  window.scrollTo(0, top)
 }
 
-function readSavedScroll(pathname: string): number {
+function read(path: string): number | null {
   try {
-    const raw = sessionStorage.getItem(scrollKey(pathname))
-    if (raw == null) return 0
+    const raw = sessionStorage.getItem(KEY(path))
+    if (raw == null) return null
     const y = Number.parseInt(raw, 10)
-    return Number.isFinite(y) && y > 0 ? y : 0
+    return Number.isFinite(y) ? y : null
   } catch {
-    return 0
+    return null
   }
 }
 
-function saveScroll(pathname: string, y?: number) {
-  try {
-    const value = Math.max(0, Math.round(y ?? getScrollY()))
-    sessionStorage.setItem(scrollKey(pathname), String(value))
-  } catch {
-    /* private mode / quota */
-  }
-}
+/** Persist scroll. Never replace a deep position with ~0 (Next pre-nav reset). */
+function save(path: string, y = getY(), opts?: { force?: boolean }) {
+  // While restoring this path, ignore transient Y writes.
+  if (!opts?.force && activeRestore?.path === path) return
 
-function markPopNavigation() {
-  pendingPopRestore = true
+  const next = Math.max(0, Math.round(y))
+  if (!opts?.force) {
+    const existing = read(path)
+    if (existing != null && existing > 80 && next < 24) return
+  }
   try {
-    sessionStorage.setItem(POP_FLAG, "1")
+    sessionStorage.setItem(KEY(path), String(next))
   } catch {
     /* ignore */
   }
 }
 
-function peekSessionPop(): boolean {
+function stopActiveRestore() {
+  activeRestore?.stop()
+  activeRestore = null
+}
+
+function startRestore(path: string) {
+  const y = read(path)
+  if (y == null || y <= 0) return
+
+  if (activeRestore?.path === path) {
+    setY(y)
+    return
+  }
+
+  stopActiveRestore()
+
+  let stopped = false
+  const nativeScrollTo = window.scrollTo.bind(window)
+
+  window.scrollTo = ((...args: Parameters<typeof window.scrollTo>) => {
+    if (stopped) return nativeScrollTo(...args)
+    let top = 0
+    if (typeof args[0] === "number") top = Number(args[1] ?? 0)
+    else if (args[0] && typeof args[0] === "object") {
+      top = Number((args[0] as ScrollToOptions).top ?? 0)
+    }
+    if (top < 24 && y > 80) return nativeScrollTo(0, y)
+    return nativeScrollTo(...args)
+  }) as typeof window.scrollTo
+
+  const apply = () => {
+    if (!stopped) setY(y)
+  }
+
+  apply()
+  const raf1 = requestAnimationFrame(() => {
+    apply()
+    requestAnimationFrame(apply)
+  })
+
+  const timers = [0, 32, 80, 160, 280, 450, 700, 1100, 1600, 2200].map((ms) =>
+    window.setTimeout(apply, ms),
+  )
+
+  const ro =
+    typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => apply())
+      : null
+  ro?.observe(document.documentElement)
+  if (document.body) ro?.observe(document.body)
+
+  const onScroll = () => {
+    if (stopped) return
+    if (getY() < 24 && y > 80) apply()
+  }
+  window.addEventListener("scroll", onScroll, { passive: true })
+
+  const done = window.setTimeout(() => stop(), RESTORE_WINDOW_MS)
+
+  function stop() {
+    if (stopped) return
+    stopped = true
+    window.scrollTo = nativeScrollTo
+    window.removeEventListener("scroll", onScroll)
+    ro?.disconnect()
+    window.clearTimeout(done)
+    cancelAnimationFrame(raf1)
+    for (const t of timers) window.clearTimeout(t)
+    if (activeRestore?.path === path) activeRestore = null
+    // Re-pin the restored position so later noise cannot shrink it.
+    save(path, y, { force: true })
+    setY(y)
+  }
+
+  activeRestore = { path, stop }
+}
+
+function markTraverse() {
+  pendingTraverse = true
+}
+
+function consumeTraverse(): boolean {
+  const v = pendingTraverse
+  pendingTraverse = false
+  return v
+}
+
+function isInternalNavAnchor(anchor: HTMLAnchorElement): boolean {
+  if (anchor.target === "_blank" || anchor.hasAttribute("download")) return false
+  const href = anchor.getAttribute("href")
+  if (!href || href.startsWith("#")) return false
   try {
-    return sessionStorage.getItem(POP_FLAG) === "1"
+    const url = new URL(anchor.href, window.location.href)
+    if (url.origin !== window.location.origin) return false
+    if (
+      url.pathname === window.location.pathname &&
+      url.search === window.location.search
+    ) {
+      return false
+    }
+    return true
   } catch {
     return false
   }
 }
 
-function clearPopFlags() {
-  pendingPopRestore = false
-  restoreForPath = null
-  try {
-    sessionStorage.removeItem(POP_FLAG)
-  } catch {
-    /* ignore */
-  }
-}
-
-function scrollToHash(hash: string): boolean {
-  if (!hash || hash === "#") return false
-  const id = decodeURIComponent(hash.slice(1))
-  const el = document.getElementById(id)
-  if (!el) return false
-  el.scrollIntoView({ behavior: "auto", block: "start" })
-  return true
-}
-
-function restoreWithRetries(y: number): () => void {
-  if (y <= 0) return () => {}
-
-  let cancelled = false
-  const apply = () => {
-    if (!cancelled) setScrollY(y)
-  }
-
-  apply()
-  requestAnimationFrame(() => {
-    apply()
-    requestAnimationFrame(apply)
-  })
-
-  const delays = [40, 100, 200, 350, 550, 800, 1100, 1600]
-  const timers = delays.map((ms) => window.setTimeout(apply, ms))
-
-  const onScroll = () => {
-    if (cancelled) return
-    const current = getScrollY()
-    if (current < 24 && y > 80) apply()
-  }
-  window.addEventListener("scroll", onScroll, { passive: true })
-
-  const unlock = window.setTimeout(() => {
-    cancelled = true
-    window.removeEventListener("scroll", onScroll)
-  }, RESTORE_LOCK_MS)
-
-  return () => {
-    cancelled = true
-    window.removeEventListener("scroll", onScroll)
-    window.clearTimeout(unlock)
-    for (const t of timers) window.clearTimeout(t)
-  }
+function pinScrollBeforeNav(path: string) {
+  // Force-write the real position at click time so later 0-saves cannot win.
+  save(path, getY(), { force: true })
 }
 
 export default function RouteChangeScroll() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const pathRef = useRef(pathname)
-  const cancelRestoreRef = useRef<(() => void) | null>(null)
   const prevPathRef = useRef(pathname)
 
   useEffect(() => {
@@ -154,62 +189,85 @@ export default function RouteChangeScroll() {
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    if ("scrollRestoration" in window.history) {
-      try {
+    try {
+      if ("scrollRestoration" in window.history) {
         window.history.scrollRestoration = "manual"
-      } catch {
-        /* ignore */
       }
+    } catch {
+      /* ignore */
     }
 
-    const persist = () => saveScroll(pathRef.current)
+    const persist = () => save(pathRef.current)
 
     const onPopState = () => {
-      saveScroll(prevPathRef.current)
-      markPopNavigation()
-    }
-
-    /** Persist scroll before soft navigations (Link clicks) leave the page. */
-    const onPointerDownCapture = (event: PointerEvent) => {
-      const target = event.target
-      if (!(target instanceof Element)) return
-      const anchor = target.closest("a[href]")
-      if (!(anchor instanceof HTMLAnchorElement)) return
-      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return
-      const href = anchor.getAttribute("href")
-      if (!href || href.startsWith("#")) return
-      try {
-        const url = new URL(anchor.href, window.location.href)
-        if (url.origin !== window.location.origin) return
-        if (
-          url.pathname === window.location.pathname &&
-          url.search === window.location.search
-        ) {
-          return
-        }
-      } catch {
-        return
-      }
-      saveScroll(pathRef.current)
+      save(prevPathRef.current)
+      markTraverse()
+      startRestore(window.location.pathname)
     }
 
     const onPageShow = (event: PageTransitionEvent) => {
       if (!event.persisted) return
-      markPopNavigation()
-      restoreForPath = pathRef.current
-      cancelRestoreRef.current?.()
-      cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathRef.current))
+      markTraverse()
+      startRestore(pathRef.current)
+    }
+
+    const nav = (
+      window as Window & {
+        navigation?: {
+          addEventListener: (t: string, fn: (e: Event) => void) => void
+          removeEventListener: (t: string, fn: (e: Event) => void) => void
+        }
+      }
+    ).navigation
+
+    const onNavigate = (event: Event) => {
+      const e = event as Event & {
+        navigationType?: string
+        destination?: { url?: string }
+      }
+      if (e.navigationType === "traverse") {
+        markTraverse()
+        try {
+          const path = e.destination?.url
+            ? new URL(e.destination.url).pathname
+            : window.location.pathname
+          startRestore(path)
+        } catch {
+          startRestore(window.location.pathname)
+        }
+      }
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const anchor = target.closest("a[href]")
+      if (!(anchor instanceof HTMLAnchorElement)) return
+      if (!isInternalNavAnchor(anchor)) return
+      pinScrollBeforeNav(pathRef.current)
+    }
+
+    const onClickCapture = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+      const anchor = target.closest("a[href]")
+      if (!(anchor instanceof HTMLAnchorElement)) return
+      if (!isInternalNavAnchor(anchor)) return
+      pinScrollBeforeNav(pathRef.current)
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") persist()
     }
 
     window.addEventListener("popstate", onPopState)
     window.addEventListener("pageshow", onPageShow)
     window.addEventListener("pagehide", persist)
     window.addEventListener("beforeunload", persist)
-    document.addEventListener("pointerdown", onPointerDownCapture, true)
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") persist()
-    }
+    document.addEventListener("pointerdown", onPointerDown, true)
+    document.addEventListener("click", onClickCapture, true)
     document.addEventListener("visibilitychange", onVisibility)
+    nav?.addEventListener("navigate", onNavigate)
 
     return () => {
       persist()
@@ -217,94 +275,90 @@ export default function RouteChangeScroll() {
       window.removeEventListener("pageshow", onPageShow)
       window.removeEventListener("pagehide", persist)
       window.removeEventListener("beforeunload", persist)
-      document.removeEventListener("pointerdown", onPointerDownCapture, true)
+      document.removeEventListener("pointerdown", onPointerDown, true)
+      document.removeEventListener("click", onClickCapture, true)
       document.removeEventListener("visibilitychange", onVisibility)
+      nav?.removeEventListener("navigate", onNavigate)
     }
   }, [])
 
   useEffect(() => {
-    if (typeof window === "undefined") return
     const path = pathname
     let ticking = false
     const onScroll = () => {
       if (ticking) return
       ticking = true
       requestAnimationFrame(() => {
-        saveScroll(path)
+        if (activeRestore?.path === path) {
+          ticking = false
+          return
+        }
+        save(path)
         ticking = false
       })
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("touchend", onScroll, { passive: true })
     return () => {
-      saveScroll(path)
+      // Cleanup must not write 0 over a pinned deep scroll (guard inside save).
+      save(path)
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("touchend", onScroll)
     }
   }, [pathname])
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    cancelRestoreRef.current?.()
-    cancelRestoreRef.current = null
+  useLayoutEffect(() => {
+    const prev = prevPathRef.current
+    const pathChanged = prev !== pathname
+    prevPathRef.current = pathname
 
     const hash = window.location.hash
-    const isPop =
-      pendingPopRestore ||
-      peekSessionPop() ||
-      restoreForPath === pathname
-
-    if (isPop) {
-      restoreForPath = pathname
-      // Drop one-shot flags; path target remains for Strict Mode remount.
-      pendingPopRestore = false
-      try {
-        sessionStorage.removeItem(POP_FLAG)
-      } catch {
-        /* ignore */
+    if (hash && hash !== "#") {
+      const el = document.getElementById(decodeURIComponent(hash.slice(1)))
+      if (el) {
+        stopActiveRestore()
+        el.scrollIntoView({ behavior: "auto", block: "start" })
+        pendingTraverse = false
+        return
       }
-    } else if (restoreForPath && restoreForPath !== pathname) {
-      // Forward navigation while a restore window was open — cancel it.
-      clearPopFlags()
     }
 
-    const apply = () => {
-      if (scrollToHash(hash)) return
+    const t = window.setTimeout(() => {
+      const traverse =
+        consumeTraverse() ||
+        activeRestore?.path === pathname ||
+        (pathChanged && shouldTreatAsBack(pathname, prev))
 
-      if (isPop || restoreForPath === pathname) {
-        cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathname))
+      if (traverse) {
+        startRestore(pathname)
         return
       }
 
-      setScrollY(0)
-    }
-
-    requestAnimationFrame(apply)
-    prevPathRef.current = pathname
-
-    const clearId = window.setTimeout(() => {
-      if (restoreForPath === pathname) {
-        restoreForPath = null
+      if (pathChanged) {
+        stopActiveRestore()
+        setY(0)
       }
-    }, RESTORE_LOCK_MS)
+    }, 0)
 
     return () => {
-      window.clearTimeout(clearId)
-      cancelRestoreRef.current?.()
-      cancelRestoreRef.current = null
-      // Leave restoreForPath set so Strict Mode remount still restores.
+      window.clearTimeout(t)
     }
-  }, [pathname, searchParams])
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const onHashChange = () => {
-      scrollToHash(window.location.hash)
-    }
-    window.addEventListener("hashchange", onHashChange)
-    return () => window.removeEventListener("hashchange", onHashChange)
-  }, [])
+  }, [pathname])
 
   return null
+}
+
+function shouldTreatAsBack(pathname: string, prevPath: string): boolean {
+  if (pathname === prevPath) return false
+  const saved = read(pathname)
+  if (saved == null || saved <= 80) return false
+  const fromArticle =
+    /^\/(stories|news)\/[^/]+$/.test(prevPath) ||
+    /^\/(actors|movies|rate)\//.test(prevPath)
+  const toList =
+    pathname === "/" ||
+    pathname === "/stories" ||
+    pathname === "/news" ||
+    pathname === "/discover"
+  return fromArticle && toList
 }

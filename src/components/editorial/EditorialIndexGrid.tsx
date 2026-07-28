@@ -24,6 +24,7 @@ export function EditorialIndexGrid({
             <li key={item.href}>
               <Link
                 href={item.href}
+                scroll={false}
                 className="group flex gap-4 sm:gap-6 py-6 sm:py-7 items-start"
               >
                 <div className="min-w-0 flex-1">
@@ -74,6 +75,7 @@ export function EditorialIndexGrid({
           <li key={item.href}>
             <Link
               href={item.href}
+              scroll={false}
               className="group flex flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] h-full hover:border-[#FFD700]/25 transition-colors"
             >
               <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
