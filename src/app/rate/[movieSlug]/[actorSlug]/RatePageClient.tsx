@@ -104,6 +104,8 @@ export default function RatePageClient({
     technicalSkill: number
     screenPresence: number
     chemistry: number
+    comment?: string
+    isSpoiler?: boolean
   } | null>(null)
   // When true, we've finished checking for an existing rating (so form can show with correct initialRating)
   const [ratingCheckDone, setRatingCheckDone] = useState(false)
@@ -226,7 +228,18 @@ export default function RatePageClient({
     let cancelled = false
     fetch('/api/ratings/me', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : []))
-      .then((ratings: Array<{ id: string; actorId: string; movieId: string; emotionalRangeDepth: number; characterBelievability: number; technicalSkill: number; screenPresence: number; chemistryInteraction: number }>) => {
+      .then((ratings: Array<{
+        id: string
+        actorId: string
+        movieId: string
+        emotionalRangeDepth: number
+        characterBelievability: number
+        technicalSkill: number
+        screenPresence: number
+        chemistryInteraction: number
+        comment?: string | null
+        isSpoiler?: boolean
+      }>) => {
         if (cancelled) return
         const match = Array.isArray(ratings)
           ? ratings.find((r) => r.actorId === actor.id && r.movieId === movie.id)
@@ -239,6 +252,8 @@ export default function RatePageClient({
             technicalSkill: match.technicalSkill,
             screenPresence: match.screenPresence,
             chemistry: match.chemistryInteraction,
+            comment: match.comment?.trim() || "",
+            isSpoiler: Boolean(match.isSpoiler),
           })
         } else {
           setUserExistingRating(null)
@@ -476,7 +491,15 @@ export default function RatePageClient({
           onSubmit={handleSubmit}
           submitting={submitting}
           onSuccess={() => setRatingSubmitted(true)}
-          initialRating={userExistingRating ? { emotionalDepth: userExistingRating.emotionalDepth, believability: userExistingRating.believability, technicalSkill: userExistingRating.technicalSkill, screenPresence: userExistingRating.screenPresence, chemistry: userExistingRating.chemistry } : undefined}
+          initialRating={userExistingRating ? {
+            emotionalDepth: userExistingRating.emotionalDepth,
+            believability: userExistingRating.believability,
+            technicalSkill: userExistingRating.technicalSkill,
+            screenPresence: userExistingRating.screenPresence,
+            chemistry: userExistingRating.chemistry,
+            comment: userExistingRating.comment,
+            isSpoiler: userExistingRating.isSpoiler,
+          } : undefined}
           communityAvg10={communityAvg10}
           communityRatingCount={communityRatingCount}
           communityDimensions={communityDimensions}

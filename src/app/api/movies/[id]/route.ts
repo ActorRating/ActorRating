@@ -131,11 +131,31 @@ export async function GET(
           screenPresence: true,
           chemistryInteraction: true,
           createdAt: true,
+          comment: true,
+          isSpoiler: true,
+          commentHidden: true,
+          user: { select: { username: true, name: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 1000,
       })
     ])
+
+    const featuredReviewByActor = new Map<
+      string,
+      { comment: string; displayName: string }
+    >()
+    for (const rating of ratings) {
+      const text = rating.comment?.trim()
+      if (!text || rating.commentHidden || rating.isSpoiler) continue
+      if (featuredReviewByActor.has(rating.actorId)) continue
+      featuredReviewByActor.set(rating.actorId, {
+        comment: text,
+        displayName: rating.user?.username
+          ? `@${rating.user.username}`
+          : rating.user?.name?.trim() || "Viewer",
+      })
+    }
 
     // Aggregate ratings per actor; compute averaged criteria so community score is accurate.
     const ratingsByActor = new Map<string, any[]>()
@@ -244,6 +264,7 @@ export async function GET(
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
         ratingCount: rating?.ratingCount || 0,
+        featuredReview: featuredReviewByActor.get(performance.actorId) ?? null,
       }
     })
     
@@ -288,6 +309,8 @@ export async function GET(
               technicalSkill: avgRating.technicalSkill,
               screenPresence: avgRating.screenPresence,
               chemistryInteraction: avgRating.chemistryInteraction,
+              ratingCount: actorRatings.length,
+              featuredReview: featuredReviewByActor.get(actorItem.id) ?? null,
             }
             enrichedPerformances.push(newPerformance)
           }

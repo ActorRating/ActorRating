@@ -229,12 +229,10 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     ].join("\n  ")
   }).join("\n  ")
 
-  const titleLine = input.roleName
-    ? `${input.actorName} as ${input.roleName}`
-    : input.actorName
+  const titleLine = input.actorName
   const movieLine = input.movieYear
-    ? `${input.movieTitle} (${input.movieYear})`
-    : input.movieTitle
+    ? `in ${input.movieTitle} (${input.movieYear})`
+    : `in ${input.movieTitle}`
 
   const handle = input.username.startsWith("@")
     ? input.username

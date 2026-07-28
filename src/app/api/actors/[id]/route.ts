@@ -128,11 +128,32 @@ export async function GET(
           screenPresence: true,
           chemistryInteraction: true,
           createdAt: true,
+          comment: true,
+          isSpoiler: true,
+          commentHidden: true,
+          user: { select: { username: true, name: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 1000,
       }),
     ])
+
+    // Most recent public (non-spoiler, non-hidden) micro-review per movie.
+    const featuredReviewByMovie = new Map<
+      string,
+      { comment: string; displayName: string }
+    >()
+    for (const rating of ratings) {
+      const text = rating.comment?.trim()
+      if (!text || rating.commentHidden || rating.isSpoiler) continue
+      if (featuredReviewByMovie.has(rating.movieId)) continue
+      featuredReviewByMovie.set(rating.movieId, {
+        comment: text,
+        displayName: rating.user?.username
+          ? `@${rating.user.username}`
+          : rating.user?.name?.trim() || "Viewer",
+      })
+    }
 
     // Aggregate ratings by movie; compute averaged criteria so community score is accurate
     const ratingsByMovie = new Map<string, any[]>()
@@ -240,6 +261,7 @@ export async function GET(
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
         ratingCount: rating?.ratingCount || 0,
+        featuredReview: featuredReviewByMovie.get(key) ?? null,
         user: {
           name: `User ${performance.userId?.slice(-4) || 'Unknown'}`,
           email: `user@example.com`
@@ -281,6 +303,7 @@ export async function GET(
             technicalSkill: avgRating.technicalSkill,
             screenPresence: avgRating.screenPresence,
             chemistryInteraction: avgRating.chemistryInteraction,
+            featuredReview: featuredReviewByMovie.get(movie.id) ?? null,
             user: {
               name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
               email: `user@example.com`

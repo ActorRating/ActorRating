@@ -47,8 +47,10 @@ export async function GET(req: NextRequest) {
     if (actorNameParam && movieTitleParam && scoreParam) {
       actorName = actorNameParam
       movieTitle = movieTitleParam
+      const yearParam = searchParams.get("movieYear")
+      movieYear = yearParam && Number.isFinite(Number(yearParam)) ? Number(yearParam) : null
       score = Math.round(parseFloat(scoreParam) * 10)
-      roleName = searchParams.get("roleName") || "Performance"
+      roleName = searchParams.get("roleName") || ""
       username = searchParams.get("username") || "You"
       quote = searchParams.get("quote")
       axes = normalizeRadarAxes(

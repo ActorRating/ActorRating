@@ -17,6 +17,7 @@ import { MoviePoster } from '@/components/ui/MoviePoster'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardScoreSplit'
+import { PerformanceCardReviewSnippet } from '@/components/performance/PerformanceCardReviewSnippet'
 import { RateOrComingSoonButton } from '@/components/rating/RateOrComingSoonButton'
 import { isMovieComingSoon } from '@/lib/movie-release'
 
@@ -78,6 +79,7 @@ interface Performance {
     posterUrl?: string | null
     releaseDate?: string | Date | null
   }
+  featuredReview?: { comment: string; displayName: string } | null
 }
 
 type ActorPageClientProps = {
@@ -181,6 +183,7 @@ export default function ActorPageClient({
   const [userHasRatedActor, setUserHasRatedActor] = useState(false)
   const [userRatedMovies, setUserRatedMovies] = useState<Set<string>>(new Set())
   const [userRatingsMap, setUserRatingsMap] = useState<Map<string, number>>(new Map())
+  const [userCommentsMap, setUserCommentsMap] = useState<Map<string, string>>(new Map())
   const [bioExpanded, setBioExpanded] = useState(false)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [ratingFeedbackData, setRatingFeedbackData] = useState<{ userScore: number; communityScore: number | null } | null>(null)
@@ -268,11 +271,15 @@ export default function ActorPageClient({
               setUserRatedMovies(new Set(userRatings.map((r: any) => r.movieId)))
               setUserHasRatedActor(userRatings.length > 0)
               const scoresMap = new Map<string, number>()
+              const commentsMap = new Map<string, string>()
               userRatings.forEach((r: any) => {
                 const scores = [r.emotionalRangeDepth, r.characterBelievability, r.technicalSkill, r.screenPresence, r.chemistryInteraction].filter((s): s is number => typeof s === 'number' && s > 0)
                 if (scores.length > 0) scoresMap.set(r.movieId, scores.reduce((a, b) => a + b, 0) / scores.length)
+                const c = typeof r.comment === 'string' ? r.comment.trim() : ''
+                if (c && !r.commentHidden) commentsMap.set(r.movieId, c)
               })
               setUserRatingsMap(scoresMap)
+              setUserCommentsMap(commentsMap)
             }
           }
         } catch (e) {
@@ -317,6 +324,7 @@ export default function ActorPageClient({
               
               // Store user scores for each movie
               const scoresMap = new Map<string, number>()
+              const commentsMap = new Map<string, string>()
               userRatings.forEach((r: any) => {
                 // Calculate user's average score for this performance
                 const scores = [
@@ -332,8 +340,11 @@ export default function ActorPageClient({
                   scoresMap.set(r.movieId, avgScore)
                   console.log('Movie:', r.movieId, 'User score:', avgScore)
                 }
+                const c = typeof r.comment === 'string' ? r.comment.trim() : ''
+                if (c && !r.commentHidden) commentsMap.set(r.movieId, c)
               })
               setUserRatingsMap(scoresMap)
+              setUserCommentsMap(commentsMap)
             }
           } else {
             console.error('Failed to fetch user ratings:', userRatingsResponse.status)
@@ -343,6 +354,7 @@ export default function ActorPageClient({
           // Clear user data when no user
           setUserRatedMovies(new Set())
           setUserRatingsMap(new Map())
+          setUserCommentsMap(new Map())
           setUserHasRatedActor(false)
         }
 
@@ -1587,11 +1599,33 @@ export default function ActorPageClient({
                           )}
 
                           {/* Character */}
-                          <div className="mb-6">
+                          <div className="mb-4">
                             <p className="text-lg sm:text-xl text-[#e4e4e7] leading-relaxed italic font-light">
                               as {character}
                             </p>
                           </div>
+
+                          {(() => {
+                            const yours = userCommentsMap.get(performance.movie.id)
+                            const featured = (performance as any).featuredReview as
+                              | { comment: string; displayName: string }
+                              | null
+                              | undefined
+                            if (yours) {
+                              return (
+                                <PerformanceCardReviewSnippet comment={yours} isYours />
+                              )
+                            }
+                            if (featured?.comment) {
+                              return (
+                                <PerformanceCardReviewSnippet
+                                  comment={featured.comment}
+                                  attribution={featured.displayName}
+                                />
+                              )
+                            }
+                            return null
+                          })()}
                         </div>
 
                         {/* Rate Button */}

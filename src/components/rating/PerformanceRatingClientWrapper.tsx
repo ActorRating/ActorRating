@@ -864,12 +864,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   useEffect(() => {
     if (!initialRating || hasAppliedInitialRating.current) return
     hasAppliedInitialRating.current = true
-    const { emotionalDepth = 0, believability = 0, technicalSkill: ts = 0, screenPresence: sp = 0, chemistry = 0 } = initialRating
+    const {
+      emotionalDepth = 0,
+      believability = 0,
+      technicalSkill: ts = 0,
+      screenPresence: sp = 0,
+      chemistry = 0,
+      comment,
+      isSpoiler,
+    } = initialRating
     setEmotionalRangeDepth(emotionalDepth)
     setCharacterBelievability(believability)
     setTechnicalSkill(ts)
     setScreenPresence(sp)
     setChemistryInteraction(chemistry)
+    if (typeof comment === "string") {
+      setReviewComment(comment)
+    }
+    if (typeof isSpoiler === "boolean") {
+      setReviewIsSpoiler(isSpoiler)
+    }
     const avg = Math.round((emotionalDepth + believability + ts + sp + chemistry) / 5)
     setOverallScore(avg)
     if (avg > 0) setSingleSliderTouched(true)
@@ -1407,16 +1421,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         `&actorName=${encodeURIComponent(performance.actor.name)}` +
         `&movieTitle=${encodeURIComponent(performance.movie.title)}` +
         `&score=${finalScore}` +
-        `&roleName=${encodeURIComponent("Performance")}` +
         `&username=${encodeURIComponent(user?.username ? `@${user.username}` : "You")}` +
-        (performance.comment?.trim()
-          ? `&quote=${encodeURIComponent(performance.comment.trim().slice(0, 120))}`
+        (reviewComment.trim() || performance.comment?.trim()
+          ? `&quote=${encodeURIComponent((reviewComment.trim() || performance.comment || "").trim().slice(0, 120))}`
           : "") +
         `&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}` +
         `&characterBelievability=${Math.round(characterBelievability)}` +
         `&technicalSkill=${Math.round(technicalSkill)}` +
         `&screenPresence=${Math.round(screenPresence)}` +
         `&chemistryInteraction=${Math.round(chemistryInteraction)}` +
+        (performance.movie.year != null
+          ? `&movieYear=${encodeURIComponent(String(performance.movie.year))}`
+          : "") +
         (externalSubmittedRating?.id
           ? `&ratingId=${encodeURIComponent(externalSubmittedRating.id)}`
           : "")

@@ -612,7 +612,9 @@ function RatePageContent() {
                 believability: existingRating.characterBelievability,
                 technicalSkill: existingRating.technicalSkill,
                 screenPresence: existingRating.screenPresence,
-                chemistry: existingRating.chemistryInteraction
+                chemistry: existingRating.chemistryInteraction,
+                comment: existingRating.comment ?? undefined,
+                isSpoiler: Boolean((existingRating as { isSpoiler?: boolean }).isSpoiler),
               } : undefined}
               submittedRating={submittedRating ? {
                 id: submittedRating.id,
