@@ -2,7 +2,7 @@
 title: "Holland & Zendaya’s double feature week: Telemachus, Athena, Peter, MJ"
 description: "The Odyssey is out. Spider-Man: Brand New Day is days away. Tom Holland and Zendaya are in both — and the acting question is the whole story."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/kGCOfQpITTI0rKzrVMRGOFteszf.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/2Es8HvjgIoNxYbsQnVa8OJVz2Wk.jpg"
 related:
   - actorSlug: tom-holland
     movieSlug: the-odyssey-2026
