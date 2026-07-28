@@ -6,6 +6,7 @@ import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
 import ModerationQueue from "@/components/admin/ModerationQueue"
+import WaitlistPanel from "@/components/admin/WaitlistPanel"
 import { getAdminData } from "@/lib/admin/getAdminData"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
 import {
@@ -143,11 +144,32 @@ export default async function AdminDashboardPage({
   const usersPage = Number(resolvedSearchParams.usersPage ?? "0")
   const safeUsersPage = Number.isFinite(usersPage) && usersPage >= 0 ? usersPage : 0
   const pvDays = parseAnalyticsDays(resolvedSearchParams.pv)
-  const [data, users, globalRatings, pageViewAnalytics] = await Promise.all([
+  const [data, users, globalRatings, pageViewAnalytics, waitlist] = await Promise.all([
     getAdminData(),
     getUsersWithStats({ search: resolvedSearchParams.usersQ, page: safeUsersPage, take: 50 }),
     getGlobalRatings(resolvedSearchParams),
     getPageViewAnalytics(pvDays),
+    (async () => {
+      try {
+        const [totalCount, entries] = await Promise.all([
+          prisma.waitlistEntry.count(),
+          prisma.waitlistEntry.findMany({
+            orderBy: { createdAt: "desc" },
+            take: 200,
+            select: { id: true, email: true, source: true, createdAt: true },
+          }),
+        ])
+        return { totalCount, entries }
+      } catch (error) {
+        console.error("Admin query failed waitlist", error)
+        return { totalCount: 0, entries: [] as Array<{
+          id: string
+          email: string
+          source: string | null
+          createdAt: Date
+        }> }
+      }
+    })(),
   ])
 
   return (
@@ -238,6 +260,8 @@ export default async function AdminDashboardPage({
       </div>
 
       <ModerationQueue />
+
+      <WaitlistPanel entries={waitlist.entries} totalCount={waitlist.totalCount} />
 
       <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
