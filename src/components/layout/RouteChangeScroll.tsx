@@ -3,8 +3,17 @@
 import { useEffect, useRef } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
+/**
+ * App Router soft navigations + iOS Safari bfcache need manual scroll control.
+ * - Forward / new links → top (or #hash)
+ * - Back / forward (popstate) + bfcache pageshow → restore saved Y for that path
+ *
+ * @see history.scrollRestoration = "manual"
+ */
+
 const SCROLL_PREFIX = "ar:scroll:"
 const POP_FLAG = "ar:scroll-pop"
+const RESTORE_LOCK_MS = 1200
 
 function scrollKey(pathname: string) {
   return `${SCROLL_PREFIX}${pathname}`
@@ -23,8 +32,10 @@ function getScrollY(): number {
 
 function setScrollY(y: number) {
   const top = Math.max(0, Math.round(y))
+  // Prefer the scrolling element (html on modern browsers; body on some WebKits).
+  const se = document.scrollingElement
+  if (se) se.scrollTop = top
   window.scrollTo(0, top)
-  // iOS Safari sometimes ignores window.scrollTo until both are set.
   document.documentElement.scrollTop = top
   document.body.scrollTop = top
 }
@@ -32,16 +43,18 @@ function setScrollY(y: number) {
 function readSavedScroll(pathname: string): number {
   try {
     const raw = sessionStorage.getItem(scrollKey(pathname))
-    const y = raw == null ? 0 : Number(raw)
+    if (raw == null) return 0
+    const y = Number.parseInt(raw, 10)
     return Number.isFinite(y) && y > 0 ? y : 0
   } catch {
     return 0
   }
 }
 
-function saveScroll(pathname: string, y: number) {
+function saveScroll(pathname: string, y?: number) {
   try {
-    sessionStorage.setItem(scrollKey(pathname), String(Math.max(0, Math.round(y))))
+    const value = Math.max(0, Math.round(y ?? getScrollY()))
+    sessionStorage.setItem(scrollKey(pathname), String(value))
   } catch {
     /* private mode / quota */
   }
@@ -74,23 +87,53 @@ function scrollToHash(hash: string): boolean {
   return true
 }
 
-function restoreWithRetries(y: number) {
-  setScrollY(y)
-  // Mobile layouts (images, editorial rails) shift after first paint.
-  const delays = [0, 50, 120, 250, 450]
-  for (const ms of delays) {
-    window.setTimeout(() => setScrollY(y), ms)
+/**
+ * Re-apply scroll after layout/images settle, and briefly resist SPA frameworks
+ * that reset to Y=0 after paint (common with Next App Router + iOS).
+ */
+function restoreWithRetries(y: number): () => void {
+  if (y <= 0) return () => {}
+
+  let cancelled = false
+  const apply = () => {
+    if (!cancelled) setScrollY(y)
+  }
+
+  apply()
+  requestAnimationFrame(() => {
+    apply()
+    requestAnimationFrame(apply)
+  })
+
+  const delays = [50, 100, 200, 350, 550, 800, 1100]
+  const timers = delays.map((ms) => window.setTimeout(apply, ms))
+
+  const onScroll = () => {
+    if (cancelled) return
+    const current = getScrollY()
+    // Something snapped us near the top while we expected a deep restore.
+    if (current < 24 && y > 80) apply()
+  }
+  window.addEventListener("scroll", onScroll, { passive: true })
+
+  const unlock = window.setTimeout(() => {
+    cancelled = true
+    window.removeEventListener("scroll", onScroll)
+  }, RESTORE_LOCK_MS)
+
+  return () => {
+    cancelled = true
+    window.removeEventListener("scroll", onScroll)
+    window.clearTimeout(unlock)
+    for (const t of timers) window.clearTimeout(t)
   }
 }
 
-/**
- * Forward navigations → top (or #hash).
- * Browser back/forward (incl. mobile) → restore last scroll for that path.
- */
 export default function RouteChangeScroll() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const pathRef = useRef(pathname)
+  const cancelRestoreRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     pathRef.current = pathname
@@ -98,6 +141,7 @@ export default function RouteChangeScroll() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
+
     if ("scrollRestoration" in window.history) {
       try {
         window.history.scrollRestoration = "manual"
@@ -106,38 +150,43 @@ export default function RouteChangeScroll() {
       }
     }
 
+    const persist = () => saveScroll(pathRef.current)
+
     const onPopState = () => {
+      // URL has already changed; persist the path we're leaving isn't possible
+      // here — scroll was saved continuously / on pagehide. Mark restore.
       markPopNavigation()
     }
-    // bfcache restore (common on iOS Safari when leaving/returning to the tab/app).
+
+    // iOS Safari bfcache: full page state restored without a normal reload.
     const onPageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        markPopNavigation()
-        const y = readSavedScroll(pathRef.current)
-        restoreWithRetries(y)
-      }
-    }
-    const persist = () => {
-      saveScroll(pathRef.current, getScrollY())
+      if (!event.persisted) return
+      markPopNavigation()
+      cancelRestoreRef.current?.()
+      cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathRef.current))
     }
 
     window.addEventListener("popstate", onPopState)
     window.addEventListener("pageshow", onPageShow)
     window.addEventListener("pagehide", persist)
+    window.addEventListener("beforeunload", persist)
     const onVisibility = () => {
       if (document.visibilityState === "hidden") persist()
     }
     document.addEventListener("visibilitychange", onVisibility)
 
     return () => {
+      persist()
       window.removeEventListener("popstate", onPopState)
       window.removeEventListener("pageshow", onPageShow)
       window.removeEventListener("pagehide", persist)
+      window.removeEventListener("beforeunload", persist)
       document.removeEventListener("visibilitychange", onVisibility)
     }
   }, [])
 
-  // Keep scroll position for the current path (used when returning via Back).
+  // Continuously snapshot scroll for the active path (SPA Link navigations
+  // do not fire beforeunload).
   useEffect(() => {
     if (typeof window === "undefined") return
     const path = pathname
@@ -146,15 +195,14 @@ export default function RouteChangeScroll() {
       if (ticking) return
       ticking = true
       requestAnimationFrame(() => {
-        saveScroll(path, getScrollY())
+        saveScroll(path)
         ticking = false
       })
     }
     window.addEventListener("scroll", onScroll, { passive: true })
-    // capture scroll on touch end — iOS often fires this after rubber-band settle
     window.addEventListener("touchend", onScroll, { passive: true })
     return () => {
-      saveScroll(path, getScrollY())
+      saveScroll(path)
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("touchend", onScroll)
     }
@@ -163,6 +211,9 @@ export default function RouteChangeScroll() {
   useEffect(() => {
     if (typeof window === "undefined") return
 
+    cancelRestoreRef.current?.()
+    cancelRestoreRef.current = null
+
     const hash = window.location.hash
     const restorePop = consumePopNavigation()
 
@@ -170,17 +221,22 @@ export default function RouteChangeScroll() {
       if (scrollToHash(hash)) return
 
       if (restorePop) {
-        restoreWithRetries(readSavedScroll(pathname))
+        cancelRestoreRef.current = restoreWithRetries(readSavedScroll(pathname))
         return
       }
 
       setScrollY(0)
     }
 
+    // Wait one frame so the new route's DOM is in the tree (SPA soft nav).
     requestAnimationFrame(apply)
+
+    return () => {
+      cancelRestoreRef.current?.()
+      cancelRestoreRef.current = null
+    }
   }, [pathname, searchParams])
 
-  // Same-route hash changes (e.g. / → /#waitlist) don't update pathname.
   useEffect(() => {
     if (typeof window === "undefined") return
     const onHashChange = () => {

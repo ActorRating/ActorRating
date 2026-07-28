@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
+import { resolveActorId, resolveMovieId } from "@/lib/resolve-entity-id"
 import {
   getRateAnotherPerformances,
   getSameActorRateProgress,
@@ -10,14 +11,12 @@ import {
   RATE_ANOTHER_LIMIT,
 } from "@/lib/success-rate-another"
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 /**
  * GET /api/actors/[id]/next-unrated-performance
  * "Rate another" carousel after a successful rating.
  * Priority: other LEADs in the same movie → SUPPORTING in the same movie →
  * other films by this actor.
- * Query: currentMovieId (required for best results) — the just-rated movie.
+ * Query: currentMovieId (required for best results) — the just-rated movie (id or slug).
  */
 export async function GET(
   request: NextRequest,
@@ -33,32 +32,26 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const currentMovieId = searchParams.get("currentMovieId") ?? undefined
 
-    let actorId = actorIdOrSlug
-    if (!UUID_REGEX.test(actorIdOrSlug)) {
-      const actor = await prisma.actor.findUnique({
-        where: { slug: actorIdOrSlug },
-        select: { id: true },
-      })
-      if (!actor) {
-        return NextResponse.json({ error: "Actor not found" }, { status: 404 })
-      }
-      actorId = actor.id
+    const actorId = await resolveActorId(actorIdOrSlug)
+    if (!actorId) {
+      return NextResponse.json({ error: "Actor not found" }, { status: 404 })
     }
 
-    let movieId = currentMovieId
-    if (movieId && !UUID_REGEX.test(movieId)) {
-      const movie = await prisma.movie.findUnique({
-        where: { slug: movieId },
-        select: { id: true },
-      })
-      movieId = movie?.id
-    }
-
+    const movieId = currentMovieId ? await resolveMovieId(currentMovieId) : null
     if (!movieId) {
+      // Still return same-actor progress when movie param is missing/invalid.
+      const ratedRows = await prisma.rating.findMany({
+        where: { userId, actorId },
+        select: { movieId: true },
+      })
+      const progress = await getSameActorRateProgress(prisma, {
+        actorId,
+        ratedMovieIds: new Set(ratedRows.map((r) => r.movieId)),
+      })
       return NextResponse.json({
         performances: [],
-        totalPerformances: 0,
-        userRatedCount: 0,
+        totalPerformances: progress.totalPerformances,
+        userRatedCount: progress.userRatedCount,
       })
     }
 

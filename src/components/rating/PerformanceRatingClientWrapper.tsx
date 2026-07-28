@@ -1155,7 +1155,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     setNextPerfLoading(true)
     try {
       const res = await fetch(
-        `/api/actors/${encodeURIComponent(actorIdOrSlug)}/next-unrated-performance?currentMovieId=${encodeURIComponent(performance.movie.id)}`,
+        `/api/actors/${encodeURIComponent(actorIdOrSlug)}/next-unrated-performance?currentMovieId=${encodeURIComponent(performance.movie.slug ?? performance.movie.id)}`,
         { cache: 'no-store' }
       )
       if (res.ok) {
@@ -1190,7 +1190,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     } finally {
       setNextPerfLoading(false)
     }
-  }, [performance.actor.id, performance.actor.slug, performance.actor.name, performance.movie.id])
+  }, [performance.actor.id, performance.actor.slug, performance.actor.name, performance.movie.id, performance.movie.slug])
 
   const fetchGuestNextPerf = useCallback(async () => {
     setGuestNextPerfLoading(true)
@@ -2075,6 +2075,13 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             onValueChange={(v) => {
                               setOverallScore(v)
                               setSingleSliderTouched(true)
+                              // Keep the 5 criteria in sync for radar/share + "Break it down"
+                              const score = Math.round(v)
+                              setEmotionalRangeDepth(score)
+                              setCharacterBelievability(score)
+                              setTechnicalSkill(score)
+                              setScreenPresence(score)
+                              setChemistryInteraction(score)
                             }}
                             onSliderStart={handleSliderStart}
                             onSliderEnd={handleSliderEnd}

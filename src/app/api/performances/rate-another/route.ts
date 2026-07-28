@@ -7,8 +7,7 @@ import {
   rateAnotherPairKey,
   RATE_ANOTHER_LIMIT,
 } from "@/lib/success-rate-another"
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+import { resolveActorId, resolveMovieId } from "@/lib/resolve-entity-id"
 
 /**
  * GET /api/performances/rate-another
@@ -32,28 +31,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    let actorId = actorParam
-    if (!UUID_REGEX.test(actorParam)) {
-      const actor = await prisma.actor.findUnique({
-        where: { slug: actorParam },
-        select: { id: true },
-      })
-      if (!actor) {
-        return NextResponse.json({ performances: [] })
-      }
-      actorId = actor.id
-    }
-
-    let movieId = movieParam
-    if (!UUID_REGEX.test(movieParam)) {
-      const movie = await prisma.movie.findUnique({
-        where: { slug: movieParam },
-        select: { id: true },
-      })
-      if (!movie) {
-        return NextResponse.json({ performances: [] })
-      }
-      movieId = movie.id
+    const actorId = await resolveActorId(actorParam)
+    const movieId = await resolveMovieId(movieParam)
+    if (!actorId || !movieId) {
+      return NextResponse.json({ performances: [] })
     }
 
     const excludePairs = new Set<string>([rateAnotherPairKey(actorId, movieId)])

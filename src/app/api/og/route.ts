@@ -4,7 +4,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
-import { buildRadarCardSvg } from "@/lib/share/radarCardSvg"
+import { buildRadarCardSvg, normalizeRadarAxes } from "@/lib/share/radarCardSvg"
 
 export const runtime = "nodejs"
 
@@ -51,13 +51,16 @@ export async function GET(req: NextRequest) {
       roleName = searchParams.get("roleName") || "Performance"
       username = searchParams.get("username") || "You"
       quote = searchParams.get("quote")
-      axes = {
-        emotionalRangeDepth: Number(searchParams.get("emotionalRangeDepth") ?? score),
-        characterBelievability: Number(searchParams.get("characterBelievability") ?? score),
-        technicalSkill: Number(searchParams.get("technicalSkill") ?? score),
-        screenPresence: Number(searchParams.get("screenPresence") ?? score),
-        chemistryInteraction: Number(searchParams.get("chemistryInteraction") ?? score),
-      }
+      axes = normalizeRadarAxes(
+        {
+          emotionalRangeDepth: Number(searchParams.get("emotionalRangeDepth")),
+          characterBelievability: Number(searchParams.get("characterBelievability")),
+          technicalSkill: Number(searchParams.get("technicalSkill")),
+          screenPresence: Number(searchParams.get("screenPresence")),
+          chemistryInteraction: Number(searchParams.get("chemistryInteraction")),
+        },
+        score,
+      )
     } else if (ratingId) {
       const rating = await prisma.rating.findFirst({
         where: { id: ratingId },
@@ -76,13 +79,16 @@ export async function GET(req: NextRequest) {
         quote = rating.comment.trim()
       }
       if (rating) {
-        axes = {
-          emotionalRangeDepth: rating.emotionalRangeDepth,
-          characterBelievability: rating.characterBelievability,
-          technicalSkill: rating.technicalSkill,
-          screenPresence: rating.screenPresence,
-          chemistryInteraction: rating.chemistryInteraction,
-        }
+        axes = normalizeRadarAxes(
+          {
+            emotionalRangeDepth: rating.emotionalRangeDepth,
+            characterBelievability: rating.characterBelievability,
+            technicalSkill: rating.technicalSkill,
+            screenPresence: rating.screenPresence,
+            chemistryInteraction: rating.chemistryInteraction,
+          },
+          score,
+        )
       }
     } else {
       return new Response("ratingId or (actorName, movieTitle, score) required", { status: 400 })
