@@ -2,7 +2,7 @@
 title: "Plainview doesn’t need your sympathy"
 description: "Daniel Day-Lewis in There Will Be Blood is still the stress test for “character believability.”"
 publishedAt: 2026-07-10
-coverImage: "https://image.tmdb.org/t/p/w1280/e3a2oUaGdbz8cS1PTOkAPTqsJ9G.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/mmd1HnuvAzFc4iuVJcnBrhDNEKr.jpg"
 related:
   - actorSlug: daniel-day-lewis
     movieSlug: there-will-be-blood-2007

@@ -2,7 +2,7 @@
 title: "How to argue with a number"
 description: "Community averages aren’t verdicts. They’re invitations. Here’s a healthier way to disagree."
 publishedAt: 2026-07-07
-coverImage: "https://image.tmdb.org/t/p/w1280/9Md4CqzUGDtK5oEkRRvozLkGc9d.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/1vXD5HXqkhvsXFHE7KmCPZGPR1e.jpg"
 related:
   - actorSlug: colin-farrell
     movieSlug: the-banshees-of-inisherin-2022

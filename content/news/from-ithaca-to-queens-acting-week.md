@@ -2,7 +2,7 @@
 title: "From Ithaca to Queens: the acting week of July 2026"
 description: "Damon’s Odysseus is already on the board. Holland and Zendaya are mid-double-feature. Brand New Day is about to unlock. Here’s the scoreboard plan."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/RMXG8myu1aGlNUsRjtxzmpdMK0.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/kGCOfQpITTI0rKzrVMRGOFteszf.jpg"
 related:
   - actorSlug: matt-damon
     movieSlug: the-odyssey-2026

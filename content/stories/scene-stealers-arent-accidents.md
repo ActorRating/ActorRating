@@ -2,7 +2,7 @@
 title: "Scene-stealers aren’t accidents"
 description: "Supporting turns that hijack a film are a billing-tier story — and a scoring story."
 publishedAt: 2026-06-30
-coverImage: "https://image.tmdb.org/t/p/w1280/5TiwfWEaPSwD20uwXjCTUqpQX70.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/c6OLXfKAk5BKeR6broC8pYiCquX.jpg"
 related:
   - actorSlug: brad-pitt
     movieSlug: fight-club-1999

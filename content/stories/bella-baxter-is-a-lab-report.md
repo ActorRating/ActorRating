@@ -2,7 +2,7 @@
 title: "Bella Baxter is a lab report you can rate"
 description: "Emma Stone in Poor Things rebuilds a person in public. Five criteria finally have somewhere useful to go."
 publishedAt: 2026-07-12
-coverImage: "https://image.tmdb.org/t/p/w1280/h0oBqUpax591vOacpBsDJ8cynjk.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/zh6IdheEYinU4TPtorWsjx6qPQE.jpg"
 related:
   - actorSlug: emma-stone
     movieSlug: poor-things-2023

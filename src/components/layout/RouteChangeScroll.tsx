@@ -6,14 +6,20 @@ import { usePathname } from "next/navigation"
 /**
  * Scroll restoration for App Router (landing → story/news → back).
  *
- * Root bug we hit in testing: Next scrolls the window to 0 *before* the
- * pathname updates, and a scroll listener / effect cleanup wrote
- * sessionStorage scroll_/=0 over the real position. Never clobber a deep
- * saved Y with a near-zero value.
+ * Saves window Y plus the clicked link's viewport offset so back lands on the
+ * same card, not just roughly the same scroll depth.
  */
 
 const KEY = (path: string) => `scroll_${path}`
-const RESTORE_WINDOW_MS = 2500
+const PIN_KEY = (path: string) => `scrollpin_${path}`
+const RESTORE_WINDOW_MS = 2800
+
+type ScrollPin = {
+  href: string
+  pathname: string
+  offset: number
+  y: number
+}
 
 let pendingTraverse = false
 let activeRestore: { path: string; stop: () => void } | null = null
@@ -49,9 +55,28 @@ function read(path: string): number | null {
   }
 }
 
+function readPin(path: string): ScrollPin | null {
+  try {
+    const raw = sessionStorage.getItem(PIN_KEY(path))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as ScrollPin
+    if (!parsed || typeof parsed.y !== "number") return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writePin(path: string, pin: ScrollPin) {
+  try {
+    sessionStorage.setItem(PIN_KEY(path), JSON.stringify(pin))
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Persist scroll. Never replace a deep position with ~0 (Next pre-nav reset). */
 function save(path: string, y = getY(), opts?: { force?: boolean }) {
-  // While restoring this path, ignore transient Y writes.
   if (!opts?.force && activeRestore?.path === path) return
 
   const next = Math.max(0, Math.round(y))
@@ -66,17 +91,51 @@ function save(path: string, y = getY(), opts?: { force?: boolean }) {
   }
 }
 
+function findPinnedAnchor(pin: ScrollPin): HTMLAnchorElement | null {
+  const anchors = Array.from(
+    document.querySelectorAll("a[href]"),
+  ) as HTMLAnchorElement[]
+  return (
+    anchors.find((a) => {
+      const attr = a.getAttribute("href") || ""
+      if (pin.href && (attr === pin.href || attr.startsWith(pin.href + "?"))) {
+        return true
+      }
+      try {
+        return new URL(a.href, window.location.origin).pathname === pin.pathname
+      } catch {
+        return false
+      }
+    }) ?? null
+  )
+}
+
+function alignToPin(pin: ScrollPin) {
+  const el = findPinnedAnchor(pin)
+  if (!el) {
+    setY(pin.y)
+    return
+  }
+  const top = el.getBoundingClientRect().top
+  const delta = top - pin.offset
+  if (Math.abs(delta) > 1) {
+    setY(getY() + delta)
+  }
+}
+
 function stopActiveRestore() {
   activeRestore?.stop()
   activeRestore = null
 }
 
 function startRestore(path: string) {
-  const y = read(path)
+  const pin = readPin(path)
+  const y = pin?.y ?? read(path)
   if (y == null || y <= 0) return
 
   if (activeRestore?.path === path) {
-    setY(y)
+    if (pin) alignToPin(pin)
+    else setY(y)
     return
   }
 
@@ -92,12 +151,20 @@ function startRestore(path: string) {
     else if (args[0] && typeof args[0] === "object") {
       top = Number((args[0] as ScrollToOptions).top ?? 0)
     }
-    if (top < 24 && y > 80) return nativeScrollTo(0, y)
+    if (top < 24 && y > 80) {
+      if (pin) {
+        alignToPin(pin)
+        return
+      }
+      return nativeScrollTo(0, y)
+    }
     return nativeScrollTo(...args)
   }) as typeof window.scrollTo
 
   const apply = () => {
-    if (!stopped) setY(y)
+    if (stopped) return
+    if (pin) alignToPin(pin)
+    else setY(y)
   }
 
   apply()
@@ -135,9 +202,8 @@ function startRestore(path: string) {
     cancelAnimationFrame(raf1)
     for (const t of timers) window.clearTimeout(t)
     if (activeRestore?.path === path) activeRestore = null
-    // Re-pin the restored position so later noise cannot shrink it.
-    save(path, y, { force: true })
-    setY(y)
+    apply()
+    save(path, getY(), { force: true })
   }
 
   activeRestore = { path, stop }
@@ -172,9 +238,24 @@ function isInternalNavAnchor(anchor: HTMLAnchorElement): boolean {
   }
 }
 
-function pinScrollBeforeNav(path: string) {
-  // Force-write the real position at click time so later 0-saves cannot win.
-  save(path, getY(), { force: true })
+function pinScrollBeforeNav(path: string, anchor: HTMLAnchorElement) {
+  const y = Math.round(getY())
+  const rect = anchor.getBoundingClientRect()
+  const href = anchor.getAttribute("href") || ""
+  let pathname = href
+  try {
+    pathname = new URL(anchor.href, window.location.href).pathname
+  } catch {
+    /* keep href */
+  }
+
+  save(path, y, { force: true })
+  writePin(path, {
+    href,
+    pathname,
+    offset: Math.round(rect.top),
+    y,
+  })
 }
 
 export default function RouteChangeScroll() {
@@ -244,7 +325,7 @@ export default function RouteChangeScroll() {
       const anchor = target.closest("a[href]")
       if (!(anchor instanceof HTMLAnchorElement)) return
       if (!isInternalNavAnchor(anchor)) return
-      pinScrollBeforeNav(pathRef.current)
+      pinScrollBeforeNav(pathRef.current, anchor)
     }
 
     const onClickCapture = (event: MouseEvent) => {
@@ -253,7 +334,7 @@ export default function RouteChangeScroll() {
       const anchor = target.closest("a[href]")
       if (!(anchor instanceof HTMLAnchorElement)) return
       if (!isInternalNavAnchor(anchor)) return
-      pinScrollBeforeNav(pathRef.current)
+      pinScrollBeforeNav(pathRef.current, anchor)
     }
 
     const onVisibility = () => {
@@ -300,7 +381,6 @@ export default function RouteChangeScroll() {
     window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("touchend", onScroll, { passive: true })
     return () => {
-      // Cleanup must not write 0 over a pinned deep scroll (guard inside save).
       save(path)
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("touchend", onScroll)
@@ -351,7 +431,8 @@ export default function RouteChangeScroll() {
 function shouldTreatAsBack(pathname: string, prevPath: string): boolean {
   if (pathname === prevPath) return false
   const saved = read(pathname)
-  if (saved == null || saved <= 80) return false
+  const pin = readPin(pathname)
+  if ((saved == null || saved <= 80) && !pin) return false
   const fromArticle =
     /^\/(stories|news)\/[^/]+$/.test(prevPath) ||
     /^\/(actors|movies|rate)\//.test(prevPath)

@@ -2,7 +2,7 @@
 title: "Holland & Zendaya’s double feature week: Telemachus, Athena, Peter, MJ"
 description: "The Odyssey is out. Spider-Man: Brand New Day is days away. Tom Holland and Zendaya are in both — and the acting question is the whole story."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/kbvNLChuMl2nyAzPZvqkD8hZGZn.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/kGCOfQpITTI0rKzrVMRGOFteszf.jpg"
 related:
   - actorSlug: tom-holland
     movieSlug: the-odyssey-2026
@@ -40,12 +40,21 @@ If you rate Brand New Day like a theme-park ride, you will miss the performance 
 
 ## Same actors, opposite scorecards
 
-| | *The Odyssey* | *Brand New Day* |
-|---|---|---|
-| Holland | Son seeking a myth | Hero seeking a self |
-| Zendaya | Goddess who intervenes | Woman who continued |
-| Core danger | Sentimentality / prestige cosplay | Quip armor / trailer charm |
-| What to protect | Stillness, yearning, divine cool | Grief without nostalgia bait |
+**Holland**
+- *The Odyssey* — son seeking a myth
+- *Brand New Day* — hero seeking a self
+
+**Zendaya**
+- *The Odyssey* — goddess who intervenes
+- *Brand New Day* — woman who continued
+
+**Core danger**
+- *The Odyssey* — sentimentality / prestige cosplay
+- *Brand New Day* — quip armor / trailer charm
+
+**What to protect**
+- *The Odyssey* — stillness, yearning, divine cool
+- *Brand New Day* — grief without nostalgia bait
 
 Do not average these into one “Holland 2026” vibe score. That is how platforms turn careers into soup.
 

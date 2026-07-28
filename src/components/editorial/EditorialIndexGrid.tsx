@@ -54,7 +54,7 @@ export function EditorialIndexGrid({
                       src={image}
                       alt=""
                       fill
-                      className="object-cover transition-transform duration-400 group-hover:scale-105"
+                      className="object-cover object-center transition-transform duration-400 group-hover:scale-105"
                       sizes="144px"
                     />
                   </div>
@@ -84,7 +84,7 @@ export function EditorialIndexGrid({
                     src={image}
                     alt=""
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                     sizes="(max-width: 640px) 100vw, 360px"
                   />
                 ) : (

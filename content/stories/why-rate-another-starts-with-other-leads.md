@@ -2,7 +2,7 @@
 title: "Why your “rate another” feed starts with other leads"
 description: "After you score a performance, we push the cast you were already thinking about — not a random deep cut from 1973."
 publishedAt: 2026-07-20
-coverImage: "https://image.tmdb.org/t/p/w1280/pB8BM7pdK1o5l9dsD7vDiQ2zJmwWmVKSQr0ub.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/aYcnDyLMnpKce1FOYUpZrXtgUye.jpg"
 related:
   - actorSlug: anthony-hopkins
     movieSlug: the-silence-of-the-lambs-1991

@@ -2,7 +2,7 @@
 title: "Spider-Man: Brand New Day is three days out — rate the turns, not the event"
 description: "July 31 wide release. Holland’s Peter and Zendaya’s MJ finally leave Coming soon. Here’s how to score the acting when the discourse wants opening-weekend vibes."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/6Q21yptoOCUq4ErwVncesLPVplb.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/vjMvFSmGUxEtqVdaZgvFee9XkZl.jpg"
 related:
   - actorSlug: tom-holland
     movieSlug: spider-man-brand-new-day-2026

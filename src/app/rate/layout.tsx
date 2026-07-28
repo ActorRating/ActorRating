@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic"
 export const metadata: Metadata = {
   title: "Rate Acting Performances",
   description:
-    "Rate acting performances scene by scene. Share your opinion and contribute to global actor rankings.",
+    "Rate acting performances with a quick score or five criteria. Share your take and contribute to community rankings.",
 }
 
 export default function RateLayout({

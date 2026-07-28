@@ -2,7 +2,7 @@
 title: "Challengers is chemistry homework"
 description: "Zendaya’s Tashi isn’t just the midpoint of a love triangle — she’s the voltage."
 publishedAt: 2026-07-08
-coverImage: "https://image.tmdb.org/t/p/w1280/4CcUgdiGe83MeqJW1NyJVmZqRrF.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/tq8COKsI99Bivjd4CZIYVGoKcIx.jpg"
 related:
   - actorSlug: zendaya
     movieSlug: challengers-2024

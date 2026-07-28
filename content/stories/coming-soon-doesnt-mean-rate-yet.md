@@ -2,7 +2,7 @@
 title: "“Coming soon” doesn’t mean rate yet"
 description: "We gate unreleased films on purpose. Here’s why your Brand New Day urge — and every trailer fever — has to wait for release day."
 publishedAt: 2026-07-04
-coverImage: "https://image.tmdb.org/t/p/w1280/i5E9H7Ik0u61ylDDTbmUpTL3Yw.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/bU206dN0ucfOFRK17OXabkdHKFC.jpg"
 related:
   - actorSlug: timothee-chalamet
     movieSlug: dune-part-three-2026

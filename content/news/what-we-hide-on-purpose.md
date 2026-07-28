@@ -2,7 +2,7 @@
 title: "What we hide on purpose"
 description: "Featurettes, Self credits, and unreleased films stay in the database — but not in your rate loop."
 publishedAt: 2026-07-09
-coverImage: "https://image.tmdb.org/t/p/w1280/loRmRzQXZeqG78TqZuyvSlEQfZb.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/zb6fM1CX41D9rF9hdgclu0peUmy.jpg"
 related:
   - actorSlug: liam-neeson
     movieSlug: schindlers-list-1993

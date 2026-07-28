@@ -2,7 +2,7 @@
 title: "Cooper and the long take of feeling"
 description: "Matthew McConaughey’s Interstellar work is easy to meme. Harder to score honestly once you separate science from grief."
 publishedAt: 2026-07-02
-coverImage: "https://image.tmdb.org/t/p/w1280/8sNiAPPYU14PUepFNeSNGUTiHW.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg"
 related:
   - actorSlug: matthew-mcconaughey
     movieSlug: interstellar-2014

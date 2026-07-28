@@ -2,7 +2,7 @@
 title: "How to rate Matt Damon’s Odysseus without grading the IMAX"
 description: "Nolan’s epic will inflate film scores. Here’s a scorecard for Damon’s Odysseus — presence, weariness, cunning, and the quiet homecoming."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/RMXG8myu1aGlNUsRjtxzmpdMK0.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg"
 related:
   - actorSlug: matt-damon
     movieSlug: the-odyssey-2026

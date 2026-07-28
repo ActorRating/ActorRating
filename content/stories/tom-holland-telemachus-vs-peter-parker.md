@@ -2,7 +2,7 @@
 title: "Tom Holland’s 2026 split: Telemachus vs Peter Parker"
 description: "One week, two lonely young men. A son without a father in The Odyssey — and a hero without a memory trail in Brand New Day."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/r57L2UBLPKcHdZQYg8tagv9XqK2.jpg"
 related:
   - actorSlug: tom-holland
     movieSlug: the-odyssey-2026

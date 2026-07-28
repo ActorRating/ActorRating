@@ -2,7 +2,7 @@
 title: "Zendaya from Athena to MJ: control, memory, and two kinds of power"
 description: "A goddess who intervenes in The Odyssey. A woman who continued without Peter in Brand New Day. Same actor — opposite leverage."
 publishedAt: 2026-07-28
-coverImage: "https://image.tmdb.org/t/p/w1280/4CcUgdiGe83MeqJW1NyJVmZqRrF.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/aHhnEpZecgqayljvJCpLyWiPiCc.jpg"
 related:
   - actorSlug: zendaya
     movieSlug: the-odyssey-2026

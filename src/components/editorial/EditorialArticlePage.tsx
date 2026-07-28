@@ -86,7 +86,7 @@ export async function EditorialArticlePage({
                   alt=""
                   fill
                   priority
-                  className="object-cover object-top opacity-[0.35] scale-110 blur-[2px]"
+                  className="object-cover object-center opacity-[0.35] scale-110 blur-[2px]"
                   sizes="100vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/80 to-black" />
@@ -110,7 +110,7 @@ export async function EditorialArticlePage({
                       src={heroImage}
                       alt=""
                       fill
-                      className="object-cover"
+                      className="object-cover object-center"
                       sizes="(max-width: 896px) 100vw, 896px"
                       priority
                     />
@@ -151,7 +151,7 @@ export async function EditorialArticlePage({
           <article className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
             {bodyHtml && (
               <div
-                className="text-base sm:text-lg leading-relaxed text-zinc-400 max-w-3xl [&_p]:mb-5 [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:tracking-tight [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mb-2 [&_a]:text-[#FFD700] [&_a]:underline-offset-2 hover:[&_a]:underline [&_strong]:text-zinc-200"
+                className="editorial-prose text-base sm:text-lg leading-relaxed text-zinc-400 max-w-3xl [&_p]:mb-5 [&_h2]:mt-10 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:tracking-tight [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-2 [&_li]:leading-relaxed [&_a]:text-[#FFD700] [&_a]:underline-offset-2 hover:[&_a]:underline [&_strong]:text-zinc-200 [&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-white/15 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-zinc-200 [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_td]:align-top"
                 dangerouslySetInnerHTML={{ __html: bodyHtml }}
               />
             )}

@@ -2,7 +2,7 @@
 title: "Oppenheimer is a performance movie wearing epic clothes"
 description: "Cillian Murphy carries three hours of moral weather. Rate the turn, not the IMAX flex."
 publishedAt: 2026-07-18
-coverImage: "https://image.tmdb.org/t/p/w1280/neeNHeXjMF5fXoCJRsOmkNGC7q.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg"
 related:
   - actorSlug: cillian-murphy
     movieSlug: oppenheimer-2023

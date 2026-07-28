@@ -2,7 +2,7 @@
 title: "ActorRating is the scoreboard for acting"
 description: "Great performances hide inside mediocre movies. Mediocre performances hide inside beloved ones."
 publishedAt: 2026-07-21
-coverImage: "https://image.tmdb.org/t/p/w1280/14icRpwdgpHEHxt7Cn5hr2RQEsF.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/kGzFbGhp99zva6oZODW5atUtnqi.jpg"
 related:
   - actorSlug: al-pacino
     movieSlug: the-godfather-part-ii-1974

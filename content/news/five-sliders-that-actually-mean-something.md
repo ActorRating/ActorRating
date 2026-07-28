@@ -2,7 +2,7 @@
 title: "Five sliders that actually mean something"
 description: "Emotional range, believability, technical skill, presence, chemistry — a cheat sheet for nights when “it was good” isn’t enough."
 publishedAt: 2026-07-19
-coverImage: "https://image.tmdb.org/t/p/w1280/5Md4iMgjsH9GAA1TUbGMJ7GGl6A.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/gkh6Nt8DtY1XT4gQsyFq9XAVJlJ.jpg"
 related:
   - actorSlug: meryl-streep
     movieSlug: the-devil-wears-prada-2006

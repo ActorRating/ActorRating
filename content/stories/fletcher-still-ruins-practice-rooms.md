@@ -2,7 +2,7 @@
 title: "Fletcher still ruins practice rooms"
 description: "J.K. Simmons in Whiplash isn’t “supporting” in the way your body remembers him."
 publishedAt: 2026-07-16
-coverImage: "https://image.tmdb.org/t/p/w1280/fRGxZuo7jJUWQsVg9PREb98Aclp.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/wbQa0EnWUyRzQ5d1pHLNRlmsCUP.jpg"
 related:
   - actorSlug: jk-simmons
     movieSlug: whiplash-2014

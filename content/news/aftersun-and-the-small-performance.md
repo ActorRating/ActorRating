@@ -2,7 +2,7 @@
 title: "Aftersun and the case for the small performance"
 description: "Paul Mescal’s Calum isn’t built for Oscar montage clips. It’s built for the score you can’t shake."
 publishedAt: 2026-07-05
-coverImage: "https://image.tmdb.org/t/p/w1280/4jdduww9j5RyzO4ITRcuBFhqNN1.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/59X25MoRSOLoiOKhO5L6T35Fve2.jpg"
 related:
   - actorSlug: paul-mescal
     movieSlug: aftersun-2022
