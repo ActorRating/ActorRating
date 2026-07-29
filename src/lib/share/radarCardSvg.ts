@@ -1,7 +1,8 @@
 /**
  * Build a branded 5-axis radar card as SVG markup.
  * Axes order (clockwise from top, −90° offset):
- * Emotional Range, Technical Skill, Screen Presence, Character Depth, Chemistry
+ * Emotional Impact, Character Depth, Screen Presence, Technical Skill, Originality
+ * (Originality is chemistryInteraction — SVG label only.)
  */
 
 export type RadarAxisScores = {
@@ -25,20 +26,21 @@ export type RadarCardInput = {
   axes: RadarAxisScores
 }
 
+/** Line 1 of each axis label (white). Empty second line for single-word axes. */
 const AXIS_LABELS = [
   "Emotional",
-  "Technical",
-  "Presence",
   "Character",
-  "Chemistry",
+  "Screen",
+  "Technical",
+  "Originality",
 ] as const
 
 const AXIS_SUBLABELS = [
-  "Range",
-  "Skill",
-  "Screen",
+  "Impact",
   "Depth",
-  "Interaction",
+  "Presence",
+  "Skill",
+  "",
 ] as const
 
 function clampScore(n: number): number {
@@ -170,9 +172,9 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
 
   const values = [
     axes.emotionalRangeDepth,
-    axes.technicalSkill,
-    axes.screenPresence,
     axes.characterBelievability,
+    axes.screenPresence,
+    axes.technicalSkill,
     axes.chemistryInteraction,
   ].map(clampScore)
 
@@ -219,14 +221,25 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   const scoreFont = isSquare ? 22 : 16
   const labelNodes = AXIS_LABELS.map((label, i) => {
     const { x, y, anchor } = labelLayout(i, cx, cy, maxR, isSquare)
-    const score = Math.round(values[i]!)
+    const scoreOutOf10 = (values[i]! / 10).toFixed(1)
     const sub = AXIS_SUBLABELS[i]
-    const line1Y = y - (isSquare ? 10 : 8)
-    const line2Y = y + (isSquare ? 12 : 10)
-    return [
-      `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="rgba(255,255,255,0.92)" text-anchor="${anchor}">${escapeXml(label)}</text>`,
-      `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${scoreFont}" font-weight="700" fill="${gold}" text-anchor="${anchor}">${escapeXml(sub)} · ${score}</text>`,
-    ].join("\n  ")
+    const hasSub = Boolean(sub)
+    // Two-line label + score, or single-word label + score
+    const line1Y = hasSub ? y - (isSquare ? 18 : 14) : y - (isSquare ? 10 : 8)
+    const line2Y = y
+    const scoreY = hasSub ? y + (isSquare ? 20 : 16) : y + (isSquare ? 14 : 12)
+    const parts = [
+      `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="${anchor}">${escapeXml(label)}</text>`,
+    ]
+    if (hasSub) {
+      parts.push(
+        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="${anchor}">${escapeXml(sub)}</text>`,
+      )
+    }
+    parts.push(
+      `<text x="${x.toFixed(1)}" y="${scoreY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${scoreFont}" font-weight="700" fill="${gold}" text-anchor="${anchor}">${scoreOutOf10}</text>`,
+    )
+    return parts.join("\n  ")
   }).join("\n  ")
 
   const titleLine = input.actorName
