@@ -129,25 +129,23 @@ function gridRing(level: number, cx: number, cy: number, maxR: number): string {
   return pts.join(" ")
 }
 
-/** Nudge label anchors outward and bias text-anchor by quadrant. */
+/** Nudge label anchors outward from each axis tip. Always middle-aligned for stacked name + score. */
 function labelLayout(
   index: number,
   cx: number,
   cy: number,
   maxR: number,
   isSquare: boolean,
-): { x: number; y: number; anchor: "start" | "middle" | "end" } {
+): { x: number; y: number } {
   const tip = radarPoint(index, 100, cx, cy, maxR)
   const dx = tip.x - cx
   const dy = tip.y - cy
   const len = Math.hypot(dx, dy) || 1
-  const pad = isSquare ? 52 : 36
-  const x = tip.x + (dx / len) * pad
-  const y = tip.y + (dy / len) * pad
-  let anchor: "start" | "middle" | "end" = "middle"
-  if (dx > maxR * 0.25) anchor = "start"
-  else if (dx < -maxR * 0.25) anchor = "end"
-  return { x, y, anchor }
+  const pad = isSquare ? 72 : 52
+  return {
+    x: tip.x + (dx / len) * pad,
+    y: tip.y + (dy / len) * pad,
+  }
 }
 
 export function buildRadarCardSvg(input: RadarCardInput): string {
@@ -217,27 +215,38 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     })
     .join("\n  ")
 
-  const labelFont = isSquare ? 20 : 15
-  const scoreFont = isSquare ? 22 : 16
+  const labelFont = isSquare ? 17 : 13
+  const axisScoreFont = isSquare ? 15 : 12
+  const axisBubbleW = isSquare ? 48 : 40
+  const axisBubbleH = isSquare ? 26 : 22
   const labelNodes = AXIS_LABELS.map((label, i) => {
-    const { x, y, anchor } = labelLayout(i, cx, cy, maxR, isSquare)
+    const { x, y } = labelLayout(i, cx, cy, maxR, isSquare)
     const scoreOutOf10 = (values[i]! / 10).toFixed(1)
     const sub = AXIS_SUBLABELS[i]
     const hasSub = Boolean(sub)
-    // Two-line label + score, or single-word label + score
-    const line1Y = hasSub ? y - (isSquare ? 18 : 14) : y - (isSquare ? 10 : 8)
-    const line2Y = y
-    const scoreY = hasSub ? y + (isSquare ? 20 : 16) : y + (isSquare ? 14 : 12)
-    const parts = [
-      `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="${anchor}">${escapeXml(label)}</text>`,
-    ]
+    const lineGap = isSquare ? 18 : 14
+    const labelBlockOffset = hasSub ? lineGap / 2 : 0
+    const line1Y = y - labelBlockOffset - (isSquare ? 22 : 18)
+    const line2Y = y - labelBlockOffset - (isSquare ? 4 : 4)
+    const singleLabelY = y - (isSquare ? 18 : 14)
+    const bubbleCy = y + (isSquare ? 18 : 14)
+    const bubbleX = x - axisBubbleW / 2
+    const bubbleY = bubbleCy - axisBubbleH / 2
+
+    const parts: string[] = []
     if (hasSub) {
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="${anchor}">${escapeXml(sub)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(sub)}</text>`,
+      )
+    } else {
+      parts.push(
+        `<text x="${x.toFixed(1)}" y="${singleLabelY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
       )
     }
     parts.push(
-      `<text x="${x.toFixed(1)}" y="${scoreY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${scoreFont}" font-weight="700" fill="${gold}" text-anchor="${anchor}">${scoreOutOf10}</text>`,
+      `<rect x="${bubbleX.toFixed(1)}" y="${bubbleY.toFixed(1)}" width="${axisBubbleW}" height="${axisBubbleH}" rx="${axisBubbleH / 2}" fill="rgba(255,215,0,0.14)" stroke="${gold}" stroke-width="1.25"/>`,
+      `<text x="${x.toFixed(1)}" y="${bubbleCy.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${axisScoreFont}" font-weight="700" fill="${gold}" text-anchor="middle" dominant-baseline="central">${scoreOutOf10}</text>`,
     )
     return parts.join("\n  ")
   }).join("\n  ")
@@ -294,7 +303,7 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   <text x="48" y="${headerY}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 24 : 20}" font-weight="700" fill="url(#goldGradient)">ActorRating.com</text>
   <text x="${w - 48}" y="${headerY}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 20 : 17}" fill="rgba(255,255,255,0.7)" text-anchor="end">${escapeXml(handle)}</text>
   <text x="${cx}" y="${titleY}" font-family="Georgia, serif" font-size="${isSquare ? 34 : 26}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(truncate(titleLine, 44))}</text>
-  <text x="${cx}" y="${movieY}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 20 : 16}" fill="rgba(255,255,255,0.65)" text-anchor="middle">${escapeXml(truncate(movieLine, 50))}</text>
+  <text x="${cx}" y="${movieY}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 20 : 16}" fill="${gold}" text-anchor="middle">${escapeXml(truncate(movieLine, 50))}</text>
   ${webWash}
   ${rings}
   ${spokeLines}
