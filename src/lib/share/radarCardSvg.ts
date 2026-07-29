@@ -138,24 +138,23 @@ function labelLayout(
   isSquare: boolean,
 ): { x: number; y: number } {
   const tip = radarPoint(index, 100, cx, cy, maxR)
-  // Top axis: sit just under the tip (toward center) so the movie title stays clear
-  // while the radar can stay large.
+  // Top axis: sit just under the tip (toward center) so the movie title stays clear.
   if (index === 0) {
-    const pullIn = isSquare ? 58 : 46
+    const pullIn = isSquare ? 70 : 56
     return { x: tip.x, y: tip.y + pullIn }
   }
   const dx = tip.x - cx
   const dy = tip.y - cy
   const len = Math.hypot(dx, dy) || 1
-  // Bottom axes use slightly less pad to clear the total-score badge.
+  // Extra pad for larger label + score bubbles.
   const pad =
     index === 2 || index === 3
       ? isSquare
-        ? 54
-        : 40
+        ? 72
+        : 54
       : isSquare
-        ? 64
-        : 48
+        ? 84
+        : 62
   return {
     x: tip.x + (dx / len) * pad,
     y: tip.y + (dy / len) * pad,
@@ -190,10 +189,10 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     axes.chemistryInteraction,
   ].map(clampScore)
 
-  // Large radar; top label tucks under the tip so the movie title stays clear.
+  // Modest radar size; labels/score bubbles carry the visual weight.
   const cx = w / 2
-  const cy = isSquare ? h * 0.57 : h * 0.58
-  const maxR = isSquare ? Math.min(w, h) * 0.31 : Math.min(w, h) * 0.33
+  const cy = isSquare ? h * 0.56 : h * 0.57
+  const maxR = isSquare ? Math.min(w, h) * 0.26 : Math.min(w, h) * 0.28
 
   const poly = values
     .map((v, i) => {
@@ -229,38 +228,38 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     })
     .join("\n  ")
 
-  const labelFont = isSquare ? 17 : 13
-  const axisScoreFont = isSquare ? 15 : 12
-  const axisBubbleW = isSquare ? 48 : 40
-  const axisBubbleH = isSquare ? 26 : 22
+  const labelFont = isSquare ? 24 : 18
+  const axisScoreFont = isSquare ? 22 : 17
+  const axisBubbleW = isSquare ? 72 : 58
+  const axisBubbleH = isSquare ? 38 : 30
   const labelNodes = AXIS_LABELS.map((label, i) => {
     const { x, y } = labelLayout(i, cx, cy, maxR, isSquare)
     const scoreOutOf10 = (values[i]! / 10).toFixed(1)
     const sub = AXIS_SUBLABELS[i]
     const hasSub = Boolean(sub)
-    const lineGap = isSquare ? 18 : 14
+    const lineGap = isSquare ? 26 : 20
     const labelBlockOffset = hasSub ? lineGap / 2 : 0
-    const line1Y = y - labelBlockOffset - (isSquare ? 22 : 18)
+    const line1Y = y - labelBlockOffset - (isSquare ? 30 : 24)
     const line2Y = y - labelBlockOffset - (isSquare ? 4 : 4)
-    const singleLabelY = y - (isSquare ? 18 : 14)
-    const bubbleCy = y + (isSquare ? 18 : 14)
+    const singleLabelY = y - (isSquare ? 26 : 20)
+    const bubbleCy = y + (isSquare ? 26 : 20)
     const bubbleX = x - axisBubbleW / 2
     const bubbleY = bubbleCy - axisBubbleH / 2
 
     const parts: string[] = []
     if (hasSub) {
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
-        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(sub)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(sub)}</text>`,
       )
     } else {
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${singleLabelY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="600" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${singleLabelY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
       )
     }
     parts.push(
-      `<rect x="${bubbleX.toFixed(1)}" y="${bubbleY.toFixed(1)}" width="${axisBubbleW}" height="${axisBubbleH}" rx="${axisBubbleH / 2}" fill="rgba(255,215,0,0.14)" stroke="${gold}" stroke-width="1.25"/>`,
-      `<text x="${x.toFixed(1)}" y="${bubbleCy.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${axisScoreFont}" font-weight="700" fill="${gold}" text-anchor="middle" dominant-baseline="central">${scoreOutOf10}</text>`,
+      `<rect x="${bubbleX.toFixed(1)}" y="${bubbleY.toFixed(1)}" width="${axisBubbleW}" height="${axisBubbleH}" rx="${axisBubbleH / 2}" fill="rgba(255,215,0,0.16)" stroke="${gold}" stroke-width="1.75"/>`,
+      `<text x="${x.toFixed(1)}" y="${bubbleCy.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${axisScoreFont}" font-weight="800" fill="${gold}" text-anchor="middle" dominant-baseline="central">${scoreOutOf10}</text>`,
     )
     return parts.join("\n  ")
   }).join("\n  ")
@@ -281,13 +280,14 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   const headerY = isSquare ? 48 : 36
   const titleY = isSquare ? 92 : 70
   const movieY = isSquare ? 124 : 96
-  const scoreBadgeY = isSquare ? h - 72 : h - 48
-  const quoteY = isSquare ? h - 128 : h - 84
+  const scoreBadgeY = isSquare ? h - 80 : h - 56
+  const quoteY = isSquare ? h - 148 : h - 100
   const footerY = isSquare ? h - 28 : h - 18
-  const badgeW = isSquare ? 200 : 160
-  const badgeH = isSquare ? 56 : 44
+  const badgeW = isSquare ? 280 : 220
+  const badgeH = isSquare ? 72 : 56
   const badgeX = cx - badgeW / 2
   const badgeY = scoreBadgeY - badgeH / 2
+  const totalScoreFont = isSquare ? 36 : 28
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
@@ -325,7 +325,7 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   ${vertexDots}
   ${labelNodes}
   <rect x="${badgeX.toFixed(1)}" y="${badgeY.toFixed(1)}" width="${badgeW}" height="${badgeH}" rx="${badgeH / 2}" fill="rgba(255,215,0,0.12)" stroke="${gold}" stroke-width="1.5"/>
-  <text x="${cx}" y="${(scoreBadgeY + (isSquare ? 8 : 6)).toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 28 : 22}" font-weight="800" fill="url(#goldGradient)" text-anchor="middle">${escapeXml(input.scoreOutOf10)} / 10</text>
+  <text x="${cx}" y="${(scoreBadgeY + (isSquare ? 11 : 8)).toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${totalScoreFont}" font-weight="800" fill="url(#goldGradient)" text-anchor="middle">${escapeXml(input.scoreOutOf10)} / 10</text>
   ${
     quote
       ? `<text x="${cx}" y="${quoteY}" font-family="Georgia, serif" font-size="${isSquare ? 20 : 16}" font-style="italic" fill="rgba(255,255,255,0.75)" text-anchor="middle">“${escapeXml(quote)}”</text>`
