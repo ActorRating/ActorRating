@@ -144,7 +144,7 @@ function SearchPageContent() {
               <SearchBar
                 placeholder="Search actors and films…"
                 showClear
-                showSuggestions
+                showSuggestions={false}
                 autoFocus
                 disableAutoScrollOnFocus
                 initialValue={query}

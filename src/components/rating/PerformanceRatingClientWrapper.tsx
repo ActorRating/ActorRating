@@ -1438,17 +1438,42 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
           : "")
       : ""
 
-  const downloadRadarCard = () => {
+  const downloadRadarCard = async () => {
     if (!radarSquareUrl) return
-    const a = document.createElement("a")
-    a.href = radarSquareUrl
-    a.download = `actorrating-radar-${performance.actor.slug || "rating"}.svg`
-    a.target = "_blank"
-    a.rel = "noopener"
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
     trackShareRating("native")
+    try {
+      // Fetch SVG, render on canvas, export as PNG
+      const res = await fetch(radarSquareUrl)
+      const svgText = await res.text()
+      const blob = new Blob([svgText], { type: "image/svg+xml" })
+      const svgObjectUrl = URL.createObjectURL(blob)
+
+      const img = new Image()
+      img.onload = () => {
+        const size = img.naturalWidth || 1200
+        const canvas = document.createElement("canvas")
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, size, size)
+        URL.revokeObjectURL(svgObjectUrl)
+        canvas.toBlob((pngBlob) => {
+          if (!pngBlob) return
+          const url = URL.createObjectURL(pngBlob)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = `actorrating-radar-${performance.actor.slug || "rating"}.png`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(url)
+        }, "image/png")
+      }
+      img.src = svgObjectUrl
+    } catch {
+      // Fallback: open SVG in new tab
+      window.open(radarSquareUrl, "_blank", "noopener")
+    }
   }
 
   const handleShare = async () => {

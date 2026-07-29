@@ -19,9 +19,9 @@ const MEMORY_CACHE_TTL_MS = 5 * 60 * 1000
 
 const searchCache = new Map<string, { data: SuggestionsResponse; expires: number }>()
 
-const LIMIT_ACTORS = 8
+const LIMIT_ACTORS = 5
 const LIMIT_MOVIES = 5
-const PREFIX_RETURN_THRESHOLD = 5
+const PREFIX_RETURN_THRESHOLD = 3
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 const RATE_LIMIT_MAX_REQUESTS = 90
 const ipRateWindow = new Map<string, { count: number; resetAt: number }>()
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
     if (memEntry) searchCache.delete(normalized)
 
-    const cacheKey = makeCacheKey("search-suggestions-v7-images", [normalized])
+    const cacheKey = makeCacheKey("search-suggestions-v8-popularity", [normalized])
     const cached = await cacheGet<SuggestionsResponse>(cacheKey)
     if (cached) {
       searchCache.set(normalized, { data: cached, expires: now + MEMORY_CACHE_TTL_MS })
@@ -77,38 +77,46 @@ export async function GET(request: NextRequest) {
       return res
     }
 
-    const prefixPattern = normalized + "%"
     const useSimilarity = normalized.length >= 3
+    // Multi-word queries (e.g. "dark knight") are almost always movie searches.
+    // When the query has 2+ tokens, sharply limit actor results so movie hits dominate.
+    const tokens = normalized.split(/\s+/).filter(Boolean)
+    const isMultiWord = tokens.length >= 2
+    const actorLimit = isMultiWord ? 2 : LIMIT_ACTORS
 
-    // --- Actors: prefix-first via Prisma; similarity via Postgres trigram if needed ---
+    // --- Actors ---
     const actorsStart = Date.now()
     const actorPrefixRows = await prisma.actor.findMany({
       where: { name: { startsWith: normalized, mode: "insensitive" } },
       select: { id: true, name: true, slug: true, imageUrl: true },
       orderBy: { name: "asc" },
-      take: LIMIT_ACTORS,
+      take: actorLimit,
     })
 
     const actorList = Array.isArray(actorPrefixRows) ? actorPrefixRows : []
     let actors: Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
-    if (!useSimilarity || actorList.length >= PREFIX_RETURN_THRESHOLD) {
-      actors = actorList.slice(0, LIMIT_ACTORS).map((r) => ({
+    if (!useSimilarity || actorList.length >= PREFIX_RETURN_THRESHOLD || isMultiWord) {
+      actors = actorList.slice(0, actorLimit).map((r) => ({
         id: r.id,
         name: r.name,
         slug: r.slug ?? null,
         imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
       }))
     } else {
-      // Requires PostgreSQL pg_trgm extension for similarity(...).
-      // Fallback behavior if pg_trgm is unavailable: catch block returns prefix-only matches.
+      // Requires PostgreSQL pg_trgm extension.
       const similarityRows = await prisma.$queryRaw<
-        Array<{ id: string; name: string; slug: string | null; imageUrl: string | null }>
+        Array<{ id: string; name: string; slug: string | null; imageUrl: string | null; rating_count: bigint }>
       >(Prisma.sql`
-        SELECT id, name, slug, "imageUrl"
-        FROM "Actor"
-        WHERE similarity(lower(name), ${normalized}) > 0.12
-        ORDER BY similarity(lower(name), ${normalized}) DESC, name ASC
-        LIMIT ${LIMIT_ACTORS}
+        SELECT a.id, a.name, a.slug, a."imageUrl",
+               COUNT(r.id) AS rating_count
+        FROM "Actor" a
+        LEFT JOIN "Rating" r ON r."actorId" = a.id
+        WHERE similarity(lower(a.name), ${normalized}) > 0.25
+        GROUP BY a.id, a.name, a.slug, a."imageUrl"
+        ORDER BY similarity(lower(a.name), ${normalized}) DESC,
+                 COUNT(r.id) DESC,
+                 a.name ASC
+        LIMIT ${actorLimit}
       `)
       const simList = Array.isArray(similarityRows) ? similarityRows : []
       const seen = new Set(actorList.map((r) => r.id))
@@ -121,35 +129,30 @@ export async function GET(request: NextRequest) {
       for (const r of simList) {
         if (!seen.has(r.id)) {
           seen.add(r.id)
-          combined.push({
-            id: r.id,
-            name: r.name,
-            slug: r.slug ?? null,
-            imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null,
-          })
+          combined.push({ id: r.id, name: r.name, slug: r.slug ?? null, imageUrl: (r as { imageUrl?: string | null }).imageUrl ?? null })
         }
       }
-      actors = combined.slice(0, LIMIT_ACTORS)
+      actors = combined.slice(0, actorLimit)
     }
     const actorsMs = Date.now() - actorsStart
 
-    // --- Movies: prefix-first via Prisma; similarity via Postgres trigram if needed ---
+    // --- Movies: prefix-first, ordered by rating count DESC ---
     const moviesStart = Date.now()
-    const moviePrefixRows = await prisma.movie.findMany({
-      where: { title: { startsWith: normalized, mode: "insensitive" } },
-      select: { id: true, title: true, slug: true, year: true, posterUrl: true },
-      orderBy: { title: "asc" },
-      take: LIMIT_MOVIES,
-    })
+    const moviePrefixRows = await prisma.$queryRaw<
+      Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null; rating_count: bigint }>
+    >(Prisma.sql`
+      SELECT m.id, m.title, m.slug, m.year, m."posterUrl",
+             COUNT(r.id) AS rating_count
+      FROM "Movie" m
+      LEFT JOIN "Rating" r ON r."movieId" = m.id
+      WHERE lower(m.title) LIKE ${normalized + "%"}
+      GROUP BY m.id, m.title, m.slug, m.year, m."posterUrl"
+      ORDER BY COUNT(r.id) DESC, m.title ASC
+      LIMIT ${LIMIT_MOVIES}
+    `)
 
     const movieList = Array.isArray(moviePrefixRows) ? moviePrefixRows : []
-    let movies: Array<{
-      id: string
-      title: string
-      slug: string | null
-      year: number
-      posterUrl: string | null
-    }>
+    let movies: Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>
     if (!useSimilarity || movieList.length >= PREFIX_RETURN_THRESHOLD) {
       movies = movieList.slice(0, LIMIT_MOVIES).map((r) => ({
         id: r.id,
@@ -159,15 +162,19 @@ export async function GET(request: NextRequest) {
         posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
       }))
     } else {
-      // Requires PostgreSQL pg_trgm extension for similarity(...).
-      // Fallback behavior if pg_trgm is unavailable: catch block returns prefix-only matches.
+      // Trigram fallback for fuzzy movie matches, also popularity-ordered
       const similarityRows = await prisma.$queryRaw<
-        Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null }>
+        Array<{ id: string; title: string; slug: string | null; year: number; posterUrl: string | null; rating_count: bigint }>
       >(Prisma.sql`
-        SELECT id, title, slug, year, "posterUrl"
-        FROM "Movie"
-        WHERE similarity(lower(title), ${normalized}) > 0.12
-        ORDER BY similarity(lower(title), ${normalized}) DESC, title ASC
+        SELECT m.id, m.title, m.slug, m.year, m."posterUrl",
+               COUNT(r.id) AS rating_count
+        FROM "Movie" m
+        LEFT JOIN "Rating" r ON r."movieId" = m.id
+        WHERE similarity(lower(m.title), ${normalized}) > 0.25
+        GROUP BY m.id, m.title, m.slug, m.year, m."posterUrl"
+        ORDER BY similarity(lower(m.title), ${normalized}) DESC,
+                 COUNT(r.id) DESC,
+                 m.title ASC
         LIMIT ${LIMIT_MOVIES}
       `)
       const simList = Array.isArray(similarityRows) ? similarityRows : []
@@ -182,13 +189,7 @@ export async function GET(request: NextRequest) {
       for (const r of simList) {
         if (!seen.has(r.id)) {
           seen.add(r.id)
-          combined.push({
-            id: r.id,
-            title: r.title,
-            slug: r.slug ?? null,
-            year: Number(r.year) ?? 0,
-            posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null,
-          })
+          combined.push({ id: r.id, title: r.title, slug: r.slug ?? null, year: Number(r.year) ?? 0, posterUrl: (r as { posterUrl?: string | null }).posterUrl ?? null })
         }
       }
       movies = combined.slice(0, LIMIT_MOVIES)
@@ -240,12 +241,14 @@ export async function GET(request: NextRequest) {
       try {
         const q = request.nextUrl.searchParams.get("q")?.trim().toLowerCase()
         if (q && q.length >= 2) {
+          const multiWord = q.split(/\s+/).filter(Boolean).length >= 2
+          const aLimit = multiWord ? 2 : LIMIT_ACTORS
           const [actors, movies] = await Promise.all([
             prisma.actor.findMany({
               where: { name: { startsWith: q, mode: "insensitive" } },
               select: { id: true, name: true, slug: true, imageUrl: true },
               orderBy: { name: "asc" },
-              take: LIMIT_ACTORS,
+              take: aLimit,
             }),
             prisma.movie.findMany({
               where: { title: { startsWith: q, mode: "insensitive" } },
