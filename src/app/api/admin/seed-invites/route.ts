@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { normalizeInviteCode } from "@/lib/invites"
 
 async function requireAdmin() {
   const session = await auth()
@@ -14,38 +15,63 @@ async function requireAdmin() {
 
 /**
  * POST /api/admin/seed-invites
- * Body: { prefix: string; count: number }
- * Creates `count` invite codes: prefix, prefix-2, prefix-3, …
+ * Body: { code: string; maxUses: number }
+ * Upserts a single multi-use invite code.
  */
 export async function POST(request: NextRequest) {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { prefix, count } = (await request.json()) as {
+  const body = (await request.json()) as {
+    code?: string
+    maxUses?: number
+    /** @deprecated use code + maxUses */
     prefix?: string
+    /** @deprecated use code + maxUses */
     count?: number
   }
 
-  if (!prefix || typeof prefix !== "string") {
-    return NextResponse.json({ error: "prefix is required" }, { status: 400 })
+  const code = normalizeInviteCode(body.code || body.prefix || "")
+  if (!code) {
+    return NextResponse.json({ error: "code is required" }, { status: 400 })
   }
 
-  const total = Math.min(Math.max(Number(count) || 1, 1), 200)
-  const codes = Array.from({ length: total }, (_, i) =>
-    i === 0 ? prefix.toUpperCase() : `${prefix.toUpperCase()}-${i + 1}`,
+  const maxUses = Math.min(
+    Math.max(Number(body.maxUses ?? body.count) || 1, 1),
+    10_000,
   )
 
-  let created = 0
-  let skipped = 0
+  const existing = await prisma.inviteCode.findUnique({
+    where: { code },
+    select: { id: true, usedCount: true },
+  })
 
-  for (const code of codes) {
-    try {
-      await prisma.inviteCode.create({ data: { code, ownerId: admin.id } })
-      created++
-    } catch {
-      skipped++
+  if (existing) {
+    if (maxUses < existing.usedCount) {
+      return NextResponse.json(
+        {
+          error: `maxUses (${maxUses}) cannot be less than usedCount (${existing.usedCount})`,
+        },
+        { status: 400 },
+      )
     }
+    const updated = await prisma.inviteCode.update({
+      where: { code },
+      data: { maxUses },
+      select: { code: true, maxUses: true, usedCount: true },
+    })
+    return NextResponse.json({ action: "updated", invite: updated })
   }
 
-  return NextResponse.json({ created, skipped, total: codes.length })
+  const created = await prisma.inviteCode.create({
+    data: {
+      code,
+      ownerId: admin.id,
+      maxUses,
+      usedCount: 0,
+    },
+    select: { code: true, maxUses: true, usedCount: true },
+  })
+
+  return NextResponse.json({ action: "created", invite: created })
 }

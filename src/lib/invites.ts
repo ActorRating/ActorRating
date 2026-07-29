@@ -26,13 +26,33 @@ export function generateInviteCode(prefix = "CRAFT"): string {
   return `${prefix}-${suffix}`
 }
 
+function isInviteExhausted(row: {
+  usedCount: number
+  maxUses: number
+  usedById: string | null
+}): boolean {
+  if (row.usedCount >= row.maxUses) return true
+  // Legacy single-use: usedById set before usedCount existed
+  if (row.maxUses === 1 && row.usedById) return true
+  return false
+}
+
 export async function findUnusedInvite(codeRaw: string) {
   const code = normalizeInviteCode(codeRaw)
   if (!code || code.length < 6) return null
-  return prisma.inviteCode.findFirst({
-    where: { code, usedById: null },
-    select: { id: true, code: true, ownerId: true },
+  const row = await prisma.inviteCode.findFirst({
+    where: { code },
+    select: {
+      id: true,
+      code: true,
+      ownerId: true,
+      maxUses: true,
+      usedCount: true,
+      usedById: true,
+    },
   })
+  if (!row || isInviteExhausted(row)) return null
+  return { id: row.id, code: row.code, ownerId: row.ownerId }
 }
 
 export async function assertInviteAvailable(
@@ -42,11 +62,33 @@ export async function assertInviteAvailable(
   if (!code) return { ok: false, error: "Invite code is required" }
   const row = await prisma.inviteCode.findUnique({
     where: { code },
-    select: { id: true, code: true, usedById: true },
+    select: {
+      id: true,
+      code: true,
+      usedById: true,
+      maxUses: true,
+      usedCount: true,
+    },
   })
   if (!row) return { ok: false, error: "Invalid invite code" }
-  if (row.usedById) return { ok: false, error: "This invite code has already been used" }
+  if (isInviteExhausted(row)) {
+    return { ok: false, error: "This invite code has already been used" }
+  }
   return { ok: true, id: row.id, code: row.code }
+}
+
+export async function userHasRedeemedInvite(userId: string): Promise<boolean> {
+  const [redemption, legacy] = await Promise.all([
+    prisma.inviteRedemption.findUnique({
+      where: { userId },
+      select: { id: true },
+    }),
+    prisma.inviteCode.findFirst({
+      where: { usedById: userId },
+      select: { id: true },
+    }),
+  ])
+  return Boolean(redemption || legacy)
 }
 
 export async function redeemInvite(params: {
@@ -55,15 +97,49 @@ export async function redeemInvite(params: {
 }): Promise<boolean> {
   const code = normalizeInviteCode(params.code)
   if (!code) return false
+
+  if (await userHasRedeemedInvite(params.userId)) return false
+
   const now = new Date()
+
   try {
-    const updated = await prisma.inviteCode.updateMany({
-      where: { code, usedById: null },
-      data: { usedById: params.userId, usedAt: now },
+    return await prisma.$transaction(async (tx) => {
+      const row = await tx.inviteCode.findUnique({
+        where: { code },
+        select: {
+          id: true,
+          maxUses: true,
+          usedCount: true,
+          usedById: true,
+        },
+      })
+      if (!row || isInviteExhausted(row)) return false
+
+      const updated = await tx.inviteCode.updateMany({
+        where: {
+          id: row.id,
+          usedCount: { lt: row.maxUses },
+        },
+        data: {
+          usedCount: { increment: 1 },
+          usedAt: now,
+          ...(row.maxUses === 1
+            ? { usedById: params.userId }
+            : {}),
+        },
+      })
+      if (updated.count !== 1) return false
+
+      await tx.inviteRedemption.create({
+        data: {
+          inviteCodeId: row.id,
+          userId: params.userId,
+        },
+      })
+      return true
     })
-    return updated.count === 1
   } catch {
-    // Unique usedById race — user already redeemed another code
+    // Unique userId race — user already redeemed another code
     return false
   }
 }
@@ -77,7 +153,7 @@ export async function issueInvites(userId: string, count = INVITES_PER_NEW_USER)
       const code = generateInviteCode()
       try {
         await prisma.inviteCode.create({
-          data: { code, ownerId: userId },
+          data: { code, ownerId: userId, maxUses: 1, usedCount: 0 },
         })
         codes.push(code)
         break

@@ -37,6 +37,7 @@ model User {
   resolvedForumPostReports ForumPostReport[] @relation("ForumPostReportResolver")
   ownedInvites InviteCode[] @relation("OwnedInvites")
   usedInvite   InviteCode?  @relation("UsedInvite")
+  inviteRedemptions InviteRedemption[]
 
   @@index([createdAt])
   @@index([email])
@@ -353,13 +354,31 @@ model InviteCode {
   code      String    @unique
   ownerId   String
   owner     User      @relation("OwnedInvites", fields: [ownerId], references: [id], onDelete: Cascade)
+  /// Cap on how many times this code can be redeemed. Default 1 = classic single-use invite.
+  maxUses   Int       @default(1)
+  /// How many times this code has been successfully redeemed.
+  usedCount Int       @default(0)
+  /// Set only for single-use codes (maxUses = 1) after redemption. Multi-use uses InviteRedemption.
   usedById  String?   @unique
   usedBy    User?     @relation("UsedInvite", fields: [usedById], references: [id], onDelete: SetNull)
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+  redemptions InviteRedemption[]
 
   @@index([ownerId])
   @@index([usedAt])
+}
+
+/// Tracks who redeemed an invite (needed for multi-use codes). One redemption per user globally.
+model InviteRedemption {
+  id           String     @id @default(cuid())
+  inviteCodeId String
+  inviteCode   InviteCode @relation(fields: [inviteCodeId], references: [id], onDelete: Cascade)
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([inviteCodeId])
 }
 
 model ShareImage {
