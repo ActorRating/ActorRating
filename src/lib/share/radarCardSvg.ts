@@ -141,7 +141,9 @@ function labelLayout(
   const dx = tip.x - cx
   const dy = tip.y - cy
   const len = Math.hypot(dx, dy) || 1
-  const pad = isSquare ? 72 : 52
+  // Top axis (0) gets less outward pad so it doesn't collide with the movie title.
+  const pad =
+    index === 0 ? (isSquare ? 44 : 32) : isSquare ? 68 : 50
   return {
     x: tip.x + (dx / len) * pad,
     y: tip.y + (dy / len) * pad,
@@ -176,10 +178,10 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     axes.chemistryInteraction,
   ].map(clampScore)
 
-  // Larger radar; score lives in a footer badge so the web stays readable.
+  // Radar sits lower so the top axis label clears actor/movie header text.
   const cx = w / 2
-  const cy = isSquare ? h * 0.5 : h * 0.54
-  const maxR = isSquare ? Math.min(w, h) * 0.28 : Math.min(w, h) * 0.3
+  const cy = isSquare ? h * 0.56 : h * 0.58
+  const maxR = isSquare ? Math.min(w, h) * 0.24 : Math.min(w, h) * 0.26
 
   const poly = values
     .map((v, i) => {
@@ -264,12 +266,12 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     ? truncate(input.quote.trim(), isSquare ? 110 : 80)
     : null
 
-  const headerY = isSquare ? 52 : 40
-  const titleY = isSquare ? 100 : 78
-  const movieY = isSquare ? 136 : 106
-  const scoreBadgeY = isSquare ? h - 88 : h - 52
-  const quoteY = isSquare ? h - 140 : h - 88
-  const footerY = isSquare ? h - 36 : h - 22
+  const headerY = isSquare ? 48 : 36
+  const titleY = isSquare ? 92 : 70
+  const movieY = isSquare ? 124 : 96
+  const scoreBadgeY = isSquare ? h - 72 : h - 48
+  const quoteY = isSquare ? h - 128 : h - 84
+  const footerY = isSquare ? h - 28 : h - 18
   const badgeW = isSquare ? 200 : 160
   const badgeH = isSquare ? 56 : 44
   const badgeX = cx - badgeW / 2
