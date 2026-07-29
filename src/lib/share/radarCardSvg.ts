@@ -129,7 +129,7 @@ function gridRing(level: number, cx: number, cy: number, maxR: number): string {
   return pts.join(" ")
 }
 
-/** Nudge label anchors outward from each axis tip. Always middle-aligned for stacked name + score. */
+/** Nudge label anchors around each axis tip. Always middle-aligned for stacked name + score. */
 function labelLayout(
   index: number,
   cx: number,
@@ -138,12 +138,24 @@ function labelLayout(
   isSquare: boolean,
 ): { x: number; y: number } {
   const tip = radarPoint(index, 100, cx, cy, maxR)
+  // Top axis: sit just under the tip (toward center) so the movie title stays clear
+  // while the radar can stay large.
+  if (index === 0) {
+    const pullIn = isSquare ? 58 : 46
+    return { x: tip.x, y: tip.y + pullIn }
+  }
   const dx = tip.x - cx
   const dy = tip.y - cy
   const len = Math.hypot(dx, dy) || 1
-  // Top axis (0) gets less outward pad so it doesn't collide with the movie title.
+  // Bottom axes use slightly less pad to clear the total-score badge.
   const pad =
-    index === 0 ? (isSquare ? 44 : 32) : isSquare ? 68 : 50
+    index === 2 || index === 3
+      ? isSquare
+        ? 54
+        : 40
+      : isSquare
+        ? 64
+        : 48
   return {
     x: tip.x + (dx / len) * pad,
     y: tip.y + (dy / len) * pad,
@@ -178,10 +190,10 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     axes.chemistryInteraction,
   ].map(clampScore)
 
-  // Radar sits lower so the top axis label clears actor/movie header text.
+  // Large radar; top label tucks under the tip so the movie title stays clear.
   const cx = w / 2
-  const cy = isSquare ? h * 0.56 : h * 0.58
-  const maxR = isSquare ? Math.min(w, h) * 0.24 : Math.min(w, h) * 0.26
+  const cy = isSquare ? h * 0.57 : h * 0.58
+  const maxR = isSquare ? Math.min(w, h) * 0.31 : Math.min(w, h) * 0.33
 
   const poly = values
     .map((v, i) => {
