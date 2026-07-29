@@ -129,36 +129,18 @@ function gridRing(level: number, cx: number, cy: number, maxR: number): string {
   return pts.join(" ")
 }
 
-/** Nudge label anchors around each axis tip. Always middle-aligned for stacked name + score. */
-function labelLayout(
+/** Unit vector from radar center toward an axis tip. */
+function axisUnit(
   index: number,
   cx: number,
   cy: number,
   maxR: number,
-  isSquare: boolean,
-): { x: number; y: number } {
+): { tip: { x: number; y: number }; ux: number; uy: number } {
   const tip = radarPoint(index, 100, cx, cy, maxR)
-  // Top axis: sit just under the tip (toward center) so the movie title stays clear.
-  if (index === 0) {
-    const pullIn = isSquare ? 70 : 56
-    return { x: tip.x, y: tip.y + pullIn }
-  }
   const dx = tip.x - cx
   const dy = tip.y - cy
   const len = Math.hypot(dx, dy) || 1
-  // Extra pad for larger label + score bubbles.
-  const pad =
-    index === 2 || index === 3
-      ? isSquare
-        ? 72
-        : 54
-      : isSquare
-        ? 84
-        : 62
-  return {
-    x: tip.x + (dx / len) * pad,
-    y: tip.y + (dy / len) * pad,
-  }
+  return { tip, ux: dx / len, uy: dy / len }
 }
 
 export function buildRadarCardSvg(input: RadarCardInput): string {
@@ -189,10 +171,10 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
     axes.chemistryInteraction,
   ].map(clampScore)
 
-  // Modest radar size; labels/score bubbles carry the visual weight.
+  // Modest radar; labels sit outside along each spoke so they never cover the web.
   const cx = w / 2
-  const cy = isSquare ? h * 0.56 : h * 0.57
-  const maxR = isSquare ? Math.min(w, h) * 0.26 : Math.min(w, h) * 0.28
+  const cy = isSquare ? h * 0.58 : h * 0.58
+  const maxR = isSquare ? Math.min(w, h) * 0.24 : Math.min(w, h) * 0.26
 
   const poly = values
     .map((v, i) => {
@@ -233,33 +215,58 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   const axisBubbleW = isSquare ? 72 : 58
   const axisBubbleH = isSquare ? 38 : 30
   const labelNodes = AXIS_LABELS.map((label, i) => {
-    const { x, y } = labelLayout(i, cx, cy, maxR, isSquare)
+    const { tip, ux, uy } = axisUnit(i, cx, cy, maxR)
     const scoreOutOf10 = (values[i]! / 10).toFixed(1)
     const sub = AXIS_SUBLABELS[i]
     const hasSub = Boolean(sub)
-    const lineGap = isSquare ? 26 : 20
-    const labelBlockOffset = hasSub ? lineGap / 2 : 0
-    const line1Y = y - labelBlockOffset - (isSquare ? 30 : 24)
-    const line2Y = y - labelBlockOffset - (isSquare ? 4 : 4)
-    const singleLabelY = y - (isSquare ? 26 : 20)
-    const bubbleCy = y + (isSquare ? 26 : 20)
-    const bubbleX = x - axisBubbleW / 2
-    const bubbleY = bubbleCy - axisBubbleH / 2
+
+    // Place score bubble and name outside the tip along the spoke (never into the web).
+    const isBottom = i === 2 || i === 3
+    const bubbleDist = isSquare ? (isBottom ? 42 : 36) : isBottom ? 34 : 28
+    const labelDist = hasSub
+      ? isSquare
+        ? isBottom
+          ? 112
+          : 96
+        : isBottom
+          ? 90
+          : 76
+      : isSquare
+        ? isBottom
+          ? 96
+          : 82
+        : isBottom
+          ? 78
+          : 64
+    const lineSpread = isSquare ? 15 : 12
+
+    const bx = tip.x + ux * bubbleDist
+    const by = tip.y + uy * bubbleDist
+    const lx = tip.x + ux * labelDist
+    const ly = tip.y + uy * labelDist
+    // Always stack name lines top→bottom on screen so "Screen Presence" reads correctly.
+    const l1x = lx
+    const l1y = ly - lineSpread
+    const l2x = lx
+    const l2y = ly + lineSpread
+
+    const bubbleX = bx - axisBubbleW / 2
+    const bubbleY = by - axisBubbleH / 2
 
     const parts: string[] = []
     if (hasSub) {
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${line1Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
-        `<text x="${x.toFixed(1)}" y="${line2Y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(sub)}</text>`,
+        `<text x="${l1x.toFixed(1)}" y="${l1y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${escapeXml(label)}</text>`,
+        `<text x="${l2x.toFixed(1)}" y="${l2y.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${escapeXml(sub)}</text>`,
       )
     } else {
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${singleLabelY.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(label)}</text>`,
+        `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${labelFont}" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">${escapeXml(label)}</text>`,
       )
     }
     parts.push(
       `<rect x="${bubbleX.toFixed(1)}" y="${bubbleY.toFixed(1)}" width="${axisBubbleW}" height="${axisBubbleH}" rx="${axisBubbleH / 2}" fill="rgba(255,215,0,0.16)" stroke="${gold}" stroke-width="1.75"/>`,
-      `<text x="${x.toFixed(1)}" y="${bubbleCy.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${axisScoreFont}" font-weight="800" fill="${gold}" text-anchor="middle" dominant-baseline="central">${scoreOutOf10}</text>`,
+      `<text x="${bx.toFixed(1)}" y="${by.toFixed(1)}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${axisScoreFont}" font-weight="800" fill="${gold}" text-anchor="middle" dominant-baseline="central">${scoreOutOf10}</text>`,
     )
     return parts.join("\n  ")
   }).join("\n  ")
