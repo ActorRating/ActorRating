@@ -128,57 +128,25 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   );
 }
 
-function HeroCtaBlock({ featured }: { featured: FeaturedHeroPayload }) {
-  const router = useRouter();
-  return (
-    <>
-      <Link
-        href={featured.rateHref}
-        prefetch={false}
-        onMouseEnter={() => {
-          if (featured.rateHref.startsWith("/rate/")) {
-            router.prefetch(featured.rateHref);
-          }
-        }}
-        className="inline-flex"
-      >
-        <span
-          className="inline-flex items-center justify-center px-6 py-[15px] rounded text-black text-[18px] font-bold leading-none transition-transform hover:scale-[1.02] min-h-[48px]"
-          style={{ background: GOLD, ...HERO_SANS }}
-        >
-          Start rating — it&apos;s free!
-        </span>
-      </Link>
-      <p
-        className="mt-5 text-[17px] font-normal leading-[1.5] tracking-normal text-[#778899]"
-        style={HERO_SANS}
-      >
-        The network for rating acting — not movies.
-      </p>
-      <p className="mt-3 text-sm text-zinc-500">
-        Have an invite?{" "}
-        <Link href="/auth/register" className="text-[#FFD700] hover:underline">
-          Join with a code
-        </Link>
-        {" · "}
-        <a
-          href="#waitlist"
-          className="text-zinc-300 hover:text-white underline-offset-2 hover:underline"
-          onClick={(e) => {
-            const el = document.getElementById("waitlist")
-            if (!el) return
-            e.preventDefault()
-            el.scrollIntoView({ behavior: "smooth", block: "start" })
-            if (window.location.hash !== "#waitlist") {
-              window.history.pushState(null, "", "#waitlist")
-            }
-          }}
-        >
-          Waitlist
-        </a>
-      </p>
-    </>
-  );
+function HeroCtaBlock() {
+  // Mounted in multiple layout branches; HeroSection assigns id="waitlist" to the visible one.
+  return <WaitlistForm anchor={false} />;
+}
+
+function useVisibleWaitlistAnchor() {
+  useEffect(() => {
+    const sync = () => {
+      const slots = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-waitlist-slot]"),
+      );
+      for (const el of slots) el.removeAttribute("id");
+      const visible = slots.find((el) => el.getClientRects().length > 0);
+      if (visible) visible.id = "waitlist";
+    };
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
 }
 
 function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
@@ -187,6 +155,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
     upgradePosterBackdropRes(featured.moviePosterUrl) ??
     featured.moviePosterUrl ??
     HERO_BACKDROP_FALLBACK;
+  useVisibleWaitlistAnchor();
 
   return (
     <>
@@ -233,8 +202,11 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             <br />
             Tell the internet who deserved&nbsp;it.
           </motion.h1>
-          <div className="mt-6 flex flex-col items-center">
-            <HeroCtaBlock featured={featured} />
+          <div
+            data-waitlist-slot
+            className="mt-6 flex flex-col items-center scroll-mt-28"
+          >
+            <HeroCtaBlock />
           </div>
         </div>
       </section>
@@ -268,9 +240,10 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
-            className="mt-12 flex flex-col items-center"
+            data-waitlist-slot
+            className="mt-12 flex flex-col items-center scroll-mt-28"
           >
-            <HeroCtaBlock featured={featured} />
+            <HeroCtaBlock />
           </motion.div>
         </div>
 
@@ -294,8 +267,11 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
       </section>
 
       {/* CTA band — only with bottom-pinned desktop hero */}
-      <section className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center">
-        <HeroCtaBlock featured={featured} />
+      <section
+        data-waitlist-slot
+        className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center scroll-mt-28"
+      >
+        <HeroCtaBlock />
       </section>
     </>
   );
@@ -671,10 +647,6 @@ export default function HomePageClient({
       <div className="bg-[#0a0a0a] border-y border-white/[0.05]">
         <LetsYouSection />
       </div>
-
-      <section className="max-w-4xl mx-auto px-5 sm:px-8 py-12 sm:py-16 flex justify-center">
-        <WaitlistForm />
-      </section>
 
       <ClosingStrip primaryRateHref={primaryRateHref} />
     </>

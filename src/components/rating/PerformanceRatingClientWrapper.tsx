@@ -2225,7 +2225,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                           rows={3}
                           maxLength={COMMENT_MAX_LENGTH}
                           placeholder="e.g. Gave high Technical Skill for the dialect work in Act II…"
-                          className="w-full rounded-md border border-white/10 bg-[#0a0a0a] px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 outline-none focus:border-[#FFD700]/40 resize-y min-h-[72px]"
+                          className="w-full rounded-md border border-white/10 bg-[#0a0a0a] px-3 py-2.5 text-base sm:text-sm text-white placeholder:text-zinc-600 outline-none focus:border-[#FFD700]/40 resize-y min-h-[72px]"
                         />
                         <p className="mt-1 text-[11px] text-zinc-600 text-right">
                           {reviewComment.length}/{COMMENT_MAX_LENGTH}

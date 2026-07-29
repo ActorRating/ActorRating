@@ -3,7 +3,20 @@
 import { FormEvent, useState } from "react"
 import Link from "next/link"
 
-export function WaitlistForm({ compact = false }: { compact?: boolean }) {
+const GOLD =
+  "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)"
+const HERO_SANS = {
+  fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
+} as const
+
+export function WaitlistForm({
+  compact = false,
+  anchor = true,
+}: {
+  compact?: boolean
+  /** When false, omit id="waitlist" (hero mounts the form in multiple layouts). */
+  anchor?: boolean
+}) {
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -42,11 +55,11 @@ export function WaitlistForm({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
-      id="waitlist"
+      id={anchor ? "waitlist" : undefined}
       className={
         compact
           ? ""
-          : "scroll-mt-28 w-full max-w-md mx-auto text-center flex flex-col items-center"
+          : "scroll-mt-28 w-full max-w-[280px] sm:max-w-md mx-auto text-center flex flex-col items-center"
       }
     >
       {!compact ? (
@@ -66,7 +79,7 @@ export function WaitlistForm({ compact = false }: { compact?: boolean }) {
       ) : (
         <form
           onSubmit={onSubmit}
-          className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full max-w-md mx-auto"
+          className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full max-w-[280px] sm:max-w-md mx-auto items-stretch"
         >
           <input
             type="email"
@@ -74,14 +87,15 @@ export function WaitlistForm({ compact = false }: { compact?: boolean }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
-            className="flex-1 rounded-sm border border-white/15 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 text-left"
+            className="flex-1 min-w-0 rounded border border-white/15 bg-zinc-950 px-4 text-[17px] text-white placeholder:text-zinc-600 text-left min-h-[48px]"
+            style={HERO_SANS}
             disabled={status === "sending"}
           />
           <button
             type="submit"
             disabled={status === "sending"}
-            className="rounded-sm px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-black disabled:opacity-60"
-            style={{ background: "linear-gradient(90deg, #FFD700, #FFA500)" }}
+            className="inline-flex shrink-0 items-center justify-center px-6 py-[15px] rounded text-black text-[18px] font-bold leading-none transition-transform hover:scale-[1.02] min-h-[48px] disabled:opacity-60 disabled:hover:scale-100"
+            style={{ background: GOLD, ...HERO_SANS }}
           >
             {status === "sending" ? "Joining…" : "Join waitlist"}
           </button>
