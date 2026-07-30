@@ -1433,6 +1433,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         (performance.movie.year != null
           ? `&movieYear=${encodeURIComponent(String(performance.movie.year))}`
           : "") +
+        (performance.actor.imageUrl
+          ? `&actorImageUrl=${encodeURIComponent(performance.actor.imageUrl)}`
+          : "") +
         (externalSubmittedRating?.id
           ? `&ratingId=${encodeURIComponent(externalSubmittedRating.id)}`
           : "")
@@ -1503,7 +1506,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     // Generate shareable image
     try {
       // Use the OG image endpoint to generate a shareable image
-      const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=og&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}`
+      const imageUrl = `${window.location.origin}/api/og?size=og&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}` +
+        (performance.actor.imageUrl ? `&actorImageUrl=${encodeURIComponent(performance.actor.imageUrl)}` : "")
 
       const encodedText = encodeURIComponent(shareText)
       const encodedUrl = encodeURIComponent(shareUrl)
@@ -1519,7 +1523,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       } else if (platform === 'instagram') {
         // Instagram doesn't support direct URL sharing, so we copy the image URL to clipboard
         // and show instructions to the user
-        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}`
+        const imageUrl = `${window.location.origin}/api/og?size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}` +
+          (performance.actor.imageUrl ? `&actorImageUrl=${encodeURIComponent(performance.actor.imageUrl)}` : "")
         await navigator.clipboard.writeText(imageUrl)
         alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
         trackShareRating('instagram')
@@ -1536,7 +1541,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank')
         trackShareRating('facebook')
       } else if (platform === 'instagram') {
-        const imageUrl = `${window.location.origin}/api/og?ratingId=${performance.actor.id}-${performance.movie.id}&size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}`
+        const imageUrl = `${window.location.origin}/api/og?size=square&variant=radar&actorName=${encodeURIComponent(performance.actor.name)}&movieTitle=${encodeURIComponent(performance.movie.title)}&score=${finalScore}&emotionalRangeDepth=${Math.round(emotionalRangeDepth)}&characterBelievability=${Math.round(characterBelievability)}&technicalSkill=${Math.round(technicalSkill)}&screenPresence=${Math.round(screenPresence)}&chemistryInteraction=${Math.round(chemistryInteraction)}` +
+          (performance.actor.imageUrl ? `&actorImageUrl=${encodeURIComponent(performance.actor.imageUrl)}` : "")
         navigator.clipboard.writeText(imageUrl).then(() => {
           alert('Share image URL copied to clipboard! Open Instagram and paste it in your story or post.')
           trackShareRating('instagram')

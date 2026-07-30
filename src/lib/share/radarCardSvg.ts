@@ -24,6 +24,8 @@ export type RadarCardInput = {
   scoreOutOf10: string
   quote?: string | null
   axes: RadarAxisScores
+  /** Absolute URL or data URL for a vertical actor portrait at the radar center. */
+  actorImageUrl?: string | null
 }
 
 /** Line 1 of each axis label (white). Empty second line for single-word axes. */
@@ -222,22 +224,42 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
 
     // Place score bubble and name outside the tip along the spoke (never into the web).
     const isBottom = i === 2 || i === 3
-    const bubbleDist = isSquare ? (isBottom ? 42 : 36) : isBottom ? 34 : 28
+    const isSide = i === 1 || i === 4 // Character Depth, Originality
+    const bubbleDist = isSquare
+      ? isBottom
+        ? 42
+        : isSide
+          ? 40
+          : 36
+      : isBottom
+        ? 34
+        : isSide
+          ? 32
+          : 28
+    // Side axes need extra label distance so two-line / single names clear the score pill.
     const labelDist = hasSub
       ? isSquare
         ? isBottom
           ? 112
-          : 96
+          : isSide
+            ? 128
+            : 96
         : isBottom
           ? 90
-          : 76
+          : isSide
+            ? 104
+            : 76
       : isSquare
         ? isBottom
           ? 96
-          : 82
+          : isSide
+            ? 118
+            : 82
         : isBottom
           ? 78
-          : 64
+          : isSide
+            ? 96
+            : 64
     const lineSpread = isSquare ? 15 : 12
 
     const bx = tip.x + ux * bubbleDist
@@ -296,8 +318,22 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   const badgeY = scoreBadgeY - badgeH / 2
   const totalScoreFont = isSquare ? 36 : 28
 
+  // Small uncropped vertical portrait at radar center (2:3).
+  const photoW = isSquare ? Math.round(maxR * 0.36) : Math.round(maxR * 0.34)
+  const photoH = Math.round(photoW * 1.5)
+  const photoX = cx - photoW / 2
+  const photoY = cy - photoH / 2
+  const photoHref = input.actorImageUrl?.trim() || null
+  const photoNode = photoHref
+    ? `<g>
+  <rect x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW}" height="${photoH}" rx="6" fill="#0a0a0a" stroke="${gold}" stroke-width="2"/>
+  <image href="${escapeXml(photoHref)}" xlink:href="${escapeXml(photoHref)}" x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW}" height="${photoH}" preserveAspectRatio="xMidYMid meet" clip-path="url(#actorPhotoClip)"/>
+  <rect x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW}" height="${photoH}" rx="6" fill="none" stroke="${gold}" stroke-width="2"/>
+</g>`
+    : ""
+
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:${goldLight};stop-opacity:1" />
@@ -319,6 +355,9 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
       <stop offset="0%" style="stop-color:#141414;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
     </radialGradient>
+    <clipPath id="actorPhotoClip">
+      <rect x="${photoX.toFixed(1)}" y="${photoY.toFixed(1)}" width="${photoW}" height="${photoH}" rx="6"/>
+    </clipPath>
   </defs>
   <rect width="100%" height="100%" fill="url(#cardVignette)"/>
   <text x="48" y="${headerY}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${isSquare ? 24 : 20}" font-weight="700" fill="url(#goldGradient)">ActorRating.com</text>
@@ -329,6 +368,7 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
   ${rings}
   ${spokeLines}
   <polygon points="${poly}" fill="url(#radarFill)" stroke="${gold}" stroke-width="${isSquare ? 3.5 : 2.75}" stroke-linejoin="round" filter="url(#softGlow)"/>
+  ${photoNode}
   ${vertexDots}
   ${labelNodes}
   <rect x="${badgeX.toFixed(1)}" y="${badgeY.toFixed(1)}" width="${badgeW}" height="${badgeH}" rx="${badgeH / 2}" fill="rgba(255,215,0,0.12)" stroke="${gold}" stroke-width="1.5"/>

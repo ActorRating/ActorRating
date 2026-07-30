@@ -5,8 +5,45 @@ import { prisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { getClientIp, isLikelyAbusiveBot } from "@/lib/requestProtection"
 import { buildRadarCardSvg, normalizeRadarAxes } from "@/lib/share/radarCardSvg"
+import { upgradeActorImageRes } from "@/lib/tmdb"
 
 export const runtime = "nodejs"
+
+async function toEmbeddedImageDataUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null
+  try {
+    const upgraded = upgradeActorImageRes(url) ?? url
+    // Only embed known image hosts (avoid open SSRF via actorImageUrl query param).
+    let parsed: URL
+    try {
+      parsed = new URL(upgraded)
+    } catch {
+      return null
+    }
+    const host = parsed.hostname.toLowerCase()
+    const allowed =
+      host === "image.tmdb.org" ||
+      host.endsWith(".tmdb.org") ||
+      host === "actorrating.com" ||
+      host.endsWith(".actorrating.com")
+    if (!allowed || (parsed.protocol !== "https:" && parsed.protocol !== "http:")) {
+      return null
+    }
+    const res = await fetch(upgraded, {
+      headers: { Accept: "image/*" },
+      signal: AbortSignal.timeout(4000),
+    })
+    if (!res.ok) return null
+    const contentType = res.headers.get("content-type") || "image/jpeg"
+    if (!contentType.startsWith("image/")) return null
+    const buf = Buffer.from(await res.arrayBuffer())
+    // Keep SVG payloads reasonable
+    if (buf.byteLength > 1_500_000) return null
+    return `data:${contentType};base64,${buf.toString("base64")}`
+  } catch {
+    return null
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -36,6 +73,7 @@ export async function GET(req: NextRequest) {
     let roleName: string
     let username: string
     let quote: string | null = null
+    let actorImageUrl: string | null = searchParams.get("actorImageUrl")
     let axes = {
       emotionalRangeDepth: 0,
       characterBelievability: 0,
@@ -79,6 +117,9 @@ export async function GET(req: NextRequest) {
         : rating?.user?.name?.trim() || "Someone"
       if (rating?.comment?.trim() && !rating.commentHidden && !rating.isSpoiler) {
         quote = rating.comment.trim()
+      }
+      if (!actorImageUrl) {
+        actorImageUrl = rating?.actor?.imageUrl ?? null
       }
       if (rating) {
         axes = normalizeRadarAxes(
@@ -126,6 +167,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (variant === "radar" || size === "square") {
+      const embeddedActorImage = await toEmbeddedImageDataUrl(actorImageUrl)
       const svg = buildRadarCardSvg({
         width: dims.w,
         height: dims.h,
@@ -137,6 +179,7 @@ export async function GET(req: NextRequest) {
         scoreOutOf10,
         quote,
         axes,
+        actorImageUrl: embeddedActorImage,
       })
       return new Response(svg, {
         status: 200,
