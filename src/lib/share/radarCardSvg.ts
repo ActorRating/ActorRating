@@ -253,18 +253,20 @@ export function buildRadarCardSvg(input: RadarCardInput): string {
         ? isBottom
           ? 96
           : isSide
-            ? 118
+            ? 134
             : 82
         : isBottom
           ? 78
           : isSide
-            ? 96
+            ? 108
             : 64
     const lineSpread = isSquare ? 15 : 12
 
     const bx = tip.x + ux * bubbleDist
     const by = tip.y + uy * bubbleDist
-    const lx = tip.x + ux * labelDist
+    // Modest left nudge so Originality clears the pill with a small, even gap.
+    const labelNudgeX = i === 4 ? (isSquare ? -6 : -5) : 0
+    const lx = tip.x + ux * labelDist + labelNudgeX
     const ly = tip.y + uy * labelDist
     // Always stack name lines top→bottom on screen so "Screen Presence" reads correctly.
     const l1x = lx
