@@ -491,7 +491,7 @@ const RatingSliderCard = memo(function RatingSliderCard({
         )}
         {!hideScore && (
           <span className="text-sm sm:text-xl font-bold text-[#FFD700]">
-            {Math.round(localValue / 10)} / 10
+            {localValue >= 100 ? 10 : Math.min(9, Math.round(localValue / 10))} / 10
           </span>
         )}
       </div>
