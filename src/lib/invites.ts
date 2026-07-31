@@ -31,6 +31,8 @@ function isInviteExhausted(row: {
   maxUses: number
   usedById: string | null
 }): boolean {
+  // maxUses <= 0 means unlimited redemptions
+  if (row.maxUses <= 0) return false
   if (row.usedCount >= row.maxUses) return true
   // Legacy single-use: usedById set before usedCount existed
   if (row.maxUses === 1 && row.usedById) return true
@@ -118,7 +120,8 @@ export async function redeemInvite(params: {
       const updated = await tx.inviteCode.updateMany({
         where: {
           id: row.id,
-          usedCount: { lt: row.maxUses },
+          // Unlimited (maxUses <= 0): no usedCount cap. Otherwise race-safe lt check.
+          ...(row.maxUses > 0 ? { usedCount: { lt: row.maxUses } } : {}),
         },
         data: {
           usedCount: { increment: 1 },

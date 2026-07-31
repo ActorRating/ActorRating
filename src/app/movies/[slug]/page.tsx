@@ -26,12 +26,18 @@ function buildMovieJsonLd(data: any, baseUrl: string) {
       }))
 
   const ratings = data.ratings || []
-  const ratingCount = ratings.length
-  const hasScores = ratings.some((r: any) => r.weightedScore != null)
+  const ratingCount =
+    typeof data.totalRatingCount === 'number' ? data.totalRatingCount : ratings.length
+  const aggregateFromApi =
+    typeof data.aggregateWeightedScore === 'number' ? data.aggregateWeightedScore : null
+  const hasScores =
+    aggregateFromApi != null || ratings.some((r: any) => r.weightedScore != null)
   const avg100 =
-    hasScores && ratingCount >= 1
-      ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
-      : null
+    aggregateFromApi != null
+      ? aggregateFromApi
+      : hasScores && ratingCount >= 1
+        ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
+        : null
   const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
   return {

@@ -24,13 +24,19 @@ function buildActorJsonLd(data: any, baseUrl: string) {
   const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw : []
 
   const ratings = data.ratings || []
-  const ratingCount = ratings.length
+  const ratingCount =
+    typeof data.totalRatingCount === 'number' ? data.totalRatingCount : ratings.length
+  const aggregateFromApi =
+    typeof data.aggregateWeightedScore === 'number' ? data.aggregateWeightedScore : null
   const hasAggregateRating =
     ratingCount >= 1 &&
-    ratings.some((r: any) => r.weightedScore != null)
-  const avg100 = hasAggregateRating
-    ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
-    : null
+    (aggregateFromApi != null || ratings.some((r: any) => r.weightedScore != null))
+  const avg100 =
+    aggregateFromApi != null
+      ? aggregateFromApi
+      : hasAggregateRating
+        ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
+        : null
   const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
   return {

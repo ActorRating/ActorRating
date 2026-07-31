@@ -355,6 +355,7 @@ model InviteCode {
   ownerId   String
   owner     User      @relation("OwnedInvites", fields: [ownerId], references: [id], onDelete: Cascade)
   /// Cap on how many times this code can be redeemed. Default 1 = classic single-use invite.
+  /// 0 = unlimited redemptions.
   maxUses   Int       @default(1)
   /// How many times this code has been successfully redeemed.
   usedCount Int       @default(0)

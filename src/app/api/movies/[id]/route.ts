@@ -43,20 +43,24 @@ export async function GET(
       return NextResponse.json({ error: "Movie not found" }, { status: 410 })
     }
 
-    // Lazy-fill releaseDate from TMDB so coming-soon gating works without a full backfill.
+    // Lazy-fill releaseDate off the critical path (don't block the response on TMDB).
     if (!movie.releaseDate && movie.tmdbId != null) {
-      try {
-        const details = await getMovieDetails(movie.tmdbId)
-        const releaseDate = parseTmdbReleaseDate(details?.releaseDate ?? null)
-        if (releaseDate) {
-          movie = await prisma.movie.update({
-            where: { id: movie.id },
-            data: { releaseDate },
-          })
+      const movieId = movie.id
+      const tmdbId = movie.tmdbId
+      void (async () => {
+        try {
+          const details = await getMovieDetails(tmdbId)
+          const releaseDate = parseTmdbReleaseDate(details?.releaseDate ?? null)
+          if (releaseDate) {
+            await prisma.movie.update({
+              where: { id: movieId },
+              data: { releaseDate },
+            })
+          }
+        } catch {
+          /* non-blocking */
         }
-      } catch {
-        /* non-blocking */
-      }
+      })()
     }
 
     const slug = movie.slug ?? id
@@ -164,14 +168,40 @@ export async function GET(
       ratingsByActor.get(rating.actorId)!.push(rating)
     })
 
-    // Build ratingMap with averaged criteria values per actor (fixes score discrepancy
-    // — without this, enrichedPerformances used only the first rating's individual values).
+    // Build ratingMap with averaged criteria + variance (for controversial sort).
+    // Clients get these on each performance — we do NOT ship the raw ratings array.
     const ratingMap = new Map<string, any>()
+    let weightedScoreSum = 0
+    let weightedScoreCount = 0
     ratingsByActor.forEach((actorRatings, actorId) => {
       const count = actorRatings.length
       const first = actorRatings[0]
       const avg = (field: string) =>
         Math.round(actorRatings.reduce((s, r) => s + (r[field] || 0), 0) / count)
+      const perRatingScores = actorRatings.map((r: any) => {
+        const vals = [
+          r.emotionalRangeDepth,
+          r.characterBelievability,
+          r.technicalSkill,
+          r.screenPresence,
+          r.chemistryInteraction,
+        ].filter((s): s is number => typeof s === "number" && s > 0)
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+      })
+      let scoreVariance = 0
+      if (perRatingScores.length > 1) {
+        const mean =
+          perRatingScores.reduce((a, b) => a + b, 0) / perRatingScores.length
+        scoreVariance =
+          perRatingScores.reduce((s, v) => s + Math.pow(v - mean, 2), 0) /
+          perRatingScores.length
+      }
+      for (const r of actorRatings) {
+        if (r.weightedScore != null && Number.isFinite(Number(r.weightedScore))) {
+          weightedScoreSum += Number(r.weightedScore)
+          weightedScoreCount += 1
+        }
+      }
       ratingMap.set(`${actorId}:${movie.id}`, {
         roleName: first.roleName,
         emotionalRangeDepth: avg('emotionalRangeDepth'),
@@ -180,8 +210,12 @@ export async function GET(
         screenPresence: avg('screenPresence'),
         chemistryInteraction: avg('chemistryInteraction'),
         ratingCount: count,
+        scoreVariance,
       })
     })
+    const totalRatingCount = ratings.length
+    const aggregateWeightedScore =
+      weightedScoreCount > 0 ? weightedScoreSum / weightedScoreCount : null
 
     // Get all unique actors that have ratings but no performance entry
     const ratedActorIds = new Set(ratings.map(r => r.actorId))
@@ -264,6 +298,7 @@ export async function GET(
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
         ratingCount: rating?.ratingCount || 0,
+        scoreVariance: rating?.scoreVariance || 0,
         featuredReview: featuredReviewByActor.get(performance.actorId) ?? null,
       }
     })
@@ -310,6 +345,7 @@ export async function GET(
               screenPresence: avgRating.screenPresence,
               chemistryInteraction: avgRating.chemistryInteraction,
               ratingCount: actorRatings.length,
+              scoreVariance: ratingMap.get(`${actorItem.id}:${movie.id}`)?.scoreVariance || 0,
               featuredReview: featuredReviewByActor.get(actorItem.id) ?? null,
             }
             enrichedPerformances.push(newPerformance)
@@ -318,14 +354,15 @@ export async function GET(
       })
     }
 
-    const billedPerformances = await hydratePerformanceBillingOrder(
+    // TMDB billing hydrate is best-effort background work — never block the response.
+    void hydratePerformanceBillingOrder(
       prisma,
       { id: movie.id, tmdbId: movie.tmdbId },
       enrichedPerformances,
       { persist: true }
-    )
+    ).catch(() => {})
 
-    billedPerformances.sort((a: any, b: any) => {
+    enrichedPerformances.sort((a: any, b: any) => {
       const tierA = TIER_RANK[a.tier] ?? 2
       const tierB = TIER_RANK[b.tier] ?? 2
       if (tierA !== tierB) return tierA - tierB
@@ -335,15 +372,16 @@ export async function GET(
       return String(a.actor?.name || "").localeCompare(String(b.actor?.name || ""))
     })
 
-    const rateableCast = billedPerformances.filter(
+    const rateableCast = enrichedPerformances.filter(
       (p: any) => !isSelfOrArchiveCredit(p.character ?? p.roleName)
     )
 
-    // Combine the data
+    // Slim payload: aggregates live on performances; no raw ratings array.
     const movieData = {
       ...movie,
       performances: rateableCast,
-      ratings
+      totalRatingCount,
+      aggregateWeightedScore,
     }
 
     if (!isProd) {

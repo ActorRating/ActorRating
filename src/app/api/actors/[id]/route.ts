@@ -168,14 +168,53 @@ export async function GET(
       })
     }
 
-    // Build a ratingMap with averaged criteria values per movie (fixes score discrepancy
-    // between actor page and rate page which both use the same weighted average formula)
+    // Build a ratingMap with averaged criteria + variance (for controversial sort).
+    // Clients get these on each performance — we do NOT ship the raw ratings array.
     const ratingMap = new Map<string, any>()
+    let weightedScoreSum = 0
+    let weightedScoreCount = 0
+    const criteriaKeys = [
+      "emotionalRangeDepth",
+      "characterBelievability",
+      "technicalSkill",
+      "screenPresence",
+      "chemistryInteraction",
+    ] as const
+    const criteriaSums: Record<string, { sum: number; n: number }> = {}
+    for (const k of criteriaKeys) criteriaSums[k] = { sum: 0, n: 0 }
+
     ratingsByMovie.forEach((movieRatings, movieId) => {
       const count = movieRatings.length
       const first = movieRatings[0]
       const avg = (field: string) =>
         Math.round(movieRatings.reduce((s, r) => s + (r[field] || 0), 0) / count)
+      const perRatingScores = movieRatings.map((r: any) => {
+        const vals = criteriaKeys
+          .map((k) => r[k])
+          .filter((s): s is number => typeof s === "number" && s > 0)
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+      })
+      let scoreVariance = 0
+      if (perRatingScores.length > 1) {
+        const mean =
+          perRatingScores.reduce((a, b) => a + b, 0) / perRatingScores.length
+        scoreVariance =
+          perRatingScores.reduce((s, v) => s + Math.pow(v - mean, 2), 0) /
+          perRatingScores.length
+      }
+      for (const r of movieRatings) {
+        if (r.weightedScore != null && Number.isFinite(Number(r.weightedScore))) {
+          weightedScoreSum += Number(r.weightedScore)
+          weightedScoreCount += 1
+        }
+        for (const k of criteriaKeys) {
+          const v = r[k]
+          if (typeof v === "number" && v > 0) {
+            criteriaSums[k]!.sum += v
+            criteriaSums[k]!.n += 1
+          }
+        }
+      }
       ratingMap.set(movieId, {
         roleName: first.roleName,
         emotionalRangeDepth: avg('emotionalRangeDepth'),
@@ -184,8 +223,19 @@ export async function GET(
         screenPresence: avg('screenPresence'),
         chemistryInteraction: avg('chemistryInteraction'),
         ratingCount: count,
+        scoreVariance,
       })
     })
+    const totalRatingCount = ratings.length
+    const aggregateWeightedScore =
+      weightedScoreCount > 0 ? weightedScoreSum / weightedScoreCount : null
+    const careerCriteriaAverages = criteriaKeys
+      .map((key) => {
+        const { sum, n } = criteriaSums[key]!
+        if (n === 0) return null
+        return { key, avg: sum / n }
+      })
+      .filter((row): row is { key: (typeof criteriaKeys)[number]; avg: number } => row !== null)
 
     // Get all unique movies that have ratings
     const ratedMovieIds = new Set(ratings.map(r => r.movieId))
@@ -261,6 +311,7 @@ export async function GET(
         screenPresence: rating?.screenPresence || 0,
         chemistryInteraction: rating?.chemistryInteraction || 0,
         ratingCount: rating?.ratingCount || 0,
+        scoreVariance: rating?.scoreVariance || 0,
         featuredReview: featuredReviewByMovie.get(key) ?? null,
         user: {
           name: `User ${performance.userId?.slice(-4) || 'Unknown'}`,
@@ -303,6 +354,8 @@ export async function GET(
             technicalSkill: avgRating.technicalSkill,
             screenPresence: avgRating.screenPresence,
             chemistryInteraction: avgRating.chemistryInteraction,
+            ratingCount: movieRatings.length,
+            scoreVariance: ratingMap.get(movie.id)?.scoreVariance || 0,
             featuredReview: featuredReviewByMovie.get(movie.id) ?? null,
             user: {
               name: `User ${firstRating.userId?.slice(-4) || 'Unknown'}`,
@@ -346,11 +399,13 @@ export async function GET(
         .catch(() => {})
     }
 
-    // Combine the data
+    // Slim payload: aggregates live on performances; no raw ratings array.
     const actorData = {
       ...actor,
       performances: rateablePerformances,
-      ratings
+      totalRatingCount,
+      aggregateWeightedScore,
+      careerCriteriaAverages,
     }
 
     if (!isProd) {

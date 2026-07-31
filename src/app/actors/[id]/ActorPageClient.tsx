@@ -30,18 +30,6 @@ interface Award {
   movie?: string
 }
 
-interface Rating {
-  userId: string
-  movieId: string
-  roleName?: string
-  weightedScore?: number
-  emotionalRangeDepth?: number
-  characterBelievability?: number
-  technicalSkill?: number
-  screenPresence?: number
-  chemistryInteraction?: number
-}
-
 interface Actor {
   id: string
   name: string
@@ -51,7 +39,10 @@ interface Actor {
   nationality?: string
   knownFor?: string
   awards?: Award[] | string | null
-  ratings?: Rating[]
+  /** Total community ratings (replaces shipping full ratings[]). */
+  totalRatingCount?: number
+  aggregateWeightedScore?: number | null
+  careerCriteriaAverages?: Array<{ key: string; avg: number }> | null
 }
 
 interface Performance {
@@ -65,6 +56,8 @@ interface Performance {
   screenPresence?: number
   chemistryInteraction?: number
   seededAggregateScore?: number | null
+  ratingCount?: number
+  scoreVariance?: number
   actor: {
     id: string
     name: string
@@ -243,19 +236,8 @@ export default function ActorPageClient({
     const fetchData = async () => {
       if (isUUID) return
       if (hasInitial) {
-        // Keep actor payload cacheable to avoid extra function invocations.
-        fetch(`/api/actors/${actorId}`, {
-          // Avoid stale JSON (e.g. missing posterUrl after API/schema changes). force-cache kept old payloads across hard refresh.
-          cache: 'no-store',
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((freshData) => {
-            if (!freshData) return
-            setActor(freshData)
-            if (Array.isArray(freshData.performances)) setPerformances(freshData.performances)
-          })
-          .catch(() => {})
-
+        // SSR already painted — only fetch user-specific ratings when logged in.
+        // Do not re-download the full actor payload on every mount.
         if (!user) {
           setLoading(false)
           return
@@ -289,7 +271,9 @@ export default function ActorPageClient({
         return
       }
       try {
-        const response = await fetch(`/api/actors/${actorId}`, { cache: 'no-store' })
+        const response = await fetch(`/api/actors/${actorId}`, {
+          cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
+        })
         if (response.status === 410) {
           setIs410(true)
           setLoading(false)
@@ -458,24 +442,24 @@ export default function ActorPageClient({
   const birthYear = useMemo(() => formatBirthYear(actor?.birthDate ?? null), [actor?.birthDate])
 
   const careerCriteriaAverages = useMemo(() => {
-    const ratings = actor?.ratings || []
-    if (ratings.length === 0) return null
-
-    const averages = CAREER_CRITERIA.map(({ key, label, shortLabel, Icon }) => {
-      const values = ratings
-        .map((r) => r[key])
-        .filter((s): s is number => typeof s === 'number' && s > 0)
-      if (values.length === 0) return null
-      const avg = values.reduce((sum, s) => sum + s, 0) / values.length
-      return { key, label, shortLabel, Icon, avg }
-    }).filter((row): row is NonNullable<typeof row> => row !== null)
-
-    return averages.length > 0 ? averages : null
-  }, [actor?.ratings])
+    const fromApi = actor?.careerCriteriaAverages
+    if (fromApi && fromApi.length > 0) {
+      const byKey = new Map(fromApi.map((r) => [r.key, r.avg]))
+      const averages = CAREER_CRITERIA.map(({ key, label, shortLabel, Icon }) => {
+        const avg = byKey.get(key)
+        if (avg == null || !(avg > 0)) return null
+        return { key, label, shortLabel, Icon, avg }
+      }).filter((row): row is NonNullable<typeof row> => row !== null)
+      return averages.length > 0 ? averages : null
+    }
+    return null
+  }, [actor?.careerCriteriaAverages])
 
   // Calculate community stats
   const communityStats = useMemo(() => {
-    const totalRatings = actor?.ratings?.length || 0
+    const totalRatings =
+      actor?.totalRatingCount ??
+      dedupedPerformances.reduce((sum, p) => sum + (p.ratingCount || 0), 0)
     const ratedPerformancesCount = scoredPerformances.length
     const totalPerformances = dedupedPerformances.length
     const unratedPerformances = totalPerformances - ratedPerformancesCount
@@ -536,37 +520,14 @@ export default function ActorPageClient({
     return scored.filter(p => p.searchScore > 0)
   }, [performancesWithScores, searchQuery])
 
-  // Calculate rating count and variance for each performance (for sorting)
+  // Rating count + variance come from the API (no raw ratings[] payload).
   const performancesWithStats = useMemo(() => {
-    return filteredPerformances.map(perf => {
-      // Count how many ratings this performance has
-      const movieRatings = actor?.ratings?.filter((r: any) => r.movieId === perf.movieId) || []
-      const ratingCount = movieRatings.length
-      
-      // Calculate variance for controversial sorting
-      let variance = 0
-      if (movieRatings.length > 1) {
-        const scores = movieRatings.map((r: Rating) => {
-          const score = [
-            r.emotionalRangeDepth,
-            r.characterBelievability,
-            r.technicalSkill,
-            r.screenPresence,
-            r.chemistryInteraction
-          ].filter((s): s is number => typeof s === 'number' && s > 0)
-          return score.length > 0 ? score.reduce((sum: number, s: number) => sum + s, 0) / score.length : 0
-        })
-        const mean = scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length
-        variance = scores.reduce((sum: number, s: number) => sum + Math.pow(s - mean, 2), 0) / scores.length
-      }
-      
-      return {
-        ...perf,
-        ratingCount,
-        variance
-      }
-    })
-  }, [filteredPerformances, actor])
+    return filteredPerformances.map(perf => ({
+      ...perf,
+      ratingCount: perf.ratingCount || 0,
+      variance: perf.scoreVariance || 0,
+    }))
+  }, [filteredPerformances])
 
   // Apply sorting to filtered performances
   const filteredAndRankedPerformances = useMemo(() => {
@@ -1181,8 +1142,7 @@ export default function ActorPageClient({
                   
                   {/* Social Proof - Rating Count in Bubble */}
                   {(() => {
-                    const highestRatedMovieRatings = actor?.ratings?.filter((r: any) => r.movieId === communityStats.highestRated?.movieId) || []
-                    const ratingCount = highestRatedMovieRatings.length
+                    const ratingCount = communityStats.highestRated?.ratingCount || 0
                     return ratingCount > 0 ? (
                       <div className="mb-4">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">

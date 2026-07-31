@@ -22,19 +22,6 @@ import { isMovieComingSoon } from '@/lib/movie-release'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 
-interface Rating {
-  userId: string
-  actorId: string
-  movieId: string
-  roleName?: string
-  weightedScore?: number
-  emotionalRangeDepth?: number
-  characterBelievability?: number
-  technicalSkill?: number
-  screenPresence?: number
-  chemistryInteraction?: number
-}
-
 interface Movie {
   id: string
   title: string
@@ -47,7 +34,9 @@ interface Movie {
   posterUrl?: string | null
   tmdbRating?: number | null
   releaseDate?: string | Date | null
-  ratings?: Rating[]
+  /** Total community ratings for this movie (replaces shipping full ratings[]). */
+  totalRatingCount?: number
+  aggregateWeightedScore?: number | null
 }
 
 interface Actor {
@@ -72,6 +61,8 @@ interface Performance {
   screenPresence?: number
   chemistryInteraction?: number
   seededAggregateScore?: number | null
+  ratingCount?: number
+  scoreVariance?: number
   actor: Actor
   movie: {
     id: string
@@ -178,18 +169,8 @@ export default function MoviePageClient({
     const fetchData = async () => {
       if (isUUID) return
       if (hasInitial) {
-        // Keep movie payload cacheable to avoid extra function invocations.
-        fetch(`/api/movies/${movieSlug}`, {
-          cache: 'force-cache',
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((freshData) => {
-            if (!freshData) return
-            setMovie(freshData)
-            if (Array.isArray(freshData.performances)) setPerformances(freshData.performances)
-          })
-          .catch(() => {})
-
+        // SSR already painted — only fetch user-specific ratings when logged in.
+        // Do not re-download the full movie payload on every mount.
         if (!user) {
           setLoading(false)
           return
@@ -385,7 +366,9 @@ export default function MoviePageClient({
 
   // Calculate community stats
   const communityStats = useMemo(() => {
-    const totalRatings = movie?.ratings?.length || 0
+    const totalRatings =
+      movie?.totalRatingCount ??
+      dedupedPerformances.reduce((sum, p) => sum + (p.ratingCount || 0), 0)
     const ratedPerformancesCount = scoredPerformances.length
     const totalPerformances = dedupedPerformances.length
     const unratedPerformances = totalPerformances - ratedPerformancesCount
@@ -441,37 +424,14 @@ export default function MoviePageClient({
     return scored.filter(p => p.searchScore > 0)
   }, [performancesWithScores, searchQuery])
 
-  // Calculate rating count and variance for each performance (for sorting)
+  // Rating count + variance come from the API (no raw ratings[] payload).
   const performancesWithStats = useMemo(() => {
-    return filteredPerformances.map(perf => {
-      // Count how many ratings this performance has
-      const actorRatings = movie?.ratings?.filter((r: any) => r.actorId === perf.actorId && r.movieId === perf.movieId) || []
-      const ratingCount = actorRatings.length
-      
-      // Calculate variance for controversial sorting
-      let variance = 0
-      if (actorRatings.length > 1) {
-        const scores = actorRatings.map((r: Rating) => {
-          const score = [
-            r.emotionalRangeDepth,
-            r.characterBelievability,
-            r.technicalSkill,
-            r.screenPresence,
-            r.chemistryInteraction
-          ].filter((s): s is number => typeof s === 'number' && s > 0)
-          return score.length > 0 ? score.reduce((sum: number, s: number) => sum + s, 0) / score.length : 0
-        })
-        const mean = scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length
-        variance = scores.reduce((sum: number, s: number) => sum + Math.pow(s - mean, 2), 0) / scores.length
-      }
-      
-      return {
-        ...perf,
-        ratingCount,
-        variance
-      }
-    })
-  }, [filteredPerformances, movie])
+    return filteredPerformances.map(perf => ({
+      ...perf,
+      ratingCount: perf.ratingCount || 0,
+      variance: perf.scoreVariance || 0,
+    }))
+  }, [filteredPerformances])
 
   // Apply sorting to filtered performances
   const filteredAndRankedPerformances = useMemo(() => {
@@ -956,8 +916,7 @@ export default function MoviePageClient({
                   
                   {/* Social Proof - Rating Count */}
                   {(() => {
-                    const highestRatedActorRatings = movie?.ratings?.filter((r: any) => r.actorId === communityStats.highestRated?.actorId && r.movieId === communityStats.highestRated?.movieId) || []
-                    const ratingCount = highestRatedActorRatings.length
+                    const ratingCount = communityStats.highestRated?.ratingCount || 0
                     return ratingCount > 0 ? (
                       <div className="mb-4">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">

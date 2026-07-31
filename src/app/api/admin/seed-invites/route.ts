@@ -17,6 +17,7 @@ async function requireAdmin() {
  * POST /api/admin/seed-invites
  * Body: { code: string; maxUses: number }
  * Upserts a single multi-use invite code.
+ * maxUses: 0 (or "unlimited") = unlimited redemptions.
  */
 export async function POST(request: NextRequest) {
   const admin = await requireAdmin()
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as {
     code?: string
-    maxUses?: number
+    maxUses?: number | string
     /** @deprecated use code + maxUses */
     prefix?: string
     /** @deprecated use code + maxUses */
@@ -36,10 +37,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "code is required" }, { status: 400 })
   }
 
-  const maxUses = Math.min(
-    Math.max(Number(body.maxUses ?? body.count) || 1, 1),
-    10_000,
-  )
+  const rawMax = body.maxUses ?? body.count
+  let maxUses: number
+  if (
+    rawMax === "unlimited" ||
+    rawMax === "Unlimited" ||
+    rawMax === "UNLIMITED" ||
+    Number(rawMax) === 0
+  ) {
+    maxUses = 0
+  } else {
+    maxUses = Math.min(Math.max(Number(rawMax) || 1, 1), 10_000)
+  }
 
   const existing = await prisma.inviteCode.findUnique({
     where: { code },
@@ -47,7 +56,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (existing) {
-    if (maxUses < existing.usedCount) {
+    if (maxUses > 0 && maxUses < existing.usedCount) {
       return NextResponse.json(
         {
           error: `maxUses (${maxUses}) cannot be less than usedCount (${existing.usedCount})`,
@@ -60,7 +69,11 @@ export async function POST(request: NextRequest) {
       data: { maxUses },
       select: { code: true, maxUses: true, usedCount: true },
     })
-    return NextResponse.json({ action: "updated", invite: updated })
+    return NextResponse.json({
+      action: "updated",
+      invite: updated,
+      unlimited: maxUses <= 0,
+    })
   }
 
   const created = await prisma.inviteCode.create({
@@ -73,5 +86,9 @@ export async function POST(request: NextRequest) {
     select: { code: true, maxUses: true, usedCount: true },
   })
 
-  return NextResponse.json({ action: "created", invite: created })
+  return NextResponse.json({
+    action: "created",
+    invite: created,
+    unlimited: maxUses <= 0,
+  })
 }

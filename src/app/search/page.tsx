@@ -7,7 +7,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
-import Link from "next/link"
+import { PrefetchLink } from "@/components/ui/PrefetchLink"
 import { useUser } from "@/components/providers/SessionProvider"
 import { SignedInLayout, HomeLayout } from "@/components/layout"
 import { SearchBar } from "@/components/SearchBar"
@@ -182,10 +182,9 @@ function SearchPageContent() {
                         const initial =
                           result.name?.trim().charAt(0).toUpperCase() || "?"
                         return (
-                          <Link
+                          <PrefetchLink
                             key={`actor-${result.id}`}
                             href={href}
-                            prefetch={false}
                             className="group w-[86px] sm:w-[92px] md:w-[100px] lg:w-[110px] text-center"
                             title={result.name}
                           >
@@ -209,7 +208,7 @@ function SearchPageContent() {
                             <p className="mt-2 text-[11px] sm:text-xs font-medium text-zinc-400 leading-tight line-clamp-2 group-hover:text-white transition-colors">
                               {result.name}
                             </p>
-                          </Link>
+                          </PrefetchLink>
                         )
                       })}
                     </div>
@@ -231,10 +230,9 @@ function SearchPageContent() {
                           result.posterUrl ??
                           null
                         return (
-                          <Link
+                          <PrefetchLink
                             key={`movie-${result.id}`}
                             href={href}
-                            prefetch={false}
                             className="group w-[86px] sm:w-[92px] md:w-[100px] lg:w-[110px] text-center"
                             title={result.title}
                           >
@@ -265,7 +263,7 @@ function SearchPageContent() {
                                 {result.year}
                               </p>
                             ) : null}
-                          </Link>
+                          </PrefetchLink>
                         )
                       })}
                     </div>
