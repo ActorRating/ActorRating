@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import AdminNav from "@/components/admin/AdminNav"
 
 export const dynamic = "force-dynamic"
 
@@ -20,5 +22,12 @@ export default async function AdminLayout({
     redirect("/auth/signin")
   }
 
-  return <>{children}</>
+  return (
+    <div className="min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <AdminNav />
+      </Suspense>
+      {children}
+    </div>
+  )
 }

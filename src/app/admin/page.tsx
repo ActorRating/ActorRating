@@ -1,18 +1,23 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import { Prisma } from "@prisma/client"
 import { Button } from "@/components/ui/Button"
 import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
+import XTrafficSection from "@/components/admin/XTrafficSection"
 import ModerationQueue from "@/components/admin/ModerationQueue"
 import WaitlistPanel from "@/components/admin/WaitlistPanel"
+import AdminTabs from "@/components/admin/AdminTabs"
+import { parseAdminTab, type AdminTabId } from "@/lib/admin/tabs"
 import { getAdminData } from "@/lib/admin/getAdminData"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
 import {
   getPageViewAnalytics,
   parseAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
+import { getXTrafficAnalytics } from "@/lib/admin/getXTrafficAnalytics"
 import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
@@ -20,6 +25,7 @@ import { getCache, setCache } from "@/lib/admin/cache"
 export const dynamic = "force-dynamic"
 
 type AdminSearchParams = {
+  tab?: string
   usersQ?: string
   usersPage?: string
   ratingsQ?: string
@@ -27,13 +33,23 @@ type AdminSearchParams = {
   actor?: string
   movie?: string
   page?: string
-  /** Pageview analytics window: 7 or 30 */
+  /** Pageview / X analytics window: 1|24|7|30 */
   pv?: string
   /** Ratings list filter: all | signed | guest */
   auth?: string
 }
 
 const RATINGS_PAGE_SIZE = 50
+
+type GlobalRatingRow = {
+  id: string
+  weightedScore: number
+  createdAt: Date
+  userId: string | null
+  user: { id: string; username: string | null } | null
+  actor: { name: string }
+  movie: { title: string }
+}
 
 async function getGlobalRatings(searchParams: AdminSearchParams) {
   const page = Number(searchParams.page ?? "0")
@@ -71,7 +87,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
   const cacheKey = `admin:ratings:${safePage}:${authFilter}:${user ?? "all"}:${actor ?? "all"}:${movie ?? "all"}:${ratingsQ ?? "all"}`
   if (safePage === 0) {
     const cached = getCache<{
-      ratings: Awaited<ReturnType<typeof prisma.rating.findMany>>
+      ratings: GlobalRatingRow[]
       page: number
       totalCount: number
       hasNext: boolean
@@ -101,7 +117,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
     ])
 
     const result = {
-      ratings,
+      ratings: ratings as GlobalRatingRow[],
       page: safePage,
       totalCount,
       hasNext: (safePage + 1) * RATINGS_PAGE_SIZE < totalCount,
@@ -114,7 +130,7 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
   } catch (error) {
     console.error("Admin query failed getGlobalRatings", error)
     return {
-      ratings: [],
+      ratings: [] as GlobalRatingRow[],
       page: safePage,
       totalCount: 0,
       hasNext: false,
@@ -123,7 +139,10 @@ async function getGlobalRatings(searchParams: AdminSearchParams) {
   }
 }
 
-function createQueryString(searchParams: AdminSearchParams, patch: Record<string, string | undefined>) {
+function createQueryString(
+  searchParams: AdminSearchParams,
+  patch: Record<string, string | undefined>,
+) {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(searchParams)) {
     if (value && value.length > 0) params.set(key, value)
@@ -135,175 +154,258 @@ function createQueryString(searchParams: AdminSearchParams, patch: Record<string
   return `?${params.toString()}`
 }
 
+async function loadWaitlist() {
+  try {
+    const [totalCount, entries] = await Promise.all([
+      prisma.waitlistEntry.count(),
+      prisma.waitlistEntry.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: { id: true, email: true, source: true, createdAt: true },
+      }),
+    ])
+    return { totalCount, entries }
+  } catch (error) {
+    console.error("Admin query failed waitlist", error)
+    return {
+      totalCount: 0,
+      entries: [] as Array<{
+        id: string
+        email: string
+        source: string | null
+        createdAt: Date
+      }>,
+    }
+  }
+}
+
 export default async function AdminDashboardPage({
   searchParams,
 }: {
   searchParams: Promise<AdminSearchParams>
 }) {
   const resolvedSearchParams = await searchParams
+  const tab: AdminTabId = parseAdminTab(resolvedSearchParams.tab)
   const usersPage = Number(resolvedSearchParams.usersPage ?? "0")
   const safeUsersPage = Number.isFinite(usersPage) && usersPage >= 0 ? usersPage : 0
   const pvDays = parseAnalyticsDays(resolvedSearchParams.pv)
-  const [data, users, globalRatings, pageViewAnalytics, waitlist] = await Promise.all([
-    getAdminData(),
-    getUsersWithStats({ search: resolvedSearchParams.usersQ, page: safeUsersPage, take: 50 }),
-    getGlobalRatings(resolvedSearchParams),
-    getPageViewAnalytics(pvDays),
-    (async () => {
-      try {
-        const [totalCount, entries] = await Promise.all([
-          prisma.waitlistEntry.count(),
-          prisma.waitlistEntry.findMany({
-            orderBy: { createdAt: "desc" },
-            take: 200,
-            select: { id: true, email: true, source: true, createdAt: true },
-          }),
-        ])
-        return { totalCount, entries }
-      } catch (error) {
-        console.error("Admin query failed waitlist", error)
-        return { totalCount: 0, entries: [] as Array<{
-          id: string
-          email: string
-          source: string | null
-          createdAt: Date
-        }> }
-      }
-    })(),
-  ])
+
+  const refreshHref = createQueryString(resolvedSearchParams, {})
 
   return (
-    <div className="max-w-7xl mx-auto p-6 sm:p-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-7xl p-6 sm:p-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Dashboard
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Live business metrics powered by server-side Prisma queries.
+            Business metrics and first-party traffic.
           </p>
         </div>
         <Button variant="outline" asChild>
-          <Link href="/admin">Refresh</Link>
+          <Link href={refreshHref || "/admin"}>Refresh</Link>
         </Button>
       </div>
 
-      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Users" value={data.totalUsers} />
-        <StatCard title="Total Ratings" value={data.totalRatings} />
-        <StatCard title="Ratings Today" value={data.ratingsToday} />
-        <StatCard title="Users Today" value={data.usersToday} />
-      </section>
+      <div className="mb-8">
+        <Suspense
+          fallback={
+            <div className="h-11 rounded-xl border border-border/70 bg-secondary/40" />
+          }
+        >
+          <AdminTabs active={tab} />
+        </Suspense>
+      </div>
 
-      <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Signed-in ratings"
-          value={data.signedInRatings}
-          subtitle={`${data.signedInRatingsToday} today`}
+      {tab === "overview" ? <OverviewTab /> : null}
+      {tab === "traffic" ? (
+        <TrafficTab
+          searchParams={resolvedSearchParams}
+          pvDays={pvDays}
         />
-        <StatCard
-          title="Guest / anonymous ratings"
-          value={data.guestRatings}
-          subtitle={`${data.guestRatingsToday} today · saved from unsigned visitors`}
+      ) : null}
+      {tab === "x" ? (
+        <XTab searchParams={resolvedSearchParams} pvDays={pvDays} />
+      ) : null}
+      {tab === "users" ? (
+        <UsersTab
+          searchParams={resolvedSearchParams}
+          safeUsersPage={safeUsersPage}
+          pvDays={pvDays}
         />
-        <StatCard
-          title="Ratings per User"
-          value={data.ratingsPerUser.toFixed(2)}
-          subtitle="avg engagement"
-        />
+      ) : null}
+      {tab === "ratings" ? (
+        <RatingsTab searchParams={resolvedSearchParams} pvDays={pvDays} />
+      ) : null}
+    </div>
+  )
+}
+
+async function OverviewTab() {
+  const [data, pageViews] = await Promise.all([
+    getAdminData(),
+    getPageViewAnalytics(7),
+  ])
+
+  return (
+    <div className="space-y-6">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard title="Total Users" value={data.totalUsers} />
+        <StatCard title="Ratings Today" value={data.ratingsToday} />
         <StatCard
           title="Conversion Rate"
           value={`${data.conversionRate.toFixed(1)}%`}
           subtitle="users who rated"
         />
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          title="Users Who Rated"
-          value={data.usersWithRatings}
-          subtitle="at least 1 rating"
+          title="Unique humans (7d)"
+          value={pageViews.uniqueHumanVisitors}
+          subtitle="Distinct IPs, non-bot"
         />
         <StatCard
-          title="Total Performances"
-          value={data.totalPerformances}
-          subtitle="Total performance rows in database"
+          title="Total Ratings"
+          value={data.totalRatings}
+          subtitle={`${data.signedInRatings} signed-in · ${data.guestRatings} guest`}
         />
-        <StatCard
-          title="Avg Rating Today"
-          value={data.avgRatingToday !== null ? data.avgRatingToday.toFixed(2) : "0.00"}
-          subtitle="Average weighted score for today"
-        />
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-1">
         <StatCard
           title="Top Actor Today"
           value={data.topActorToday?.name ?? "N/A"}
           subtitle={
-            data.topActorToday ? `${data.topActorToday.count} ratings today` : "No ratings yet today"
+            data.topActorToday
+              ? `${data.topActorToday.count} ratings today`
+              : "No ratings yet today"
           }
         />
       </section>
 
-      <div className="mt-6">
-        <GrowthChart data={data.growthLast7Days} />
-      </div>
+      <GrowthChart data={data.growthLast7Days} title="Ratings growth — last 7 days" />
+    </div>
+  )
+}
 
-      <PageViewAnalyticsSection
-        data={pageViewAnalytics}
-        hrefForDays={(days) =>
-          createQueryString(resolvedSearchParams, { pv: String(days === 1 ? 24 : days) })
-        }
-      />
+async function TrafficTab({
+  searchParams,
+  pvDays,
+}: {
+  searchParams: AdminSearchParams
+  pvDays: ReturnType<typeof parseAnalyticsDays>
+}) {
+  const pageViewAnalytics = await getPageViewAnalytics(pvDays)
+  return (
+    <PageViewAnalyticsSection
+      data={pageViewAnalytics}
+      hrefForDays={(days) =>
+        createQueryString(searchParams, {
+          tab: "traffic",
+          pv: String(days === 1 ? 24 : days),
+        })
+      }
+    />
+  )
+}
 
-      <div className="mt-6">
-        <RecentRatings ratings={data.recentRatings} />
-      </div>
+async function XTab({
+  searchParams,
+  pvDays,
+}: {
+  searchParams: AdminSearchParams
+  pvDays: ReturnType<typeof parseAnalyticsDays>
+}) {
+  const xAnalytics = await getXTrafficAnalytics(pvDays)
+  return (
+    <XTrafficSection
+      data={xAnalytics}
+      hrefForDays={(days) =>
+        createQueryString(searchParams, {
+          tab: "x",
+          pv: String(days === 1 ? 24 : days),
+        })
+      }
+    />
+  )
+}
 
-      <ModerationQueue />
+async function UsersTab({
+  searchParams,
+  safeUsersPage,
+  pvDays,
+}: {
+  searchParams: AdminSearchParams
+  safeUsersPage: number
+  pvDays: number
+}) {
+  const [data, users, waitlist] = await Promise.all([
+    getAdminData(),
+    getUsersWithStats({
+      search: searchParams.usersQ,
+      page: safeUsersPage,
+      take: 50,
+    }),
+    loadWaitlist(),
+  ])
 
+  return (
+    <div className="space-y-6">
       <WaitlistPanel entries={waitlist.entries} totalCount={waitlist.totalCount} />
 
-      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground">Acquisition</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          First-touch channel on signup (ar_src / utm).
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">Source</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Users</th>
+                <th className="border-b border-border px-3 py-3 font-medium">
+                  Users Who Rated
+                </th>
+                <th className="border-b border-border px-3 py-3 font-medium">
+                  Conversion %
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.sourceBreakdown.map((row) => (
+                <tr key={row.source} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3 font-medium">
+                    {row.source}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">{row.users}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {row.usersWithRatings}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {row.conversion.toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">All Users</h2>
           <form method="get" className="flex items-center gap-2">
+            <input type="hidden" name="tab" value="users" />
             <input
               type="text"
               name="usersQ"
-              defaultValue={resolvedSearchParams.usersQ ?? ""}
+              defaultValue={searchParams.usersQ ?? ""}
               placeholder="Search username or email"
               className="h-10 w-64 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
             />
-            <input type="hidden" name="ratingsQ" value={resolvedSearchParams.ratingsQ ?? ""} />
-            <input type="hidden" name="user" value={resolvedSearchParams.user ?? ""} />
-            <input type="hidden" name="actor" value={resolvedSearchParams.actor ?? ""} />
-            <input type="hidden" name="movie" value={resolvedSearchParams.movie ?? ""} />
-            <input type="hidden" name="page" value={resolvedSearchParams.page ?? "0"} />
             <input type="hidden" name="usersPage" value="0" />
-            <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
-            <input
-              type="hidden"
-              name="auth"
-              value={
-                resolvedSearchParams.auth === "signed" || resolvedSearchParams.auth === "guest"
-                  ? resolvedSearchParams.auth
-                  : ""
-              }
-            />
+            <input type="hidden" name="pv" value={searchParams.pv ?? String(pvDays)} />
             <Button type="submit" variant="outline">
               Search
             </Button>
           </form>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Source breakdown:</span>
-          {data.sourceBreakdown.map((row) => (
-            <span key={row.source}>
-              {" "}
-              {row.source}: {row.users}
-            </span>
-          ))}
         </div>
 
         <div className="mt-4 overflow-x-auto">
@@ -325,20 +427,35 @@ export default async function AdminDashboardPage({
               {users.users.map((user) => (
                 <tr key={user.id} className="text-sm text-foreground/95">
                   <td className="border-b border-border/60 px-3 py-3">
-                    <Link href={`/admin/users/${user.id}`} className="font-medium text-primary hover:underline">
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       {user.username ?? user.name ?? "Unnamed"}
                     </Link>
                   </td>
-                  <td className="border-b border-border/60 px-3 py-3">{user.name ?? "—"}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {user.name ?? "—"}
+                  </td>
                   <td className="border-b border-border/60 px-3 py-3">{user.email}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{user.signupProvider ?? "—"}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{user.source ?? "unknown"}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{user.totalRatings}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {user.signupProvider ?? "—"}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {user.source ?? "unknown"}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {user.totalRatings}
+                  </td>
                   <td className="border-b border-border/60 px-3 py-3">
                     {user.averageRating.toFixed(2)}
                   </td>
-                  <td className="border-b border-border/60 px-3 py-3">{formatAdminDateTime(user.firstActivity)}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{formatAdminDateTime(user.lastActivity)}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {formatAdminDateTime(user.firstActivity)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {formatAdminDateTime(user.lastActivity)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -350,13 +467,16 @@ export default async function AdminDashboardPage({
               ? "No users found"
               : `Showing ${users.page * users.take + 1}-${Math.min(
                   (users.page + 1) * users.take,
-                  users.totalCount
+                  users.totalCount,
                 )} of ${users.totalCount}`}
           </div>
           <div className="flex gap-2">
             {users.page > 0 ? (
               <Link
-                href={createQueryString(resolvedSearchParams, { usersPage: String(users.page - 1) })}
+                href={createQueryString(searchParams, {
+                  tab: "users",
+                  usersPage: String(users.page - 1),
+                })}
                 className="rounded-lg border border-border px-3 py-2 hover:bg-background"
               >
                 Previous
@@ -364,7 +484,10 @@ export default async function AdminDashboardPage({
             ) : null}
             {users.hasNext ? (
               <Link
-                href={createQueryString(resolvedSearchParams, { usersPage: String(users.page + 1) })}
+                href={createQueryString(searchParams, {
+                  tab: "users",
+                  usersPage: String(users.page + 1),
+                })}
                 className="rounded-lg border border-border px-3 py-2 hover:bg-background"
               >
                 Next
@@ -373,34 +496,43 @@ export default async function AdminDashboardPage({
           </div>
         </div>
       </section>
+    </div>
+  )
+}
 
-      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Acquisition Performance</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[740px] border-separate border-spacing-0 text-left">
-            <thead>
-              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="border-b border-border px-3 py-3 font-medium">Source</th>
-                <th className="border-b border-border px-3 py-3 font-medium">Users</th>
-                <th className="border-b border-border px-3 py-3 font-medium">Users Who Rated</th>
-                <th className="border-b border-border px-3 py-3 font-medium">Conversion %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.sourceBreakdown.map((row) => (
-                <tr key={row.source} className="text-sm text-foreground/95">
-                  <td className="border-b border-border/60 px-3 py-3 font-medium">{row.source}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{row.users}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{row.usersWithRatings}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{row.conversion.toFixed(1)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+async function RatingsTab({
+  searchParams,
+  pvDays,
+}: {
+  searchParams: AdminSearchParams
+  pvDays: number
+}) {
+  const [data, globalRatings] = await Promise.all([
+    getAdminData(),
+    getGlobalRatings(searchParams),
+  ])
 
-      <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard title="Total Ratings" value={data.totalRatings} />
+        <StatCard
+          title="Signed-in"
+          value={data.signedInRatings}
+          subtitle={`${data.signedInRatingsToday} today`}
+        />
+        <StatCard
+          title="Guest"
+          value={data.guestRatings}
+          subtitle={`${data.guestRatingsToday} today`}
+        />
+      </div>
+
+      <RecentRatings ratings={data.recentRatings} />
+
+      <ModerationQueue />
+
+      <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">All Ratings</h2>
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -410,61 +542,65 @@ export default async function AdminDashboardPage({
                 { key: "signed", label: `Signed-in (${data.signedInRatings})` },
                 { key: "guest", label: `Guest (${data.guestRatings})` },
               ] as const
-            ).map((tab) => (
+            ).map((authTab) => (
               <Link
-                key={tab.key}
-                href={createQueryString(resolvedSearchParams, {
-                  auth: tab.key === "all" ? undefined : tab.key,
+                key={authTab.key}
+                href={createQueryString(searchParams, {
+                  tab: "ratings",
+                  auth: authTab.key === "all" ? undefined : authTab.key,
                   page: "0",
                 })}
                 className={`rounded-lg border px-3 py-2 ${
-                  globalRatings.authFilter === tab.key
+                  globalRatings.authFilter === authTab.key
                     ? "border-primary bg-primary/15 text-foreground"
                     : "border-border text-muted-foreground hover:bg-background"
                 }`}
               >
-                {tab.label}
+                {authTab.label}
               </Link>
             ))}
           </div>
         </div>
         <form method="get" className="mt-4 flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              name="ratingsQ"
-              defaultValue={resolvedSearchParams.ratingsQ ?? ""}
-              placeholder="Search by username or actor"
-              className="h-10 w-56 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-            <input
-              type="text"
-              name="user"
-              defaultValue={resolvedSearchParams.user ?? ""}
-              placeholder="Filter user"
-              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-            <input
-              type="text"
-              name="actor"
-              defaultValue={resolvedSearchParams.actor ?? ""}
-              placeholder="Filter actor"
-              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-            <input
-              type="text"
-              name="movie"
-              defaultValue={resolvedSearchParams.movie ?? ""}
-              placeholder="Filter movie"
-              className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-            <input type="hidden" name="usersQ" value={resolvedSearchParams.usersQ ?? ""} />
-            <input type="hidden" name="usersPage" value={resolvedSearchParams.usersPage ?? "0"} />
-            <input type="hidden" name="page" value="0" />
-            <input type="hidden" name="pv" value={resolvedSearchParams.pv ?? String(pvDays)} />
-            <input type="hidden" name="auth" value={globalRatings.authFilter === "all" ? "" : globalRatings.authFilter} />
-            <Button type="submit" variant="outline">
-              Apply
-            </Button>
+          <input type="hidden" name="tab" value="ratings" />
+          <input
+            type="text"
+            name="ratingsQ"
+            defaultValue={searchParams.ratingsQ ?? ""}
+            placeholder="Search by username or actor"
+            className="h-10 w-56 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+          <input
+            type="text"
+            name="user"
+            defaultValue={searchParams.user ?? ""}
+            placeholder="Filter user"
+            className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+          <input
+            type="text"
+            name="actor"
+            defaultValue={searchParams.actor ?? ""}
+            placeholder="Filter actor"
+            className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+          <input
+            type="text"
+            name="movie"
+            defaultValue={searchParams.movie ?? ""}
+            placeholder="Filter movie"
+            className="h-10 w-40 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+          <input type="hidden" name="page" value="0" />
+          <input type="hidden" name="pv" value={searchParams.pv ?? String(pvDays)} />
+          <input
+            type="hidden"
+            name="auth"
+            value={globalRatings.authFilter === "all" ? "" : globalRatings.authFilter}
+          />
+          <Button type="submit" variant="outline">
+            Apply
+          </Button>
         </form>
 
         <div className="mt-4 overflow-x-auto">
@@ -483,15 +619,22 @@ export default async function AdminDashboardPage({
                 <tr key={rating.id} className="text-sm text-foreground/95">
                   <td className="border-b border-border/60 px-3 py-3">
                     {rating.user?.id ? (
-                      <Link href={`/admin/users/${rating.user.id}`} className="text-primary hover:underline">
+                      <Link
+                        href={`/admin/users/${rating.user.id}`}
+                        className="text-primary hover:underline"
+                      >
                         {rating.user.username ?? "Anonymous"}
                       </Link>
                     ) : (
                       <span className="text-muted-foreground">Guest</span>
                     )}
                   </td>
-                  <td className="border-b border-border/60 px-3 py-3">{rating.actor.name}</td>
-                  <td className="border-b border-border/60 px-3 py-3">{rating.movie.title}</td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {rating.actor.name}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3">
+                    {rating.movie.title}
+                  </td>
                   <td className="border-b border-border/60 px-3 py-3 font-semibold">
                     {rating.weightedScore.toFixed(1)}
                   </td>
@@ -511,13 +654,16 @@ export default async function AdminDashboardPage({
               ? "No ratings found"
               : `Showing ${globalRatings.page * RATINGS_PAGE_SIZE + 1}-${Math.min(
                   (globalRatings.page + 1) * RATINGS_PAGE_SIZE,
-                  globalRatings.totalCount
+                  globalRatings.totalCount,
                 )} of ${globalRatings.totalCount}`}
           </div>
           <div className="flex gap-2">
             {globalRatings.page > 0 ? (
               <Link
-                href={createQueryString(resolvedSearchParams, { page: String(globalRatings.page - 1) })}
+                href={createQueryString(searchParams, {
+                  tab: "ratings",
+                  page: String(globalRatings.page - 1),
+                })}
                 className="rounded-lg border border-border px-3 py-2 hover:bg-background"
               >
                 Previous
@@ -525,7 +671,10 @@ export default async function AdminDashboardPage({
             ) : null}
             {globalRatings.hasNext ? (
               <Link
-                href={createQueryString(resolvedSearchParams, { page: String(globalRatings.page + 1) })}
+                href={createQueryString(searchParams, {
+                  tab: "ratings",
+                  page: String(globalRatings.page + 1),
+                })}
                 className="rounded-lg border border-border px-3 py-2 hover:bg-background"
               >
                 Next

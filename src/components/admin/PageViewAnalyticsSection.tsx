@@ -85,7 +85,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
   ]
 
   return (
-    <section className="mt-6 space-y-6">
+    <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-foreground">First-party traffic</h2>

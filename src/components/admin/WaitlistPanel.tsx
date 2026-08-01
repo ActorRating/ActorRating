@@ -22,7 +22,7 @@ export default function WaitlistPanel({
   totalCount: number
 }) {
   return (
-    <section className="mt-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+    <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">Waitlist</h2>
         <p className="mt-1 text-sm text-muted-foreground">
