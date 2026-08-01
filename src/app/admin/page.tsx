@@ -528,7 +528,12 @@ async function RatingsTab({
         />
       </div>
 
-      <RecentRatings ratings={data.recentRatings} />
+      <RecentRatings ratings={data.recentRatings} title="Recent Ratings" />
+      <RecentRatings
+        ratings={data.recentGuestRatings}
+        title="Last Guest Ratings"
+        emptyMessage="No guest ratings yet."
+      />
 
       <ModerationQueue />
 

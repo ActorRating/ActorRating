@@ -56,6 +56,7 @@ export type AdminDashboardData = {
   topActorToday: { id: string; name: string; count: number } | null
   growthLast7Days: AdminGrowthPoint[]
   recentRatings: AdminRecentRating[]
+  recentGuestRatings: AdminRecentRating[]
   sourceBreakdown: Array<{
     source: AcquisitionSource | "unknown"
     users: number
@@ -96,6 +97,7 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       growthRows,
       topActorRows,
       recentRatings,
+      recentGuestRatings,
       totalUsersBySource,
       usersWithRatingsBySource,
     ] = await Promise.all([
@@ -147,6 +149,19 @@ export async function getAdminData(): Promise<AdminDashboardData> {
         LIMIT 1
       `),
       prisma.rating.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          weightedScore: true,
+          createdAt: true,
+          actor: { select: { name: true } },
+          movie: { select: { title: true } },
+          user: { select: { username: true } },
+        },
+      }),
+      prisma.rating.findMany({
+        where: { userId: null },
         orderBy: { createdAt: "desc" },
         take: 20,
         select: {
@@ -243,6 +258,14 @@ export async function getAdminData(): Promise<AdminDashboardData> {
         username: rating.user?.username ?? null,
         createdAt: rating.createdAt,
       })),
+      recentGuestRatings: recentGuestRatings.map((rating) => ({
+        id: rating.id,
+        actorName: rating.actor.name,
+        movieTitle: rating.movie.title,
+        value: Number(rating.weightedScore.toFixed(1)),
+        username: null,
+        createdAt: rating.createdAt,
+      })),
       sourceBreakdown,
     }
     setCache(cacheKey, data, 30_000)
@@ -270,6 +293,7 @@ export async function getAdminData(): Promise<AdminDashboardData> {
         return { date: dayFormatter.format(d), count: 0 }
       }),
       recentRatings: [],
+      recentGuestRatings: [],
       sourceBreakdown: [
         ...VALID_SOURCES.map((source) => ({
           source,
