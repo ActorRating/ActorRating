@@ -12,6 +12,7 @@ import {
   parseUtmParams,
   truncateReferrer,
 } from "@/lib/analytics/pageview"
+import { normalizeInviteCode } from "@/lib/invites"
 import {
   AR_SRC_COOKIE,
   arSrcCookieOptions,
@@ -79,13 +80,13 @@ export async function POST(request: NextRequest) {
       return emptyOk()
     }
 
-    const path = normalizePageViewPath(typeof body.path === "string" ? body.path : "")
-    if (!path) {
+    const pathBase = normalizePageViewPath(typeof body.path === "string" ? body.path : "")
+    if (!pathBase) {
       return emptyOk()
     }
 
     // Never log our own beacon / auth APIs as "pages"
-    if (path.startsWith("/api/")) {
+    if (pathBase.startsWith("/api/")) {
       return emptyOk()
     }
 
@@ -93,6 +94,16 @@ export async function POST(request: NextRequest) {
     const params = new URLSearchParams(
       search.startsWith("?") ? search.slice(1) : search,
     )
+
+    // Preserve invite code on register landings so Traffic / Invites can attribute hits.
+    let path = pathBase
+    if (pathBase === "/auth/register") {
+      const inviteCode = normalizeInviteCode(params.get("code"))
+      if (inviteCode) {
+        path = `/auth/register?code=${inviteCode}`.slice(0, 500)
+      }
+    }
+
     const { utmSource, utmMedium, utmCampaign } = parseUtmParams(params)
 
     // Prefer utm_source; allow ?src=tiktok|instagram|youtube|x on any landing URL

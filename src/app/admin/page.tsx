@@ -7,6 +7,7 @@ import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
 import XTrafficSection from "@/components/admin/XTrafficSection"
+import InviteAnalyticsSection from "@/components/admin/InviteAnalyticsSection"
 import ModerationQueue from "@/components/admin/ModerationQueue"
 import WaitlistPanel from "@/components/admin/WaitlistPanel"
 import AdminTabs from "@/components/admin/AdminTabs"
@@ -18,6 +19,7 @@ import {
   parseAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
 import { getXTrafficAnalytics } from "@/lib/admin/getXTrafficAnalytics"
+import { getInviteAnalytics } from "@/lib/admin/getInviteAnalytics"
 import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
@@ -335,7 +337,7 @@ async function UsersTab({
   safeUsersPage: number
   pvDays: number
 }) {
-  const [data, users, waitlist] = await Promise.all([
+  const [data, users, waitlist, inviteAnalytics] = await Promise.all([
     getAdminData(),
     getUsersWithStats({
       search: searchParams.usersQ,
@@ -343,10 +345,21 @@ async function UsersTab({
       take: 50,
     }),
     loadWaitlist(),
+    getInviteAnalytics(pvDays as 1 | 7 | 30),
   ])
 
   return (
     <div className="space-y-6">
+      <InviteAnalyticsSection
+        data={inviteAnalytics}
+        hrefForDays={(days) =>
+          createQueryString(searchParams, {
+            tab: "users",
+            pv: String(days === 1 ? 24 : days),
+          })
+        }
+      />
+
       <WaitlistPanel entries={waitlist.entries} totalCount={waitlist.totalCount} />
 
       <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
