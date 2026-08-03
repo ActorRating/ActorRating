@@ -7,9 +7,11 @@ import { getClientIp } from "@/lib/requestProtection"
 import { isDisposableEmail } from "@/lib/authGuards"
 import { validateEmail } from "@/lib/validation"
 import { AR_SRC_COOKIE, isValidSource } from "@/lib/tracking/source"
+import { sendWaitlistBetaAccessEmail } from "@/lib/waitlistBetaEmail"
 
 /**
  * Join the public waitlist (no invite required).
+ * New signups receive a beta-access email with the shared invite code.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -47,11 +49,24 @@ export async function POST(request: NextRequest) {
     const cookieSrc = request.cookies.get(AR_SRC_COOKIE)?.value ?? null
     const source = isValidSource(cookieSrc) ? cookieSrc : null
 
-    await prisma.waitlistEntry.upsert({
+    const existingEntry = await prisma.waitlistEntry.findUnique({
       where: { email },
-      create: { email, source },
-      update: {},
+      select: { id: true },
     })
+    if (existingEntry) {
+      return NextResponse.json({ success: true, alreadyOnWaitlist: true })
+    }
+
+    await prisma.waitlistEntry.create({
+      data: { email, source },
+    })
+
+    try {
+      await sendWaitlistBetaAccessEmail(email)
+    } catch (mailError) {
+      // Join succeeded; don't fail the request if SMTP hiccups.
+      console.error("Waitlist beta-access email failed:", mailError)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
