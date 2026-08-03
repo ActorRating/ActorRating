@@ -2,8 +2,9 @@ import nodemailer from "nodemailer"
 
 const INVITE_CODE = "CINEMA2026"
 const REGISTER_URL = `https://actorrating.com/auth/register?code=${INVITE_CODE}`
-const FROM = "ActorRating <contact@actorrating.com>"
 const REPLY_TO = "contact@actorrating.com"
+/** Preferred From; falls back to the same SMTP identity as magic links. */
+const DEFAULT_FROM = "ActorRating <contact@actorrating.com>"
 
 const SUBJECT = "Your ActorRating Beta Access Code 🎟️"
 
@@ -44,9 +45,19 @@ function resolveSmtpServer(): string {
   ).trim()
 }
 
+function resolveFrom(): string {
+  return (
+    process.env.WAITLIST_EMAIL_FROM ||
+    process.env.AUTH_EMAIL_FROM ||
+    process.env.EMAIL_FROM ||
+    DEFAULT_FROM
+  ).trim()
+}
+
 /**
  * Welcome / beta-access email after a new waitlist signup.
- * Uses the same SMTP config as magic-link auth; From is contact@actorrating.com.
+ * Uses the same SMTP config as magic-link auth.
+ * Reply-To is always contact@actorrating.com so recipients can reply.
  */
 export async function sendWaitlistBetaAccessEmail(to: string) {
   const server = resolveSmtpServer()
@@ -54,11 +65,12 @@ export async function sendWaitlistBetaAccessEmail(to: string) {
     throw new Error("EMAIL_SERVER is not configured for waitlist email delivery.")
   }
 
+  const from = resolveFrom()
   const transport = nodemailer.createTransport(server)
 
   await transport.sendMail({
     to,
-    from: FROM,
+    from,
     replyTo: REPLY_TO,
     subject: SUBJECT,
     text: TEXT_BODY,
