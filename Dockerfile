@@ -121,6 +121,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-bot-category.js 
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-forum-threads.js ./scripts/seed-forum-threads.js
 # Bootstrap invites: `node scripts/seed-invite-codes.js` before INVITE_GATE_ENABLED=1
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-invite-codes.js ./scripts/seed-invite-codes.js
+# Coolify Scheduled Task: `node scripts/run-waitlist-invite-cron.js`
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-waitlist-invite-cron.js ./scripts/run-waitlist-invite-cron.js
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp
