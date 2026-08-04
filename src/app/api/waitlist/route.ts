@@ -7,11 +7,14 @@ import { getClientIp } from "@/lib/requestProtection"
 import { isDisposableEmail } from "@/lib/authGuards"
 import { validateEmail } from "@/lib/validation"
 import { AR_SRC_COOKIE, isValidSource } from "@/lib/tracking/source"
-import { sendWaitlistBetaAccessEmail } from "@/lib/waitlistBetaEmail"
+import {
+  scheduleInviteEmailAt,
+  sendWaitlistReceivedEmail,
+} from "@/lib/waitlistBetaEmail"
 
 /**
  * Join the public waitlist (no invite required).
- * New signups receive a beta-access email with the shared invite code.
+ * Sends an immediate “waitlist received” email; beta invite is emailed ~3h later via cron.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -58,14 +61,18 @@ export async function POST(request: NextRequest) {
     }
 
     await prisma.waitlistEntry.create({
-      data: { email, source },
+      data: {
+        email,
+        source,
+        inviteEmailScheduledFor: scheduleInviteEmailAt(),
+      },
     })
 
     try {
-      await sendWaitlistBetaAccessEmail(email)
+      await sendWaitlistReceivedEmail(email)
     } catch (mailError) {
       // Join succeeded; don't fail the request if SMTP hiccups.
-      console.error("Waitlist beta-access email failed:", mailError)
+      console.error("Waitlist received email failed:", mailError)
     }
 
     return NextResponse.json({ success: true })

@@ -3,12 +3,73 @@ import nodemailer from "nodemailer"
 const INVITE_CODE = "CINEMA2026"
 const REGISTER_URL = `https://actorrating.com/auth/register?code=${INVITE_CODE}`
 const REPLY_TO = "contact@actorrating.com"
-/** Preferred From; falls back to the same SMTP identity as magic links. */
 const DEFAULT_FROM = "ActorRating <contact@actorrating.com>"
 
-const SUBJECT = "Your ActorRating Beta Access Code 🎟️"
+/** Hours after waitlist join before the beta invite email is sent. */
+export const WAITLIST_INVITE_DELAY_HOURS = Math.max(
+  1,
+  Number(process.env.WAITLIST_INVITE_DELAY_HOURS || 3) || 3,
+)
 
-const TEXT_BODY = `Hi there,
+const SMTP_TIMEOUTS = {
+  connectionTimeout: 12_000,
+  greetingTimeout: 12_000,
+  socketTimeout: 20_000,
+} as const
+
+function resolveSmtpServer(): string {
+  return (
+    process.env.AUTH_EMAIL_SERVER ||
+    process.env.EMAIL_SERVER ||
+    ""
+  ).trim()
+}
+
+function resolveFrom(): string {
+  return (
+    process.env.WAITLIST_EMAIL_FROM ||
+    process.env.AUTH_EMAIL_FROM ||
+    process.env.EMAIL_FROM ||
+    DEFAULT_FROM
+  ).trim()
+}
+
+function createTransport() {
+  const server = resolveSmtpServer()
+  if (!server) {
+    throw new Error("EMAIL_SERVER is not configured for waitlist email delivery.")
+  }
+  return nodemailer.createTransport({
+    url: server,
+    ...SMTP_TIMEOUTS,
+  })
+}
+
+/**
+ * Immediate acknowledgment after joining the waitlist.
+ */
+export async function sendWaitlistReceivedEmail(to: string) {
+  const transport = createTransport()
+  const subject = "Waitlist Received"
+  const text = `Thanks for requesting access! We review and release private beta access codes in small daily batches to keep system performance smooth. Keep an eye on your inbox today!`
+
+  await transport.sendMail({
+    to,
+    from: resolveFrom(),
+    replyTo: REPLY_TO,
+    subject,
+    text,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;max-width:560px">
+        <p>${text}</p>
+      </div>
+    `,
+  })
+}
+
+const BETA_SUBJECT = "Your ActorRating Beta Access Code 🎟️"
+
+const BETA_TEXT = `Hi there,
 
 Thank you for joining the early waitlist for ActorRating! 🍿
 
@@ -37,43 +98,18 @@ The ActorRating Team
 📲 Follow us on X: @ActorRating
 `
 
-function resolveSmtpServer(): string {
-  return (
-    process.env.AUTH_EMAIL_SERVER ||
-    process.env.EMAIL_SERVER ||
-    ""
-  ).trim()
-}
-
-function resolveFrom(): string {
-  return (
-    process.env.WAITLIST_EMAIL_FROM ||
-    process.env.AUTH_EMAIL_FROM ||
-    process.env.EMAIL_FROM ||
-    DEFAULT_FROM
-  ).trim()
-}
-
 /**
- * Welcome / beta-access email after a new waitlist signup.
- * Uses the same SMTP config as magic-link auth.
- * Reply-To is always contact@actorrating.com so recipients can reply.
+ * Delayed beta-access email (invite code). Reply-To contact@actorrating.com.
  */
 export async function sendWaitlistBetaAccessEmail(to: string) {
-  const server = resolveSmtpServer()
-  if (!server) {
-    throw new Error("EMAIL_SERVER is not configured for waitlist email delivery.")
-  }
-
-  const from = resolveFrom()
-  const transport = nodemailer.createTransport(server)
+  const transport = createTransport()
 
   await transport.sendMail({
     to,
-    from,
+    from: resolveFrom(),
     replyTo: REPLY_TO,
-    subject: SUBJECT,
-    text: TEXT_BODY,
+    subject: BETA_SUBJECT,
+    text: BETA_TEXT,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;max-width:560px">
         <p>Hi there,</p>
@@ -108,4 +144,8 @@ export async function sendWaitlistBetaAccessEmail(to: string) {
       </div>
     `,
   })
+}
+
+export function scheduleInviteEmailAt(from = new Date()): Date {
+  return new Date(from.getTime() + WAITLIST_INVITE_DELAY_HOURS * 60 * 60 * 1000)
 }

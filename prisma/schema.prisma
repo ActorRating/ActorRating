@@ -340,12 +340,17 @@ model ForumPostReport {
 
 /// Public waitlist for visitors without an invite code.
 model WaitlistEntry {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  source    String?  @db.VarChar(50)
+  id                      String    @id @default(cuid())
+  email                   String    @unique
+  createdAt               DateTime  @default(now())
+  source                  String?   @db.VarChar(50)
+  /// When the CINEMA2026 (beta invite) email should be sent. Null = never / legacy.
+  inviteEmailScheduledFor DateTime?
+  /// Set when the delayed beta invite email was successfully sent.
+  inviteEmailSentAt       DateTime?
 
   @@index([createdAt])
+  @@index([inviteEmailScheduledFor, inviteEmailSentAt])
 }
 
 /// Invite codes gate new account creation when INVITE_GATE_ENABLED=1.
