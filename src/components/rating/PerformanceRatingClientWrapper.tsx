@@ -1775,6 +1775,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       if (!forDownload && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: `${performance.actor.name} · ${performance.movie.title}`, text: shareText })
         trackShareRating('native')
+      } else if (!forDownload) {
+        // No file-share support — fall back to native text/url share (or clipboard).
+        await handleShare()
       } else {
         const objectUrl = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -2873,18 +2876,26 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                   </div>
                 </div>
 
-                {/* Primary share button — below the card */}
-                <div className="flex justify-center">
+                {/* Download PNG + native share — beside each other under the card */}
+                <div className="mx-auto flex w-full max-w-[320px] items-stretch gap-2">
                   <button
                     type="button"
-                    onClick={handleShare}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-md text-sm font-bold text-black transition-all duration-200 hover:scale-[1.02] active:scale-95"
-                    style={{
-                      background: GOLD,
-                    }}
+                    onClick={() => shareAsImage(true)}
+                    disabled={isGeneratingImage}
+                    className="min-w-0 flex-1 rounded-md py-2.5 text-xs font-bold uppercase tracking-wide text-black disabled:opacity-50"
+                    style={{ background: GOLD }}
                   >
-                    <Share2 className="w-4 h-4" />
-                    Share your rating
+                    {isGeneratingImage ? "Preparing…" : "Download PNG"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => shareAsImage(false)}
+                    disabled={isGeneratingImage}
+                    aria-label="Share rating card"
+                    className="flex h-auto w-11 shrink-0 items-center justify-center rounded-md text-black disabled:opacity-50"
+                    style={{ background: GOLD }}
+                  >
+                    <Share2 className="h-4 w-4" />
                   </button>
                 </div>
 
