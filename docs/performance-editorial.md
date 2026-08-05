@@ -14,8 +14,9 @@ Unique craft blurbs on indexable `/rate/[movie]/[actor]` pages, generated from *
 
 ## How pages get editorials
 
-1. **On demand:** Indexable rate pages missing editorial schedule a deferred template generate via `after()` on visit.
-2. **Admin:** `/admin/editorial` → **Generate next 10**
+1. **Admin (recommended):** `/admin/editorial` → **Generate next 10**  
+   Runs one template generate at a time (avoids proxy timeouts) and shows a queue preview + real error text (including “table missing → migrate”).
+2. **On demand:** Indexable rate pages missing editorial schedule a deferred template generate via `after()` on visit.
 3. **CLI:** `npm run editorial:generate -- --limit=50`
 4. **Cron:** nightly batch for missing / `NEEDS_REGEN`
 

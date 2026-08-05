@@ -24,18 +24,36 @@ type Detail = ListItem & {
   editedByEmail: string | null
 }
 
+type QueueItem = {
+  actorId: string
+  movieId: string
+  actorName: string
+  movieTitle: string
+  movieYear: number
+  ratingCount: number
+  reason: string
+}
+
 const STATUSES = ["", "DRAFT", "PUBLISHED", "HUMAN_LOCKED", "NEEDS_REGEN"] as const
+
+async function readError(res: Response): Promise<string> {
+  const data = await res.json().catch(() => ({} as { error?: string }))
+  if (typeof data.error === "string" && data.error) return data.error
+  return `Request failed (${res.status})`
+}
 
 export default function EditorialAdminPanel() {
   const [q, setQ] = useState("")
   const [status, setStatus] = useState("")
   const [items, setItems] = useState<ListItem[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [queue, setQueue] = useState<QueueItem[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<Detail | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [progress, setProgress] = useState<string | null>(null)
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -45,7 +63,7 @@ export default function EditorialAdminPanel() {
       if (q.trim()) params.set("q", q.trim())
       if (status) params.set("status", status)
       const res = await fetch(`/api/admin/editorial?${params.toString()}`)
-      if (!res.ok) throw new Error("Failed to load")
+      if (!res.ok) throw new Error(await readError(res))
       const data = await res.json()
       setItems(data.items ?? [])
       setCounts(data.counts ?? {})
@@ -56,12 +74,24 @@ export default function EditorialAdminPanel() {
     }
   }, [q, status])
 
+  const loadQueue = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/editorial/queue?limit=15&minRatings=0")
+      if (!res.ok) throw new Error(await readError(res))
+      const data = await res.json()
+      setQueue(data.items ?? [])
+    } catch (err) {
+      setQueue([])
+      setMessage(err instanceof Error ? err.message : "Queue load failed")
+    }
+  }, [])
+
   const loadDetail = useCallback(async (id: string) => {
     setSelectedId(id)
     setMessage(null)
     try {
       const res = await fetch(`/api/admin/editorial/${id}`)
-      if (!res.ok) throw new Error("Failed to load editorial")
+      if (!res.ok) throw new Error(await readError(res))
       setDetail(await res.json())
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Load failed")
@@ -71,7 +101,8 @@ export default function EditorialAdminPanel() {
 
   useEffect(() => {
     void loadList()
-  }, [loadList])
+    void loadQueue()
+  }, [loadList, loadQueue])
 
   async function save(patch: Partial<Detail> & { status?: string }) {
     if (!detail) return
@@ -83,10 +114,7 @@ export default function EditorialAdminPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || "Save failed")
-      }
+      if (!res.ok) throw new Error(await readError(res))
       const updated = await res.json()
       setDetail(updated)
       setMessage("Saved")
@@ -108,8 +136,8 @@ export default function EditorialAdminPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: detail.id, force }),
       })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Generate failed")
+      if (!res.ok) throw new Error(await readError(res))
+      const data = await res.json()
       setDetail(data.editorial)
       setMessage(force ? "Regenerated (forced)" : "Regenerated")
       void loadList()
@@ -120,23 +148,59 @@ export default function EditorialAdminPanel() {
     }
   }
 
-  async function runBatch(limit = 10) {
+  /** One-by-one generation — avoids proxy timeouts from a single long batch request. */
+  async function runSequential(limit = 10) {
     setSaving(true)
     setMessage(null)
+    setProgress(null)
+    let ok = 0
+    let fail = 0
+    const failures: string[] = []
+
     try {
-      const res = await fetch("/api/admin/editorial/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Batch failed")
-      setMessage(`Batch done: ok=${data.ok} fail=${data.fail} (attempted ${data.attempted})`)
+      const res = await fetch(`/api/admin/editorial/queue?limit=${limit}&minRatings=0`)
+      if (!res.ok) throw new Error(await readError(res))
+      const data = await res.json()
+      const targets: QueueItem[] = data.items ?? []
+      setQueue(targets)
+
+      if (targets.length === 0) {
+        setMessage("Queue empty — nothing to generate (or migrate hasn’t been applied).")
+        return
+      }
+
+      for (let i = 0; i < targets.length; i++) {
+        const item = targets[i]
+        setProgress(`${i + 1}/${targets.length}: ${item.actorName} — ${item.movieTitle}`)
+        try {
+          const gen = await fetch("/api/admin/editorial/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
+          })
+          if (!gen.ok) {
+            fail += 1
+            failures.push(`${item.actorName}: ${await readError(gen)}`)
+          } else {
+            ok += 1
+          }
+        } catch (err) {
+          fail += 1
+          failures.push(
+            `${item.actorName}: ${err instanceof Error ? err.message : "network error"}`,
+          )
+        }
+      }
+
+      const failureNote = failures.length ? ` · ${failures.slice(0, 3).join(" | ")}` : ""
+      setMessage(`Generated ${ok} ok, ${fail} failed (${targets.length} queued)${failureNote}`)
       void loadList()
+      void loadQueue()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Batch failed")
     } finally {
       setSaving(false)
+      setProgress(null)
     }
   }
 
@@ -173,7 +237,10 @@ export default function EditorialAdminPanel() {
         </label>
         <button
           type="button"
-          onClick={() => void loadList()}
+          onClick={() => {
+            void loadList()
+            void loadQueue()
+          }}
           className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
         >
           Refresh
@@ -181,11 +248,27 @@ export default function EditorialAdminPanel() {
         <button
           type="button"
           disabled={saving}
-          onClick={() => void runBatch(10)}
+          onClick={() => void runSequential(10)}
           className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700] disabled:opacity-50"
         >
           Generate next 10
         </button>
+      </div>
+
+      <div className="rounded-xl border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground">Queue preview ({queue.length})</p>
+        {queue.length === 0 ? (
+          <p className="mt-1">No pending indexable performances (or table not migrated yet).</p>
+        ) : (
+          <ul className="mt-2 space-y-1">
+            {queue.slice(0, 8).map((item) => (
+              <li key={`${item.actorId}:${item.movieId}`}>
+                {item.actorName} — {item.movieTitle} ({item.movieYear}) · {item.ratingCount} ratings ·{" "}
+                {item.reason}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -196,6 +279,7 @@ export default function EditorialAdminPanel() {
         ))}
       </div>
 
+      {progress ? <p className="text-sm text-muted-foreground">{progress}</p> : null}
       {message ? <p className="text-sm text-[#FFD700]">{message}</p> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -223,7 +307,7 @@ export default function EditorialAdminPanel() {
               </li>
             ))}
             {items.length === 0 && !loading ? (
-              <li className="text-sm text-muted-foreground">No editorials match.</li>
+              <li className="text-sm text-muted-foreground">No editorials yet — run Generate next 10.</li>
             ) : null}
           </ul>
         </div>

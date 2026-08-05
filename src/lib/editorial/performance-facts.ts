@@ -1,7 +1,6 @@
 import { createHash } from "crypto"
 import type { PrismaClient } from "@prisma/client"
 import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
-import { getRatePageInternalLinks } from "@/lib/rate-page-internal-links"
 import { isRatePageIndexable } from "@/lib/rate-page-seo"
 import { TEMPLATE_VERSION } from "@/lib/editorial/editorial-version"
 
@@ -69,6 +68,7 @@ function parseGenres(genre: string | null | undefined): string[] {
 
 /**
  * Build a deterministic facts pack for editorial generation/grounding.
+ * Intentionally avoids heavy similar-performance queries so admin/cron batches stay fast.
  */
 export async function buildPerformanceFactsPack(
   prisma: PrismaClient,
@@ -156,28 +156,6 @@ export async function buildPerformanceFactsPack(
     .slice(0, 2)
     .map((s) => DIM_LABELS[s.key])
 
-  let relatedPerformanceLabels: string[] = []
-  try {
-    const links = await getRatePageInternalLinks(prisma, {
-      actorId,
-      movieId,
-      actorName: perf.actor.name,
-      actorSlug: perf.actor.slug,
-      movieTitle: perf.movie.title,
-      movieSlug: perf.movie.slug,
-      movieYear: perf.movie.year,
-      director: perf.movie.director,
-      genre: perf.movie.genre,
-    })
-    relatedPerformanceLabels = [
-      ...links.similarByCraft.flatMap((g) => g.items.map((i) => i.label)),
-      ...links.higherRated.map((i) => i.label),
-      ...links.lowerRated.map((i) => i.label),
-    ].slice(0, 8)
-  } catch {
-    relatedPerformanceLabels = []
-  }
-
   return {
     actorName: perf.actor.name,
     actorSlug: perf.actor.slug,
@@ -193,6 +171,7 @@ export async function buildPerformanceFactsPack(
     dimensions,
     strongestDimensions,
     weakestDimensions,
-    relatedPerformanceLabels,
+    // Links live in RatePageInternalLinksSection — keep generation cheap.
+    relatedPerformanceLabels: [],
   }
 }

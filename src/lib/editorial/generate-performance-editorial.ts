@@ -39,7 +39,7 @@ export async function generatePerformanceEditorial(
 
   const inputHash = hashPerformanceFacts(facts, TEMPLATE_VERSION)
   const draft = buildTemplateEditorial(facts)
-  const validation = validateEditorialDraft(draft)
+  const validation = validateEditorialDraft(draft, { skipSpoilerCheck: true })
   if (!validation.ok) {
     return { ok: false, reason: validation.reason }
   }

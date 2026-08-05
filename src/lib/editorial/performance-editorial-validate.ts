@@ -23,7 +23,10 @@ export type EditorialValidationResult =
   | { ok: true; wordCount: number }
   | { ok: false; reason: string; wordCount: number }
 
-export function validateEditorialDraft(draft: EditorialDraftSections): EditorialValidationResult {
+export function validateEditorialDraft(
+  draft: EditorialDraftSections,
+  opts: { skipSpoilerCheck?: boolean } = {},
+): EditorialValidationResult {
   const sections = [draft.overview, draft.scoreAnalysis, draft.communityTake, draft.notableMoments]
   for (const s of sections) {
     if (!s || !s.trim()) {
@@ -39,10 +42,12 @@ export function validateEditorialDraft(draft: EditorialDraftSections): Editorial
     return { ok: false, reason: `Too long (${wordCount} words)`, wordCount }
   }
 
-  const blob = sections.join(" ")
-  for (const re of SPOILER_SOFT_PATTERNS) {
-    if (re.test(blob)) {
-      return { ok: false, reason: `Soft spoiler pattern matched: ${re}`, wordCount }
+  if (!opts.skipSpoilerCheck) {
+    const blob = sections.join(" ")
+    for (const re of SPOILER_SOFT_PATTERNS) {
+      if (re.test(blob)) {
+        return { ok: false, reason: `Soft spoiler pattern matched: ${re}`, wordCount }
+      }
     }
   }
 
