@@ -116,7 +116,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const yearPart = movie.year ? ` (${movie.year})` : ""
   const title = `Rate ${actor.name} in ${movie.title}${yearPart}`
-  const description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
+  let description = `How do audiences really rate ${actor.name}'s performance in ${movie.title}? See community scores and decide for yourself.`
+
+  try {
+    const editorial = await prisma.performanceEditorial.findUnique({
+      where: { actorId_movieId: { actorId: actor.id, movieId: movie.id } },
+      select: { status: true, overview: true, wordCount: true },
+    })
+    if (
+      editorial &&
+      (editorial.status === "PUBLISHED" || editorial.status === "HUMAN_LOCKED") &&
+      editorial.wordCount > 0 &&
+      editorial.overview.trim()
+    ) {
+      const firstSentence =
+        editorial.overview.split(/(?<=[.!?])\s+/)[0]?.trim() || editorial.overview.trim()
+      if (firstSentence.length >= 40) {
+        description =
+          firstSentence.length > 160 ? `${firstSentence.slice(0, 157).trimEnd()}…` : firstSentence
+      }
+    }
+  } catch {
+    // keep default description
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
   const canonMovieSeg = movie.slug ?? movie.id

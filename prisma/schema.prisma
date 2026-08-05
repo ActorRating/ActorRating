@@ -133,6 +133,7 @@ model Actor {
   performances Performance[]
   ratings      Rating[]
   forumThreads ForumThread[]
+  editorials   PerformanceEditorial[]
 
   @@index([name])
   @@index([slug])
@@ -168,11 +169,41 @@ model Movie {
   performances   Performance[]
   ratings        Rating[]
   forumThreads   ForumThread[]
+  editorials     PerformanceEditorial[]
 
   @@unique([title, year])
   @@index([title])
   @@index([slug])
   @@index([indexingCohort])
+}
+
+/// Unique AI/human editorial copy for a performance rate page (actor+movie).
+model PerformanceEditorial {
+  id             String          @id @default(cuid())
+  actorId        String
+  movieId        String
+  status         EditorialStatus @default(DRAFT)
+  overview       String          @db.Text
+  scoreAnalysis  String          @db.Text
+  communityTake  String          @db.Text
+  notableMoments String          @db.Text
+  spoilerFree    Boolean         @default(true)
+  wordCount      Int             @default(0)
+  inputHash      String
+  promptVersion  String
+  model          String?
+  generatedAt    DateTime?
+  publishedAt    DateTime?
+  editedAt       DateTime?
+  editedByEmail  String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  actor          Actor           @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  movie          Movie           @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, movieId])
+  @@index([status, publishedAt])
+  @@index([status, updatedAt])
 }
 
 model Performance {
@@ -506,4 +537,11 @@ enum RatingCommentReportStatus {
   OPEN
   RESOLVED
   DISMISSED
+}
+
+enum EditorialStatus {
+  DRAFT
+  PUBLISHED
+  HUMAN_LOCKED
+  NEEDS_REGEN
 }

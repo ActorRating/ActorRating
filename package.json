@@ -40,7 +40,8 @@
     "seed:forum": "node scripts/seed-forum-threads.js",
     "seed:forum:dev": "tsx scripts/seed-forum-threads.ts",
     "seed:invites": "node scripts/seed-invite-codes.js",
-    "seed:invites:dev": "tsx scripts/seed-invite-codes.ts"
+    "seed:invites:dev": "tsx scripts/seed-invite-codes.ts",
+    "editorial:generate": "tsx scripts/generate-performance-editorial.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

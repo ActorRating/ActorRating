@@ -16,6 +16,7 @@ import {
 import { isMovieComingSoon } from '@/lib/movie-release'
 import { getRatePageInternalLinks } from '@/lib/rate-page-internal-links'
 import RatePageInternalLinksSection from '@/components/seo/RatePageInternalLinksSection'
+import PerformanceEditorialSection from '@/components/seo/PerformanceEditorialSection'
 import RatePageClient from './RatePageClient'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
@@ -227,6 +228,12 @@ export default async function RatePage({
   const plainActor = JSON.parse(JSON.stringify(initialActor))
 
   let internalLinks = null
+  let editorial = null as null | {
+    overview: string
+    scoreAnalysis: string
+    communityTake: string
+    notableMoments: string
+  }
   try {
     internalLinks = await getRatePageInternalLinks(prisma, {
       actorId: actorRow.id,
@@ -243,6 +250,37 @@ export default async function RatePage({
     console.error('Rate page internal links failed:', err)
   }
 
+  try {
+    const row = await prisma.performanceEditorial.findUnique({
+      where: {
+        actorId_movieId: { actorId: actorRow.id, movieId: movieRow.id },
+      },
+      select: {
+        status: true,
+        overview: true,
+        scoreAnalysis: true,
+        communityTake: true,
+        notableMoments: true,
+        wordCount: true,
+      },
+    })
+    if (
+      row &&
+      (row.status === 'PUBLISHED' || row.status === 'HUMAN_LOCKED') &&
+      row.wordCount > 0 &&
+      row.overview.trim()
+    ) {
+      editorial = {
+        overview: row.overview,
+        scoreAnalysis: row.scoreAnalysis,
+        communityTake: row.communityTake,
+        notableMoments: row.notableMoments,
+      }
+    }
+  } catch (err) {
+    console.error('Rate page editorial load failed:', err)
+  }
+
   return (
     <>
       <RatePageClient
@@ -250,6 +288,16 @@ export default async function RatePage({
         initialActor={plainActor}
         initialSeededAggregateScore={seededAggregateScore}
       />
+      {editorial ? (
+        <PerformanceEditorialSection
+          actorName={actorRow.name}
+          movieTitle={movieRow.title}
+          overview={editorial.overview}
+          scoreAnalysis={editorial.scoreAnalysis}
+          communityTake={editorial.communityTake}
+          notableMoments={editorial.notableMoments}
+        />
+      ) : null}
       {internalLinks ? <RatePageInternalLinksSection links={internalLinks} /> : null}
     </>
   )

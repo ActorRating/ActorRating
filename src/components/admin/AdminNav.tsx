@@ -22,6 +22,11 @@ export default function AdminNav() {
       label: 'Add Movies',
       match: (path: string) => path.startsWith('/admin/add-movies'),
     },
+    {
+      href: '/admin/editorial',
+      label: 'Editorial',
+      match: (path: string) => path.startsWith('/admin/editorial'),
+    },
   ];
 
   return (
