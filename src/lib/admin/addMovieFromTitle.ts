@@ -232,6 +232,7 @@ export async function addMovieFromTitle(
 
 /**
  * Backfill movies that were added incompletely (missing poster, slug, or castIngestedAt).
+ * Also expands TMDB filmography for cast members who look unexpanded (few system performances).
  */
 export async function completeIncompleteMovies(
   prisma: PrismaClient,
@@ -239,6 +240,9 @@ export async function completeIncompleteMovies(
 ): Promise<{
   scanned: number
   completed: number
+  filmographyActorsExpanded: number
+  filmographyPerformancesAdded: number
+  filmographyMovieShellsCreated: number
   failed: Array<{ id: string; title: string; error: string }>
 }> {
   const take = Math.min(Math.max(options?.take ?? 40, 1), 100)
@@ -263,7 +267,12 @@ export async function completeIncompleteMovies(
   })
 
   let completed = 0
+  let filmographyActorsExpanded = 0
+  let filmographyPerformancesAdded = 0
+  let filmographyMovieShellsCreated = 0
   const failed: Array<{ id: string; title: string; error: string }> = []
+  /** Avoid re-expanding the same actor twice in one backfill run. */
+  const expandedActorIds = new Set<string>()
 
   for (const movie of incomplete) {
     try {
@@ -281,6 +290,52 @@ export async function completeIncompleteMovies(
       }
 
       await enrichMovieMetadataFromTmdb(prisma, movie)
+
+      const castOnMovie = await prisma.performance.findMany({
+        where: { movieId: movie.id, userId: SYSTEM_USER_ID },
+        orderBy: { order: "asc" },
+        select: {
+          order: true,
+          actor: { select: { id: true, tmdbId: true, name: true } },
+        },
+      })
+
+      const actorsToExpand: Array<{
+        id: string
+        tmdbId: number | null
+        order: number
+        name: string
+      }> = []
+
+      for (const row of castOnMovie) {
+        if (expandedActorIds.has(row.actor.id)) continue
+        if (row.actor.tmdbId == null) continue
+
+        // Heuristic: filmography not expanded yet (only a few system credits).
+        const actorPerfCount = await prisma.performance.count({
+          where: { actorId: row.actor.id, userId: SYSTEM_USER_ID },
+        })
+        if (actorPerfCount > 5) continue
+
+        actorsToExpand.push({
+          id: row.actor.id,
+          tmdbId: row.actor.tmdbId,
+          order: row.order ?? 99,
+          name: row.actor.name,
+        })
+      }
+
+      if (actorsToExpand.length > 0) {
+        const filmography = await expandFilmographiesForNewActors(
+          prisma,
+          actorsToExpand,
+        )
+        filmographyActorsExpanded += filmography.actorsExpanded
+        filmographyPerformancesAdded += filmography.performancesAdded
+        filmographyMovieShellsCreated += filmography.movieShellsCreated
+        for (const a of actorsToExpand) expandedActorIds.add(a.id)
+      }
+
       completed += 1
     } catch (error) {
       failed.push({
@@ -291,5 +346,12 @@ export async function completeIncompleteMovies(
     }
   }
 
-  return { scanned: incomplete.length, completed, failed }
+  return {
+    scanned: incomplete.length,
+    completed,
+    filmographyActorsExpanded,
+    filmographyPerformancesAdded,
+    filmographyMovieShellsCreated,
+    failed,
+  }
 }

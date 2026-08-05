@@ -147,7 +147,8 @@ export default function AddMoviesPage() {
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
             Fix movies already in the DB that are missing poster, slug, castIngestedAt, or system
-            cast (up to 40 per run).
+            cast (up to 40 per run). Also expands TMDB filmography for cast members who still look
+            unexpanded. Can be slow.
           </p>
           <button
             onClick={handleBackfillIncomplete}
