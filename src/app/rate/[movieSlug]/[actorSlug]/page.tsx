@@ -145,7 +145,7 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
 
   const performance = await prisma.performance.findFirst({
     where: { actorId: actorRow.id, movieId: movieRow.id },
-    select: { seededAggregateScore: true, character: true, comment: true, tier: true },
+    select: { seededAggregateScore: true, character: true, comment: true },
     orderBy: { createdAt: 'asc' },
   })
 
