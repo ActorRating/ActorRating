@@ -1,16 +1,9 @@
-"use client"
-
-import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-
-export default function RatePageLoading() {
+/** Thin progress only — avoid a full-page “Loading rating page…” shell that HTML-only bots capture. */
+export default function RateSegmentLoading() {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <BouncingBallsLoader
-        size="lg"
-        color="#FFD700"
-        showText={true}
-        text="Loading rating page..."
-      />
-    </div>
+    <div
+      className="fixed top-0 left-0 right-0 z-[201] h-0.5 bg-[#FFD700]/80 animate-pulse"
+      aria-hidden
+    />
   )
 }
