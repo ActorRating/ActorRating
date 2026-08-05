@@ -89,6 +89,9 @@ export default function AddMoviesPage() {
       }
       setBackfillMessage(
         `Scanned ${data.scanned}, completed ${data.completed}` +
+          (data.filmographyActorsExpanded
+            ? `, expanded ${data.filmographyActorsExpanded} actor filmographies (+${data.filmographyMovieShellsCreated ?? 0} shells)`
+            : '') +
           (data.failed?.length ? `, failed ${data.failed.length}` : '') +
           '. Run again if more remain.',
       )
