@@ -244,4 +244,52 @@ export async function getMovieCreditsForIngestion(movieId: number): Promise<Movi
     console.error(`Error fetching movie credits for ingestion (tmdbId=${movieId}):`, error);
     throw new Error(`Failed to fetch movie credits (tmdbId=${movieId})`);
   }
-} 
+}
+
+export type PersonMovieCredit = {
+  tmdbId: number
+  title: string
+  releaseDate: string | null
+  overview: string | null
+  character: string | null
+  order: number | null
+  posterPath: string | null
+}
+
+/**
+ * Person movie credits for filmography expansion. Rate-limited.
+ */
+export async function getPersonMovieCredits(personTmdbId: number): Promise<PersonMovieCredit[]> {
+  await rateLimitTmdb()
+  if (!API_KEY) {
+    throw new Error('TMDB_API_KEY is not set')
+  }
+
+  const url = `${TMDB_BASE_URL}/person/${personTmdbId}/movie_credits?api_key=${API_KEY}&language=en-US`
+  const response = await axios.get(url, { timeout: 30000 })
+  const cast = (response.data?.cast ?? []) as Array<{
+    id?: number
+    title?: string
+    release_date?: string
+    overview?: string
+    character?: string
+    order?: number
+    poster_path?: string
+  }>
+
+  return cast
+    .filter((c) => typeof c.id === 'number' && !!c.title?.trim())
+    .map((c) => ({
+      tmdbId: c.id!,
+      title: c.title!.trim(),
+      releaseDate:
+        typeof c.release_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(c.release_date)
+          ? c.release_date.slice(0, 10)
+          : null,
+      overview: typeof c.overview === 'string' ? c.overview : null,
+      character: typeof c.character === 'string' ? c.character : null,
+      order: typeof c.order === 'number' ? c.order : null,
+      posterPath: typeof c.poster_path === 'string' ? c.poster_path : null,
+    }))
+}
+ 

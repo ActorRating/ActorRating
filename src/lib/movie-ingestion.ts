@@ -139,6 +139,8 @@ export async function upsertPerformanceForMovie(
 export type SyncMovieCastResult = {
   actorsCreated: number;
   performancesUpserted: number;
+  /** Actors created during this sync (for optional filmography expansion). */
+  createdActors: Array<{ id: string; tmdbId: number | null; order: number; name: string }>;
 };
 
 /**
@@ -158,11 +160,12 @@ export async function syncMovieCast(
 
   if (castSize === 0) {
     log("syncMovieCast: TMDB credits empty, skipping cast sync");
-    return { actorsCreated: 0, performancesUpserted: 0 };
+    return { actorsCreated: 0, performancesUpserted: 0, createdActors: [] };
   }
 
   let actorsCreated = 0;
   let performancesUpserted = 0;
+  const createdActors: SyncMovieCastResult["createdActors"] = [];
 
   for (const member of credits.cast) {
     const order = member.order
@@ -178,7 +181,15 @@ export async function syncMovieCast(
       member.name,
       member.profilePath ?? undefined
     );
-    if (created) actorsCreated += 1;
+    if (created) {
+      actorsCreated += 1;
+      createdActors.push({
+        id: actor.id,
+        tmdbId: actor.tmdbId,
+        order,
+        name: actor.name,
+      });
+    }
 
     const tier = computePerformanceTier(order, castSize);
     const comment =
@@ -192,7 +203,7 @@ export async function syncMovieCast(
     performancesUpserted += 1;
   }
 
-  return { actorsCreated, performancesUpserted };
+  return { actorsCreated, performancesUpserted, createdActors };
 }
 
 /** Simple tier for ingestion: LEAD 0–2, SUPPORTING 3–9, MINOR 10+. No ensemble adjustment. */
