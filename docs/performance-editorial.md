@@ -12,11 +12,11 @@ Unique craft blurbs on indexable `/rate/[movie]/[actor]` pages, generated from *
 1. `prisma migrate deploy` (adds `PerformanceEditorial`)
 2. Coolify scheduled task (daily): `node scripts/run-performance-editorial-cron.js`
 
-## First batch
+## How pages get editorials
 
-After deploy, either:
+1. **On demand:** Indexable rate pages missing editorial schedule a deferred template generate via `after()` on visit.
+2. **Admin:** `/admin/editorial` → **Generate next 10**
+3. **CLI:** `npm run editorial:generate -- --limit=50`
+4. **Cron:** nightly batch for missing / `NEEDS_REGEN`
 
-- Admin → Editorial → **Generate next 10** (repeat), or
-- `npm run editorial:generate -- --limit=50`
-
-Human-locked rows are never overwritten by cron. Edit freely in admin for higher-quality copy.
+Human-locked rows are never overwritten by cron or deferred generate. Edit freely in admin for higher-quality copy.

@@ -1887,8 +1887,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             display: submitPhase === 'success' ? 'none' : undefined,
           }}
         >
-          {/* Actor Name - Primary Focus, Largest Text, White */}
-          <h1
+          {/* Actor Name - visual hero; document H1 is in RatePageCrawlShell (SSR) */}
+          <div
             id="actor-name-header"
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-2 sm:mb-4 tracking-tight px-1 text-white leading-tight"
             style={{
@@ -1896,7 +1896,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
             }}
           >
             {performance.actor.name}
-          </h1>
+          </div>
           {/* Movie Title - Clean, non-italic styling */}
           <div className="px-1">
             <h2

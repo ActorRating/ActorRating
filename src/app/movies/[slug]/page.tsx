@@ -10,6 +10,7 @@ import { withIsoDates } from '@/lib/dateUtils'
 import { prisma } from '@/lib/prisma'
 import { isFeaturetteMovie, matchesFeaturetteTitle } from '@/lib/non-rateable'
 import MoviePageClient from './MoviePageClient'
+import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 
 function buildMovieJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')
@@ -92,6 +93,10 @@ export default async function MoviePage({
     if (!res.ok) return <MoviePageClient />
     const data = await res.json()
     const jsonLd = buildMovieJsonLd(data, baseUrl)
+    const crumbs = breadcrumbJsonLd(baseUrl, [
+      { name: 'Home', path: '/' },
+      { name: data.title, path: `/movies/${data.slug || data.id}` },
+    ])
     const initialMovie = withIsoDates(data)
     const initialPerformances = Array.isArray(data.performances)
       ? data.performances.map((p: Record<string, unknown>) => withIsoDates(p))
@@ -101,6 +106,10 @@ export default async function MoviePage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
         />
         <MoviePageClient
           initialMovie={initialMovie}

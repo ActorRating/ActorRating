@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         genre: true,
         overview: true,
         isFeaturette: true,
+        posterUrl: true,
       },
     });
 
@@ -60,6 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
     const canonical = `${baseUrl}/movies/${movie.slug ?? movie.id}`;
+    const ogImage = movie.posterUrl || undefined;
 
     return {
       title,
@@ -70,11 +72,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         type: "website",
+        url: canonical,
+        ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
       twitter: {
         card: "summary_large_image",
         title,
         description,
+        ...(ogImage ? { images: [ogImage] } : {}),
       },
     };
   } catch (err) {

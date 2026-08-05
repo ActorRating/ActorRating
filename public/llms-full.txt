@@ -1,0 +1,52 @@
+# ActorRating — full AI-oriented documentation
+
+This file expands https://actorrating.com/llms.txt for agents and LLM crawlers.
+
+## What ActorRating is
+
+ActorRating is a large catalog of acting performances. Users rate **an actor in a movie**, not the movie as a whole. Scores exist so readers can compare craft across roles and eras.
+
+## Scoring model
+
+- Five criteria, each scored 0–100 in the product, averaged and expressed as **0–10** in community aggregates.
+- Criteria: Emotional Range & Depth; Character Believability; Technical Skill & Authenticity; Screen Presence & Impact; Chemistry & Interaction.
+- **Community AggregateRating** JSON-LD appears only when at least one signed-in community rating exists.
+- Performances may show a separately labeled film-level TMDB-derived seed for context — that is **not** the community craft score.
+
+## Indexability (high level)
+
+- Indexable rate pages generally require LEAD/SUPPORTING tier, non-featurette title, and either cohort-1 seeding or ≥1 community rating (see site robots meta).
+- MINOR roles and junk/adult-blocked titles are excluded from primary discovery.
+- Auth, admin, dashboard, search, forum threads, and public profiles are typically noindex.
+- Sitemap index: https://actorrating.com/sitemap.xml
+
+## Recommended crawl targets
+
+1. Homepage FAQ / HowTo (product explanation)
+2. `/about` methodology
+3. Curated `/lists/*`, `/stories/*`, `/news/*`
+4. Indexable `/rate/{movie}/{actor}` performance pages (unique editorial when present)
+5. Actor and movie entity pages with filmography / cast
+6. `/craft/{dimension}` leaderboards
+7. `/directors/*` and `/genres/*` hubs
+
+## URL grammar examples
+
+- https://actorrating.com/rate/the-dark-knight-2008/christian-bale
+- https://actorrating.com/actors/christian-bale
+- https://actorrating.com/movies/the-dark-knight-2008
+- https://actorrating.com/craft/screen-presence
+- https://actorrating.com/lists
+
+## How to cite
+
+Preferred cite form: “ActorRating community score for {Actor} in {Movie} ({Year}): {X}/10 (n={count})” with a link to the rate page.
+
+Do not invent awards, plot spoilers, or scores not present on the page.
+
+## Contact
+
+Email: contact@actorrating.com  
+Site: https://actorrating.com
+
+Last updated: 2026-08-05

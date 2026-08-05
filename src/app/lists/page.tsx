@@ -12,12 +12,12 @@ export const dynamic = "force-dynamic"
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
 
 export const metadata: Metadata = {
-  title: "Lists — ActorRating",
+  title: "Lists",
   description:
     "Hand-authored performance listicles that dig into acting — with real links to ActorRating community scores.",
   alternates: { canonical: `${BASE_URL}/lists` },
   openGraph: {
-    title: "Lists — ActorRating",
+    title: "Lists",
     description:
       "Hand-authored performance listicles that dig into acting — with real links to ActorRating community scores.",
     url: `${BASE_URL}/lists`,

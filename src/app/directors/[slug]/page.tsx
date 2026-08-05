@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { createSlug } from "@/lib/createSlug"
 import { HomeLayout } from "@/components/layout"
+import { breadcrumbJsonLd } from "@/lib/seo/breadcrumb-jsonld"
 
 export const revalidate = 3600
 
@@ -87,8 +88,39 @@ export default async function DirectorPage({ params }: Props) {
   const data = await resolveDirector(slug)
   if (!data) notFound()
 
+  const collectionLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${data.name} movies on ActorRating`,
+    url: `${BASE}/directors/${slug}`,
+    description: `Films directed by ${data.name}. Rate acting performances in each title.`,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: data.movies.length,
+      itemListElement: data.movies.slice(0, 40).map((m, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: m.title,
+        url: `${BASE}/movies/${m.slug ?? m.id}`,
+      })),
+    },
+  }
+  const crumbs = breadcrumbJsonLd(BASE, [
+    { name: "Home", path: "/" },
+    { name: "Directors", path: "/discover" },
+    { name: data.name, path: `/directors/${slug}` },
+  ])
+
   return (
     <HomeLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
+      />
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
         <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Director</p>
         <h1 className="mt-2 text-3xl font-bold text-white sm:text-4xl">{data.name}</h1>

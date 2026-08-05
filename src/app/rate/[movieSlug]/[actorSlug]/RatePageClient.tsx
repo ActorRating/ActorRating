@@ -456,9 +456,9 @@ export default function RatePageClient({
       {/* Edit Rating label at the very top when editing an existing rating */}
       {userExistingRating && (
         <div className="text-center pt-4 sm:pt-6 pb-1">
-          <h1 className="text-lg sm:text-xl font-semibold text-white/80">
+          <p className="text-lg sm:text-xl font-semibold text-white/80">
             Edit Rating
-          </h1>
+          </p>
         </div>
       )}
       <PerformanceSEOContent

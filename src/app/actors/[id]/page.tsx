@@ -7,6 +7,7 @@ export const revalidate = 60
 
 import { withIsoDates } from '@/lib/dateUtils'
 import ActorPageClient from './ActorPageClient'
+import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 
 function buildActorJsonLd(data: any, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')
@@ -21,7 +22,7 @@ function buildActorJsonLd(data: any, baseUrl: string) {
         name: p.movie.title,
         url: `${base}/movies/${p.movie.slug || p.movie.id}`,
       }))
-  const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw : []
+  const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw.slice(0, 25) : []
 
   const ratings = data.ratings || []
   const ratingCount =
@@ -78,6 +79,10 @@ export default async function ActorPage({
     if (!res.ok) return <ActorPageClient />
     const data = await res.json()
     const jsonLd = buildActorJsonLd(data, baseUrl)
+    const crumbs = breadcrumbJsonLd(baseUrl, [
+      { name: 'Home', path: '/' },
+      { name: data.name, path: `/actors/${data.slug || data.id}` },
+    ])
     const initialActor = withIsoDates(data)
     const initialPerformances = Array.isArray(data.performances)
       ? data.performances.map((p: Record<string, unknown>) => withIsoDates(p))
@@ -87,6 +92,10 @@ export default async function ActorPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
         />
         <ActorPageClient
           initialActor={initialActor}

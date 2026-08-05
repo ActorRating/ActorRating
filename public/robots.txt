@@ -1,3 +1,45 @@
+# AI / agent entrypoint
+# Full documentation: https://actorrating.com/llms-full.txt
+# Short summary: https://actorrating.com/llms.txt
+
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /onboarding
+Disallow: /onboarding/
+Disallow: /profile
+Disallow: /profile/
+Disallow: /search
+Disallow: /search?
+
+# Explicit allow for major AI crawlers (same corpus as general crawl)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://actorrating.com/sitemap.xml

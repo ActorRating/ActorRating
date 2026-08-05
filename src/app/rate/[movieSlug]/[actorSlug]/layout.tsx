@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { isRatePageIndexable } from "@/lib/rate-page-seo"
+import { breadcrumbJsonLd } from "@/lib/seo/breadcrumb-jsonld"
 
 type Props = {
   params: Promise<{ movieSlug: string; actorSlug: string }>
@@ -144,6 +145,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonMovieSeg = movie.slug ?? movie.id
   const canonActorSeg = actor.slug ?? actor.id
   const canonical = `${baseUrl}/rate/${canonMovieSeg}/${canonActorSeg}`
+  const ogImage = movie.posterUrl || actor.imageUrl || undefined
 
   return {
     title,
@@ -155,11 +157,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       type: "website",
       url: canonical,
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   }
 }
@@ -199,47 +203,62 @@ export default async function RateLayout({ params, children }: Props) {
   const avg100 = ratingAgg?._avg ? computeAverage100FromAvgRow(ratingAgg._avg as any) : null
   const avg10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
-  // JSON-LD only when ≥1 real community rating — never use seeded TMDB scores as AggregateRating.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://actorrating.com"
-  const pageUrl = `${baseUrl.replace(/\/$/, "")}/rate/${canonMovieSeg}/${canonActorSeg}`
-  const jsonLd =
-    data && ratingCount >= 1 && avg10 != null
-      ? {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Person",
-              name: data.actor.name,
-            },
-            {
-              "@type": "Movie",
-              "@id": pageUrl,
-              name: data.movie.title,
-              ...(data.movie.year && { datePublished: data.movie.year.toString() }),
-              actor: {
-                "@type": "Person",
-                name: data.actor.name,
-              },
-              aggregateRating: {
-                "@type": "AggregateRating",
-                ratingValue: String(avg10),
-                ratingCount: String(ratingCount),
-                bestRating: 10,
-                worstRating: 0,
-              },
-            },
-          ],
-        }
-      : null
+  const base = baseUrl.replace(/\/$/, "")
+  const pageUrl = `${base}/rate/${canonMovieSeg}/${canonActorSeg}`
+
+  // Always emit Person + Movie identity. AggregateRating only with real community ratings.
+  const graph: Array<Record<string, unknown>> = [
+    {
+      "@type": "Person",
+      name: data.actor.name,
+      url: `${base}/actors/${canonActorSeg}`,
+    },
+    {
+      "@type": "Movie",
+      "@id": pageUrl,
+      name: data.movie.title,
+      url: `${base}/movies/${canonMovieSeg}`,
+      ...(data.movie.year && { datePublished: data.movie.year.toString() }),
+      actor: {
+        "@type": "Person",
+        name: data.actor.name,
+        url: `${base}/actors/${canonActorSeg}`,
+      },
+      ...(ratingCount >= 1 &&
+        avg10 != null && {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: String(avg10),
+            ratingCount: String(ratingCount),
+            bestRating: 10,
+            worstRating: 0,
+          },
+        }),
+    },
+  ]
+
+  const breadcrumbs = breadcrumbJsonLd(base, [
+    { name: "Home", path: "/" },
+    { name: data.movie.title, path: `/movies/${canonMovieSeg}` },
+    { name: data.actor.name, path: `/rate/${canonMovieSeg}/${canonActorSeg}` },
+  ])
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": graph,
+  }
 
   return (
     <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       {children}
     </>
   )

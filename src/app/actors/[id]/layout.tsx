@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         id: true,
         name: true,
         slug: true,
+        imageUrl: true,
       },
     });
 
@@ -41,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com";
     const canonicalPath = `/actors/${actor.slug || actor.id}`;
     const canonical = `${baseUrl}${canonicalPath}`;
+    const ogImage = actor.imageUrl || undefined;
 
     return {
       title,
@@ -51,11 +53,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: ogTitle,
         description: ogDescription,
         type: "website",
+        url: canonical,
+        ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
       twitter: {
         card: "summary_large_image",
         title: ogTitle,
         description: ogDescription,
+        ...(ogImage ? { images: [ogImage] } : {}),
       },
     };
   } catch (err) {
