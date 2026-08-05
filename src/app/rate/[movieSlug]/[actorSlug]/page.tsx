@@ -19,9 +19,6 @@ import RatePageInternalLinksSection from '@/components/seo/RatePageInternalLinks
 import PerformanceEditorialSection from '@/components/seo/PerformanceEditorialSection'
 import RatePageCrawlShell from '@/components/seo/RatePageCrawlShell'
 import RatePageClient from './RatePageClient'
-import { after } from 'next/server'
-import { generatePerformanceEditorial } from '@/lib/editorial/generate-performance-editorial'
-import { isRatePageIndexable } from '@/lib/rate-page-seo'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
   if (!value) return ''
@@ -160,7 +157,6 @@ async function resolveRatePageData(movieSlug: string, actorSlug: string) {
     movieRow,
     actorRow,
     character: performance?.character ?? null,
-    tier: performance?.tier ?? null,
     seededAggregateScore:
       typeof performance?.seededAggregateScore === 'number'
         ? performance.seededAggregateScore
@@ -205,7 +201,7 @@ export default async function RatePage({
     notFound()
   }
 
-  const { movieRow, actorRow, seededAggregateScore, character, tier } = resolved
+  const { movieRow, actorRow, seededAggregateScore, character } = resolved
 
   const canonicalMovieSeg = movieRow.slug ?? movieRow.id
   const canonicalActorSeg = actorRow.slug ?? actorRow.id
@@ -284,27 +280,6 @@ export default async function RatePage({
         communityTake: row.communityTake,
         notableMoments: row.notableMoments,
       }
-    } else if (!row || row.status === 'NEEDS_REGEN' || row.wordCount === 0) {
-      // Backfill editorials for crawlers after response (template generator, no API key).
-      const ratingCount = await prisma.rating.count({
-        where: { actorId: actorRow.id, movieId: movieRow.id, userId: { not: null } },
-      })
-      if (
-        isRatePageIndexable({
-          movieSlug: movieRow.slug,
-          movieTitle: movieRow.title,
-          indexingCohort: movieRow.indexingCohort,
-          seededAggregateScore,
-          communityRatingCount: ratingCount,
-          tier,
-        })
-      ) {
-        after(() => {
-          void generatePerformanceEditorial(prisma, actorRow.id, movieRow.id, {
-            publish: true,
-          }).catch((err) => console.error('Deferred editorial generate failed:', err))
-        })
-      }
     }
   } catch (err) {
     console.error('Rate page editorial load failed:', err)
@@ -312,6 +287,11 @@ export default async function RatePage({
 
   return (
     <>
+      <RatePageClient
+        initialMovie={plainMovie}
+        initialActor={plainActor}
+        initialSeededAggregateScore={seededAggregateScore}
+      />
       <RatePageCrawlShell
         actorName={actorRow.name}
         actorHref={`/actors/${canonicalActorSeg}`}
@@ -320,11 +300,6 @@ export default async function RatePage({
         movieYear={movieRow.year}
         character={character}
         director={movieRow.director}
-      />
-      <RatePageClient
-        initialMovie={plainMovie}
-        initialActor={plainActor}
-        initialSeededAggregateScore={seededAggregateScore}
       />
       {editorial ? (
         <PerformanceEditorialSection

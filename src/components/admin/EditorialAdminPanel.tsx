@@ -179,8 +179,25 @@ export default function EditorialAdminPanel() {
             body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
           })
           if (!gen.ok) {
-            fail += 1
-            failures.push(`${item.actorName}: ${await readError(gen)}`)
+            const errText = await readError(gen)
+            // Brief pause + one retry on pool exhaustion.
+            if (/connection pool|Timed out fetching/i.test(errText)) {
+              await new Promise((r) => setTimeout(r, 1500))
+              const retry = await fetch("/api/admin/editorial/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
+              })
+              if (!retry.ok) {
+                fail += 1
+                failures.push(`${item.actorName}: ${await readError(retry)}`)
+              } else {
+                ok += 1
+              }
+            } else {
+              fail += 1
+              failures.push(`${item.actorName}: ${errText}`)
+            }
           } else {
             ok += 1
           }
@@ -190,6 +207,8 @@ export default function EditorialAdminPanel() {
             `${item.actorName}: ${err instanceof Error ? err.message : "network error"}`,
           )
         }
+        // Let the Prisma pool drain between pages (Coolify uses a small pool).
+        await new Promise((r) => setTimeout(r, 250))
       }
 
       const failureNote = failures.length ? ` · ${failures.slice(0, 3).join(" | ")}` : ""

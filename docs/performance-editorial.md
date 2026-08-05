@@ -20,4 +20,4 @@ Unique craft blurbs on indexable `/rate/[movie]/[actor]` pages, generated from *
 3. **CLI:** `npm run editorial:generate -- --limit=50`
 4. **Cron:** nightly batch for missing / `NEEDS_REGEN`
 
-Human-locked rows are never overwritten by cron or deferred generate. Edit freely in admin for higher-quality copy.
+Human-locked rows are never overwritten by cron. Prefer admin **Generate next 10** (paced, with pool-timeout retry). Avoid slamming generate while the site is under heavy crawl load.

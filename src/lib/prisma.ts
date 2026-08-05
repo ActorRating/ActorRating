@@ -33,10 +33,11 @@ if (!databaseUrl.includes('pgbouncer=')) {
   connectionUrl = `${databaseUrl}${separator}pgbouncer=true`
 }
 
-// Add connection limit and timeouts if not already present (helps with serverless).
+// Keep pool modest but usable for long-lived Coolify/node processes.
+// Override via DATABASE_URL (...&connection_limit=N&pool_timeout=M) if needed.
 if (!databaseUrl.includes('connection_limit')) {
   const sep = connectionUrl.includes('?') ? '&' : '?'
-  connectionUrl += `${sep}connection_limit=3&pool_timeout=25&connect_timeout=10`
+  connectionUrl += `${sep}connection_limit=10&pool_timeout=60&connect_timeout=10`
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({

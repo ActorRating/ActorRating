@@ -11,8 +11,7 @@ type Props = {
 }
 
 /**
- * Always-SSR crawlable summary for rate pages (outside the client auth/loading gate).
- * Provides a single H1 + unique intro for HTML-only bots and AI crawlers.
+ * SSR crawlable summary — placed below the rating UI so the hero layout stays intact.
  */
 export default function RatePageCrawlShell({
   actorName,
@@ -31,45 +30,34 @@ export default function RatePageCrawlShell({
   return (
     <section
       aria-label="Performance overview"
-      className="mx-auto w-full max-w-[900px] bg-black px-3 pt-6 sm:px-6"
+      className="mx-auto mt-10 w-full max-w-[900px] space-y-3 px-3 sm:px-6"
     >
-      <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-        Rate {actorName} in {movieTitle} ({movieYear})
-      </h1>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
-        Rate {actorName}
+      <div className="space-y-1 border-t border-white/[0.06] pt-8">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+          Performance
+        </p>
+        <h1 className="text-lg font-semibold tracking-tight text-zinc-100 sm:text-xl">
+          Rate {actorName} in {movieTitle} ({movieYear})
+        </h1>
+      </div>
+      <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
+        Rate{" "}
+        <Link href={actorHref} className="text-zinc-300 transition hover:text-[#FFD700]">
+          {actorName}
+        </Link>
         {role ? (
           <>
             {" "}
-            as <span className="text-zinc-300">{role}</span>
+            as <span className="text-zinc-400">{role}</span>
           </>
         ) : null}{" "}
         in{" "}
-        <Link href={movieHref} className="text-zinc-200 underline-offset-2 hover:underline">
+        <Link href={movieHref} className="text-zinc-300 transition hover:text-[#FFD700]">
           {movieTitle} ({movieYear})
         </Link>
-        {director && director.toLowerCase() !== "unknown" ? (
-          <>
-            {" "}
-            directed by {director}
-          </>
-        ) : null}
-        . Scores focus on acting craft — not overall movie quality — using five
-        criteria on a 0–10 community scale.
-      </p>
-      <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-zinc-500">
-        <li>Emotional Range &amp; Depth</li>
-        <li>Character Believability</li>
-        <li>Technical Skill &amp; Authenticity</li>
-        <li>Screen Presence &amp; Impact</li>
-        <li>Chemistry &amp; Interaction</li>
-      </ul>
-      <p className="mt-3 text-sm text-zinc-500">
-        Actor profile:{" "}
-        <Link href={actorHref} className="text-zinc-300 underline-offset-2 hover:underline">
-          {actorName}
-        </Link>
-        .
+        {director && director.toLowerCase() !== "unknown" ? <> · {director}</> : null}. Community
+        scores use Emotional Range &amp; Depth, Character Believability, Technical Skill, Screen
+        Presence, and Chemistry — acting craft, not overall film quality.
       </p>
     </section>
   )

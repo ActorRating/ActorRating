@@ -61,15 +61,17 @@ export default function RatePageInternalLinksSection({
   return (
     <nav
       aria-label="Related performances and catalog links"
-      className="mx-auto mt-10 w-full max-w-[900px] space-y-8 px-3 pb-16 sm:px-6"
+      className="mx-auto mt-8 w-full max-w-[900px] space-y-8 px-3 pb-16 sm:px-6"
     >
-      <div className="space-y-1">
+      <div className="space-y-1 border-t border-white/[0.06] pt-8">
         <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
           Explore more
         </p>
-        <h2 className="text-xl font-semibold text-white">Related pages &amp; performances</h2>
+        <h2 className="text-lg font-semibold text-zinc-100 sm:text-xl">
+          Related pages &amp; performances
+        </h2>
         <p className="text-sm text-zinc-500">
-          Jump to the actor, film, director, genre, and similar craft performances.
+          Actor, film, craft peers, and similar performances.
         </p>
       </div>
 
