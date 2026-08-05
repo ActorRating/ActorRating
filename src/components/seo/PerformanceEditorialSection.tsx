@@ -21,9 +21,9 @@ export default function PerformanceEditorialSection({
   return (
     <article
       aria-label={`Editorial analysis of ${actorName} in ${movieTitle}`}
-      className="mx-auto mt-8 w-full max-w-[900px] space-y-5 px-3 sm:px-6"
+      className="mx-auto mt-8 w-full max-w-[900px] space-y-6 px-3 sm:px-6"
     >
-      <header className="space-y-1 border-t border-white/[0.06] pt-8">
+      <header className="space-y-1 border-t border-white/[0.06] pt-8 text-center">
         <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
           Performance notes
         </p>
@@ -31,26 +31,24 @@ export default function PerformanceEditorialSection({
       </header>
 
       <section className="space-y-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Overview</h3>
+        <h3 className="text-sm font-semibold tracking-wide text-[#FFD700]">Overview</h3>
         <p className="text-sm leading-relaxed text-zinc-500">{overview}</p>
       </section>
 
       <section className="space-y-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h3 className="text-sm font-semibold tracking-wide text-[#FFD700]">
           Why the score looks this way
         </h3>
         <p className="text-sm leading-relaxed text-zinc-500">{scoreAnalysis}</p>
       </section>
 
       <section className="space-y-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Community consensus
-        </h3>
+        <h3 className="text-sm font-semibold tracking-wide text-[#FFD700]">Community consensus</h3>
         <p className="text-sm leading-relaxed text-zinc-500">{communityTake}</p>
       </section>
 
       <section className="space-y-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h3 className="text-sm font-semibold tracking-wide text-[#FFD700]">
           Notable craft moments
         </h3>
         <p className="text-sm leading-relaxed text-zinc-500">{notableMoments}</p>

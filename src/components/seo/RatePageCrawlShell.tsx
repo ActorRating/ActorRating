@@ -32,7 +32,7 @@ export default function RatePageCrawlShell({
       aria-label="Performance overview"
       className="mx-auto mt-10 w-full max-w-[900px] space-y-3 px-3 sm:px-6"
     >
-      <div className="space-y-1 border-t border-white/[0.06] pt-8">
+      <div className="space-y-1 border-t border-white/[0.06] pt-8 text-center">
         <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
           Performance
         </p>
@@ -40,7 +40,7 @@ export default function RatePageCrawlShell({
           Rate {actorName} in {movieTitle} ({movieYear})
         </h1>
       </div>
-      <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
+      <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-500">
         Rate{" "}
         <Link href={actorHref} className="text-zinc-300 transition hover:text-[#FFD700]">
           {actorName}

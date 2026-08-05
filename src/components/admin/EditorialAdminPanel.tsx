@@ -1,7 +1,28 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+
+const REQUEST_TIMEOUT_MS = 35_000
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 type ListItem = {
   id: string
@@ -52,8 +73,12 @@ export default function EditorialAdminPanel() {
   const [detail, setDetail] = useState<Detail | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
+  const cancelRef = useRef(false)
+
+  const busy = saving || generating
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -62,7 +87,7 @@ export default function EditorialAdminPanel() {
       const params = new URLSearchParams()
       if (q.trim()) params.set("q", q.trim())
       if (status) params.set("status", status)
-      const res = await fetch(`/api/admin/editorial?${params.toString()}`)
+      const res = await fetchWithTimeout(`/api/admin/editorial?${params.toString()}`)
       if (!res.ok) throw new Error(await readError(res))
       const data = await res.json()
       setItems(data.items ?? [])
@@ -76,7 +101,7 @@ export default function EditorialAdminPanel() {
 
   const loadQueue = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/editorial/queue?limit=15&minRatings=0")
+      const res = await fetchWithTimeout("/api/admin/editorial/queue?limit=15&minRatings=0")
       if (!res.ok) throw new Error(await readError(res))
       const data = await res.json()
       setQueue(data.items ?? [])
@@ -90,7 +115,7 @@ export default function EditorialAdminPanel() {
     setSelectedId(id)
     setMessage(null)
     try {
-      const res = await fetch(`/api/admin/editorial/${id}`)
+      const res = await fetchWithTimeout(`/api/admin/editorial/${id}`)
       if (!res.ok) throw new Error(await readError(res))
       setDetail(await res.json())
     } catch (err) {
@@ -109,7 +134,7 @@ export default function EditorialAdminPanel() {
     setSaving(true)
     setMessage(null)
     try {
-      const res = await fetch(`/api/admin/editorial/${detail.id}`, {
+      const res = await fetchWithTimeout(`/api/admin/editorial/${detail.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -131,7 +156,7 @@ export default function EditorialAdminPanel() {
     setSaving(true)
     setMessage(null)
     try {
-      const res = await fetch("/api/admin/editorial/generate", {
+      const res = await fetchWithTimeout("/api/admin/editorial/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: detail.id, force }),
@@ -150,15 +175,21 @@ export default function EditorialAdminPanel() {
 
   /** One-by-one generation — avoids proxy timeouts from a single long batch request. */
   async function runSequential(limit = 10) {
-    setSaving(true)
+    if (generating) return
+    cancelRef.current = false
+    setGenerating(true)
     setMessage(null)
-    setProgress(null)
+    setProgress("Loading queue…")
     let ok = 0
     let fail = 0
     const failures: string[] = []
 
     try {
-      const res = await fetch(`/api/admin/editorial/queue?limit=${limit}&minRatings=0`)
+      const res = await fetchWithTimeout(
+        `/api/admin/editorial/queue?limit=${limit}&minRatings=0`,
+        {},
+        45_000,
+      )
       if (!res.ok) throw new Error(await readError(res))
       const data = await res.json()
       const targets: QueueItem[] = data.items ?? []
@@ -170,10 +201,14 @@ export default function EditorialAdminPanel() {
       }
 
       for (let i = 0; i < targets.length; i++) {
+        if (cancelRef.current) {
+          setMessage(`Cancelled after ${ok} ok, ${fail} failed (${i}/${targets.length} attempted)`)
+          break
+        }
         const item = targets[i]
         setProgress(`${i + 1}/${targets.length}: ${item.actorName} — ${item.movieTitle}`)
         try {
-          const gen = await fetch("/api/admin/editorial/generate", {
+          const gen = await fetchWithTimeout("/api/admin/editorial/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
@@ -183,7 +218,8 @@ export default function EditorialAdminPanel() {
             // Brief pause + one retry on pool exhaustion.
             if (/connection pool|Timed out fetching/i.test(errText)) {
               await new Promise((r) => setTimeout(r, 1500))
-              const retry = await fetch("/api/admin/editorial/generate", {
+              if (cancelRef.current) break
+              const retry = await fetchWithTimeout("/api/admin/editorial/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
@@ -211,14 +247,17 @@ export default function EditorialAdminPanel() {
         await new Promise((r) => setTimeout(r, 250))
       }
 
-      const failureNote = failures.length ? ` · ${failures.slice(0, 3).join(" | ")}` : ""
-      setMessage(`Generated ${ok} ok, ${fail} failed (${targets.length} queued)${failureNote}`)
+      if (!cancelRef.current) {
+        const failureNote = failures.length ? ` · ${failures.slice(0, 3).join(" | ")}` : ""
+        setMessage(`Generated ${ok} ok, ${fail} failed (${targets.length} queued)${failureNote}`)
+      }
       void loadList()
       void loadQueue()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Batch failed")
     } finally {
-      setSaving(false)
+      cancelRef.current = false
+      setGenerating(false)
       setProgress(null)
     }
   }
@@ -266,12 +305,24 @@ export default function EditorialAdminPanel() {
         </button>
         <button
           type="button"
-          disabled={saving}
+          disabled={busy}
           onClick={() => void runSequential(10)}
           className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700] disabled:opacity-50"
         >
-          Generate next 10
+          {generating ? "Generating…" : "Generate next 10"}
         </button>
+        {generating ? (
+          <button
+            type="button"
+            onClick={() => {
+              cancelRef.current = true
+              setProgress("Cancelling after current item…")
+            }}
+            className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground"
+          >
+            Cancel
+          </button>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
@@ -298,7 +349,11 @@ export default function EditorialAdminPanel() {
         ))}
       </div>
 
-      {progress ? <p className="text-sm text-muted-foreground">{progress}</p> : null}
+      {progress ? (
+        <p className="rounded-lg border border-[#FFD700]/25 bg-[#FFD700]/5 px-3 py-2 text-sm text-[#FFD700]">
+          {progress}
+        </p>
+      ) : null}
       {message ? <p className="text-sm text-[#FFD700]">{message}</p> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -375,7 +430,7 @@ export default function EditorialAdminPanel() {
               <div className="flex flex-wrap gap-2 pt-2">
                 <button
                   type="button"
-                  disabled={saving}
+                  disabled={busy}
                   onClick={() =>
                     void save({
                       overview: detail.overview,
@@ -390,7 +445,7 @@ export default function EditorialAdminPanel() {
                 </button>
                 <button
                   type="button"
-                  disabled={saving}
+                  disabled={busy}
                   onClick={() => void save({ status: "PUBLISHED" })}
                   className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
@@ -398,7 +453,7 @@ export default function EditorialAdminPanel() {
                 </button>
                 <button
                   type="button"
-                  disabled={saving}
+                  disabled={busy}
                   onClick={() => void save({ status: "DRAFT" })}
                   className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
@@ -406,7 +461,7 @@ export default function EditorialAdminPanel() {
                 </button>
                 <button
                   type="button"
-                  disabled={saving}
+                  disabled={busy}
                   onClick={() => void save({ status: "HUMAN_LOCKED" })}
                   className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700]"
                 >
@@ -414,7 +469,7 @@ export default function EditorialAdminPanel() {
                 </button>
                 <button
                   type="button"
-                  disabled={saving || detail.status === "HUMAN_LOCKED"}
+                  disabled={busy || detail.status === "HUMAN_LOCKED"}
                   onClick={() => void regenerate(false)}
                   className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-40"
                 >
@@ -423,7 +478,7 @@ export default function EditorialAdminPanel() {
                 {detail.status === "HUMAN_LOCKED" ? (
                   <button
                     type="button"
-                    disabled={saving}
+                    disabled={busy}
                     onClick={() => void regenerate(true)}
                     className="rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-300"
                   >
