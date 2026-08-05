@@ -20,6 +20,7 @@ import {
 } from "../src/lib/performances-page-targets"
 import { isFeaturetteMovie, isSelfOrArchiveCredit } from "../src/lib/non-rateable"
 import { isMovieComingSoon, parseTmdbReleaseDate } from "../src/lib/movie-release"
+import { isRatePageIndexable } from "../src/lib/rate-page-seo"
 
 const REPO_ROOT = path.join(__dirname, "..")
 const LIVE_DIR = path.join(REPO_ROOT, "public", "sitemaps")
@@ -209,6 +210,9 @@ async function resolveCuratedPerformancePairs(): Promise<
     actorId: string
     movieId: string
     maxUpd: Date
+    tier: string | null
+    seededAggregateScore: number | null
+    communityRatingCount: number
     movie: {
       slug: string | null
       id: string
@@ -218,6 +222,7 @@ async function resolveCuratedPerformancePairs(): Promise<
       isFeaturette: boolean
       releaseDate: Date | null
       year: number
+      indexingCohort: number
     }
     actor: { slug: string | null; id: string }
     characters: Array<string | null>
@@ -245,6 +250,7 @@ async function resolveCuratedPerformancePairs(): Promise<
         isFeaturette: true,
         releaseDate: true,
         year: true,
+        indexingCohort: true,
       },
     }),
   ])
@@ -267,6 +273,8 @@ async function resolveCuratedPerformancePairs(): Promise<
       movieId: true,
       character: true,
       updatedAt: true,
+      tier: true,
+      seededAggregateScore: true,
       actor: { select: { id: true, slug: true } },
       movie: {
         select: {
@@ -278,18 +286,23 @@ async function resolveCuratedPerformancePairs(): Promise<
           isFeaturette: true,
           releaseDate: true,
           year: true,
+          indexingCohort: true,
         },
       },
     },
   })
 
-  const ratingMax = await prisma.rating.groupBy({
+  const ratingGroups = await prisma.rating.groupBy({
     by: ["actorId", "movieId"],
     where: { OR: pairs.map((p) => ({ actorId: p.actorId, movieId: p.movieId })) },
     _max: { updatedAt: true },
+    _count: { _all: true },
   })
   const ratingMaxMap = new Map(
-    ratingMax.map((r) => [`${r.actorId}:${r.movieId}`, r._max.updatedAt]),
+    ratingGroups.map((r) => [`${r.actorId}:${r.movieId}`, r._max.updatedAt]),
+  )
+  const ratingCountMap = new Map(
+    ratingGroups.map((r) => [`${r.actorId}:${r.movieId}`, r._count._all]),
   )
 
   const byPair = new Map<
@@ -298,6 +311,9 @@ async function resolveCuratedPerformancePairs(): Promise<
       actorId: string
       movieId: string
       maxUpd: Date
+      tier: string | null
+      seededAggregateScore: number | null
+      communityRatingCount: number
       movie: {
         slug: string | null
         id: string
@@ -307,6 +323,7 @@ async function resolveCuratedPerformancePairs(): Promise<
         isFeaturette: boolean
         releaseDate: Date | null
         year: number
+        indexingCohort: number
       }
       actor: { slug: string | null; id: string }
       characters: Array<string | null>
@@ -325,6 +342,9 @@ async function resolveCuratedPerformancePairs(): Promise<
         actorId: p.actorId,
         movieId: p.movieId,
         maxUpd,
+        tier: p.tier,
+        seededAggregateScore: p.seededAggregateScore,
+        communityRatingCount: ratingCountMap.get(key) ?? 0,
         movie: p.movie,
         actor: p.actor,
         characters: [p.character],
@@ -332,6 +352,13 @@ async function resolveCuratedPerformancePairs(): Promise<
     } else {
       existing.characters.push(p.character)
       if (maxUpd > existing.maxUpd) existing.maxUpd = maxUpd
+      // Prefer non-null seeded / better tier from system rows
+      if (existing.seededAggregateScore == null && p.seededAggregateScore != null) {
+        existing.seededAggregateScore = p.seededAggregateScore
+      }
+      if (existing.tier === "MINOR" && p.tier !== "MINOR") {
+        existing.tier = p.tier
+      }
     }
   }
   return Array.from(byPair.values())
@@ -347,6 +374,11 @@ function generateStatic(outDir: string): void {
     { url: `${BASE_URL}/stories`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/news`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/discover`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/craft/emotional-range`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
+    { url: `${BASE_URL}/craft/screen-presence`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
+    { url: `${BASE_URL}/craft/character-believability`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
+    { url: `${BASE_URL}/craft/technical-skill`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
+    { url: `${BASE_URL}/craft/chemistry-interaction`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
     { url: `${BASE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ]
@@ -539,6 +571,18 @@ async function generatePerformances(outDir: string): Promise<number> {
   for (const c of curated) {
     if (!shouldIncludeRateMovie(c.movie)) continue
     if (isSelfOnlyCreditPair(c.characters)) continue
+    if (
+      !isRatePageIndexable({
+        movieSlug: c.movie.slug,
+        movieTitle: c.movie.title,
+        indexingCohort: c.movie.indexingCohort,
+        seededAggregateScore: c.seededAggregateScore,
+        communityRatingCount: c.communityRatingCount,
+        tier: c.tier,
+      })
+    ) {
+      continue
+    }
     const key = `${c.actorId}:${c.movieId}`
     if (seen.has(key)) continue
     seen.add(key)

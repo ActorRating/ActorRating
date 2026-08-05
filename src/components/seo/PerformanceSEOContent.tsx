@@ -39,18 +39,17 @@ export function PerformanceSEOContent({
     <>      
       {/* SEO Content - Hidden visually but accessible to crawlers and screen readers */}
       <div className="sr-only">
-        <h1>Rate {actorName}'s Acting Performance in {fullMovieTitle}</h1>
         <p>
-          This page allows users to rate an acting performance by {actorName} in {fullMovieTitle} using 
-          ActorRating's 0-10 performance rating system based on five Oscar-inspired criteria. 
+          Rate {actorName}&apos;s acting performance in {fullMovieTitle} using
+          ActorRating&apos;s 0-10 performance rating system based on five Oscar-inspired criteria.
           Our rating methodology evaluates the craft of acting independently from the overall film quality.
         </p>
         <p>
-          Rate this acting performance across five professional criteria: Emotional Range & Depth, 
-          Character Believability, Technical Skill & Authenticity, Screen Presence & Impact, and 
-          Chemistry & Interaction. Each criterion is scored on a 0-100 scale internally, then averaged 
-          and converted into a final score out of 10 for clarity and consistency. Your performance rating 
-          will contribute to the community's aggregated score, helping identify career-defining roles 
+          Rate this acting performance across five professional criteria: Emotional Range &amp; Depth,
+          Character Believability, Technical Skill &amp; Authenticity, Screen Presence &amp; Impact, and
+          Chemistry &amp; Interaction. Each criterion is scored on a 0-100 scale internally, then averaged
+          and converted into a final score out of 10 for clarity and consistency. Your performance rating
+          will contribute to the community&apos;s aggregated score, helping identify career-defining roles
           and overlooked performances.
         </p>
       </div>

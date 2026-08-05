@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     description: "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria. Compare and see who deserved the awards.",
     images: ["https://actorrating.com/logo.png"],
   },
+  alternates: {
+    canonical: "https://actorrating.com",
+  },
 };
 
 export default async function Home() {

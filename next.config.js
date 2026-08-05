@@ -113,6 +113,12 @@ const nextConfig = {
     ].join('; ')
 
     return [
+      // Hub-only: keep /rate out of the index without forcing noindex onto
+      // indexable performance pages under /rate/[movie]/[actor].
+      {
+        source: '/rate',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, follow' }],
+      },
       {
         source: '/(.*)',
         headers: [

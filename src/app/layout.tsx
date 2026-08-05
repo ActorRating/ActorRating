@@ -107,10 +107,6 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-status-bar-style": "black-translucent", // Allows content behind status bar
     "viewport-fit": "cover", // CRITICAL: iOS safe area support
   },
-  // Preconnect hints to reduce render-blocking (Next.js will add these to head)
-  alternates: {
-    canonical: "https://actorrating.com",
-  },
 };
 
 // ✅ Modern Next.js viewport handling with iOS safe area support

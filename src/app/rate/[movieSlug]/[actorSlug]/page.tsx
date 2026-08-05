@@ -14,6 +14,8 @@ import {
   matchesFeaturetteTitle,
 } from '@/lib/non-rateable'
 import { isMovieComingSoon } from '@/lib/movie-release'
+import { getRatePageInternalLinks } from '@/lib/rate-page-internal-links'
+import RatePageInternalLinksSection from '@/components/seo/RatePageInternalLinksSection'
 import RatePageClient from './RatePageClient'
 
 function toIsoDateSafe(value: string | Date | undefined): string {
@@ -224,11 +226,31 @@ export default async function RatePage({
   const plainMovie = JSON.parse(JSON.stringify(initialMovie))
   const plainActor = JSON.parse(JSON.stringify(initialActor))
 
+  let internalLinks = null
+  try {
+    internalLinks = await getRatePageInternalLinks(prisma, {
+      actorId: actorRow.id,
+      movieId: movieRow.id,
+      actorName: actorRow.name,
+      actorSlug: actorRow.slug,
+      movieTitle: movieRow.title,
+      movieSlug: movieRow.slug,
+      movieYear: movieRow.year,
+      director: movieRow.director,
+      genre: movieRow.genre,
+    })
+  } catch (err) {
+    console.error('Rate page internal links failed:', err)
+  }
+
   return (
-    <RatePageClient
-      initialMovie={plainMovie}
-      initialActor={plainActor}
-      initialSeededAggregateScore={seededAggregateScore}
-    />
+    <>
+      <RatePageClient
+        initialMovie={plainMovie}
+        initialActor={plainActor}
+        initialSeededAggregateScore={seededAggregateScore}
+      />
+      {internalLinks ? <RatePageInternalLinksSection links={internalLinks} /> : null}
+    </>
   )
 }

@@ -116,7 +116,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${displayName} | ActorRating`,
     description,
-    robots: { index: true, follow: true },
+    // Thin public profiles — followable but not SEO targets.
+    robots: { index: false, follow: true },
     alternates: { canonical: profileUrl },
     openGraph: {
       type: "profile",

@@ -2,6 +2,7 @@ export const revalidate = 60;
 
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { isActorCatalogIndexable } from "@/lib/entity-seo";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -24,21 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       return {
         title: "Actor Not Found",
         description: "The requested actor could not be found.",
+        robots: { index: false, follow: false },
       };
     }
 
-    // Index if there is any rateable credit on a non-featurette film (Performance or Rating row).
-    const [hasPerf, hasRating] = await Promise.all([
-      prisma.performance.findFirst({
-        where: { actorId: actor.id, movie: { isFeaturette: false } },
-        select: { id: true },
-      }),
-      prisma.rating.findFirst({
-        where: { actorId: actor.id, movie: { isFeaturette: false } },
-        select: { id: true },
-      }),
-    ]);
-    const shouldIndex = !!(hasPerf || hasRating);
+    // Match sitemap: ≥1 rating OR ≥5 performances on non-featurette titles.
+    const shouldIndex = await isActorCatalogIndexable(prisma, actor.id);
     const robots = shouldIndex ? undefined : { index: false as const, follow: true as const };
 
     const title = `${actor.name} Performances Ranked & Rated`;

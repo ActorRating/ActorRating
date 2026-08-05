@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isPublicSeoBlockedMovie } from "@/lib/public-movie-seo-block";
 import { isFeaturetteMovie, matchesFeaturetteTitle } from "@/lib/non-rateable";
+import { isMovieCatalogIndexable } from "@/lib/entity-seo";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       return {
         title: "Movie Not Found",
         description: "The requested movie could not be found.",
+        robots: { index: false, follow: false },
       };
     }
 
@@ -48,12 +50,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       notFound();
     }
 
-    // Index if the title has any Performance or Rating row (same bar as sitemap / actor pages).
-    const [hasPerf, hasRating] = await Promise.all([
-      prisma.performance.findFirst({ where: { movieId: movie.id }, select: { id: true } }),
-      prisma.rating.findFirst({ where: { movieId: movie.id }, select: { id: true } }),
-    ]);
-    const isIndexable = !!(hasPerf || hasRating);
+    // Match sitemap: ≥1 rating OR ≥5 performances.
+    const isIndexable = await isMovieCatalogIndexable(prisma, movie.id);
     const robots = isIndexable ? undefined : { index: false as const, follow: true as const };
 
     const yearPart = movie.year ? ` (${movie.year})` : "";
