@@ -1806,6 +1806,41 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     doNavigateToActorPage()
   }
 
+  /** Prefer the in-app page before /rate; fall back to actor filmography. */
+  const handleBackFromSuccess = () => {
+    try {
+      const returnTo = sessionStorage.getItem("rateReturnTo")
+      if (
+        returnTo &&
+        returnTo.startsWith("/") &&
+        !returnTo.startsWith("/rate/") &&
+        returnTo !== window.location.pathname
+      ) {
+        router.push(returnTo)
+        return
+      }
+    } catch {
+      // ignore storage errors
+    }
+    doNavigateToActorPage()
+  }
+
+  // Remember where the user entered rating from (same-origin referrer), skipping /rate hops.
+  useEffect(() => {
+    try {
+      const ref = document.referrer
+      if (!ref) return
+      const url = new URL(ref)
+      if (url.origin !== window.location.origin) return
+      const path = `${url.pathname}${url.search}${url.hash}`
+      if (!path.startsWith("/rate/")) {
+        sessionStorage.setItem("rateReturnTo", path)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   const handleRateNextPerformance = (p?: SuccessCarouselPerf) => {
     if (p) {
       router.push(`/rate/${p.movieSlug}/${p.actorSlug}`)
@@ -3266,18 +3301,18 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
               </div>
             )}
 
-            {/* ── Back to filmography ────────────────────────────────────────── */}
+            {/* ── Back (previous page, else actor filmography) ───────────────── */}
             <div className="pb-2 text-center">
               <button
                 type="button"
-                onClick={handleBackToFilmography}
+                onClick={handleBackFromSuccess}
                 className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
                 style={{ color: '#3f3f46' }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = '#71717a')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = '#3f3f46')}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                Back to filmography
+                Back
               </button>
             </div>
 
