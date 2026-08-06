@@ -27,19 +27,46 @@ type CandidateRow = {
 }
 
 /**
+ * Approx remaining cohort-1 LEAD/SUPPORTING performances needing editorial
+ * (seeded + indexingCohort=1). Used for admin progress labeling.
+ */
+export async function countCohort1EditorialQueue(prisma: PrismaClient): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{ n: number }>>`
+    SELECT COUNT(*)::int AS n
+    FROM "Performance" p
+    INNER JOIN "Movie" m ON m.id = p."movieId"
+    LEFT JOIN "PerformanceEditorial" e
+      ON e."actorId" = p."actorId" AND e."movieId" = p."movieId"
+    WHERE p."userId" = ${SYSTEM_USER_ID}
+      AND p.tier IN ('LEAD', 'SUPPORTING')
+      AND NOT m."isFeaturette"
+      AND m."indexingCohort" = 1
+      AND p."seededAggregateScore" IS NOT NULL
+      AND (
+        e.id IS NULL
+        OR e.status = 'NEEDS_REGEN'::"EditorialStatus"
+      )
+  `
+  return rows[0]?.n ?? 0
+}
+
+/**
  * Indexable performances missing editorial or marked NEEDS_REGEN.
  *
  * Two cheap paths (avoids full-table correlated COUNT that hung Generate):
  * 1) Cohort-1 + seeded score, missing/regen — indexable without community ratings
  * 2) Performances that already have community ratings and are missing/regen
+ *
+ * Pass `cohort: 1` to restrict both paths to indexingCohort=1 (admin “all cohort 1”).
  */
 export async function listEditorialGenerationQueue(
   prisma: PrismaClient,
-  opts: { limit?: number; minRatings?: number } = {},
+  opts: { limit?: number; minRatings?: number; cohort?: number | null } = {},
 ): Promise<EditorialQueueItem[]> {
   const limit = opts.limit ?? 50
   const minRatings = opts.minRatings ?? 1
   const window = Math.max(limit * 10, 150)
+  const cohortOnly = opts.cohort === 1
 
   const seededPath = await prisma.$queryRaw<CandidateRow[]>`
     SELECT
@@ -72,43 +99,82 @@ export async function listEditorialGenerationQueue(
     LIMIT ${window}
   `
 
-  const communityPath = await prisma.$queryRaw<CandidateRow[]>`
-    SELECT
-      p."actorId" AS "actorId",
-      p."movieId" AS "movieId",
-      a.name AS "actorName",
-      m.title AS "movieTitle",
-      m.year AS "movieYear",
-      m.slug AS "movieSlug",
-      m."indexingCohort" AS cohort,
-      p.tier::text AS tier,
-      p."seededAggregateScore"::float AS seeded,
-      e.status::text AS "editorialStatus",
-      rc.cnt::int AS "ratingCount"
-    FROM (
-      SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
-      FROM "Rating" r
-      WHERE r."userId" IS NOT NULL
-      GROUP BY r."actorId", r."movieId"
-      HAVING COUNT(*) >= ${Math.max(minRatings, 1)}
-    ) rc
-    INNER JOIN "Performance" p
-      ON p."actorId" = rc."actorId"
-     AND p."movieId" = rc."movieId"
-     AND p."userId" = ${SYSTEM_USER_ID}
-    INNER JOIN "Actor" a ON a.id = p."actorId"
-    INNER JOIN "Movie" m ON m.id = p."movieId"
-    LEFT JOIN "PerformanceEditorial" e
-      ON e."actorId" = p."actorId" AND e."movieId" = p."movieId"
-    WHERE p.tier IN ('LEAD', 'SUPPORTING')
-      AND NOT m."isFeaturette"
-      AND (
-        e.id IS NULL
-        OR e.status = 'NEEDS_REGEN'::"EditorialStatus"
-      )
-    ORDER BY rc.cnt DESC, m.year DESC
-    LIMIT ${window}
-  `
+  const communityPath = cohortOnly
+    ? await prisma.$queryRaw<CandidateRow[]>`
+        SELECT
+          p."actorId" AS "actorId",
+          p."movieId" AS "movieId",
+          a.name AS "actorName",
+          m.title AS "movieTitle",
+          m.year AS "movieYear",
+          m.slug AS "movieSlug",
+          m."indexingCohort" AS cohort,
+          p.tier::text AS tier,
+          p."seededAggregateScore"::float AS seeded,
+          e.status::text AS "editorialStatus",
+          rc.cnt::int AS "ratingCount"
+        FROM (
+          SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
+          FROM "Rating" r
+          WHERE r."userId" IS NOT NULL
+          GROUP BY r."actorId", r."movieId"
+          HAVING COUNT(*) >= ${Math.max(minRatings, 1)}
+        ) rc
+        INNER JOIN "Performance" p
+          ON p."actorId" = rc."actorId"
+         AND p."movieId" = rc."movieId"
+         AND p."userId" = ${SYSTEM_USER_ID}
+        INNER JOIN "Actor" a ON a.id = p."actorId"
+        INNER JOIN "Movie" m ON m.id = p."movieId"
+        LEFT JOIN "PerformanceEditorial" e
+          ON e."actorId" = p."actorId" AND e."movieId" = p."movieId"
+        WHERE p.tier IN ('LEAD', 'SUPPORTING')
+          AND NOT m."isFeaturette"
+          AND m."indexingCohort" = 1
+          AND (
+            e.id IS NULL
+            OR e.status = 'NEEDS_REGEN'::"EditorialStatus"
+          )
+        ORDER BY rc.cnt DESC, m.year DESC
+        LIMIT ${window}
+      `
+    : await prisma.$queryRaw<CandidateRow[]>`
+        SELECT
+          p."actorId" AS "actorId",
+          p."movieId" AS "movieId",
+          a.name AS "actorName",
+          m.title AS "movieTitle",
+          m.year AS "movieYear",
+          m.slug AS "movieSlug",
+          m."indexingCohort" AS cohort,
+          p.tier::text AS tier,
+          p."seededAggregateScore"::float AS seeded,
+          e.status::text AS "editorialStatus",
+          rc.cnt::int AS "ratingCount"
+        FROM (
+          SELECT r."actorId", r."movieId", COUNT(*)::int AS cnt
+          FROM "Rating" r
+          WHERE r."userId" IS NOT NULL
+          GROUP BY r."actorId", r."movieId"
+          HAVING COUNT(*) >= ${Math.max(minRatings, 1)}
+        ) rc
+        INNER JOIN "Performance" p
+          ON p."actorId" = rc."actorId"
+         AND p."movieId" = rc."movieId"
+         AND p."userId" = ${SYSTEM_USER_ID}
+        INNER JOIN "Actor" a ON a.id = p."actorId"
+        INNER JOIN "Movie" m ON m.id = p."movieId"
+        LEFT JOIN "PerformanceEditorial" e
+          ON e."actorId" = p."actorId" AND e."movieId" = p."movieId"
+        WHERE p.tier IN ('LEAD', 'SUPPORTING')
+          AND NOT m."isFeaturette"
+          AND (
+            e.id IS NULL
+            OR e.status = 'NEEDS_REGEN'::"EditorialStatus"
+          )
+        ORDER BY rc.cnt DESC, m.year DESC
+        LIMIT ${window}
+      `
 
   const byKey = new Map<string, CandidateRow>()
   for (const row of [...seededPath, ...communityPath]) {

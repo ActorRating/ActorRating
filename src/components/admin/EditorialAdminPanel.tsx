@@ -76,9 +76,21 @@ export default function EditorialAdminPanel() {
   const [generating, setGenerating] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
+  const [cohort1Remaining, setCohort1Remaining] = useState<number | null>(null)
   const cancelRef = useRef(false)
 
   const busy = saving || generating
+
+  const loadCohort1Count = useCallback(async () => {
+    try {
+      const res = await fetchWithTimeout("/api/admin/editorial/queue?countOnly=1&cohort=1")
+      if (!res.ok) return
+      const data = await res.json()
+      if (typeof data.remaining === "number") setCohort1Remaining(data.remaining)
+    } catch {
+      /* non-fatal */
+    }
+  }, [])
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -101,7 +113,9 @@ export default function EditorialAdminPanel() {
 
   const loadQueue = useCallback(async () => {
     try {
-      const res = await fetchWithTimeout("/api/admin/editorial/queue?limit=15&minRatings=0")
+      const res = await fetchWithTimeout(
+        "/api/admin/editorial/queue?limit=15&minRatings=0&cohort=1",
+      )
       if (!res.ok) throw new Error(await readError(res))
       const data = await res.json()
       setQueue(data.items ?? [])
@@ -127,7 +141,8 @@ export default function EditorialAdminPanel() {
   useEffect(() => {
     void loadList()
     void loadQueue()
-  }, [loadList, loadQueue])
+    void loadCohort1Count()
+  }, [loadList, loadQueue, loadCohort1Count])
 
   async function save(patch: Partial<Detail> & { status?: string }) {
     if (!detail) return
@@ -173,6 +188,32 @@ export default function EditorialAdminPanel() {
     }
   }
 
+  async function generateOne(item: QueueItem): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const gen = await fetchWithTimeout("/api/admin/editorial/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
+      })
+      if (gen.ok) return { ok: true }
+      const errText = await readError(gen)
+      if (/connection pool|Timed out fetching/i.test(errText)) {
+        await new Promise((r) => setTimeout(r, 1500))
+        if (cancelRef.current) return { ok: false, error: "cancelled" }
+        const retry = await fetchWithTimeout("/api/admin/editorial/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
+        })
+        if (!retry.ok) return { ok: false, error: await readError(retry) }
+        return { ok: true }
+      }
+      return { ok: false, error: errText }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "network error" }
+    }
+  }
+
   /** One-by-one generation — avoids proxy timeouts from a single long batch request. */
   async function runSequential(limit = 10) {
     if (generating) return
@@ -186,7 +227,7 @@ export default function EditorialAdminPanel() {
 
     try {
       const res = await fetchWithTimeout(
-        `/api/admin/editorial/queue?limit=${limit}&minRatings=0`,
+        `/api/admin/editorial/queue?limit=${limit}&minRatings=0&cohort=1`,
         {},
         45_000,
       )
@@ -207,43 +248,14 @@ export default function EditorialAdminPanel() {
         }
         const item = targets[i]
         setProgress(`${i + 1}/${targets.length}: ${item.actorName} — ${item.movieTitle}`)
-        try {
-          const gen = await fetchWithTimeout("/api/admin/editorial/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
-          })
-          if (!gen.ok) {
-            const errText = await readError(gen)
-            // Brief pause + one retry on pool exhaustion.
-            if (/connection pool|Timed out fetching/i.test(errText)) {
-              await new Promise((r) => setTimeout(r, 1500))
-              if (cancelRef.current) break
-              const retry = await fetchWithTimeout("/api/admin/editorial/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ actorId: item.actorId, movieId: item.movieId }),
-              })
-              if (!retry.ok) {
-                fail += 1
-                failures.push(`${item.actorName}: ${await readError(retry)}`)
-              } else {
-                ok += 1
-              }
-            } else {
-              fail += 1
-              failures.push(`${item.actorName}: ${errText}`)
-            }
-          } else {
-            ok += 1
-          }
-        } catch (err) {
+        const result = await generateOne(item)
+        if (result.ok) ok += 1
+        else {
           fail += 1
-          failures.push(
-            `${item.actorName}: ${err instanceof Error ? err.message : "network error"}`,
-          )
+          if (result.error && result.error !== "cancelled") {
+            failures.push(`${item.actorName}: ${result.error}`)
+          }
         }
-        // Let the Prisma pool drain between pages (Coolify uses a small pool).
         await new Promise((r) => setTimeout(r, 250))
       }
 
@@ -253,8 +265,95 @@ export default function EditorialAdminPanel() {
       }
       void loadList()
       void loadQueue()
+      void loadCohort1Count()
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Batch failed")
+    } finally {
+      cancelRef.current = false
+      setGenerating(false)
+      setProgress(null)
+    }
+  }
+
+  /**
+   * Drain entire cohort-1 backlog in paced chunks (keep tab open).
+   * Refetches the queue after each chunk so completed rows drop off.
+   */
+  async function runAllCohort1() {
+    if (generating) return
+    const label =
+      cohort1Remaining != null
+        ? `Generate editorials for all remaining cohort-1 performances (~${cohort1Remaining})?\n\nKeep this tab open. You can Cancel anytime.`
+        : "Generate editorials for all remaining cohort-1 performances?\n\nKeep this tab open. You can Cancel anytime."
+    if (!window.confirm(label)) return
+
+    cancelRef.current = false
+    setGenerating(true)
+    setMessage(null)
+    setProgress("Starting cohort-1 drain…")
+    let ok = 0
+    let fail = 0
+    let attempted = 0
+    const skip = new Set<string>()
+    const failures: string[] = []
+    const chunkSize = 20
+    let stoppedOnFailures = false
+
+    try {
+      while (!cancelRef.current) {
+        const res = await fetchWithTimeout(
+          `/api/admin/editorial/queue?limit=${chunkSize}&minRatings=0&cohort=1`,
+          {},
+          45_000,
+        )
+        if (!res.ok) throw new Error(await readError(res))
+        const data = await res.json()
+        const raw: QueueItem[] = data.items ?? []
+        const targets = raw.filter((item) => !skip.has(`${item.actorId}:${item.movieId}`))
+        setQueue(raw)
+
+        if (raw.length === 0) break
+        if (targets.length === 0) {
+          // Entire page consists of previously failed items — stop to avoid a loop.
+          stoppedOnFailures = true
+          setMessage(
+            `Stopped: remaining queue items keep failing (${fail} failed, ${ok} ok). Try again later or check errors.`,
+          )
+          break
+        }
+
+        for (const item of targets) {
+          if (cancelRef.current) break
+          attempted += 1
+          setProgress(
+            `Cohort 1 · ${ok} ok · ${fail} failed · #${attempted}: ${item.actorName} — ${item.movieTitle}`,
+          )
+          const result = await generateOne(item)
+          if (result.ok) {
+            ok += 1
+            setCohort1Remaining((n) => (typeof n === "number" ? Math.max(0, n - 1) : n))
+          } else {
+            fail += 1
+            skip.add(`${item.actorId}:${item.movieId}`)
+            if (result.error && result.error !== "cancelled") {
+              failures.push(`${item.actorName}: ${result.error}`)
+            }
+          }
+          await new Promise((r) => setTimeout(r, 250))
+        }
+      }
+
+      if (cancelRef.current) {
+        setMessage(`Cancelled — ${ok} ok, ${fail} failed (${attempted} attempted).`)
+      } else if (!stoppedOnFailures) {
+        const failureNote = failures.length ? ` · ${failures.slice(0, 3).join(" | ")}` : ""
+        setMessage(`Cohort 1 done — ${ok} ok, ${fail} failed${failureNote}`)
+      }
+      void loadList()
+      void loadQueue()
+      void loadCohort1Count()
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Cohort-1 drain failed")
     } finally {
       cancelRef.current = false
       setGenerating(false)
@@ -298,6 +397,7 @@ export default function EditorialAdminPanel() {
           onClick={() => {
             void loadList()
             void loadQueue()
+            void loadCohort1Count()
           }}
           className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
         >
@@ -309,7 +409,17 @@ export default function EditorialAdminPanel() {
           onClick={() => void runSequential(10)}
           className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700] disabled:opacity-50"
         >
-          {generating ? "Generating…" : "Generate next 10"}
+          Generate next 10
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void runAllCohort1()}
+          className="rounded-lg border border-[#FFD700]/60 bg-[#FFD700]/10 px-3 py-2 text-sm font-medium text-[#FFD700] disabled:opacity-50"
+        >
+          {cohort1Remaining != null
+            ? `Generate all cohort 1 (~${cohort1Remaining})`
+            : "Generate all cohort 1"}
         </button>
         {generating ? (
           <button
@@ -326,7 +436,10 @@ export default function EditorialAdminPanel() {
       </div>
 
       <div className="rounded-xl border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">Queue preview ({queue.length})</p>
+        <p className="font-medium text-foreground">
+          Cohort-1 queue preview ({queue.length}
+          {cohort1Remaining != null ? ` · ~${cohort1Remaining} remaining` : ""})
+        </p>
         {queue.length === 0 ? (
           <p className="mt-1">No pending indexable performances (or table not migrated yet).</p>
         ) : (

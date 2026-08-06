@@ -14,10 +14,9 @@ Unique craft blurbs on indexable `/rate/[movie]/[actor]` pages, generated from *
 
 ## How pages get editorials
 
-1. **Admin (recommended):** `/admin/editorial` → **Generate next 10**  
-   Runs one template generate at a time (avoids proxy timeouts) and shows a queue preview + real error text (including “table missing → migrate”).
-2. **On demand:** Indexable rate pages missing editorial schedule a deferred template generate via `after()` on visit.
-3. **CLI:** `npm run editorial:generate -- --limit=50`
-4. **Cron:** nightly batch for missing / `NEEDS_REGEN`
+1. **Admin (recommended):** `/admin/editorial` → **Generate next 10** or **Generate all cohort 1**  
+   Runs one template generate at a time (avoids proxy timeouts). Cohort-1 drain keeps going until the backlog is empty — keep the tab open; Cancel works anytime.
+2. **CLI:** `npm run editorial:generate -- --limit=50`
+3. **Cron:** nightly batch for missing / `NEEDS_REGEN`
 
-Human-locked rows are never overwritten by cron. Prefer admin **Generate next 10** (paced, with pool-timeout retry). Avoid slamming generate while the site is under heavy crawl load.
+Human-locked rows are never overwritten by cron. Prefer admin generate (paced, with pool-timeout retry). Avoid slamming generate while the site is under heavy crawl load.
