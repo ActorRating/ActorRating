@@ -292,26 +292,28 @@ export default async function RatePage({
         initialActor={plainActor}
         initialSeededAggregateScore={seededAggregateScore}
       />
-      <RatePageCrawlShell
-        actorName={actorRow.name}
-        actorHref={`/actors/${canonicalActorSeg}`}
-        movieTitle={movieRow.title}
-        movieHref={`/movies/${canonicalMovieSeg}`}
-        movieYear={movieRow.year}
-        character={character}
-        director={movieRow.director}
-      />
-      {editorial ? (
-        <PerformanceEditorialSection
+      <div className="pb-20 sm:pb-28">
+        <RatePageCrawlShell
           actorName={actorRow.name}
+          actorHref={`/actors/${canonicalActorSeg}`}
           movieTitle={movieRow.title}
-          overview={editorial.overview}
-          scoreAnalysis={editorial.scoreAnalysis}
-          communityTake={editorial.communityTake}
-          notableMoments={editorial.notableMoments}
+          movieHref={`/movies/${canonicalMovieSeg}`}
+          movieYear={movieRow.year}
+          character={character}
+          director={movieRow.director}
         />
-      ) : null}
-      {internalLinks ? <RatePageInternalLinksSection links={internalLinks} /> : null}
+        {editorial ? (
+          <PerformanceEditorialSection
+            actorName={actorRow.name}
+            movieTitle={movieRow.title}
+            overview={editorial.overview}
+            scoreAnalysis={editorial.scoreAnalysis}
+            communityTake={editorial.communityTake}
+            notableMoments={editorial.notableMoments}
+          />
+        ) : null}
+        {internalLinks ? <RatePageInternalLinksSection links={internalLinks} /> : null}
+      </div>
     </>
   )
 }

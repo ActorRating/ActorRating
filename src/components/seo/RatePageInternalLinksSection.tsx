@@ -61,7 +61,7 @@ export default function RatePageInternalLinksSection({
   return (
     <nav
       aria-label="Related performances and catalog links"
-      className="mx-auto mt-8 w-full max-w-[900px] space-y-8 px-3 pb-16 sm:px-6"
+      className="mx-auto mt-8 w-full max-w-[900px] space-y-8 px-3 sm:px-6"
     >
       <div className="space-y-1 border-t border-white/[0.06] pt-8">
         <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
