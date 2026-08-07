@@ -545,3 +545,140 @@ enum EditorialStatus {
   HUMAN_LOCKED
   NEEDS_REGEN
 }
+
+// ─── ARIE (ActorRating Intelligence Engine) — Sprint 1 ───────────────────────
+
+enum AriePlatform {
+  X
+}
+
+enum ArieEventDecision {
+  PENDING
+  IGNORE
+  PROCESS
+  ERROR
+}
+
+enum ArieUsageProvider {
+  X
+  GROQ
+  IMAGE
+  OTHER
+}
+
+/// Idempotent inbound social/event stream (tweet, mention, tracked account, etc.).
+model ArieInboundEvent {
+  id               String            @id @default(cuid())
+  platform         AriePlatform      @default(X)
+  externalId       String
+  authorHandle     String?
+  authorId         String?
+  text             String            @db.Text
+  payload          Json
+  receivedAt       DateTime          @default(now())
+  decision         ArieEventDecision @default(PENDING)
+  opportunityScore Int?
+  scoreBreakdown   Json?
+  reasonCodes      String[]          @default([])
+  processedAt      DateTime?
+  errorMessage     String?
+
+  opportunities ArieOpportunity[]
+
+  @@unique([platform, externalId])
+  @@index([receivedAt])
+  @@index([decision, receivedAt])
+  @@index([opportunityScore])
+}
+
+/// Scored content opportunity derived from an inbound event (or calendar seed).
+model ArieOpportunity {
+  id               String   @id @default(cuid())
+  inboundEventId   String?
+  format           String?
+  status           String   @default("open")
+  opportunityScore Int?
+  scoreBreakdown   Json?
+  priorityAuthor   Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  inboundEvent ArieInboundEvent? @relation(fields: [inboundEventId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([inboundEventId])
+}
+
+/// Metered spend for Cost Governor (Groq / X / images).
+model ArieUsageRecord {
+  id               String           @id @default(cuid())
+  provider         ArieUsageProvider
+  operation        String
+  units            Float            @default(0)
+  estimatedCostUsd Decimal          @db.Decimal(12, 6)
+  metadata         Json?
+  occurredAt       DateTime         @default(now())
+  periodKey        String
+
+  @@index([periodKey, provider])
+  @@index([occurredAt])
+}
+
+/// Runtime pins (active prompt versions, kill switches mirrored, experiment flags).
+model ArieConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Structured application log for ARIE pipelines (queryable ops).
+model ArieLog {
+  id        String   @id @default(cuid())
+  level     String
+  scope     String
+  message   String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([scope, createdAt])
+  @@index([level, createdAt])
+}
+
+/// A/B (or multi-arm) experiment definition — runtime in Sprint 6.
+model ArieExperiment {
+  id          String   @id @default(cuid())
+  name        String
+  status      String   @default("draft")
+  hypothesis  String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  arms        ArieExperimentArm[]
+  assignments ArieExperimentAssignment[]
+}
+
+model ArieExperimentArm {
+  id           String @id @default(cuid())
+  experimentId String
+  name         String
+  promptRef    String
+  weight       Int    @default(1)
+
+  experiment  ArieExperiment            @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  assignments ArieExperimentAssignment[]
+
+  @@index([experimentId])
+}
+
+model ArieExperimentAssignment {
+  id            String   @id @default(cuid())
+  experimentId  String
+  armId         String
+  opportunityId String
+  createdAt     DateTime @default(now())
+
+  experiment ArieExperiment    @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  arm        ArieExperimentArm @relation(fields: [armId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, opportunityId])
+  @@index([armId])
+}

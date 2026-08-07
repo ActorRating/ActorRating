@@ -1,7 +1,7 @@
-# ActorRating Social AI
+# ActorRating Intelligence Engine (ARIE)
 
-**Technical Architecture RFC · v1.1**  
-**Status:** Draft (living source of truth)  
+**Technical Architecture RFC · v1.2 (FROZEN)**  
+**Status:** Frozen — implementation may proceed; no new architectural features unless a sprint exposes a real need  
 **Owner:** ActorRating Engineering  
 **Last updated:** 2026-08-07  
 
@@ -11,31 +11,35 @@
 
 | Field | Value |
 | --- | --- |
-| Title | ActorRating Social AI — Technical Architecture |
-| Version | 1.1 |
+| Title | ActorRating Intelligence Engine (ARIE) — Technical Architecture |
+| Version | 1.2 (frozen) |
 | Classification | Internal engineering RFC |
-| Scope | Distribution engine for X (Twitter); extensible to other platforms / future structured-content products |
+| Scope | Real-time cinema intelligence engine; first output channel is X; later channels are adapters |
 | Implementation state | **Greenfield** — this RFC defines target architecture; update sections as components ship |
 | Related product systems | Actor / Movie / Performance **knowledge graph**, Radar craft scores, Rate pages, Performance editorial, Leaderboards, Admin dashboard |
 | Litmus test | **Can this system run unattended for six months?** If not, fix the architecture before adding features. |
+| Freeze rule | **No new architectural features** unless implementation exposes a real need. Prefer shipping. |
+| Product name | **ARIE** (ActorRating Intelligence Engine) — not “Social AI” |
 
 ### How to use this document
 
-1. This file is the **single source of truth** for the Social AI / AI distribution engine.
-2. **RFC first, then implement.** Every new agent, endpoint, table, or workflow is specified here (or in an ADR linked from here) **before** writing n8n nodes or application code.
-3. When you ship a component, update the matching section in the **same PR**. Mark subsections `Implemented` / `Partial` / `Planned`.
-4. Do not invent alternate architectures in chat threads or Notion pages without folding decisions back here.
-5. Open design questions live in [§19 Open questions](#19-open-questions--decisions-log). Resolved decisions move into the relevant body section.
-6. Treat this as a **long-term engineering asset**. ActorRating’s X account is the first application of a reusable distribution engine for structured-content products.
+1. This file is the **single source of truth** for **ARIE** (ActorRating Intelligence Engine).
+2. **RFC is frozen at v1.2.** Do not add architecture for its own sake. Open an ADR only when a sprint hits a concrete blocker.
+3. **RFC first, then implement** for any *approved* change. Every agent, endpoint, table, or workflow is specified here (or in an ADR) **before** writing n8n nodes or application code.
+4. When you ship a component, update the matching section in the **same PR**. Mark subsections `Implemented` / `Partial` / `Planned`.
+5. Do not invent alternate architectures in chat threads or Notion pages without folding decisions back here.
+6. Open design questions live in [§19 Open questions](#19-open-questions--decisions-log). Resolved decisions move into the relevant body section.
+7. Treat this as a **long-term engineering asset**. Publishing channels (X, Threads, newsletters, …) are **outputs**; the intelligence stays the same.
 
 ### Companion files (planned)
 
 ```
-docs/social-ai/
-  ARCHITECTURE.md          ← this RFC (SoT)
+docs/arie/
+  ARCHITECTURE.md          ← this RFC (SoT) — FROZEN v1.2
+  BRAND_CONSTITUTION.md    ← permanent; every agent must reference
   prompts/                 ← versioned prompt contracts (per agent, semver)
   runbooks/                ← ops: incident, kill-switch, cost alarms
-  adr/                     ← Architecture Decision Records (short, dated)
+  adr/                     ← Architecture Decision Records (rare under freeze)
 ```
 
 ---
@@ -63,15 +67,23 @@ docs/social-ai/
 19. [Open questions & decisions log](#19-open-questions--decisions-log)
 20. [Appendix](#20-appendix)
 
+**Binding companions**
+
+- [Brand Constitution](./BRAND_CONSTITUTION.md) — permanent; every agent references it  
+- Cost Governor — [§12.6](#126-cost-governor)  
+- Experiment Framework — [§16.6](#166-experiment-framework)  
+
 ---
 
 ## 1. Vision
 
 ### 1.1 Mission
 
-Build **tasteful, data-grounded distribution infrastructure** — not a pile of automations — that puts ActorRating’s craft-first point of view into cultural conversations on X without sounding like a bot, fabricating facts, or turning every mention into an ad.
+Build a **real-time cinema intelligence engine** — not a reply bot — that **extracts** value from ActorRating’s database and presents craft-first insight at the right moment, on whatever channel we wire next.
 
-This is infrastructure for growth and brand voice. Feature requests after Sprint 1 must fit the architecture; they do not get a one-off n8n shortcut.
+The AI does not create the value. ActorRating’s structured data does. ARIE’s job is timing, grounding, and voice.
+
+This is infrastructure for distribution. No one-off n8n shortcuts. **Architecture is frozen; build the sprints.**
 
 ActorRating rates **acting craft**, not movie quality. Social AI must reinforce that distinction in every public word.
 
@@ -157,7 +169,7 @@ Social AI **must never**:
 
 We win by being the account that **brings receipts** (Radar craft dimensions, community consensus, comparisons, leaderboards) into conversations that already care about acting — then invites discussion, not sermons.
 
-Longer term: the same engine can market any structured-content product. ActorRating is the first application.
+Channels are adapters: X, Threads, Bluesky, SEO articles, newsletters, YouTube scripts, podcast notes, push, in-app recommendations. **The intelligence stays the same.**
 
 ---
 
@@ -307,6 +319,9 @@ sequenceDiagram
 12. **Measurable everything** — Opportunity Score, Confidence, funnel metrics, prompt versions — no black boxes.
 13. **Score before you spend** — Most events are ignored after Opportunity Score; generation is expensive.
 14. **Infrastructure, not scripts** — If it cannot run unattended for six months, it is not done.
+15. **Constitution over prompts** — Brand Constitution is permanent; prompts are versioned experiments under it.
+16. **Cost Governor** — Monthly budget with rising Opportunity thresholds; never silent unlimited spend.
+17. **Experiments, not vibes** — Controlled A/B with sample sizes; rollbacks by version.
 
 ---
 
@@ -1064,7 +1079,42 @@ Maintain allowlist tiers (e.g. major film reporters, cast/crew, reputable critic
 ### 12.5 Link policy
 
 - Only `actorrating.com` (and approved short domains)  
-- UTM convention: `utm_source=x&utm_medium=social_ai&utm_campaign={format}`  
+- UTM convention: `utm_source=arie&utm_medium={channel}&utm_campaign={format}`  
+
+### 12.6 Cost Governor
+
+**Status:** Binding · Sprint 1  
+
+Every paid call (X API credits, Groq tokens, image renders) is metered into a usage ledger. ARIE does **not** rely on a brittle fixed daily hard-stop alone. Prefer a **monthly cap with intelligent throttling** that raises the Opportunity Score bar as budget burns.
+
+#### Monthly budget (initial defaults — config, not code magic)
+
+| Provider | Monthly cap (USD) | Notes |
+| --- | --- | --- |
+| X API | part of pool | Track estimated credit $ |
+| Groq | part of pool | Token → $ estimate |
+| Images | part of pool | Per-render estimate |
+| **Total** | **$20 / month** (start lean) | Raise only with explicit config change |
+
+#### Throttle bands
+
+| Spend used | Behavior |
+| --- | --- |
+| 0–25% | Normal Opportunity thresholds |
+| 25–50% | Prefer high-priority authors; mild threshold bump (+5) |
+| 50–75% | Only high-priority accounts **or** Opportunity ≥ prior+10 |
+| 75–90% | Only Opportunity ≥ 85 |
+| 90–99% | Only exceptional opportunities (Opportunity ≥ 90 **and** Confidence path clear) |
+| 100% | **Stop paid generation/publish** until period reset (drafts from cache only if free) |
+
+As the day/month progresses and budget is consumed, effective minimum Opportunity Score **rises automatically**. The system becomes more selective instead of going dark early from naive daily clamps.
+
+#### Implementation rules
+
+- Check governor **before** Groq/X write/image calls  
+- Persist usage rows even on failure after the provider accepted the call  
+- Expose remaining budget + band on admin Social/ARIE funnel  
+- Env: `ARIE_MONTHLY_BUDGET_USD`, `ARIE_COST_GOVERNOR_ENABLED`  
 
 ---
 
@@ -1259,28 +1309,37 @@ Independent workflows scale, allow partial deploys (e.g. freeze Publisher while 
 
 ## 15. Deployment roadmap
 
-Foundation before autonomy. **Do not start with unsupervised public replies.**
+**LOCKED.** No deviations without an ADR that cites a concrete blocker.
 
-### 15.1 Sprint plan
+```text
+Sprint 1  Infrastructure · Event Collection · Database · Logging
+          (+ Cost Governor meter · Brand Constitution wiring hook)
+--------------------
+Sprint 2  Knowledge API · Knowledge Graph · Context Builder · Opportunity Score
+--------------------
+Sprint 3  Reply Agent · QA Agent · Publisher
+--------------------
+Sprint 4  Quote Tweets · Original Posts · Scheduler
+--------------------
+Sprint 5  Radar Generator · Comparison Cards · Leaderboards
+--------------------
+Sprint 6  Learning Engine · Analytics · Experiments · Admin Dashboard
+```
 
-| Sprint | Name | Ships | Exit criteria |
-| --- | --- | --- | --- |
-| **1** | **Infrastructure** | X API integration; Groq integration; Knowledge API skeleton; social DB tables; event ingestion; structured logging | Events land in Postgres; kill switch works; no public posts required |
-| **2** | **Intelligence** | Content Opportunity Score; Knowledge Graph traversal; entity extraction; Context Builder; Confidence scoring | ≥80% of events ignored cheaply; Context Packages reproducible |
-| **3** | **Generation** | Reply / Quote / Original agents; Quality agent; all JSON outputs; prompt `v1.0` files | Drafts appear in review queue with Confidence breakdowns |
-| **4** | **Publishing** | Scheduler; jitter; rate limits; retry; analytics collection; soft auto-publish behind flags | Safe assisted publish; caps enforced; full funnel logged |
-| **5** | **Assets** | Radar charts; comparison cards; leaderboard / performance graphics | Assets attach when `asset_request` present |
-| **6** | **Learning** | Engagement analysis; observation engine; prompt recommendations (human-applied); admin performance dashboard | Observations accepted in admin; zero auto prompt writes |
+Architecture is frozen. **Build Sprint 1 now.**
 
-### 15.2 After Sprint 6
+### 15.1 Sprint 1 exit criteria
 
-- Multi-platform adapters  
-- Thread agent at scale  
-- Tighter graph materialization if SQL CTEs hit limits  
+- Inbound events idempotently stored  
+- Structured logs for ingest / governor / LLM stubs  
+- Usage ledger + throttle band computation  
+- Groq + X client interfaces (even if mocked behind env flags)  
+- Constitution path referenced from config (`docs/arie/BRAND_CONSTITUTION.md`)  
+- Migrate deployable on Coolify  
 
-### 15.3 Pre-n8n checklist
+### 15.2 Pre-n8n / publish checklist
 
-Do **not** build production n8n Publish nodes until Sprint 1 + Sprint 2 contracts exist in code (even if thin), and this RFC’s unattended gate (§1.4) is satisfied.
+No production Publish nodes until Sprint 3 contracts exist and the unattended gate (§1.4) remains green.
 
 ---
 
@@ -1353,6 +1412,38 @@ Additional cards:
 ### 16.5 Audit
 
 Weekly human review sample: 20 auto posts + 20 drafts. Log labels into learning.
+
+### 16.6 Experiment Framework
+
+**Status:** Binding · schema in Sprint 1 · runtime in Sprint 6 (earlier if needed)
+
+Stop guessing. Run controlled experiments on **prompt versions** (and later formats).
+
+Example:
+
+```text
+Version A — asks questions
+Version B — makes statements
+
+Random split on eligible reply opportunities
+After N≥500 published replies per arm:
+
+Questions   CTR 6.2%
+Statements  CTR 3.9%
+```
+
+#### Rules
+
+| Rule | Detail |
+| --- | --- |
+| One primary factor per experiment | e.g. question vs statement prompts |
+| Arms pin prompt versions | `reply-writer@1.0` vs `reply-writer@1.1` |
+| Assignment sticky per opportunity | Do not re-roll mid-pipeline |
+| Constitution is not an experiment | Brand Constitution always on |
+| Promotion | Human reviews metrics → pins winner as default |
+| Kill | Any arm can be disabled immediately |
+
+Tables: `ArieExperiment`, `ArieExperimentArm`, `ArieExperimentAssignment` (see schema). Metrics join published posts → CTR / replies / bookmarks.
 
 ---
 
@@ -1444,17 +1535,20 @@ Month 1: bias toward **false negatives** (too many drafts) over false positives 
 | 2026-08-07 | Foundation sprints before auto-replies | Infrastructure &gt; automation theater |
 | 2026-08-07 | Social funnel lives in existing admin dashboard | Optimize a system, not vibes |
 | 2026-08-07 | Learning writes recommendations only | Prevent engagement-tactic drift |
+| 2026-08-07 | **RFC frozen at v1.2** | Stop architecture paralysis; ship sprints |
+| 2026-08-07 | Rename to **ARIE** (ActorRating Intelligence Engine) | Channel-agnostic intelligence; social is an output |
+| 2026-08-07 | Brand Constitution is binding permanent doc | Voice stability across years/agents |
+| 2026-08-07 | Cost Governor = monthly cap + rising Opportunity bar | Selective under budget pressure |
+| 2026-08-07 | Experiment Framework (A/B prompt arms) | Evidence over guessing |
+| 2026-08-07 | Locked sprint order 1→6 | No deviations without ADR |
 
 ---
 
 ## 20. Appendix
 
-### 20.1 Brand voice card (seed — expand in prompts/)
+### 20.1 Brand voice
 
-- Craft-first, specific, adult, dry-warm — never snark-for-clout  
-- Prefer concrete dimension language over “amazing performance”  
-- Distinguish acting craft vs film quality  
-- Invite curiosity; do not dunk on actors as people  
+Canonical: [BRAND_CONSTITUTION.md](./BRAND_CONSTITUTION.md). Prompts may only refine tactics under it.
 
 ### 20.2 Claim → fact example
 
@@ -1474,21 +1568,24 @@ Month 1: bias toward **false negatives** (too many drafts) over false positives 
 
 | Term | Meaning |
 | --- | --- |
+| **ARIE** | ActorRating Intelligence Engine |
 | Knowledge Graph | Traversable Actor↔Movie↔Performance↔Radar relationships |
 | Context Package | Structured knowledge bundle for writers |
 | Opportunity Score | 0–100 gate on whether an event deserves generation |
 | Confidence | 0–100 publish eligibility score with breakdown |
-| Observation | Human-approved learning unit / recommendation |
-| Prompt version | Semver’d prompt file pinned in config |
-| Knowledge API | Trusted ActorRating read API for social |
+| Cost Governor | Monthly spend bands that raise Opportunity thresholds |
+| Experiment | Controlled A/B across prompt versions |
+| Observation | Human-approved learning recommendation |
+| Brand Constitution | Permanent behavioral law for all agents |
 
 ### 20.4 Document changelog
 
 | Version | Date | Notes |
 | --- | --- | --- |
-| 1.0 | 2026-08-06 | Initial RFC — greenfield Social AI blueprint |
-| 1.1 | 2026-08-07 | Knowledge Graph; Opportunity Score; structured I/O; prompt semver; sprint roadmap; admin funnel; unattended gate; learning = recommendations only |
+| 1.0 | 2026-08-06 | Initial RFC |
+| 1.1 | 2026-08-07 | Knowledge Graph; Opportunity Score; structured I/O; sprints |
+| **1.2** | **2026-08-07** | **FROZEN.** ARIE rename; Constitution; Cost Governor; Experiments; locked build order |
 
 ---
 
-*End of RFC. Update in-repo; do not fork into conflicting docs. RFC first, then build.*
+*End of frozen RFC. Ship Sprint 1. Do not fork into conflicting docs.*
