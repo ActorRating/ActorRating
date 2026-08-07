@@ -50,40 +50,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "text required" }, { status: 400 })
   }
 
-  const pkg = await buildContextFromText({
-    text: body.text,
-    authorHandle: body.authorHandle ?? null,
-  })
+  try {
+    const pkg = await buildContextFromText({
+      text: body.text,
+      authorHandle: body.authorHandle ?? null,
+    })
 
-  // Admin VM1 eval must score the full distribution spectrum — including mid/low
-  // Opportunity. Do not apply Cost Governor spend gates here (production ingest still does).
-  if (pkg.opportunity.decision === "ignore") {
-    return NextResponse.json(
-      {
-        error: "opportunity_ignored",
-        opportunity: pkg.opportunity,
-        coverage: pkg.coverage,
-        package: pkg,
-        hint: "System would not reply. For should-ignore corpus rows, note the handle + score and grade Opportunity correctness in notes; or paste a processable tweet.",
-      },
-      { status: 422 },
-    )
+    // Admin VM1 eval must score the full distribution spectrum — including mid/low
+    // Opportunity. Do not apply Cost Governor spend gates here (production ingest still does).
+    if (pkg.opportunity.decision === "ignore") {
+      return NextResponse.json(
+        {
+          error: "opportunity_ignored",
+          opportunity: pkg.opportunity,
+          coverage: pkg.coverage,
+          package: pkg,
+          hint: "System would not reply. For should-ignore corpus rows, note the handle + score and grade Opportunity correctness in notes; or paste a processable tweet.",
+        },
+        { status: 422 },
+      )
+    }
+
+    const draft = await previewReplyDraft(pkg)
+    if (!draft.ok) {
+      return NextResponse.json(
+        {
+          error: draft.reason,
+          coverage: pkg.coverage,
+          opportunity: pkg.opportunity,
+        },
+        { status: 422 },
+      )
+    }
+
+    const row = await prisma.ariePreviewEval.findUnique({ where: { id: draft.previewId } })
+    return NextResponse.json({ preview: row ? serialize(row) : null })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[arie/admin/previews]", message)
+    return NextResponse.json({ error: "preview_failed", reason: message }, { status: 500 })
   }
-
-  const draft = await previewReplyDraft(pkg)
-  if (!draft.ok) {
-    return NextResponse.json(
-      {
-        error: draft.reason,
-        coverage: pkg.coverage,
-        opportunity: pkg.opportunity,
-      },
-      { status: 422 },
-    )
-  }
-
-  const row = await prisma.ariePreviewEval.findUnique({ where: { id: draft.previewId } })
-  return NextResponse.json({ preview: row ? serialize(row) : null })
 }
 
 function serialize(row: {

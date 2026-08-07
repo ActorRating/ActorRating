@@ -8,7 +8,14 @@ let cached: { version: string; text: string } | null = null
 export async function loadBrandConstitution(): Promise<{ version: string; text: string }> {
   if (cached) return cached
   const abs = path.join(process.cwd(), ARIE_CONSTITUTION_PATH)
-  const text = await readFile(abs, "utf8")
-  cached = { version: ARIE_CONSTITUTION_VERSION, text }
-  return cached
+  try {
+    const text = await readFile(abs, "utf8")
+    cached = { version: ARIE_CONSTITUTION_VERSION, text }
+    return cached
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err)
+    throw new Error(
+      `constitution_missing: ${ARIE_CONSTITUTION_PATH} (${detail}). Ensure the Coolify image copies docs/arie/BRAND_CONSTITUTION.md.`,
+    )
+  }
 }

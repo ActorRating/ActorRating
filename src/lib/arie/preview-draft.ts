@@ -41,7 +41,14 @@ export async function previewReplyDraft(
     return { ok: false, reason: "opportunity_ignored" }
   }
 
-  const constitution = await loadBrandConstitution()
+  let constitution: { version: string; text: string }
+  try {
+    constitution = await loadBrandConstitution()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    await arieLog("error", "preview", "constitution_load_failed", { error: msg })
+    return { ok: false, reason: msg.startsWith("constitution_missing") ? msg : `constitution_missing: ${msg}` }
+  }
   const system = [
     "You write ActorRating X reply drafts.",
     "You MUST obey the Brand Constitution below.",

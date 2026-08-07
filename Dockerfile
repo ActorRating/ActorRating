@@ -109,6 +109,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 # Curated listicle markdown (read at runtime by /lists routes + sitemap generator)
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
+# ARIE Brand Constitution — loaded at runtime by preview draft / agents (not in standalone trace)
+COPY --from=builder --chown=nextjs:nodejs /app/docs/arie/BRAND_CONSTITUTION.md ./docs/arie/BRAND_CONSTITUTION.md
 
 # Bundled sitemap generator — runs at container start via docker-entrypoint.sh.
 # Cast ingest is optional (Coolify Terminal): `node scripts/ingest-all-movies-cast.js`

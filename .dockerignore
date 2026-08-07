@@ -9,6 +9,8 @@ dist
 .gitignore
 .cursor
 *.md
+# Keep ARIE constitution available for the runner image COPY
+!docs/arie/BRAND_CONSTITUTION.md
 
 # Local env (set secrets in Coolify)
 .env
