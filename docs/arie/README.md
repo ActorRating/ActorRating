@@ -9,13 +9,22 @@ Source of truth for ActorRating’s **cinema intelligence engine** (channel-agno
 
 **Freeze rule:** No new architectural features unless a sprint exposes a real need.
 
-**Build order (locked):** Sprint 1 → 6 as in the RFC. Currently: **Sprint 1 — Infrastructure**.
+**Build order (locked):** Sprint 1 → 6 as in the RFC. Currently: **Sprint 2 — Knowledge / Context** (in progress).
+
+| Doc | Role |
+| --- | --- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | RFC **v1.2 FROZEN** |
+| [BRAND_CONSTITUTION.md](./BRAND_CONSTITUTION.md) | Permanent law for every agent |
+| [SPRINT1.md](./SPRINT1.md) | Sprint 1 ops |
+| [SPRINT2.md](./SPRINT2.md) | Sprint 2 ops — Context Package |
 
 ```
 docs/arie/
   ARCHITECTURE.md
   BRAND_CONSTITUTION.md
-  prompts/          # semver’d agent prompts (as agents land)
+  SPRINT1.md
+  SPRINT2.md
+  prompts/
   runbooks/
-  adr/              # rare under freeze
+  adr/
 ```

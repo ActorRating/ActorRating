@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
 import { arieServiceKey } from "@/lib/arie/config"
 import { ingestInboundEvent } from "@/lib/arie/ingest"
 
@@ -15,7 +16,7 @@ function authorized(request: NextRequest): boolean {
 
 /**
  * POST /api/arie/ingest
- * Service-authenticated event ingestion (Sprint 1).
+ * Ingest + Sprint 2 pipeline (entity → score → context package).
  */
 export async function POST(request: NextRequest) {
   if (!authorized(request)) {
@@ -29,6 +30,7 @@ export async function POST(request: NextRequest) {
     authorId?: string
     text?: string
     payload?: Record<string, unknown>
+    process?: boolean
   }
 
   if (!body?.externalId || !body?.text) {
@@ -42,15 +44,30 @@ export async function POST(request: NextRequest) {
     authorId: body.authorId,
     text: body.text,
     payload: body.payload,
+    process: body.process,
   })
 
   if (!result.ok) {
     return NextResponse.json({ error: result.reason }, { status: 422 })
   }
 
+  const refreshed = await prisma.arieInboundEvent.findUnique({
+    where: { id: result.event.id },
+  })
+
   return NextResponse.json({
     id: result.event.id,
-    decision: result.event.decision,
+    decision: refreshed?.decision ?? result.event.decision,
+    opportunityScore: refreshed?.opportunityScore ?? result.processed?.opportunityScore ?? null,
+    opportunityId: result.processed?.opportunityId ?? null,
     deduped: result.deduped,
+    processed: result.processed
+      ? {
+          ok: result.processed.ok,
+          decision: result.processed.decision,
+          opportunityScore: result.processed.opportunityScore,
+          opportunityId: result.processed.opportunityId,
+        }
+      : null,
   })
 }

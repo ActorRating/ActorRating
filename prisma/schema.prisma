@@ -604,9 +604,25 @@ model ArieOpportunity {
   updatedAt        DateTime @updatedAt
 
   inboundEvent ArieInboundEvent? @relation(fields: [inboundEventId], references: [id], onDelete: SetNull)
+  contextPackage ArieContextPackage?
 
   @@index([status, createdAt])
   @@index([inboundEventId])
+}
+
+/// Persisted Context Package snapshot (Sprint 2) — agents consume this, not raw DB.
+model ArieContextPackage {
+  id             String   @id @default(cuid())
+  opportunityId  String?  @unique
+  inboundEventId String?
+  package        Json
+  builderVersion String
+  createdAt      DateTime @default(now())
+
+  opportunity ArieOpportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@index([inboundEventId])
+  @@index([createdAt])
 }
 
 /// Metered spend for Cost Governor (Groq / X / images).

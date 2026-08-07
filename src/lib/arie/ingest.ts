@@ -2,6 +2,7 @@ import type { AriePlatform, Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { arieIngestEnabled } from "@/lib/arie/config"
 import { arieLog } from "@/lib/arie/log"
+import { processInboundEvent } from "@/lib/arie/pipeline"
 
 export type IngestEventInput = {
   platform?: AriePlatform
@@ -10,11 +11,13 @@ export type IngestEventInput = {
   authorId?: string | null
   text: string
   payload?: Record<string, unknown>
+  /** When true (default), run Sprint 2 pipeline after insert. */
+  process?: boolean
 }
 
 /**
- * Idempotent ingest of an inbound platform event (Sprint 1).
- * Opportunity scoring lands in Sprint 2 — events stay PENDING until then.
+ * Idempotent ingest of an inbound platform event.
+ * Optionally runs entity → score → context pipeline (Sprint 2).
  */
 export async function ingestInboundEvent(input: IngestEventInput) {
   if (!arieIngestEnabled()) {
@@ -42,7 +45,11 @@ export async function ingestInboundEvent(input: IngestEventInput) {
         platform,
         externalId,
       })
-      return { ok: true as const, event: existing, deduped: true }
+      if (input.process !== false && existing.decision === "PENDING") {
+        const processed = await processInboundEvent(existing.id)
+        return { ok: true as const, event: existing, deduped: true, processed }
+      }
+      return { ok: true as const, event: existing, deduped: true, processed: null }
     }
 
     const event = await prisma.arieInboundEvent.create({
@@ -63,7 +70,12 @@ export async function ingestInboundEvent(input: IngestEventInput) {
       externalId,
     })
 
-    return { ok: true as const, event, deduped: false }
+    let processed: Awaited<ReturnType<typeof processInboundEvent>> | null = null
+    if (input.process !== false) {
+      processed = await processInboundEvent(event.id)
+    }
+
+    return { ok: true as const, event, deduped: false, processed }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     await arieLog("error", "ingest", "ingest_failed", { externalId, error: msg })

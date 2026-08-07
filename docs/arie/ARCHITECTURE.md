@@ -650,7 +650,7 @@ v1 may implement the graph as **Postgres SQL views / recursive CTEs / Prisma dom
 
 ## 6. Context Builder
 
-**Status:** Planned · **Critical path for quality**
+**Status:** Partial (Sprint 2) · **Critical path for quality**
 
 The Context Builder is the heart of generation quality. Generators **never browse randomly**. They receive a **Context Package** assembled by **graph traversal** ([§5](#5-knowledge-graph-layer)) via the Knowledge API.
 

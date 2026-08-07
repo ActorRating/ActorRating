@@ -19,7 +19,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     engine: "ARIE",
-    sprint: 1,
+    sprint: 2,
     constitutionVersion: ARIE_CONSTITUTION_VERSION,
     flags: {
       ingestEnabled: arieIngestEnabled(),
