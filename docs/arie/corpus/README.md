@@ -1,43 +1,86 @@
-# Validation Corpus v1
+# Validation Corpus v1 (VM1)
 
-**Purpose:** Fixed evaluation set for ARIE. Rerun across Context Builder / Opportunity Score versions.
+**Purpose:** Validate ARIE on the sources most likely to create **distribution for ActorRating** — not a generic “movie Twitter” sample.
 
-**Status:** Collecting — freeze when you have ~125 entries, then do not casually rewrite the set.
+**Status:** Collecting — freeze near ~125 entries, then keep stable for reruns.
 
-## Target mix
+Analytics already show where replies earn impressions. The corpus (and priority handles) follows that map.
 
-| `bucket` | Target | Notes |
+## Source priority (growth, not prestige)
+
+| Stars | Account | Why |
 | --- | --- | --- |
-| `breaking` | 30 | Deadline, THR, Variety |
-| `aggregator` | 30 | Film Updates, DiscussingFilm, Cinema Tweets |
-| `opinion` | 20 | Takes / discourse |
-| `trailer_bo` | 20 | Trailers, posters, box office |
-| `should_ignore` | 20 | Gossip, politics, noise — Opportunity should ignore |
+| ⭐⭐⭐⭐⭐ | **BoinkBuzz** | Highest avg impressions / reply (~4.4k) |
+| ⭐⭐⭐⭐⭐ | **ChaosCrave** | Consistently strong (~2.3k / reply) |
+| ⭐⭐⭐⭐ | **Film Updates** | Huge volume, fast news |
+| ⭐⭐⭐⭐ | **Deadline** | High-quality industry news |
+| ⭐⭐⭐ | **DiscussingFilm** | News + discussion mix |
+| ⭐⭐⭐ | **Variety / THR** | Credibility |
+| ⭐⭐ | **Cinema Tweets** | More opinion-led |
+
+Always record **`authorHandle`** on every eval (already required in `/admin/arie`). After 100–150 grades you want slices like:
+
+- BoinkBuzz: 90% A/B  
+- ChaosCrave: 85% A/B  
+- Deadline: 78% A/B  
+- Opinion accounts: 45% A/B  
+
+That tells ARIE **where to spend Opportunity / budget**, not only whether a draft “sounds good.”
+
+## Weighted mix (~125) — distribution-first
+
+| Target | Source / bucket | `authorHandle` examples | Notes |
+| --- | --- | --- | --- |
+| **30** | BoinkBuzz | `boinkbuzz` | Core distribution |
+| **25** | ChaosCrave | `chaoscrave` | Core distribution |
+| **20** | Film Updates | `filmupdates` | Volume / speed |
+| **15** | Deadline | `deadline` | Quality news |
+| **10** | DiscussingFilm | `discussingfilm` | Mix |
+| **10** | Variety / THR | `variety`, `thr` | Credibility |
+| **15** | Mixed | various | Trailers, opinions, box office, **should-ignore** |
+
+Of the **15 mixed**, keep a meaningful **should-ignore** slice (gossip, politics, noise). A system that knows when **not** to reply protects brand better than maxing reply count.
+
+Do **not** optimize the corpus only for impression potential — include low-Opportunity and ignore cases on purpose.
+
+## Optional `bucket` tags
+
+Use for analysis; primary split is **by source account**.
+
+| `bucket` | Use when |
+| --- | --- |
+| `distribution_core` | BoinkBuzz / ChaosCrave |
+| `news_fast` | Film Updates |
+| `news_trade` | Deadline / Variety / THR |
+| `discussion` | DiscussingFilm / Cinema Tweets takes |
+| `trailer_bo` | Trailers, posters, box office |
+| `should_ignore` | Must not engage |
 
 ## File format
 
-Add rows to [`corpus-v1.jsonl`](./corpus-v1.jsonl) — one JSON object per line:
+[`corpus-v1.jsonl`](./corpus-v1.jsonl) — one JSON object per line:
 
 ```json
 {
   "id": "v1-001",
-  "bucket": "breaking",
-  "authorHandle": "deadline",
-  "text": "Leonardo DiCaprio joins Nolan's next film.",
+  "bucket": "distribution_core",
+  "authorHandle": "boinkbuzz",
+  "text": "…",
   "sourceUrl": null,
-  "notes": optional
+  "notes": "optional"
 }
 ```
 
+`authorHandle` is **required** for every row (no anonymous corpus items).
+
 ## How to run a corpus pass
 
-1. For each line: `/admin/arie` → set handle → paste `text` → Generate → blind grade + subscores.  
-2. Put preview id / grade notes back later if needed (optional field `"previewId"` after eval).  
-3. After full pass: fill [../BASELINE.md](../BASELINE.md) and stop changing builder mid-stream.
+1. `/admin/arie` → set **exact** handle → paste `text` → Generate → blind grade + subscores.  
+2. Never clear the handle — per-source A/B rates are a first-class outcome.  
+3. After the pass: fill [../BASELINE.md](../BASELINE.md) **including per-source grade table**.
 
 ## Rules
 
-- Prefer real tweets (paraphrase only if needed for ToS / privacy).  
-- Keep should_ignore honestly ignore-worthy.  
-- Do not drop hard cases after a bad grade — that destroys the benchmark.  
-- Version bumps: new file `corpus-v2.jsonl` only if the product’s world truly changed; prefer reusing v1.
+- Prefer real tweets from those accounts (paraphrase only if needed).  
+- Keep hard cases; don’t delete after a D.  
+- Prefer reusing v1 over inventing v2.  

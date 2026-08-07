@@ -32,7 +32,9 @@ Do not think about how the reply was generated.
 
 Ask only:
 
-> If I saw this reply under Deadline, would I be happy that it came from ActorRating?
+> If I saw this reply under **this source account**, would I be happy that it came from ActorRating?
+
+(Always keep the real `authorHandle` — BoinkBuzz ≠ Deadline. Per-source A/B rates are a primary outcome.)
 
 | Answer | Grade |
 | --- | --- |
@@ -114,28 +116,42 @@ GROUP BY 1 ORDER BY 1;
 SELECT id, "opportunityScore", "humanGrade", "coveragePercent", LEFT("sourceText", 80)
 FROM "AriePreviewEval"
 WHERE "opportunityScore" >= 85 AND "humanGrade" IN ('C', 'D');
+-- A/B rate by source account (distribution insight)
+SELECT
+  COALESCE(LOWER("authorHandle"), '(none)') AS source,
+  COUNT(*) FILTER (WHERE "humanGrade" IN ('A', 'B'))::float
+    / NULLIF(COUNT(*), 0) AS ab_rate,
+  COUNT(*) AS n,
+  ROUND(AVG("opportunityScore")::numeric, 1) AS avg_opp
+FROM "AriePreviewEval"
+WHERE "humanGrade" IS NOT NULL
+GROUP BY 1
+ORDER BY n DESC;
 ```
 
 ---
 
-## Evaluation corpus (freeze it)
+## Evaluation corpus (distribution-first)
 
-Don’t only use “today’s feed.” Build and **keep**:
+VM1 is **not** a balanced “movie Twitter” sample. It is weighted to where ActorRating already earns reply impressions.
 
-**Validation Corpus v1** — ~125 tweets  
-See [corpus/README.md](./corpus/README.md).
+See [corpus/README.md](./corpus/README.md):
 
-Buckets:
-
-| Bucket | Count |
+| Weight | Source |
 | --- | --- |
-| Breaking (Deadline, THR, Variety) | ~30 |
-| Aggregators (Film Updates, DiscussingFilm, …) | ~30 |
-| Opinion / discussion | ~20 |
-| Trailers / posters / box office | ~20 |
-| Should ignore | ~20 |
+| 30 | BoinkBuzz |
+| 25 | ChaosCrave |
+| 20 | Film Updates |
+| 15 | Deadline |
+| 10 | DiscussingFilm |
+| 10 | Variety / THR |
+| 15 | Mixed (trailers, opinions, box office, **should-ignore**) |
 
-In three months, **rerun the exact same corpus**. That is an objective version benchmark.
+Still include low-Opportunity and ignore cases — reputation &gt; reply volume.
+
+Record **Tweet source** on every eval (`authorHandle`). After the corpus you should know A/B% **by account**.
+
+In three months, **rerun the exact same corpus**.
 
 ---
 

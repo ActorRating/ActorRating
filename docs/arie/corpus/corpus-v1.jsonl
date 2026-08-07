@@ -1,3 +1,6 @@
-{"id":"v1-001","bucket":"breaking","authorHandle":"deadline","text":"Leonardo DiCaprio is in talks to join Christopher Nolan's next film, sources tell Deadline.","sourceUrl":null,"notes":"Seed example — replace/expand with real corpus; keep id stable once frozen"}
-{"id":"v1-002","bucket":"should_ignore","authorHandle":"randomuser","text":"Beautiful sunset at the beach today Sunset","sourceUrl":null,"notes":"Control: Opportunity Score should ignore"}
-{"id":"v1-003","bucket":"opinion","authorHandle":"discussingfilm","text":"Unpopular opinion: method acting is overrated and most audiences can't tell the difference.","sourceUrl":null,"notes":"Craft-adjacent opinion — may draft only if AR can add signal"}
+{"id":"v1-001","bucket":"distribution_core","authorHandle":"boinkbuzz","text":"REPLACE with a real BoinkBuzz casting/entertainment post ActorRating could meaningfully reply to.","sourceUrl":null,"notes":"⭐⭐⭐⭐⭐ distribution — seed placeholder"}
+{"id":"v1-002","bucket":"distribution_core","authorHandle":"chaoscrave","text":"REPLACE with a real ChaosCrave post from your reply history or feed.","sourceUrl":null,"notes":"⭐⭐⭐⭐⭐ distribution — seed placeholder"}
+{"id":"v1-003","bucket":"news_fast","authorHandle":"filmupdates","text":"REPLACE with a Film Updates breaking cast/release line.","sourceUrl":null,"notes":"Volume channel"}
+{"id":"v1-004","bucket":"news_trade","authorHandle":"deadline","text":"Leonardo DiCaprio is in talks to join Christopher Nolan's next film, sources tell Deadline.","sourceUrl":null,"notes":"Trade quality — example OK to keep until replaced"}
+{"id":"v1-005","bucket":"should_ignore","authorHandle":"randomuser","text":"Beautiful sunset at the beach today","sourceUrl":null,"notes":"Control: Opportunity should IGNORE — brand > reply count"}
+{"id":"v1-006","bucket":"discussion","authorHandle":"discussingfilm","text":"REPLACE with a DiscussingFilm news or discussion post.","sourceUrl":null,"notes":"Mix channel"}

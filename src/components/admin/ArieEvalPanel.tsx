@@ -64,7 +64,7 @@ export default function ArieEvalPanel() {
     brandVoice: 4,
   })
   const [tweetText, setTweetText] = useState("")
-  const [authorHandle, setAuthorHandle] = useState("deadline")
+  const [authorHandle, setAuthorHandle] = useState("boinkbuzz")
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -168,9 +168,9 @@ export default function ArieEvalPanel() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-xs text-muted-foreground">
-        Ungraded: {ungraded} · Total: {total}. Aim for a 100–150 tweet corpus across breakers,
-        aggregators, opinion, trailers, and should-ignore. Do not start Sprint 3 until
-        docs/arie/SPRINT2_EXIT.md is green — then freeze docs/arie/BASELINE.md.
+        Ungraded: {ungraded} · Total: {total}. VM1 is distribution-weighted (BoinkBuzz, ChaosCrave,
+        Film Updates, Deadline, …) plus should-ignore controls. Always set the real source handle —
+        per-account A/B rates are part of the baseline. Freeze BASELINE.md before Sprint 3.
       </p>
 
       <section className="space-y-3 rounded-xl border border-border bg-secondary/20 p-4">
@@ -181,7 +181,7 @@ export default function ArieEvalPanel() {
             value={authorHandle}
             onChange={(e) => setAuthorHandle(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="deadline"
+            placeholder="boinkbuzz"
           />
         </label>
         <label className="block text-sm">
@@ -191,7 +191,7 @@ export default function ArieEvalPanel() {
             onChange={(e) => setTweetText(e.target.value)}
             rows={4}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Leonardo DiCaprio joins Nolan's next film."
+            placeholder="Paste a real BoinkBuzz / ChaosCrave / Film Updates / Deadline post…"
           />
         </label>
         <button

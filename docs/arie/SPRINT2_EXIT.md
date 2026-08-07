@@ -14,9 +14,11 @@ Stop builder work when: *remaining misses are reasoning/creativity — not missi
 
 ## Corpus
 
-Frozen **Validation Corpus v1** (~125) with bucket mix in [corpus/README.md](./corpus/README.md).
+Frozen **Validation Corpus v1** (~125), **weighted to distribution channels** (BoinkBuzz, ChaosCrave, Film Updates, …) — see [corpus/README.md](./corpus/README.md).
 
-Grade in batches of **~25** (blind → analyze → optional one change → next).
+Not a prestige “trade-press only” sample. Always grade with **source handle** set.
+
+Grade in batches of **~25** (blind → analyze → optional one change → next). Also track **A/B% by source**.
 
 ---
 

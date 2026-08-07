@@ -7,7 +7,7 @@
 | --- | --- |
 | Freeze date | _TBD_ |
 | Corpus size (graded) | _TBD_ |
-| Corpus mix | see VALIDATION.md buckets |
+| Corpus mix | Distribution-weighted VM1 — see corpus/README.md |
 | Prompt version | `reply-writer@preview-0.1` _(update if pinned differently)_ |
 | Model | _e.g. groq/llama-3.3-70b-versatile_ |
 | Context Builder version | `context-builder@2.0` |
@@ -24,6 +24,20 @@
 | D | | |
 | **A+B** | | **must ≥ 80%** |
 | **D** | | **must &lt; 5%** |
+
+## A/B rate by source (required)
+
+| Source | N | A+B % | Avg Opportunity | Notes |
+| --- | --- | --- | --- | --- |
+| BoinkBuzz | | | | ⭐⭐⭐⭐⭐ |
+| ChaosCrave | | | | ⭐⭐⭐⭐⭐ |
+| Film Updates | | | | |
+| Deadline | | | | |
+| DiscussingFilm | | | | |
+| Variety / THR | | | | |
+| Mixed / ignore | | | | |
+
+_This table decides where ARIE should focus effort after validation._
 
 ## Sub-score averages (1–5)
 
