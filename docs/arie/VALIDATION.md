@@ -1,91 +1,161 @@
 # ARIE Sprint 2 — Validation plan
 
-**Do not start Sprint 3 yet.** Architecture can wait. Measurement cannot.
-
-Every day spent validating Sprint 2 is worth more than a day spent building publish automation.
+**Sprint 2 is feature-complete.** Do not treat this as “grading AI.” Treat it as building a **measurable ML-style dataset**.
 
 UI: `/admin/arie`  
-Exit gate: [SPRINT2_EXIT.md](./SPRINT2_EXIT.md)  
-After ~100 graded previews: freeze [BASELINE.md](./BASELINE.md)
+Exit: [SPRINT2_EXIT.md](./SPRINT2_EXIT.md)  
+Freeze after: [BASELINE.md](./BASELINE.md) · [corpus/](./corpus/)
 
 ---
 
-## Evaluation corpus (100–150 tweets)
-
-Do **not** grab only random posts. Build a representative set:
-
-| Bucket | Count | Sources / examples |
-| --- | --- | --- |
-| Breaking news | ~30 | Deadline, THR, Variety |
-| Aggregators | ~30 | Film Updates, DiscussingFilm, Cinema Tweets |
-| Opinion / discussion | ~20 | Takes, debates, “overrated” threads |
-| Trailers / posters / box office | ~20 | Official + trade coverage |
-| **Should ignore** | ~20 | Gossip, politics, weather, memes, low-AR relevance |
-
-The last bucket tests whether Opportunity Score correctly says **don’t engage**.
-
-Tag `authorHandle` on each generate so later you can slice grades by source.
-
----
-
-## Scoring rubric
-
-### Overall (required)
-
-| Grade | Meaning |
-| --- | --- |
-| **A** | Would post unchanged |
-| **B** | Tiny edit |
-| **C** | Rewrite needed |
-| **D** | Unusable |
-
-### Sub-scores (1–5, required when grading)
-
-| Metric | Question |
-| --- | --- |
-| **Relevance** | Did it actually address the tweet? |
-| **Insight** | Did ActorRating add something unique? |
-| **Accuracy** | Were the facts correct? |
-| **Brand voice** | Did it sound like ActorRating? |
-
-An A should not be “felt good” — the four scores explain *why*.
-
----
-
-## Watch patterns, not one-offs
-
-| Pattern | Action |
-| --- | --- |
-| D grades + missing Comparisons / Radar | Improve **Context Builder** |
-| Opinion tweets often drafted / low grades | Opportunity Score should **down-rank** them |
-| Breaking news → many A/B | Sweet spot — lean pipeline here |
-| High Opportunity Score → many C/D | Scoring model is **broken** (fix correlation) |
-| High Coverage + D | Builder OK; writer/prompt issue (rare this early) |
-| Low Coverage + D | Fix builder slots, not prompts |
-
----
-
-## Milestone before Sprint 3
-
-- ✅ A+B ≥ 80%  
-- ✅ D &lt; 5%  
-- ✅ Average Context Coverage ≥ 85%  
-- ✅ Median generation latency &lt; 2s  
-- ✅ Zero factual hallucinations from ActorRating data  
-- ✅ Opportunity Score correlates with grades (high-score drafts usually A/B)  
-
-North-star: without being told it’s AI, would a knowledgeable film fan assume an ActorRating-aware human wrote it?
-
----
-
-## After the first ~100 grades
-
-1. Fill [BASELINE.md](./BASELINE.md) with frozen numbers (prompt version, grade mix, coverage, latency, cost).  
-2. **Freeze** that file — future changes compete against it.  
-3. Only then start Sprint 3 safeguards:
+## Operating rule
 
 ```text
-Draft → QA → Constitution → Policy → Similarity → Rate limits → Publisher
+Batch (≈25)
+   ↓
+Blind grade
+   ↓
+Stop & analyze patterns
+   ↓
+One justified Context Builder / Opportunity change (or none)
+   ↓
+Next batch
 ```
 
-If those steps rewrite content heavily, Sprint 2 is not done.
+Do **not** continuously modify the builder while grading. Otherwise you cannot attribute outcomes.
+
+---
+
+## Phase 1 — Blind grading
+
+Do not think about how the reply was generated.
+
+Ask only:
+
+> If I saw this reply under Deadline, would I be happy that it came from ActorRating?
+
+| Answer | Grade |
+| --- | --- |
+| Yes | **A** or **B** |
+| No | **C** or **D** |
+
+Avoid “helping” the AI because you know how the pipeline works.
+
+Then fill 1–5: Relevance · Insight · Accuracy · Brand voice (so A isn’t just “felt good”).
+
+---
+
+## Phase 2 — Pattern analysis (every 25)
+
+Stop. Do not race to 100.
+
+Ask:
+
+- Why were the D’s D’s?
+- Why were the A’s A’s?
+
+Look for **clusters**, not one-offs.
+
+Example:
+
+```text
+25 drafts → 17 A/B · 6 C · 2 D
+
+Both D's: no previous collaboration found
+↓
+Knowledge Graph / Context Package gap
+```
+
+That is more valuable than “68% A/B.”
+
+Record cluster notes in the grade `notes` field and eventually in BASELINE.md.
+
+---
+
+## Phase 3 — Freeze improvements
+
+```text
+Batch 1 → Analyze → Improve (or not)
+Batch 2 → Analyze → Improve (or not)
+…
+```
+
+One change per batch when justified. No drive-by edits mid-grade.
+
+---
+
+## Prediction Accuracy (derive this)
+
+You already log Opportunity Score + Human Grade. Check whether score **predicts** quality.
+
+| Opportunity | Human | OK? |
+| --- | --- | --- |
+| 95 | A | ✓ |
+| 92 | A | ✓ |
+| 88 | B | ✓ |
+| 81 | D | ✗ scorer lie |
+| 71 | C | maybe |
+| &lt;50 ignored | (should not draft) | ✓ if ignored |
+
+**Wanted:** high Opportunity → mostly A/B; low Opportunity → ignore or weak.
+
+If 95-point opportunities often become C/D, recalibrate Opportunity Score — don’t only polish prompts.
+
+Quick SQL-style checks after grades exist (run in admin DB / `psql`):
+
+```sql
+-- Avg opportunity by grade
+SELECT "humanGrade", COUNT(*), ROUND(AVG("opportunityScore")::numeric, 1) AS avg_opp
+FROM "AriePreviewEval"
+WHERE "humanGrade" IS NOT NULL
+GROUP BY 1 ORDER BY 1;
+
+-- High score but poor grade (prediction failures)
+SELECT id, "opportunityScore", "humanGrade", "coveragePercent", LEFT("sourceText", 80)
+FROM "AriePreviewEval"
+WHERE "opportunityScore" >= 85 AND "humanGrade" IN ('C', 'D');
+```
+
+---
+
+## Evaluation corpus (freeze it)
+
+Don’t only use “today’s feed.” Build and **keep**:
+
+**Validation Corpus v1** — ~125 tweets  
+See [corpus/README.md](./corpus/README.md).
+
+Buckets:
+
+| Bucket | Count |
+| --- | --- |
+| Breaking (Deadline, THR, Variety) | ~30 |
+| Aggregators (Film Updates, DiscussingFilm, …) | ~30 |
+| Opinion / discussion | ~20 |
+| Trailers / posters / box office | ~20 |
+| Should ignore | ~20 |
+
+In three months, **rerun the exact same corpus**. That is an objective version benchmark.
+
+---
+
+## When to stop improving Sprint 2
+
+Stop when this sentence is true:
+
+> The remaining weaknesses are due to reasoning or creativity — **not** missing context.
+
+If every draft has rich, relevant context and occasional weak replies are pure LLM limits, Sprint 2 has extracted its value.
+
+Expect most wins from **one more fact/comparison in the package** (e.g. last Nolan collab, career radar, closest comparable, community consensus) — not prompt rewrites.
+
+---
+
+## Explicit freeze (now)
+
+Until BASELINE.md is frozen:
+
+1. No new features  
+2. No new agents  
+3. No Sprint 3 work  
+4. Only: evaluate · pattern · justified builder/score fixes · freeze baseline  

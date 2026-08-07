@@ -1337,6 +1337,9 @@ Architecture is frozen. **Build Sprint 1 now.**
 - Constitution path referenced from config (`docs/arie/BRAND_CONSTITUTION.md`)  
 - Migrate deployable on Coolify  
 
+**Effective:** 2026-08-07  
+**Mode:** Validation only · **Sprint 2 feature-complete**  
+
 ### 15.2 Sprint 2 exit (validation gate)
 
 See [SPRINT2_EXIT.md](./SPRINT2_EXIT.md). Do not start publish automation until A+B ≥ 80% on ~100 graded previews.

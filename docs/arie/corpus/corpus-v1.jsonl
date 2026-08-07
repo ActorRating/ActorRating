@@ -1,0 +1,3 @@
+{"id":"v1-001","bucket":"breaking","authorHandle":"deadline","text":"Leonardo DiCaprio is in talks to join Christopher Nolan's next film, sources tell Deadline.","sourceUrl":null,"notes":"Seed example — replace/expand with real corpus; keep id stable once frozen"}
+{"id":"v1-002","bucket":"should_ignore","authorHandle":"randomuser","text":"Beautiful sunset at the beach today Sunset","sourceUrl":null,"notes":"Control: Opportunity Score should ignore"}
+{"id":"v1-003","bucket":"opinion","authorHandle":"discussingfilm","text":"Unpopular opinion: method acting is overrated and most audiences can't tell the difference.","sourceUrl":null,"notes":"Craft-adjacent opinion — may draft only if AR can add signal"}
