@@ -73,11 +73,25 @@ Use for analysis; primary split is **by source account**.
 
 `authorHandle` is **required** for every row (no anonymous corpus items).
 
-## How to run a corpus pass
+## How to run a corpus pass (fast path)
 
-1. `/admin/arie` → set **exact** handle → paste `text` → Generate → blind grade + subscores.  
-2. Never clear the handle — per-source A/B rates are a first-class outcome.  
-3. After the pass: fill [../BASELINE.md](../BASELINE.md) **including per-source grade table**.
+1. Collect tweets in a notepad (weighted mix).  
+2. `/admin/arie` → paste bulk format into **Corpus queue**:
+
+```text
+@boinkbuzz
+tweet text…
+
+---
+@chaoscrave
+tweet text…
+```
+
+3. **Add to queue** → **Next from queue** (or press `N`).  
+4. Grade with keyboard: `A`/`B`/`C`/`D` (auto-advances). `Shift+D` = D + all subs 1.  
+5. Ignores persist as `[IGNORED BY OPPORTUNITY]` so you can grade silence too.
+
+X timeline auto-pull is later (same queue). For VM1, bulk paste is faster and controllable.
 
 ## Rules
 

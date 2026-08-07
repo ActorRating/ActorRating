@@ -32,6 +32,8 @@ type Preview = {
   notes: string | null
 }
 
+type QueueStats = { pending: number; done: number; error: number; total: number }
+
 const SLOT_LABELS: Array<[keyof CoverageSlots, string]> = [
   ["actor", "Actor"],
   ["movie", "Movie"],
@@ -52,92 +54,138 @@ const SUBS = [
 
 type SubKey = (typeof SUBS)[number][0]
 
+const BULK_PLACEHOLDER = `@boinkbuzz
+Paste a real casting/news tweet here.
+
+---
+@chaoscrave
+Paste another tweet.
+
+---
+@filmupdates
+Paste another tweet.`
+
 export default function ArieEvalPanel() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [ungraded, setUngraded] = useState(0)
   const [total, setTotal] = useState(0)
+  const [queue, setQueue] = useState<QueueStats>({ pending: 0, done: 0, error: 0, total: 0 })
+  const [bulkText, setBulkText] = useState(BULK_PLACEHOLDER)
   const [notes, setNotes] = useState("")
+  const [subsTouched, setSubsTouched] = useState(false)
   const [subs, setSubs] = useState<Record<SubKey, number>>({
-    relevance: 4,
-    insight: 4,
-    accuracy: 4,
-    brandVoice: 4,
+    relevance: 3,
+    insight: 3,
+    accuracy: 3,
+    brandVoice: 3,
   })
-  const [tweetText, setTweetText] = useState("")
-  const [authorHandle, setAuthorHandle] = useState("boinkbuzz")
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const applyPreview = useCallback((p: Preview | null) => {
     setPreview(p)
     setNotes(p?.notes ?? "")
+    setSubsTouched(false)
     setSubs({
-      relevance: p?.scoreRelevance ?? 4,
-      insight: p?.scoreInsight ?? 4,
-      accuracy: p?.scoreAccuracy ?? 4,
-      brandVoice: p?.scoreBrandVoice ?? 4,
+      relevance: p?.scoreRelevance ?? 3,
+      insight: p?.scoreInsight ?? 3,
+      accuracy: p?.scoreAccuracy ?? 3,
+      brandVoice: p?.scoreBrandVoice ?? 3,
     })
   }, [])
 
-  const loadNext = useCallback(async () => {
-    setBusy(true)
-    setMessage(null)
-    try {
-      const res = await fetch("/api/admin/arie/previews")
-      if (!res.ok) throw new Error(await res.text())
-      const data = await res.json()
-      applyPreview(data.preview)
+  const refreshCounts = useCallback(async () => {
+    const [previewsRes, queueRes] = await Promise.all([
+      fetch("/api/admin/arie/previews"),
+      fetch("/api/admin/arie/queue"),
+    ])
+    if (previewsRes.ok) {
+      const data = await previewsRes.json()
       setUngraded(data.ungraded ?? 0)
       setTotal(data.total ?? 0)
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Load failed")
-    } finally {
-      setBusy(false)
+      if (!preview && data.preview) applyPreview(data.preview)
     }
-  }, [applyPreview])
+    if (queueRes.ok) {
+      const q = await queueRes.json()
+      setQueue({
+        pending: q.pending ?? 0,
+        done: q.done ?? 0,
+        error: q.error ?? 0,
+        total: q.total ?? 0,
+      })
+    }
+  }, [applyPreview, preview])
 
   useEffect(() => {
-    void loadNext()
-  }, [loadNext])
+    void refreshCounts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
+  }, [])
 
-  async function generate() {
-    if (!tweetText.trim()) return
+  async function importQueue(replace: boolean) {
     setBusy(true)
     setMessage(null)
     try {
-      const res = await fetch("/api/admin/arie/previews", {
+      const res = await fetch("/api/admin/arie/queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: tweetText.trim(),
-          authorHandle: authorHandle.trim() || null,
-        }),
+        body: JSON.stringify({ text: bulkText, replace }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(
-          typeof data.error === "string"
-            ? `${data.error}${data.reason ? `: ${data.reason}` : ""}`
-            : `Request failed (${res.status})`,
-        )
+        throw new Error(typeof data.error === "string" ? data.error : "Import failed")
       }
-      applyPreview(data.preview)
-      setTweetText("")
-      const countsRes = await fetch("/api/admin/arie/previews")
-      if (countsRes.ok) {
-        const counts = await countsRes.json()
-        setUngraded(counts.ungraded ?? 0)
-        setTotal(counts.total ?? 0)
-      }
+      setQueue({
+        pending: data.pending ?? 0,
+        done: data.done ?? 0,
+        error: data.error ?? 0,
+        total: data.total ?? 0,
+      })
+      setMessage(`Imported ${data.imported} · pending ${data.pending}`)
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Generate failed")
+      setMessage(err instanceof Error ? err.message : "Import failed")
     } finally {
       setBusy(false)
     }
   }
 
-  async function saveGrade(grade: (typeof GRADES)[number]) {
+  async function nextFromQueue() {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/admin/arie/queue/next", { method: "POST" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? `${data.error}${data.reason ? `: ${data.reason}` : ""}`
+            : `Queue next failed (${res.status})`,
+        )
+      }
+      applyPreview(data.preview)
+      if (data.queue) setQueue(data.queue)
+      setUngraded((u) => u + 1)
+      setTotal((t) => t + 1)
+      setMessage(
+        data.kind === "ignored"
+          ? "Opportunity ignored — grade if silence was correct"
+          : data.kind === "no_reply"
+            ? "Model/system chose [NO REPLY]"
+            : "Draft ready",
+      )
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Queue next failed")
+      await refreshCounts()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function saveGrade(
+    grade: (typeof GRADES)[number],
+    overrideSubs?: Record<SubKey, number>,
+  ) {
     if (!preview) return
+    const useSubs = overrideSubs ?? subs
     setBusy(true)
     setMessage(null)
     try {
@@ -147,15 +195,21 @@ export default function ArieEvalPanel() {
         body: JSON.stringify({
           humanGrade: grade,
           notes,
-          scoreRelevance: subs.relevance,
-          scoreInsight: subs.insight,
-          scoreAccuracy: subs.accuracy,
-          scoreBrandVoice: subs.brandVoice,
+          scoreRelevance: useSubs.relevance,
+          scoreInsight: useSubs.insight,
+          scoreAccuracy: useSubs.accuracy,
+          scoreBrandVoice: useSubs.brandVoice,
         }),
       })
       if (!res.ok) throw new Error(await res.text())
-      setMessage(`Saved grade ${grade}`)
-      await loadNext()
+      setMessage(`Saved ${grade}${queue.pending ? " — press N for next" : ""}`)
+      applyPreview(null)
+      setUngraded((u) => Math.max(0, u - 1))
+      if (queue.pending > 0) {
+        await nextFromQueue()
+      } else {
+        await refreshCounts()
+      }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Save failed")
     } finally {
@@ -163,52 +217,115 @@ export default function ArieEvalPanel() {
     }
   }
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.isContentEditable)) {
+        return
+      }
+      if (busy) return
+
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault()
+        void nextFromQueue()
+        return
+      }
+      if (!preview) return
+
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault()
+        void saveGrade(
+          "A",
+          e.shiftKey ? { relevance: 5, insight: 5, accuracy: 5, brandVoice: 5 } : undefined,
+        )
+      } else if (e.key === "b" || e.key === "B") {
+        e.preventDefault()
+        void saveGrade("B")
+      } else if (e.key === "c" || e.key === "C") {
+        e.preventDefault()
+        void saveGrade("C")
+      } else if (e.key === "d" || e.key === "D") {
+        e.preventDefault()
+        void saveGrade(
+          "D",
+          e.shiftKey ? { relevance: 1, insight: 1, accuracy: 1, brandVoice: 1 } : undefined,
+        )
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, preview, notes, subs, queue.pending])
+
   const slots = preview?.coverage?.slots
+  const silence =
+    preview?.draftText === "[NO REPLY]" || preview?.draftText === "[IGNORED BY OPPORTUNITY]"
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-xs text-muted-foreground">
-        Ungraded: {ungraded} · Total: {total}. VM1 is distribution-weighted (BoinkBuzz, ChaosCrave,
-        Film Updates, Deadline, …) plus should-ignore controls. Always set the real source handle —
-        per-account A/B rates are part of the baseline. Freeze BASELINE.md before Sprint 3.
+        Ungraded: {ungraded} · Total: {total} · Queue pending: {queue.pending}/{queue.total}. Paste a
+        batch once, then <kbd className="rounded border border-border px-1">N</kbd> next ·{" "}
+        <kbd className="rounded border border-border px-1">A</kbd>/
+        <kbd className="rounded border border-border px-1">B</kbd>/
+        <kbd className="rounded border border-border px-1">C</kbd>/
+        <kbd className="rounded border border-border px-1">D</kbd> grade ·{" "}
+        <kbd className="rounded border border-border px-1">Shift+D</kbd> = D+subs 1 ·{" "}
+        <kbd className="rounded border border-border px-1">Shift+A</kbd> = A+subs 5. Click outside
+        textareas for hotkeys.
       </p>
 
       <section className="space-y-3 rounded-xl border border-border bg-secondary/20 p-4">
-        <h2 className="text-sm font-semibold text-foreground">Generate preview</h2>
-        <label className="block text-sm">
-          <span className="mb-1 block text-muted-foreground">Author handle</span>
-          <input
-            value={authorHandle}
-            onChange={(e) => setAuthorHandle(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="boinkbuzz"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block text-muted-foreground">Incoming tweet</span>
-          <textarea
-            value={tweetText}
-            onChange={(e) => setTweetText(e.target.value)}
-            rows={4}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Paste a real BoinkBuzz / ChaosCrave / Film Updates / Deadline post…"
-          />
-        </label>
-        <button
-          type="button"
-          disabled={busy || !tweetText.trim()}
-          onClick={() => void generate()}
-          className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700] disabled:opacity-50"
-        >
-          Generate draft
-        </button>
+        <h2 className="text-sm font-semibold text-foreground">Corpus queue (fast path)</h2>
+        <p className="text-xs text-muted-foreground">
+          Blocks separated by <code>---</code>. First line = @handle, rest = tweet. Import once, then
+          grind with keyboard.
+        </p>
+        <textarea
+          value={bulkText}
+          onChange={(e) => setBulkText(e.target.value)}
+          rows={8}
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+        />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void importQueue(false)}
+            className="rounded-lg border border-[#FFD700]/40 px-3 py-2 text-sm text-[#FFD700] disabled:opacity-50"
+          >
+            Add to queue
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void importQueue(true)}
+            className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground disabled:opacity-50"
+          >
+            Replace queue
+          </button>
+          <button
+            type="button"
+            disabled={busy || queue.pending === 0}
+            onClick={() => void nextFromQueue()}
+            className="rounded-lg border border-[#FFD700] bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700] disabled:opacity-50"
+          >
+            Next from queue ({queue.pending})
+          </button>
+        </div>
       </section>
 
       {message ? <p className="text-sm text-[#FFD700]">{message}</p> : null}
+      {!subsTouched && preview ? (
+        <p className="text-xs text-amber-200/80">
+          Subs default to 3 — click them or use Shift+A / Shift+D presets before grading if they
+          matter.
+        </p>
+      ) : null}
 
       {!preview ? (
         <p className="text-sm text-muted-foreground">
-          No ungraded previews. Paste a tweet above to generate one.
+          Queue empty or no open preview. Import tweets, then press N / Next from queue.
         </p>
       ) : (
         <section className="space-y-5 rounded-xl border border-border bg-secondary/30 p-4">
@@ -247,10 +364,10 @@ export default function ArieEvalPanel() {
               {preview.confidence != null ? ` · confidence ${preview.confidence}` : ""}
             </p>
             <p className="mt-1 text-base leading-relaxed text-zinc-100">{preview.draftText}</p>
-            {preview.draftText === "[NO REPLY]" ? (
+            {silence ? (
               <p className="mt-2 text-xs text-amber-200/90">
-                System chose silence. Grade A/B if that was right; C/D if ActorRating should have had a
-                craft reply.
+                System chose silence/ignore. Grade A/B if that was right; C/D if ActorRating should
+                have replied.
               </p>
             ) : null}
             <p className="mt-2 text-xs text-muted-foreground">
@@ -276,7 +393,10 @@ export default function ArieEvalPanel() {
                         key={n}
                         type="button"
                         disabled={busy}
-                        onClick={() => setSubs((s) => ({ ...s, [key]: n }))}
+                        onClick={() => {
+                          setSubsTouched(true)
+                          setSubs((s) => ({ ...s, [key]: n }))
+                        }}
                         className={`min-w-[2.25rem] rounded border px-2 py-1 text-sm disabled:opacity-50 ${
                           subs[key] === n
                             ? "border-[#FFD700] bg-[#FFD700]/15 text-[#FFD700]"
@@ -313,10 +433,6 @@ export default function ArieEvalPanel() {
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              A = post unchanged · B = tiny edit · C = rewrite · D = unusable. Clicking a grade
-              saves.
-            </p>
           </div>
 
           <label className="block text-sm">
@@ -326,18 +442,9 @@ export default function ArieEvalPanel() {
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              placeholder="Missing comparison. / Opinion tweet should have been ignored."
+              placeholder="Pattern tags…"
             />
           </label>
-
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void loadNext()}
-            className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground"
-          >
-            Skip / load next ungraded
-          </button>
         </section>
       )}
     </div>
