@@ -7,7 +7,14 @@ import type { ArieHumanGrade } from "@prisma/client"
 
 const GRADES = new Set(["A", "B", "C", "D"])
 
-/** PATCH — save human grade + optional notes. */
+function clampScore(n: unknown): number | null {
+  if (typeof n !== "number" || !Number.isFinite(n)) return null
+  const v = Math.round(n)
+  if (v < 1 || v > 5) return null
+  return v
+}
+
+/** PATCH — save human grade + 1–5 subscores + optional notes. */
 export async function PATCH(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
@@ -19,6 +26,10 @@ export async function PATCH(
   const body = (await request.json().catch(() => null)) as null | {
     humanGrade?: string
     notes?: string | null
+    scoreRelevance?: number
+    scoreInsight?: number
+    scoreAccuracy?: number
+    scoreBrandVoice?: number
   }
   if (!body?.humanGrade || !GRADES.has(body.humanGrade)) {
     return NextResponse.json({ error: "humanGrade must be A|B|C|D" }, { status: 400 })
@@ -32,6 +43,10 @@ export async function PATCH(
     data: {
       humanGrade: body.humanGrade as ArieHumanGrade,
       notes: body.notes?.trim() ? body.notes.trim() : null,
+      scoreRelevance: clampScore(body.scoreRelevance),
+      scoreInsight: clampScore(body.scoreInsight),
+      scoreAccuracy: clampScore(body.scoreAccuracy),
+      scoreBrandVoice: clampScore(body.scoreBrandVoice),
       gradedAt: new Date(),
       gradedByEmail: admin.email ?? null,
     },
@@ -41,6 +56,10 @@ export async function PATCH(
     preview: {
       id: updated.id,
       humanGrade: updated.humanGrade,
+      scoreRelevance: updated.scoreRelevance,
+      scoreInsight: updated.scoreInsight,
+      scoreAccuracy: updated.scoreAccuracy,
+      scoreBrandVoice: updated.scoreBrandVoice,
       notes: updated.notes,
       gradedAt: updated.gradedAt,
       opportunityScore: updated.opportunityScore,

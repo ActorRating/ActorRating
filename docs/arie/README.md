@@ -18,6 +18,8 @@ Source of truth for ActorRating’s **cinema intelligence engine** (channel-agno
 | [SPRINT1.md](./SPRINT1.md) | Sprint 1 ops |
 | [SPRINT2.md](./SPRINT2.md) | Sprint 2 ops — Context Package |
 | [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) | Exit checklist before Sprint 3 |
+| [VALIDATION.md](./VALIDATION.md) | How to run the 100–150 tweet eval |
+| [BASELINE.md](./BASELINE.md) | Freeze after first corpus (template until then) |
 
 ```
 docs/arie/

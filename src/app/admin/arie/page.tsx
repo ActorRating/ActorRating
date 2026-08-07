@@ -8,8 +8,8 @@ export default function AdminAriePage() {
       <header className="mb-6 space-y-1">
         <h1 className="text-2xl font-semibold text-foreground">ARIE eval</h1>
         <p className="text-sm text-muted-foreground">
-          Grade Context Package drafts before Sprint 3. Improve the builder—not the prompt—when
-          coverage is high and grades are weak.
+          Validation checkpoint — not publishing. Grade drafts and sub-scores; improve the Context
+          Builder until SPRINT2_EXIT is green, then freeze BASELINE.md before Sprint 3.
         </p>
       </header>
       <ArieEvalPanel />

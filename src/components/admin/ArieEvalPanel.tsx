@@ -25,6 +25,10 @@ type Preview = {
   model: string
   generationMs: number | null
   humanGrade: "A" | "B" | "C" | "D" | null
+  scoreRelevance: number | null
+  scoreInsight: number | null
+  scoreAccuracy: number | null
+  scoreBrandVoice: number | null
   notes: string | null
 }
 
@@ -39,16 +43,41 @@ const SLOT_LABELS: Array<[keyof CoverageSlots, string]> = [
 ]
 
 const GRADES = ["A", "B", "C", "D"] as const
+const SUBS = [
+  ["relevance", "Relevance", "Did it address the tweet?"],
+  ["insight", "Insight", "Did ActorRating add something unique?"],
+  ["accuracy", "Accuracy", "Were the facts correct?"],
+  ["brandVoice", "Brand voice", "Did it sound like ActorRating?"],
+] as const
+
+type SubKey = (typeof SUBS)[number][0]
 
 export default function ArieEvalPanel() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [ungraded, setUngraded] = useState(0)
   const [total, setTotal] = useState(0)
   const [notes, setNotes] = useState("")
+  const [subs, setSubs] = useState<Record<SubKey, number>>({
+    relevance: 4,
+    insight: 4,
+    accuracy: 4,
+    brandVoice: 4,
+  })
   const [tweetText, setTweetText] = useState("")
   const [authorHandle, setAuthorHandle] = useState("deadline")
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const applyPreview = useCallback((p: Preview | null) => {
+    setPreview(p)
+    setNotes(p?.notes ?? "")
+    setSubs({
+      relevance: p?.scoreRelevance ?? 4,
+      insight: p?.scoreInsight ?? 4,
+      accuracy: p?.scoreAccuracy ?? 4,
+      brandVoice: p?.scoreBrandVoice ?? 4,
+    })
+  }, [])
 
   const loadNext = useCallback(async () => {
     setBusy(true)
@@ -57,16 +86,15 @@ export default function ArieEvalPanel() {
       const res = await fetch("/api/admin/arie/previews")
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
-      setPreview(data.preview)
+      applyPreview(data.preview)
       setUngraded(data.ungraded ?? 0)
       setTotal(data.total ?? 0)
-      setNotes(data.preview?.notes ?? "")
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Load failed")
     } finally {
       setBusy(false)
     }
-  }, [])
+  }, [applyPreview])
 
   useEffect(() => {
     void loadNext()
@@ -93,8 +121,7 @@ export default function ArieEvalPanel() {
             : `Request failed (${res.status})`,
         )
       }
-      setPreview(data.preview)
-      setNotes("")
+      applyPreview(data.preview)
       setTweetText("")
       const countsRes = await fetch("/api/admin/arie/previews")
       if (countsRes.ok) {
@@ -102,6 +129,13 @@ export default function ArieEvalPanel() {
         setUngraded(counts.ungraded ?? 0)
         setTotal(counts.total ?? 0)
       }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Generate failed")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function saveGrade(grade: (typeof GRADES)[number]) {
     if (!preview) return
     setBusy(true)
@@ -110,7 +144,14 @@ export default function ArieEvalPanel() {
       const res = await fetch(`/api/admin/arie/previews/${preview.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ humanGrade: grade, notes }),
+        body: JSON.stringify({
+          humanGrade: grade,
+          notes,
+          scoreRelevance: subs.relevance,
+          scoreInsight: subs.insight,
+          scoreAccuracy: subs.accuracy,
+          scoreBrandVoice: subs.brandVoice,
+        }),
       })
       if (!res.ok) throw new Error(await res.text())
       setMessage(`Saved grade ${grade}`)
@@ -127,8 +168,9 @@ export default function ArieEvalPanel() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-xs text-muted-foreground">
-        Ungraded: {ungraded} · Total previews: {total}. Target corpus: ~100 real casting/film tweets.
-        Improve the Context Builder when coverage is high but grades are C/D.
+        Ungraded: {ungraded} · Total: {total}. Aim for a 100–150 tweet corpus across breakers,
+        aggregators, opinion, trailers, and should-ignore. Do not start Sprint 3 until
+        docs/arie/SPRINT2_EXIT.md is green — then freeze docs/arie/BASELINE.md.
       </p>
 
       <section className="space-y-3 rounded-xl border border-border bg-secondary/20 p-4">
@@ -175,7 +217,7 @@ export default function ArieEvalPanel() {
               Incoming tweet
               {preview.authorHandle ? ` · @${preview.authorHandle}` : ""}
             </p>
-            <p className="mt-1 text-sm text-zinc-100 whitespace-pre-wrap">{preview.sourceText}</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-100">{preview.sourceText}</p>
           </div>
 
           <div>
@@ -213,7 +255,40 @@ export default function ArieEvalPanel() {
 
           <div>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-              Grade
+              Sub-scores (1–5)
+            </p>
+            <div className="space-y-3">
+              {SUBS.map(([key, label, hint]) => (
+                <div key={key}>
+                  <div className="mb-1 flex items-baseline justify-between gap-2">
+                    <span className="text-sm text-foreground">{label}</span>
+                    <span className="text-xs text-muted-foreground">{hint}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setSubs((s) => ({ ...s, [key]: n }))}
+                        className={`min-w-[2.25rem] rounded border px-2 py-1 text-sm disabled:opacity-50 ${
+                          subs[key] === n
+                            ? "border-[#FFD700] bg-[#FFD700]/15 text-[#FFD700]"
+                            : "border-border text-muted-foreground hover:border-[#FFD700]/40"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+              Overall grade
             </p>
             <div className="flex flex-wrap gap-2">
               {GRADES.map((g) => (
@@ -233,18 +308,19 @@ export default function ArieEvalPanel() {
               ))}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              A = post unchanged · B = tiny edit · C = rewrite · D = unusable
+              A = post unchanged · B = tiny edit · C = rewrite · D = unusable. Clicking a grade
+              saves.
             </p>
           </div>
 
           <label className="block text-sm">
-            <span className="mb-1 block text-muted-foreground">Optional notes</span>
+            <span className="mb-1 block text-muted-foreground">Optional notes / pattern</span>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              placeholder="Excellent comparison. / Missing Nolan collab radar."
+              placeholder="Missing comparison. / Opinion tweet should have been ignored."
             />
           </label>
 

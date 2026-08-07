@@ -107,6 +107,10 @@ function serialize(row: {
   promptTokens: number | null
   completionTokens: number | null
   humanGrade: string | null
+  scoreRelevance: number | null
+  scoreInsight: number | null
+  scoreAccuracy: number | null
+  scoreBrandVoice: number | null
   notes: string | null
   gradedAt: Date | null
   createdAt: Date
@@ -127,6 +131,10 @@ function serialize(row: {
     promptTokens: row.promptTokens,
     completionTokens: row.completionTokens,
     humanGrade: row.humanGrade,
+    scoreRelevance: row.scoreRelevance,
+    scoreInsight: row.scoreInsight,
+    scoreAccuracy: row.scoreAccuracy,
+    scoreBrandVoice: row.scoreBrandVoice,
     notes: row.notes,
     gradedAt: row.gradedAt,
     createdAt: row.createdAt,

@@ -725,6 +725,14 @@ model AriePreviewEval {
   promptTokens       Int?
   completionTokens   Int?
   humanGrade         ArieHumanGrade?
+  /// 1–5: Did the draft address the tweet?
+  scoreRelevance     Int?
+  /// 1–5: Did ActorRating add something unique?
+  scoreInsight       Int?
+  /// 1–5: Were the facts correct?
+  scoreAccuracy      Int?
+  /// 1–5: Did it sound like ActorRating?
+  scoreBrandVoice    Int?
   notes              String?         @db.Text
   gradedAt           DateTime?
   gradedByEmail      String?
