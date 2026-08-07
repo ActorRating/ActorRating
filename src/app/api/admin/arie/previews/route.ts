@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminSession } from "@/lib/admin/requireAdmin"
 import { buildContextFromText } from "@/lib/arie/pipeline"
 import { previewReplyDraft } from "@/lib/arie/preview-draft"
-import { getGovernorSnapshot, governorAllowsOpportunity } from "@/lib/arie/cost-governor"
-
 /** GET — next ungraded preview (or latest if ?id=). */
 export async function GET(request: NextRequest) {
   const admin = await requireAdminSession()
@@ -57,6 +55,8 @@ export async function POST(request: NextRequest) {
     authorHandle: body.authorHandle ?? null,
   })
 
+  // Admin VM1 eval must score the full distribution spectrum — including mid/low
+  // Opportunity. Do not apply Cost Governor spend gates here (production ingest still does).
   if (pkg.opportunity.decision === "ignore") {
     return NextResponse.json(
       {
@@ -64,26 +64,22 @@ export async function POST(request: NextRequest) {
         opportunity: pkg.opportunity,
         coverage: pkg.coverage,
         package: pkg,
+        hint: "System would not reply. For should-ignore corpus rows, note the handle + score and grade Opportunity correctness in notes; or paste a processable tweet.",
       },
       { status: 422 },
     )
   }
 
-  const snap = await getGovernorSnapshot()
-  const gate = governorAllowsOpportunity(snap, {
-    opportunityScore: pkg.opportunity.score,
-    priorityAuthor: pkg.opportunity.priorityAuthor,
-  })
-  if (!gate.allowed) {
-    return NextResponse.json(
-      { error: "blocked_by_cost_governor", reason: gate.reason, coverage: pkg.coverage },
-      { status: 402 },
-    )
-  }
-
   const draft = await previewReplyDraft(pkg)
   if (!draft.ok) {
-    return NextResponse.json({ error: draft.reason, coverage: pkg.coverage }, { status: 422 })
+    return NextResponse.json(
+      {
+        error: draft.reason,
+        coverage: pkg.coverage,
+        opportunity: pkg.opportunity,
+      },
+      { status: 422 },
+    )
   }
 
   const row = await prisma.ariePreviewEval.findUnique({ where: { id: draft.previewId } })
