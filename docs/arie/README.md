@@ -17,6 +17,7 @@ Source of truth for ActorRating’s **cinema intelligence engine** (channel-agno
 | [BRAND_CONSTITUTION.md](./BRAND_CONSTITUTION.md) | Permanent law for every agent |
 | [SPRINT1.md](./SPRINT1.md) | Sprint 1 ops |
 | [SPRINT2.md](./SPRINT2.md) | Sprint 2 ops — Context Package |
+| [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) | Exit checklist before Sprint 3 |
 
 ```
 docs/arie/

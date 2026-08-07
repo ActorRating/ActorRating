@@ -27,6 +27,8 @@ npx prisma@6.16.2 migrate deploy
 
 ## Milestone test
 
+Use **`/admin/arie`** for the labeled eval loop (preferred), or:
+
 ```bash
 curl -s -X POST "$ORIGIN/api/arie/preview-draft" \
   -H "Authorization: Bearer $ARIE_SERVICE_KEY" \
@@ -34,10 +36,8 @@ curl -s -X POST "$ORIGIN/api/arie/preview-draft" \
   -d '{"text":"Leonardo DiCaprio joins Nolan'\''s next film.","authorHandle":"deadline"}' | jq .
 ```
 
-Expect: high `opportunityScore`, rich `package.facts`, a craft-first `draft.reply`, `confidence` in response.
-
-Also try Film Updates / Deadline-style casting blurbs. Iterate on extraction + package shape—not on prompts—until drafts look excellent.
+Exit bar: see [SPRINT2_EXIT.md](./SPRINT2_EXIT.md).
 
 ## Next
 
-Sprint 3 — Reply Agent · QA Agent · Publisher (publishing is mechanical once drafts are reliable).
+Sprint 3 only after exit checklist: Draft → QA → policy → dedupe → Constitution → Publish.

@@ -1,11 +1,16 @@
+import type { Prisma } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { loadBrandConstitution } from "@/lib/arie/constitution"
 import { groqJsonCompletion } from "@/lib/arie/groq"
 import { arieLog } from "@/lib/arie/log"
 import type { ContextPackage } from "@/lib/arie/types"
 
+const PROMPT_VERSION = "reply-writer@preview-0.1"
+
 export type PreviewDraftResult =
   | {
       ok: true
+      previewId: string
       draft: {
         action: string
         confidence: number
@@ -15,15 +20,23 @@ export type PreviewDraftResult =
         prompt_version: string
       }
       opportunityScore: number
+      coveragePercent: number
+      coverage: ContextPackage["coverage"]
       contextPackageId: string
+      model: string
+      generationMs: number
+      promptTokens: number
+      completionTokens: number
     }
   | { ok: false; reason: string }
 
 /**
- * Sprint 2 validation hook: Context Package → Groq draft (no publish).
- * Agents must only use facts from the package.
+ * Sprint 2 validation: Context Package → Groq draft → persist eval row (no publish).
  */
-export async function previewReplyDraft(pkg: ContextPackage): Promise<PreviewDraftResult> {
+export async function previewReplyDraft(
+  pkg: ContextPackage,
+  opts: { inboundEventId?: string | null } = {},
+): Promise<PreviewDraftResult> {
   if (pkg.opportunity.decision === "ignore") {
     return { ok: false, reason: "opportunity_ignored" }
   }
@@ -51,9 +64,11 @@ export async function previewReplyDraft(pkg: ContextPackage): Promise<PreviewDra
       radar: pkg.radar,
       communityRating: pkg.communityRating,
       topPerformances: pkg.topPerformances.slice(0, 5),
+      relatedPerformances: pkg.relatedPerformances.slice(0, 4),
       facts: pkg.facts,
       links: pkg.links.slice(0, 4),
       currentTrend: pkg.currentTrend,
+      coverage: pkg.coverage,
     },
     null,
     0,
@@ -85,17 +100,53 @@ export async function previewReplyDraft(pkg: ContextPackage): Promise<PreviewDra
       ? Math.max(0, Math.min(100, Math.round(raw.confidence)))
       : 0
 
+  const draft = {
+    action: typeof raw.action === "string" ? raw.action : "reply",
+    confidence,
+    reason: typeof raw.reason === "string" ? raw.reason : "",
+    reply,
+    claims,
+    prompt_version: PROMPT_VERSION,
+  }
+
+  const row = await prisma.ariePreviewEval.create({
+    data: {
+      inboundEventId: opts.inboundEventId ?? null,
+      sourceText: pkg.event.text,
+      authorHandle: pkg.event.author_handle ?? null,
+      opportunityScore: pkg.opportunity.score,
+      coveragePercent: pkg.coverage.percent,
+      coverage: pkg.coverage as unknown as Prisma.InputJsonValue,
+      contextPackage: pkg as unknown as Prisma.InputJsonValue,
+      draftText: reply,
+      draftJson: draft as unknown as Prisma.InputJsonValue,
+      confidence,
+      promptVersion: PROMPT_VERSION,
+      model: `groq/${result.model}`,
+      generationMs: result.generationMs,
+      promptTokens: result.usage.promptTokens,
+      completionTokens: result.usage.completionTokens,
+    },
+  })
+
+  await arieLog("info", "preview", "draft_saved", {
+    previewId: row.id,
+    opportunityScore: pkg.opportunity.score,
+    coveragePercent: pkg.coverage.percent,
+    confidence,
+  })
+
   return {
     ok: true,
-    draft: {
-      action: typeof raw.action === "string" ? raw.action : "reply",
-      confidence,
-      reason: typeof raw.reason === "string" ? raw.reason : "",
-      reply,
-      claims,
-      prompt_version: "reply-writer@preview-0.1",
-    },
+    previewId: row.id,
+    draft,
     opportunityScore: pkg.opportunity.score,
+    coveragePercent: pkg.coverage.percent,
+    coverage: pkg.coverage,
     contextPackageId: pkg.package_id,
+    model: `groq/${result.model}`,
+    generationMs: result.generationMs,
+    promptTokens: result.usage.promptTokens,
+    completionTokens: result.usage.completionTokens,
   }
 }

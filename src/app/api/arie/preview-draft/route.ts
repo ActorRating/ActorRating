@@ -18,6 +18,7 @@ function authorized(request: NextRequest): boolean {
 /**
  * POST /api/arie/preview-draft
  * Milestone validator: news text → Context Package → Groq draft (never publishes).
+ * Persists AriePreviewEval for admin grading.
  */
 export async function POST(request: NextRequest) {
   if (!authorized(request)) {
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
         error: "blocked_by_cost_governor",
         reason: gate.reason,
         opportunity: pkg.opportunity,
+        coverage: pkg.coverage,
         package: pkg,
       },
       { status: 402 },
@@ -57,14 +59,26 @@ export async function POST(request: NextRequest) {
   const draft = await previewReplyDraft(pkg)
   if (!draft.ok) {
     return NextResponse.json(
-      { error: draft.reason, opportunity: pkg.opportunity, package: pkg },
+      {
+        error: draft.reason,
+        opportunity: pkg.opportunity,
+        coverage: pkg.coverage,
+        package: pkg,
+      },
       { status: 422 },
     )
   }
 
   return NextResponse.json({
+    previewId: draft.previewId,
     opportunityScore: draft.opportunityScore,
+    coveragePercent: draft.coveragePercent,
+    coverage: draft.coverage,
     confidence: draft.draft.confidence,
+    model: draft.model,
+    generationMs: draft.generationMs,
+    promptTokens: draft.promptTokens,
+    completionTokens: draft.completionTokens,
     draft: draft.draft,
     package: pkg,
   })

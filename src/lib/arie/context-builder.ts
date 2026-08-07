@@ -11,6 +11,7 @@ import {
   type ContextPackage,
   type OpportunityResult,
 } from "@/lib/arie/types"
+import { computeContextCoverage } from "@/lib/arie/coverage"
 
 const DIM_KEYS = [
   "emotionalRangeDepth",
@@ -433,7 +434,7 @@ export async function buildContextPackage(
 
   const packageId = randomUUID()
 
-  return {
+  const base: Omit<ContextPackage, "coverage"> = {
     package_id: packageId,
     created_at: asOf(),
     builder_version: CONTEXT_BUILDER_VERSION,
@@ -473,6 +474,9 @@ export async function buildContextPackage(
       max_claims: Math.min(8, Math.max(2, facts.length)),
     },
   }
+
+  const coverage = computeContextCoverage(base)
+  return { ...base, coverage }
 }
 
 export function contextPackageHash(pkg: ContextPackage): string {

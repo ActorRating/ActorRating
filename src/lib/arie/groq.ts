@@ -6,7 +6,13 @@ import { getGovernorSnapshot, recordUsage } from "@/lib/arie/cost-governor"
 const GROQ_USD_PER_MTOKEN = 0.05
 
 export type GroqJsonResult =
-  | { ok: true; json: unknown; usage: { promptTokens: number; completionTokens: number } }
+  | {
+      ok: true
+      json: unknown
+      model: string
+      usage: { promptTokens: number; completionTokens: number }
+      generationMs: number
+    }
   | { ok: false; reason: string }
 
 /**
@@ -32,6 +38,7 @@ export async function groqJsonCompletion(opts: {
   }
 
   const model = opts.model ?? process.env.ARIE_GROQ_MODEL ?? "llama-3.3-70b-versatile"
+  const started = Date.now()
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -59,6 +66,7 @@ export async function groqJsonCompletion(opts: {
     choices?: Array<{ message?: { content?: string } }>
     usage?: { prompt_tokens?: number; completion_tokens?: number }
   }
+  const generationMs = Date.now() - started
   const content = data.choices?.[0]?.message?.content ?? "{}"
   const promptTokens = data.usage?.prompt_tokens ?? 0
   const completionTokens = data.usage?.completion_tokens ?? 0
@@ -70,14 +78,16 @@ export async function groqJsonCompletion(opts: {
     operation: opts.operation,
     units: total,
     estimatedCostUsd,
-    metadata: { model, promptTokens, completionTokens },
+    metadata: { model, promptTokens, completionTokens, generationMs },
   })
 
   try {
     return {
       ok: true,
       json: JSON.parse(content) as unknown,
+      model,
       usage: { promptTokens, completionTokens },
+      generationMs,
     }
   } catch {
     await arieLog("error", "groq", "invalid_json", { content: content.slice(0, 300) })

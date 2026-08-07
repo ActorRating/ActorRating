@@ -128,4 +128,19 @@ export type ContextPackage = {
     max_tokens_for_writer: number
     max_claims: number
   }
+  /** Sprint 2 eval — why a draft was strong/weak. */
+  coverage: {
+    slots: {
+      actor: boolean
+      movie: boolean
+      director: boolean
+      radar: boolean
+      comparisons: boolean
+      awards: boolean
+      community: boolean
+    }
+    present: number
+    total: number
+    percent: number
+  }
 }

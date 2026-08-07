@@ -1337,9 +1337,15 @@ Architecture is frozen. **Build Sprint 1 now.**
 - Constitution path referenced from config (`docs/arie/BRAND_CONSTITUTION.md`)  
 - Migrate deployable on Coolify  
 
-### 15.2 Pre-n8n / publish checklist
+### 15.2 Sprint 2 exit (validation gate)
 
-No production Publish nodes until Sprint 3 contracts exist and the unattended gate (§1.4) remains green.
+See [SPRINT2_EXIT.md](./SPRINT2_EXIT.md). Do not start publish automation until A+B ≥ 80% on ~100 graded previews.
+
+Sprint 3 is **Draft → QA → policy → dedupe → similarity → Constitution → Publish** — publishing is the last line.
+
+### 15.3 Pre-n8n / publish checklist
+
+No production Publish nodes until Sprint 2 exit + Sprint 3 safety chain exists.
 
 ---
 

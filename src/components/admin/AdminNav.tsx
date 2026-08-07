@@ -27,6 +27,11 @@ export default function AdminNav() {
       label: 'Editorial',
       match: (path: string) => path.startsWith('/admin/editorial'),
     },
+    {
+      href: '/admin/arie',
+      label: 'ARIE',
+      match: (path: string) => path.startsWith('/admin/arie'),
+    },
   ];
 
   return (

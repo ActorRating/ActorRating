@@ -698,3 +698,41 @@ model ArieExperimentAssignment {
   @@unique([experimentId, opportunityId])
   @@index([armId])
 }
+
+enum ArieHumanGrade {
+  A
+  B
+  C
+  D
+}
+
+/// Sprint 2+ human eval loop — labeled drafts become the training goldset.
+model AriePreviewEval {
+  id                 String          @id @default(cuid())
+  inboundEventId     String?
+  sourceText         String          @db.Text
+  authorHandle       String?
+  opportunityScore   Int
+  coveragePercent    Int
+  coverage           Json
+  contextPackage     Json
+  draftText          String          @db.Text
+  draftJson          Json?
+  confidence         Int?
+  promptVersion      String
+  model              String
+  generationMs       Int?
+  promptTokens       Int?
+  completionTokens   Int?
+  humanGrade         ArieHumanGrade?
+  notes              String?         @db.Text
+  gradedAt           DateTime?
+  gradedByEmail      String?
+  createdAt          DateTime        @default(now())
+
+  @@index([humanGrade, createdAt])
+  @@index([createdAt])
+  @@index([opportunityScore])
+  @@index([coveragePercent])
+  @@index([promptVersion])
+}
