@@ -1,9 +1,9 @@
 # ActorRating Social AI
 
-**Technical Architecture RFC · v1.0**  
+**Technical Architecture RFC · v1.1**  
 **Status:** Draft (living source of truth)  
 **Owner:** ActorRating Engineering  
-**Last updated:** 2026-08-06  
+**Last updated:** 2026-08-07  
 
 ---
 
@@ -12,25 +12,28 @@
 | Field | Value |
 | --- | --- |
 | Title | ActorRating Social AI — Technical Architecture |
-| Version | 1.0 |
+| Version | 1.1 |
 | Classification | Internal engineering RFC |
-| Scope | Distribution engine for X (Twitter); extensible to other platforms |
+| Scope | Distribution engine for X (Twitter); extensible to other platforms / future structured-content products |
 | Implementation state | **Greenfield** — this RFC defines target architecture; update sections as components ship |
-| Related product systems | Actor / Movie / Performance graph, Radar craft scores, Rate pages, Performance editorial, Leaderboards |
+| Related product systems | Actor / Movie / Performance **knowledge graph**, Radar craft scores, Rate pages, Performance editorial, Leaderboards, Admin dashboard |
+| Litmus test | **Can this system run unattended for six months?** If not, fix the architecture before adding features. |
 
 ### How to use this document
 
 1. This file is the **single source of truth** for the Social AI / AI distribution engine.
-2. When you ship a component, update the matching section in the **same PR** (or immediately after). Mark subsections `Implemented` / `Partial` / `Planned`.
-3. Do not invent alternate architectures in chat threads or Notion pages without folding decisions back here.
-4. Open design questions live in [§18 Open questions](#18-open-questions--decisions-log). Resolved decisions move into the relevant body section.
+2. **RFC first, then implement.** Every new agent, endpoint, table, or workflow is specified here (or in an ADR linked from here) **before** writing n8n nodes or application code.
+3. When you ship a component, update the matching section in the **same PR**. Mark subsections `Implemented` / `Partial` / `Planned`.
+4. Do not invent alternate architectures in chat threads or Notion pages without folding decisions back here.
+5. Open design questions live in [§19 Open questions](#19-open-questions--decisions-log). Resolved decisions move into the relevant body section.
+6. Treat this as a **long-term engineering asset**. ActorRating’s X account is the first application of a reusable distribution engine for structured-content products.
 
 ### Companion files (planned)
 
 ```
 docs/social-ai/
   ARCHITECTURE.md          ← this RFC (SoT)
-  prompts/                 ← versioned prompt contracts (per agent)
+  prompts/                 ← versioned prompt contracts (per agent, semver)
   runbooks/                ← ops: incident, kill-switch, cost alarms
   adr/                     ← Architecture Decision Records (short, dated)
 ```
@@ -43,21 +46,22 @@ docs/social-ai/
 2. [High-level system architecture](#2-high-level-system-architecture)
 3. [Core principles](#3-core-principles)
 4. [AI agent specifications](#4-ai-agent-specifications)
-5. [Context Builder](#5-context-builder)
-6. [ActorRating Knowledge API](#6-actorrating-knowledge-api)
-7. [Memory system](#7-memory-system)
-8. [Learning engine](#8-learning-engine)
-9. [Dynamic asset engine](#9-dynamic-asset-engine)
-10. [Content strategy](#10-content-strategy)
-11. [Publishing rules](#11-publishing-rules)
-12. [Database schema](#12-database-schema)
-13. [n8n workflow architecture](#13-n8n-workflow-architecture)
-14. [Deployment roadmap](#14-deployment-roadmap)
-15. [Monitoring](#15-monitoring)
-16. [Confidence Score](#16-confidence-score)
-17. [Operational guidelines](#17-operational-guidelines)
-18. [Open questions & decisions log](#18-open-questions--decisions-log)
-19. [Appendix](#19-appendix)
+5. [Knowledge Graph Layer](#5-knowledge-graph-layer)
+6. [Context Builder](#6-context-builder)
+7. [ActorRating Knowledge API](#7-actorrating-knowledge-api)
+8. [Memory system](#8-memory-system)
+9. [Learning engine](#9-learning-engine)
+10. [Dynamic asset engine](#10-dynamic-asset-engine)
+11. [Content strategy](#11-content-strategy)
+12. [Publishing rules](#12-publishing-rules)
+13. [Database schema](#13-database-schema)
+14. [n8n workflow architecture](#14-n8n-workflow-architecture)
+15. [Deployment roadmap](#15-deployment-roadmap)
+16. [Monitoring](#16-monitoring)
+17. [Confidence Score](#17-confidence-score)
+18. [Operational guidelines](#18-operational-guidelines)
+19. [Open questions & decisions log](#19-open-questions--decisions-log)
+20. [Appendix](#20-appendix)
 
 ---
 
@@ -65,7 +69,9 @@ docs/social-ai/
 
 ### 1.1 Mission
 
-Build a **tasteful, data-grounded distribution engine** that puts ActorRating’s craft-first point of view into cultural conversations on X — without sounding like a bot, without fabricating facts, and without turning every mention into an ad.
+Build **tasteful, data-grounded distribution infrastructure** — not a pile of automations — that puts ActorRating’s craft-first point of view into cultural conversations on X without sounding like a bot, fabricating facts, or turning every mention into an ad.
+
+This is infrastructure for growth and brand voice. Feature requests after Sprint 1 must fit the architecture; they do not get a one-off n8n shortcut.
 
 ActorRating rates **acting craft**, not movie quality. Social AI must reinforce that distinction in every public word.
 
@@ -75,8 +81,9 @@ ActorRating rates **acting craft**, not movie quality. Social AI must reinforce 
 | --- | --- | --- |
 | Great rate-page / radar content is mostly pull (SEO, word of mouth) | Growth slow outside organic search | Push craft insights into live discourse where actors and films are already trending |
 | Manual social is high quality but not scalable | Founder time, inconsistent cadence | System drafts / posts within strict brand + data guardrails |
-| Generic “AI marketing bots” damage trust | Brand risk | Structured Knowledge API + Confidence Score + human thresholds |
-| Trends move faster than research | Missed moments | Event → opportunity → context → agents pipeline measured in minutes, not days |
+| Generic “AI marketing bots” damage trust | Brand risk | Knowledge Graph + Knowledge API + Confidence Score + human thresholds |
+| Trends move faster than research | Missed moments | Event → Opportunity Score → graph traversal → agents, measured in minutes |
+| Unmeasurable posting | Cannot optimize | Funnel metrics in admin (opportunities → publish → CTR → waitlist/ratings) |
 
 ### 1.3 Guiding principles (summary)
 
@@ -84,7 +91,24 @@ Full list in [§3](#3-core-principles). The north star is:
 
 > **Every automated post should feel like something a sharp film-literate human at ActorRating would publish after checking the numbers.**
 
-### 1.4 Success metrics
+### 1.4 Unattended readiness (architecture gate)
+
+Before writing production n8n nodes that post publicly, the design must answer **yes** to:
+
+| Question | Required answer |
+| --- | --- |
+| Can kill switches stop all publishing instantly? | Yes |
+| Do all LLM steps emit versioned structured JSON? | Yes |
+| Are facts traversable from the Knowledge Graph (not open-web scrape)? | Yes |
+| Is every event scored and most ignored cheaply? | Yes |
+| Can we roll back a prompt version without guessing? | Yes |
+| Do drafts catch everything below Confidence threshold? | Yes |
+| Is the Learning Engine forbidden from rewriting prompts? | Yes |
+| Can we observe the full funnel in admin for 6 months of logs? | Yes |
+
+If any answer is no, **fix the RFC first**.
+
+### 1.5 Success metrics
 
 **North-star**
 
@@ -95,7 +119,7 @@ Full list in [§3](#3-core-principles). The north star is:
 | Metric | Target direction | Notes |
 | --- | --- | --- |
 | Brand-safe incident rate | → 0 | Fabrication, wrong entity, offensive reply |
-| Share of posts with Confidence ≥ auto-publish threshold | Stable or ↑ | Threshold starts conservative (see §16) |
+| Share of posts with Confidence ≥ auto-publish threshold | Stable or ↑ | Threshold starts conservative (see §17) |
 | Click-through to AR from posts that include links | ↑ | Not every post needs a link |
 | Reply helpfulness (human sample audit) | ≥ 80% “adds value” | Weekly sample |
 | Duplicate / near-duplicate publish rate | → 0 | Memory system |
@@ -113,7 +137,7 @@ Full list in [§3](#3-core-principles). The north star is:
 | Auto-publish error rate | &lt; 1% of eligible posts |
 | Human review queue backlog | &lt; 50 drafts older than 24h |
 
-### 1.5 Non-goals
+### 1.6 Non-goals
 
 Social AI **must never**:
 
@@ -121,16 +145,19 @@ Social AI **must never**:
 2. Fabricate scores, rankings, cast lists, release dates, or quotes not present in ActorRating (or a vetted citation path).
 3. Post political activism, culture-war bait, harassment, or pile-ons.
 4. Optimize purely for engagement / virality at the expense of brand voice.
-5. Self-modify production prompts without a human-reviewed change process ([§8](#8-learning-engine)).
+5. Self-modify production prompts without a human-reviewed change process ([§9](#9-learning-engine)).
 6. Mass-reply, spam hashtags, or follow/unfollow growth hacks.
 7. Claim ActorRating is an “AI rating engine” for performances we do not support with data.
 8. Auto-post below Confidence threshold without explicit human approval.
 9. Leak private user data, emails, or non-public ratings.
 10. Become a general-purpose movie chatbot unanchored from craft and ActorRating.
+11. Let the Learning Engine directly rewrite prompts or chase low-quality engagement tactics.
 
-### 1.6 Product thesis
+### 1.7 Product thesis
 
 We win by being the account that **brings receipts** (Radar craft dimensions, community consensus, comparisons, leaderboards) into conversations that already care about acting — then invites discussion, not sermons.
+
+Longer term: the same engine can market any structured-content product. ActorRating is the first application.
 
 ---
 
@@ -145,7 +172,7 @@ We win by being the account that **brings receipts** (Radar craft dimensions, co
                   Event Collection Layer
                            │
                            ▼
-                 Content Opportunity Engine
+              Content Opportunity Scorer
                            │
                  ┌─────────┴─────────┐
                  │                   │
@@ -155,10 +182,15 @@ We win by being the account that **brings receipts** (Radar craft dimensions, co
                       ActorRating Knowledge API
                                      │
                                      ▼
+                         Knowledge Graph
+                      (traverse, don't search)
+                                     │
+                                     ▼
                            Context Builder
                                      │
                                      ▼
                       Multi-Agent AI Pipeline
+                     (structured JSON only)
                                      │
        ┌──────────────┬──────────────┬──────────────┐
        ▼              ▼              ▼              ▼
@@ -181,6 +213,8 @@ We win by being the account that **brings receipts** (Radar craft dimensions, co
     Engagement Collection Engine
               ▼
         Learning & Analytics
+              ▼
+         Admin Social Funnel
 ```
 
 ### 2.2 Component overview
@@ -188,14 +222,16 @@ We win by being the account that **brings receipts** (Radar craft dimensions, co
 | Layer | Responsibility | Primary tech (target) |
 | --- | --- | --- |
 | Event Collection | Ingest mentions, tracked accounts, keyword/trend streams | X API + n8n Watcher |
-| Opportunity Engine | Classify → ignore / reply / quote / thread / original seed | Rules + light model |
+| Opportunity Scorer | Score every event; ignore most; pick format for the rest | Rules + light model (Groq) |
 | Knowledge API | Deterministic ActorRating facts for social | Next.js route handlers / internal API |
-| Context Builder | Assemble structured context packages | Service module + cache |
-| Agents | Draft copy / structure per format | LLM with versioned prompts |
+| Knowledge Graph | Relationship traversal (actor↔movie↔performance↔radar) | Postgres graph queries over AR schema |
+| Context Builder | Assemble structured context packages from traversals | Service module + cache |
+| Agents | Draft copy / structure per format | Groq/LLM with **semver’d** prompts |
 | QA + Confidence | Brand, facts, uniqueness, entity match | LLM critic + deterministic checks |
 | Scheduler / Publisher | Human-like cadence, limits, kill-switch | n8n + Postgres |
 | Assets | Charts, cards, comps from DB | Image render pipeline |
 | Memory + Learning | Performance store + human-curated observations | Postgres |
+| Admin funnel | Observable metrics for unattended ops | Existing `/admin` dashboard extension |
 
 ### 2.3 End-to-end sequence (reply path)
 
@@ -203,8 +239,9 @@ We win by being the account that **brings receipts** (Radar craft dimensions, co
 sequenceDiagram
   participant X as X API
   participant W as Watcher
-  participant O as Opportunity Engine
+  participant O as Opportunity Scorer
   participant K as Knowledge API
+  participant G as Knowledge Graph
   participant C as Context Builder
   participant R as Reply Agent
   participant Q as QA + Confidence
@@ -213,14 +250,16 @@ sequenceDiagram
 
   X->>W: Tweet event
   W->>O: Normalize event
-  O-->>O: Ignore?
-  alt Process
-    O->>K: Resolve entities + fetch facts
-    K-->>O: Structured facts
-    O->>C: Build context package
-    C->>R: Context + format=reply
-    R->>Q: Draft
-    Q-->>Q: Score confidence
+  O-->>O: Content Opportunity Score
+  alt Score below threshold
+    O->>M: Persist ignore + scores
+  else Process
+    O->>K: Resolve entities
+    K->>G: Traverse relationships
+    G-->>C: Graph neighborhood + facts
+    C->>R: Context Package (JSON)
+    R->>Q: Structured draft JSON
+    Q-->>Q: Confidence Score
     alt score ≥ threshold
       Q->>P: Eligible job
       P->>X: Post reply (scheduled)
@@ -261,11 +300,13 @@ sequenceDiagram
 5. **Use ActorRating data whenever possible** — Radar, community score, cohort rankings, comps.
 6. **Promote discussion rather than advertise** — Soft CTAs; links earned, not forced.
 7. **Every post should strengthen the brand** — Craft-first, respectful, specific.
-8. **Structured knowledge over open-web search** — Agents consume Context Packages, not random browsing.
+8. **Structured knowledge over open-web search** — Traverse the Knowledge Graph; agents consume Context Packages, not random browsing.
 9. **Human-in-the-loop where risk is high** — Low confidence → draft, never silent auto-post.
-10. **Learn from outcomes without mutating prompts in the wild** — Observations feed *inputs*, not hot-edited system prompts.
+10. **Learn from outcomes without mutating prompts in the wild** — Observations become *recommendations*; humans ship prompt version bumps.
 11. **Idempotent & restartable pipelines** — n8n workflows and jobs must tolerate retries.
-12. **Measurable confidence** — No publish without a persisted Confidence Score breakdown.
+12. **Measurable everything** — Opportunity Score, Confidence, funnel metrics, prompt versions — no black boxes.
+13. **Score before you spend** — Most events are ignored after Opportunity Score; generation is expensive.
+14. **Infrastructure, not scripts** — If it cannot run unattended for six months, it is not done.
 
 ---
 
@@ -277,19 +318,77 @@ Conventions for every agent:
 | --- | --- |
 | Purpose | Why it exists |
 | Inputs | Typed contract |
-| Outputs | Typed contract |
-| Prompt | Reference to `docs/social-ai/prompts/<agent>@vN.md` (not inline sprawl long-term) |
+| Outputs | Typed **JSON** contract (never plain prose as the transport) |
+| Prompt | Reference to `docs/social-ai/prompts/<agent>/vX.Y.md` |
 | Temperature | Default sampling |
 | Tools | Allowed tool/API calls |
 | Failure modes | Expected errors |
 | Retry logic | When / how many |
 | Confidence contribution | Which Confidence sub-scores it influences |
 
+### 4.0 Structured output contract (mandatory)
+
+Every AI response that feeds a workflow must be **JSON**, parseable without regex scraping.
+
+Example (Reply Agent):
+
+```json
+{
+  "action": "reply",
+  "confidence": 94,
+  "reason": "Major casting announcement with strong ActorRating context",
+  "prompt_version": "reply-writer@1.0",
+  "entities": {
+    "actors": ["Leonardo DiCaprio"],
+    "director": "Christopher Nolan",
+    "movies": ["Inception"]
+  },
+  "entity_ids": {
+    "actors": ["nm0000138"],
+    "movies": ["tt1375666"],
+    "director_name": "Christopher Nolan"
+  },
+  "claims": [
+    { "span": "Screen Presence", "fact_id": "radar:dim:…:screenPresence" }
+  ],
+  "reply": "…",
+  "link_suggestion": null,
+  "asset_request": null
+}
+```
+
+Hard rules:
+
+- Downstream nodes read fields, not paragraphs.
+- Parse failure → retry once with repair prompt → else `status=failed` + alert.
+- `action` is always one of: `ignore` | `reply` | `quote` | `thread` | `original` | `poll` | `draft_only`.
+- Natural-language `reply` / `tweets` are fields *inside* the JSON, never the sole output.
+
+### 4.0.1 Prompt versioning
+
+Do **not** maintain a blob called “the reply prompt.”
+
+```text
+docs/social-ai/prompts/reply-writer/v1.0.md
+docs/social-ai/prompts/reply-writer/v1.1.md   ← more questions, less promo, more comps
+```
+
+| Rule | Detail |
+| --- | --- |
+| Semver | `MAJOR.MINOR` in filename + front-matter |
+| Pinning | Runtime config selects active version per agent |
+| Rollback | Point config at previous file; no archaeology in n8n UI |
+| Changelog | Each version file starts with “What changed / why” |
+| Eval | Optional golden-set notes before promoting a version |
+
+If engagement drops after a bump, roll back to the prior version and file an observation — do not guess in production.
+
 Global LLM policy:
 
-- Prefer **JSON-mode / schema outputs** for any agent whose output feeds another machine step.
+- **JSON-mode / schema outputs** required for classifiers, writers, QA, learning proposals.
 - Log `prompt_version`, `model`, `input_hash`, `latency_ms`, `token_usage` on every call.
 - No agent may call X publish APIs directly — only Publisher may.
+- Default inference provider target: **Groq** (swappable behind an interface).
 
 ---
 
@@ -337,7 +436,7 @@ If unresolved and no high-confidence entity → opportunity degrades to ignore o
 
 ### 4.3 Context Builder (service, not chatty LLM)
 
-See [§5](#5-context-builder). Prefer **deterministic assembly**. Optional tiny LLM step only to choose which packages to include when budgets are tight.
+See [§5](#6-context-builder). Prefer **deterministic assembly**. Optional tiny LLM step only to choose which packages to include when budgets are tight.
 
 ---
 
@@ -444,33 +543,120 @@ Translates “we should show a radar for X” into a typed `asset_request` for t
 
 ---
 
-## 5. Context Builder
+## 5. Knowledge Graph Layer
+
+**Status:** Planned · **Primary competitive advantage**
+
+ActorRating already stores Actors, Movies, Performances, Radar dimensions, and Ratings. Social AI elevates that into an explicit **Knowledge Graph**: Context Builder does not “search the web” or wander; it **traverses relationships**.
+
+### 5.1 Why a graph (not ad-hoc joins)
+
+| Ad-hoc queries | Knowledge Graph traversal |
+| --- | --- |
+| Each agent invents SQL / endpoint soup | One neighborhood expansion API |
+| Easy to miss collaborations | Edges encode director, cast, craft dims |
+| Non-deterministic LLM “research” | Deterministic hops with budgets |
+| Hard to explain a claim | Every fact has a path |
+
+### 5.2 Example neighborhood
+
+```text
+Christopher Nolan
+      │
+      ├───────────────┐
+      │               │
+      ▼               ▼
+ Inception        Oppenheimer
+      │               │
+      ▼               ▼
+ Leonardo         Cillian Murphy
+      │               │
+      ▼               ▼
+ Screen Presence  Emotional Range & Depth
+ Technical Skill  Character Believability
+```
+
+When news appears — *“Matt Damon joins Nolan…”* — the pipeline:
+
+1. Resolve `Matt Damon` → Actor node, `Nolan` → Director/person node  
+2. Traverse Nolan → films → cast overlaps → Damon’s prior AR performances  
+3. Pull Radar dimensions on strongest comparable performances  
+4. Emit Context Package facts with graph path metadata  
+
+No random search. Structured hops only.
+
+### 5.3 Node types (v1)
+
+| Node | Source |
+| --- | --- |
+| `Actor` | `Actor` table |
+| `Movie` | `Movie` table |
+| `Performance` | `Performance` (system / indexable) |
+| `Director` | Derived from `Movie.director` (normalize over time) |
+| `CraftDimension` | Fixed enum (5 radar dims) |
+| `Genre` / `Hub` | Optional for later traversals |
+
+### 5.4 Edge types (v1)
+
+| Edge | Meaning |
+| --- | --- |
+| `DIRECTED` | Director → Movie |
+| `APPEARS_IN` | Actor → Movie (via Performance) |
+| `HAS_PERFORMANCE` | Actor+Movie → Performance |
+| `HAS_RADAR` | Performance → CraftDimension scores |
+| `RATED_BY_COMMUNITY` | Performance → aggregate + count |
+| `COLLABORATED_WITH` | Actor ↔ Actor (shared films; materialize or compute) |
+| `SIMILAR_CRAFT` | Performance ↔ Performance (optional precompute) |
+
+### 5.5 Traversal API (conceptual)
+
+```text
+GET /social/graph/neighborhood
+  ?seed_type=actor|movie|director
+  &seed_id=…
+  &max_depth=2
+  &edge_allowlist=DIRECTED,APPEARS_IN,HAS_PERFORMANCE,HAS_RADAR
+  &budget_nodes=40
+```
+
+Returns nodes, edges, and pre-rendered `facts[]` for Context Builder.
+
+### 5.6 Implementation note
+
+v1 may implement the graph as **Postgres SQL views / recursive CTEs / Prisma domain services** over the existing schema — a separate graph DB is **not** required until scale demands it. The **mental model and API contract** are the product; storage can evolve.
+
+### 5.7 Non-goals for the graph
+
+- Ingesting unverified celebrity gossip as edges  
+- Open-web entity linking without AR ID resolution  
+- Letting writers invent edges that do not exist in AR data  
+
+---
+
+## 6. Context Builder
 
 **Status:** Planned · **Critical path for quality**
 
-The Context Builder is the heart of the system. Generators **never browse randomly**. They receive a **Context Package**: a bounded, structured JSON document assembled from the Knowledge API.
+The Context Builder is the heart of generation quality. Generators **never browse randomly**. They receive a **Context Package** assembled by **graph traversal** ([§5](#5-knowledge-graph-layer)) via the Knowledge API.
 
-### 5.1 Goals
+### 6.1 Goals
 
 - Deterministic, auditable inputs to every generation  
 - Token-budget aware (truncate by priority, never by silent omission of required entities)  
 - Every factual claim later mapped back to package fact IDs  
+- Traversal paths retained for debugging (“why did we mention Inception?”)  
 
-### 5.2 Pipeline (example)
+### 6.2 Pipeline (example)
 
 ```text
-Input: “Leonardo joins Nolan film”
+Input: “Matt Damon joins Nolan film”
 
         ▼
-Find actor          → ActorRating Actor (id, slug, name, aliases)
+Resolve entities     → Actor + Director nodes
         ▼
-Find movie / project → Movie (if released / catalogued) or tentative title note
+Traverse graph       → Nolan films, Damon performances, overlaps
         ▼
-Find director       → director field / related movies
-        ▼
-Find collaborations → prior actor↔director / co-star performances
-        ▼
-Find radar scores   → dimension averages for selected performances
+Find radar scores    → dimension averages for selected performances
         ▼
 Find community ratings → counts, aggregate craft score where public
         ▼
@@ -478,10 +664,10 @@ Find related AR URLs → rate pages, hubs (canonical only)
         ▼
 Find recent AR social posts about entity (anti-dupe)
         ▼
-Create structured Context Package
+Create structured Context Package (+ graph paths)
 ```
 
-### 5.3 Context Package schema (v1)
+### 6.3 Context Package schema (v1)
 
 ```ts
 type ContextPackage = {
@@ -535,7 +721,7 @@ type Fact = {
 }
 ```
 
-### 5.4 Priority / truncation order
+### 6.4 Priority / truncation order
 
 When over budget, drop in this order (last dropped first kept):
 
@@ -546,7 +732,7 @@ When over budget, drop in this order (last dropped first kept):
 5. Leaderboard neighbors  
 6. **Never drop** primary actor/movie identity facts or the primary performance radar if present  
 
-### 5.5 Anti-hallucination contract
+### 6.5 Anti-hallucination contract
 
 Writers may only assert facts that appear in `facts[]` **or** clearly marked subjective opinion with no numeric claim.
 
@@ -554,7 +740,7 @@ QA rejects any `claims[]` entry whose `fact_id` is missing.
 
 ---
 
-## 6. ActorRating Knowledge API
+## 7. ActorRating Knowledge API
 
 **Status:** Planned (new internal surface; prefer reusing existing Prisma/domain libs)
 
@@ -562,7 +748,7 @@ Base path (target): `/api/internal/social/*` or `/api/social/*` with service aut
 
 Auth: `SOCIAL_AI_SERVICE_KEY` (or mTLS in later phase). Never expose privileged endpoints publicly without auth.
 
-### 6.1 Endpoint catalog (v1 target)
+### 7.1 Endpoint catalog (v1 target)
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -577,10 +763,11 @@ Auth: `SOCIAL_AI_SERVICE_KEY` (or mTLS in later phase). Never expose privileged 
 | GET | `/social/leaderboards` | Craft / genre / director board slices |
 | GET | `/social/similar` | Similar performances by craft |
 | GET | `/social/trending` | Internal AR trending (ratings velocity), not X trends |
+| GET | `/social/graph/neighborhood` | Knowledge Graph traversal around a seed entity |
 
 Exact external REST shapes may wrap existing app routers; the contract below is what Social AI depends on.
 
-### 6.2 `GET /social/context`
+### 7.2 `GET /social/context`
 
 **Query**
 
@@ -593,28 +780,28 @@ Exact external REST shapes may wrap existing app routers; the contract below is 
 | `mode` | no | `reply` \| `quote` \| `thread` \| `original` |
 | `max_facts` | no | Default 40 |
 
-**Response:** `ContextPackage` (§5.3)
+**Response:** `ContextPackage` (§6.3)
 
 **Caching:** Redis/Postgres `asset_cache`-style key: `ctx:v1:{hash(entities+mode)}` TTL 15–60 minutes. Bypass cache on `refresh=1`.
 
 **Rate limits:** Per service key; burst protect (e.g. 60/min).
 
-### 6.3 `GET /social/resolve`
+### 7.3 `GET /social/resolve`
 
 Input: `text` or `names[]`  
 Output: ranked candidates with confidence, types (`actor`|`movie`), AR ids/slugs.
 
-### 6.4 `GET /social/radar`
+### 7.4 `GET /social/radar`
 
 Input: `actorId` + `movieId` (or `performanceId`)  
 Output: five craft dimensions (Emotional Range & Depth, Character Believability, Technical Skill, Screen Presence, Chemistry & Interaction), aggregate, rating count, URLs.
 
-### 6.5 `GET /social/compare`
+### 7.5 `GET /social/compare`
 
 Input: two performances or two actors (with optional film scope)  
 Output: aligned dimension deltas + short “facts only” bullet list for writers.
 
-### 6.6 Caching & SLOs
+### 7.6 Caching & SLOs
 
 | Endpoint | Cache TTL | p95 cold | p95 warm |
 | --- | --- | --- | --- |
@@ -623,7 +810,7 @@ Output: aligned dimension deltas + short “facts only” bullet list for writer
 | radar/compare | 30m | 500ms | 50ms |
 | leaderboards | 10m | 1s | 80ms |
 
-### 6.7 Rate limits & abuse
+### 7.7 Rate limits & abuse
 
 - Service-to-service auth required  
 - Per-route quotas  
@@ -631,11 +818,11 @@ Output: aligned dimension deltas + short “facts only” bullet list for writer
 
 ---
 
-## 7. Memory system
+## 8. Memory system
 
 Social AI memory is **performance memory**, not a rolling chat transcript.
 
-### 7.1 What we remember
+### 8.1 What we remember
 
 - What we posted (and why — opportunity + context hash)  
 - What we replied to (source tweet ids)  
@@ -644,13 +831,13 @@ Social AI memory is **performance memory**, not a rolling chat transcript.
 - Learning observations derived from that history  
 - Failures / QA rejects (so we do not repeat)
 
-### 7.2 What we do not remember as “truth”
+### 8.2 What we do not remember as “truth”
 
 - Free-form LLM speculation  
 - User DMs  
 - Unverified third-party gossip  
 
-### 7.3 Logical stores
+### 8.3 Logical stores
 
 | Store | Purpose |
 | --- | --- |
@@ -663,17 +850,17 @@ Social AI memory is **performance memory**, not a rolling chat transcript.
 | `learning_observations` | Curated, prompt-safe observations |
 | `processed_tweets` | Idempotency for inbound |
 
-Detailed physical schema: [§12](#12-database-schema).
+Detailed physical schema: [§13](#13-database-schema).
 
-### 7.4 Uniqueness
+### 8.4 Uniqueness
 
 Before publish, embed or fingerprint `text` and compare to `social_posts` in last N days (cosine / trigram). Near-dupe → Confidence penalty or hard fail.
 
 ---
 
-## 8. Learning engine
+## 9. Learning engine
 
-### 8.1 Philosophy
+### 9.1 Philosophy
 
 ```text
 Yesterday
@@ -682,15 +869,25 @@ Read analytics + audit labels
    ▼
 Extract patterns
    ▼
-Store observations (evidence-linked)
+Store observations / recommendations (evidence-linked)
    ▼
-Future prompts receive observations as read-only context
+Human reviews → accepted observations enter Context Builder
+   ▼
+Optional: human ships a new prompt MINOR version (RFC + PR)
 ```
 
-**No self-modifying production prompts.**  
-Prompt changes = PR + version bump + evaluation notes.
+**The Learning Engine must never rewrite production prompts.**
 
-### 8.2 Observation types (examples)
+Instead:
+
+- It writes **recommendations**  
+  Example: *“Questions about performance craft outperformed declarative statements by 28% this week.”*
+- Recommendations become inputs to a **reviewed** prompt update (`v1.0` → `v1.1`) or config change.
+- That keeps brand voice stable and blocks drift toward cheap engagement tactics.
+
+Prompt changes = PR + version bump + evaluation notes. Always rollbackable ([§4.0.1](#401-prompt-versioning)).
+
+### 9.2 Observation types (examples)
 
 | Type | Example |
 | --- | --- |
@@ -699,28 +896,32 @@ Prompt changes = PR + version bump + evaluation notes.
 | `entity` | “Ambiguous name ‘Michael’ high misresolve risk — require year/film” |
 | `timing` | “Replies &gt;45 min late underperform on breaking casting news” |
 | `avoid` | “Posts that say ‘underrated’ without data underperform + QA flags” |
+| `prompt_recommendation` | “Increase share of craft questions vs declarative praise (evidence: …)” |
 
-### 8.3 Pipeline
+### 9.3 Pipeline
 
 1. **Collect** engagement snapshots (hourly/daily)  
 2. **Join** to posts + opportunity features  
-3. **Learning Agent** proposes observations with confidence + evidence post ids  
-4. **Human accept/reject** (admin UI or labeled review) — required for `active=true`  
+3. **Learning Agent** proposes observations with confidence + evidence post ids (**structured JSON**)  
+4. **Human accept/reject** in admin — required for `active=true`  
 5. Context Builder attaches top active observations relevant to entities/format  
+6. **Separate, human-driven** prompt version PR if a recommendation warrants it  
 
-### 8.4 Explicit non-goals for v1–v3
+### 9.4 Explicit non-goals
 
 - Auto A/B rewriting system prompts nightly  
+- Self-modifying temperatures or thresholds without deploy  
 - Reinforcement learning that updates weights without review  
+- Optimizing for dunks / outrage  
 - Scraping competitors’ replies as training without legal review  
 
 ---
 
-## 9. Dynamic asset engine
+## 10. Dynamic asset engine
 
 Generate brand-consistent visuals from **database truth**, not from LLM-drawn fake charts.
 
-### 9.1 Asset types
+### 10.1 Asset types
 
 | Type | Data source | Typical use |
 | --- | --- | --- |
@@ -730,7 +931,7 @@ Generate brand-consistent visuals from **database truth**, not from LLM-drawn fa
 | Tier list | Curated query + scores | Original (careful) |
 | Performance card | Actor + movie + score | Reply / quote |
 
-### 9.2 Pipeline
+### 10.2 Pipeline
 
 ```text
 asset_request (typed)
@@ -744,7 +945,7 @@ Store generated_assets (png/webp + params JSON)
 Publisher attaches media
 ```
 
-### 9.3 Rules
+### 10.3 Rules
 
 - Template versions are code; content params are data  
 - Watermark / logo per brand kit  
@@ -753,34 +954,64 @@ Publisher attaches media
 
 ---
 
-## 10. Content strategy
+## 11. Content strategy
 
-### 10.1 Decision matrix
+### 11.1 Content Opportunity Score
+
+**Not every tweet deserves a reply.** Every inbound event receives a **Content Opportunity Score (0–100)** *before* Context Builder or writers run.
+
+| Signal | Weight | Meaning |
+| --- | --- | --- |
+| **Relevance** | 30% | Brand / craft / film-culture fit |
+| **Virality** | 20% | Reach velocity, author influence, thread heat |
+| **ActorRating context** | 20% | Strength of graph neighborhood (entities we can support with facts) |
+| **Uniqueness** | 15% | Novelty vs recent AR social memory |
+| **Competition** | 10% | How crowded the reply/quote field already is |
+| **Freshness** | 5% | Time since event (decay) |
+
+```text
+opportunity_score = round(
+    0.30 * relevance
+  + 0.20 * virality
+  + 0.20 * ar_context
+  + 0.15 * uniqueness
+  + 0.10 * competition   // inverted: lower crowding → higher score
+  + 0.05 * freshness
+)
+```
+
+**Example**
+
+```text
+Final score: 87  →  generate (prefer Reply)
+Final score: 34  →  Ignore
+```
+
+Persist full breakdown on every event (including ignores) — required for funnel analytics.
+
+### 11.2 Score → action thresholds (initial)
+
+| Score | Default action |
+| --- | --- |
+| &lt; 50 | **Ignore** (log only) |
+| 50–69 | Optional human review / draft only if priority author |
+| 70–84 | Generate draft (no auto-publish) |
+| ≥ 85 | Generate; may auto-publish if Confidence also clears |
+
+Format selection (reply vs quote vs thread) is a second-stage decision among events that clear the process threshold — see matrix below.
+
+### 11.3 Decision matrix
 
 | Opportunity signals | Prefer | Avoid |
 | --- | --- | --- |
-| High brand relevance + clear AR entities + question/opinion | **Reply** | Ignore |
+| High Opportunity Score + clear AR entities + question/opinion | **Reply** | Ignore |
 | Viral take we can reframe with data | **Quote** (+ asset if delta is visual) | Reply buried in 2k comments |
 | Rich multi-fact story (career craft arc) | **Thread** | Single reply dump |
 | Evergreen AR insight / calendar | **Original** | Reactive dunk |
 | Binary audience fork | **Poll** (later) | Fake engagement polls |
-| Low relevance / unresolved entity / risk | **Ignore** | “Just say something” |
+| Low Opportunity Score / unresolved entity / risk | **Ignore** | “Just say something” |
 
-### 10.2 Scoring model (Opportunity Engine)
-
-```text
-expected_value ≈
-    w1 * brand_relevance
-  + w2 * entity_confidence
-  + w3 * trending_score
-  + w4 * account_priority
-  + w5 * novelty_vs_memory
-  − w6 * risk_flags
-```
-
-Publish capacity is scarce; only top EV opportunities enter generation.
-
-### 10.3 Format × Confidence thresholds
+### 11.4 Format × Confidence thresholds
 
 | Format | Auto-publish Confidence (initial) |
 | --- | --- |
@@ -788,17 +1019,19 @@ Publish capacity is scarce; only top EV opportunities enter generation.
 | Quote | ≥ 88 |
 | Original single | ≥ 90 |
 | Thread | ≥ 92 |
-| Poll | Human-only (v1) |
+| Poll | Human-only (Sprint 3+) |
 
 Thresholds are config, not hard-coded magic — change via ADR + deploy.
 
+Opportunity Score gates **whether we spend tokens**. Confidence Score gates **whether we publish**. Do not conflate them.
+
 ---
 
-## 11. Publishing rules
+## 12. Publishing rules
 
 Human-like, brand-safe, platform-safe.
 
-### 11.1 Cadence & limits (initial defaults)
+### 12.1 Cadence & limits (initial defaults)
 
 | Rule | Default |
 | --- | --- |
@@ -810,17 +1043,17 @@ Human-like, brand-safe, platform-safe.
 | Quiet hours | Configurable timezone window |
 | Burst protection | ≤ 2 posts / 15 min |
 
-### 11.2 Duplicate detection
+### 12.2 Duplicate detection
 
 - Exact tweet_id processed → skip  
 - Near-duplicate text vs last 30 days → block or rewrite  
 - Same `context_hash` + format within 7 days → block  
 
-### 11.3 Priority accounts
+### 12.3 Priority accounts
 
 Maintain allowlist tiers (e.g. major film reporters, cast/crew, reputable critics). Higher tier → higher EV weight + slightly lower delay floor.
 
-### 11.4 Kill switches
+### 12.4 Kill switches
 
 | Switch | Effect |
 | --- | --- |
@@ -828,18 +1061,18 @@ Maintain allowlist tiers (e.g. major film reporters, cast/crew, reputable critic
 | `SOCIAL_AI_REPLIES_ENABLED=false` | Pause replies |
 | Panic mute in admin | Cancel queued jobs |
 
-### 11.5 Link policy
+### 12.5 Link policy
 
 - Only `actorrating.com` (and approved short domains)  
 - UTM convention: `utm_source=x&utm_medium=social_ai&utm_campaign={format}`  
 
 ---
 
-## 12. Database schema
+## 13. Database schema
 
 **Status:** Planned · Prisma models to be added in a dedicated migration when v1 implementation starts.
 
-### 12.1 ER overview
+### 13.1 ER overview
 
 ```mermaid
 erDiagram
@@ -854,7 +1087,7 @@ erDiagram
   LEARNING_OBSERVATIONS ||--o{ LEARNING_SIGNALS : derived_from
 ```
 
-### 12.2 Tables (logical)
+### 13.2 Tables (logical)
 
 #### `processed_tweets`
 
@@ -961,7 +1194,7 @@ Optional: X trend snapshots we chose to track (careful with ToS / storage).
 | eligible_auto | boolean |
 | breakdown | jsonb |
 
-### 12.3 Indexing & retention (policy)
+### 13.3 Indexing & retention (policy)
 
 - Hot engagement data: 180 days full fidelity; rollups thereafter  
 - Drafts rejected: 60 days  
@@ -970,7 +1203,7 @@ Optional: X trend snapshots we chose to track (careful with ToS / storage).
 
 ---
 
-## 13. n8n workflow architecture
+## 14. n8n workflow architecture
 
 Prefer **independent, restartable workflows** over one mega-graph.
 
@@ -995,7 +1228,7 @@ Learning Engine (scheduled)
 Asset Generator (on demand from asset_request queue)
 ```
 
-### 13.1 Workflow catalog
+### 14.1 Workflow catalog
 
 | Workflow | Trigger | Idempotency key |
 | --- | --- | --- |
@@ -1012,46 +1245,81 @@ Asset Generator (on demand from asset_request queue)
 | `wf_learning` | cron daily | `date` |
 | `wf_assets` | asset_request queue | `params_hash` |
 
-### 13.2 Failure handling
+### 14.2 Failure handling
 
 - All HTTP steps: retry with backoff (max 3) on 429/5xx  
 - Poison messages → `status=failed` + alert; do not infinite loop  
 - Publisher must re-check kill switch + Confidence + daily caps immediately before post  
 
-### 13.3 Why not one workflow
+### 14.3 Why not one workflow
 
 Independent workflows scale, allow partial deploys (e.g. freeze Publisher while iterating generators), and match on-call mental models.
 
 ---
 
-## 14. Deployment roadmap
+## 15. Deployment roadmap
 
-| Phase | Name | Ships | Exit criteria |
+Foundation before autonomy. **Do not start with unsupervised public replies.**
+
+### 15.1 Sprint plan
+
+| Sprint | Name | Ships | Exit criteria |
 | --- | --- | --- | --- |
-| **v1** | Auto replies (assisted) | Watcher → context (manual/light) → reply drafts → human approve → publish | 50 approved replies, 0 brand incidents |
-| **v2** | Context Builder | Full Knowledge API context packages; claim↔fact enforcement | ≥90% drafts with factual_support ≥80 |
-| **v3** | Quote tweets | Quote writer + duplicate memory | Quotes live with threshold 88 |
-| **v4** | Original posts | Calendar + scheduler jitter | 5 originals/week sustainable quality |
-| **v5** | Dynamic radar / assets | Radar + comparison renders attached | ≥30% quotes with assets when eligible |
-| **v6** | Learning engine | Observations + admin accept loop | Active observations influencing ≥20% posts |
-| **v7** | Multi-platform | Abstractions for IG/LinkedIn/etc. | Platform interface + 1 second channel |
+| **1** | **Infrastructure** | X API integration; Groq integration; Knowledge API skeleton; social DB tables; event ingestion; structured logging | Events land in Postgres; kill switch works; no public posts required |
+| **2** | **Intelligence** | Content Opportunity Score; Knowledge Graph traversal; entity extraction; Context Builder; Confidence scoring | ≥80% of events ignored cheaply; Context Packages reproducible |
+| **3** | **Generation** | Reply / Quote / Original agents; Quality agent; all JSON outputs; prompt `v1.0` files | Drafts appear in review queue with Confidence breakdowns |
+| **4** | **Publishing** | Scheduler; jitter; rate limits; retry; analytics collection; soft auto-publish behind flags | Safe assisted publish; caps enforced; full funnel logged |
+| **5** | **Assets** | Radar charts; comparison cards; leaderboard / performance graphics | Assets attach when `asset_request` present |
+| **6** | **Learning** | Engagement analysis; observation engine; prompt recommendations (human-applied); admin performance dashboard | Observations accepted in admin; zero auto prompt writes |
 
-### 14.1 Implementation vertical slice (first engineering epic)
+### 15.2 After Sprint 6
 
-1. Schema migration for memory tables  
-2. `GET /social/resolve` + `GET /social/radar` + `GET /social/context` MVP  
-3. Reply draft generator + QA + Confidence persistence  
-4. Admin review queue (approve/reject)  
-5. Publisher with kill switch  
-6. Watcher for mention stream only  
+- Multi-platform adapters  
+- Thread agent at scale  
+- Tighter graph materialization if SQL CTEs hit limits  
 
-Do not start with fully autonomous public replies on day one.
+### 15.3 Pre-n8n checklist
+
+Do **not** build production n8n Publish nodes until Sprint 1 + Sprint 2 contracts exist in code (even if thin), and this RFC’s unattended gate (§1.4) is satisfied.
 
 ---
 
-## 15. Monitoring
+## 16. Monitoring
 
-### 15.1 Health dashboard (metrics)
+### 16.1 Social funnel (primary dashboard)
+
+Everything must be measurable. Target daily view (wire into existing **`/admin`** — new “Social AI” tab alongside ratings / waitlist / X traffic):
+
+```text
+Today's Opportunities     147
+         ↓
+Ignored                   118
+         ↓
+Generated                  29
+         ↓
+Published                  17
+         ↓
+Average Confidence       94.3
+         ↓
+CTR                       5.8%
+         ↓
+Waitlist (+ from social)    6
+         ↓
+New Ratings (+ attributed) 214
+```
+
+Additional cards:
+
+| Card | Source |
+| --- | --- |
+| Opportunity Score distribution | `processed_tweets` / opportunities |
+| Ignore reason breakdown | reason_codes |
+| Draft queue depth / age | `generated_posts` |
+| Prompt version mix | generation logs |
+| Cost (tokens / day) | LLM usage log |
+| Kill-switch state | config |
+
+### 16.2 Health dashboard (systems)
 
 | Area | Metrics |
 | --- | --- |
@@ -1060,9 +1328,18 @@ Do not start with fully autonomous public replies on day one.
 | Cost | LLM tokens $ / day; X API usage; render minutes |
 | Publish | Success/fail; delay vs target jitter; cap hits |
 | Engagement | CTR, replies, bookmarks by format |
-| Learning | Observations proposed vs accepted; stale observations |
+| Learning | Observations proposed vs accepted; stale observations; prompt recs pending |
 
-### 15.2 Alerts
+### 16.3 Admin integration plan
+
+| Step | Work |
+| --- | --- |
+| 1 | Add `Social` tab to admin shell (`AdminTabs`) |
+| 2 | API `GET /api/admin/social/funnel?range=1d\|7d\|30d` |
+| 3 | Reuse `StatCard` / chart patterns from existing admin |
+| 4 | Deep links: draft review queue, kill switches, prompt version pins |
+
+### 16.4 Alerts
 
 | Condition | Severity |
 | --- | --- |
@@ -1071,18 +1348,19 @@ Do not start with fully autonomous public replies on day one.
 | Knowledge API p95 &gt; 5s | P2 |
 | Daily spend &gt; budget | P2 |
 | Zero posts for 24h while enabled | P3 |
+| Ignore rate &lt; 50% for 6h (over-triggering) | P2 |
 
-### 15.3 Audit
+### 16.5 Audit
 
 Weekly human review sample: 20 auto posts + 20 drafts. Log labels into learning.
 
 ---
 
-## 16. Confidence Score
+## 17. Confidence Score
 
 Every generated candidate receives a **Confidence Score (0–100)** before it can auto-publish.
 
-### 16.1 Sub-scores
+### 17.1 Sub-scores
 
 | Signal | Weight (initial) | How measured |
 | --- | --- | --- |
@@ -1098,7 +1376,7 @@ total = round(100 * Σ weight_i * (sub_i / 100))
 
 Weights are config; changes require ADR.
 
-### 16.2 Eligibility
+### 17.2 Eligibility
 
 ```text
 IF total >= format_threshold
@@ -1111,42 +1389,47 @@ THEN eligible_auto = true
 ELSE draft (persist reason codes)
 ```
 
-### 16.3 Persistence
+### 17.3 Persistence
 
 Always store full breakdown on `confidence_scores` for learning and dispute analysis.
 
-### 16.4 Calibration
+### 17.4 Calibration
 
 Month 1: bias toward **false negatives** (too many drafts) over false positives (bad autos). Re-calibrate using audit labels.
 
 ---
 
-## 17. Operational guidelines
+## 18. Operational guidelines
 
 1. **Default to draft** when uncertain.  
-2. **One kill switch drill per quarter.**  
-3. **Prompt changes** go through `prompts/*@vN` + eval notes; never hot-edit only in n8n UI without committing versions.  
-4. **Incident:** disable publish → snapshot failing `generated_post_id`s → patch → staged re-enable.  
-5. **Cost control:** max tokens per agent; prefer smaller models for classifier/QA; larger for writers.  
-6. **Legal / ToS:** comply with X automation rules; no scrape-bypass; respect rate limits.  
-7. **Keep this RFC current** — stale architecture docs are worse than none.
+2. **RFC first** — update this document before new agents/endpoints/workflows.  
+3. **One kill switch drill per quarter.**  
+4. **Prompt changes** go through `prompts/<agent>/vX.Y.md` + eval notes; never hot-edit only in n8n UI without committing versions.  
+5. **Learning recommends; humans ship versions.**  
+6. **Incident:** disable publish → snapshot failing `generated_post_id`s → patch → staged re-enable.  
+7. **Cost control:** score events before generation; max tokens per agent; prefer smaller models for classifier/QA.  
+8. **Legal / ToS:** comply with X automation rules; no scrape-bypass; respect rate limits.  
+9. **Keep this RFC current** — stale architecture docs are worse than none.  
+10. **Six-month unattended test** — if you would not leave it running, it is not infrastructure yet.
 
 ---
 
-## 18. Open questions & decisions log
+## 19. Open questions & decisions log
 
-### 18.1 Open questions
+### 19.1 Open questions
 
 | ID | Question | Options | Needed by |
 | --- | --- | --- | --- |
-| Q1 | Human review UI: in `/admin` vs external | Admin panel / Notion / Linear | v1 |
-| Q2 | Embedding store for uniqueness | pgvector vs external | v2 |
-| Q3 | X access tier (API product) | Free/Basic/Pro | v1 |
-| Q4 | Official account handles + who holds keys | — | v1 |
-| Q5 | Languages beyond English | EN-only / EN+TR / … | v3 |
-| Q6 | Whether published Performance Editorial may be paraphrased into posts | yes/restricted | v2 |
+| Q1 | Human review UI: extend `/admin` Social tab vs separate | Admin panel (preferred) / external | Sprint 3 |
+| Q2 | Embedding store for uniqueness | pgvector vs external | Sprint 2–4 |
+| Q3 | X access tier (API product) | Free/Basic/Pro | Sprint 1 |
+| Q4 | Official account handles + who holds keys | — | Sprint 1 |
+| Q5 | Languages beyond English | EN-only / EN+TR / … | Sprint 4+ |
+| Q6 | Whether published Performance Editorial may be paraphrased into posts | yes/restricted | Sprint 3 |
+| Q7 | Graph storage: SQL CTE vs materialize edges table | SQL first / hybrid | Sprint 2 |
+| Q8 | Groq model IDs per agent tier | TBD | Sprint 1 |
 
-### 18.2 Decisions
+### 19.2 Decisions
 
 | Date | Decision | Rationale |
 | --- | --- | --- |
@@ -1154,22 +1437,32 @@ Month 1: bias toward **false negatives** (too many drafts) over false positives 
 | 2026-08-06 | Learning via observations, not auto prompt mutation | Controllability / safety |
 | 2026-08-06 | Confidence Score gate on all auto publishes | Quality &gt; quantity |
 | 2026-08-06 | n8n as independent workflows | Restartability |
+| 2026-08-07 | Elevate ActorRating data to Knowledge Graph Layer | Deterministic context, competitive moat |
+| 2026-08-07 | Content Opportunity Score before generation | Don’t waste effort on low-value events |
+| 2026-08-07 | All agent I/O is structured JSON | Deterministic workflows |
+| 2026-08-07 | Semver’d prompt files with rollback | Measurable voice changes |
+| 2026-08-07 | Foundation sprints before auto-replies | Infrastructure &gt; automation theater |
+| 2026-08-07 | Social funnel lives in existing admin dashboard | Optimize a system, not vibes |
+| 2026-08-07 | Learning writes recommendations only | Prevent engagement-tactic drift |
 
 ---
 
-## 19. Appendix
+## 20. Appendix
 
-### 19.1 Brand voice card (seed — expand in prompts/)
+### 20.1 Brand voice card (seed — expand in prompts/)
 
 - Craft-first, specific, adult, dry-warm — never snark-for-clout  
 - Prefer concrete dimension language over “amazing performance”  
 - Distinguish acting craft vs film quality  
 - Invite curiosity; do not dunk on actors as people  
 
-### 19.2 Claim → fact example
+### 20.2 Claim → fact example
 
 ```json
 {
+  "action": "reply",
+  "confidence": 91,
+  "prompt_version": "reply-writer@1.0",
   "text": "Bale’s Dark Knight run still spikes on Presence + Believability in our craft split.",
   "claims": [
     { "span": "Presence + Believability", "fact_id": "radar:dim:tt0468569:nm0000288:top2" }
@@ -1177,22 +1470,25 @@ Month 1: bias toward **false negatives** (too many drafts) over false positives 
 }
 ```
 
-### 19.3 Glossary
+### 20.3 Glossary
 
 | Term | Meaning |
 | --- | --- |
+| Knowledge Graph | Traversable Actor↔Movie↔Performance↔Radar relationships |
 | Context Package | Structured knowledge bundle for writers |
-| Opportunity | Decision to potentially create content from an event |
-| Observation | Human-approved learning unit injected into future context |
+| Opportunity Score | 0–100 gate on whether an event deserves generation |
 | Confidence | 0–100 publish eligibility score with breakdown |
+| Observation | Human-approved learning unit / recommendation |
+| Prompt version | Semver’d prompt file pinned in config |
 | Knowledge API | Trusted ActorRating read API for social |
 
-### 19.4 Document changelog
+### 20.4 Document changelog
 
 | Version | Date | Notes |
 | --- | --- | --- |
 | 1.0 | 2026-08-06 | Initial RFC — greenfield Social AI blueprint |
+| 1.1 | 2026-08-07 | Knowledge Graph; Opportunity Score; structured I/O; prompt semver; sprint roadmap; admin funnel; unattended gate; learning = recommendations only |
 
 ---
 
-*End of RFC. Update in-repo; do not fork into conflicting docs.*
+*End of RFC. Update in-repo; do not fork into conflicting docs. RFC first, then build.*

@@ -4,12 +4,12 @@ This folder is the **source of truth** for the Social AI / AI distribution engin
 
 | Doc | Role |
 | --- | --- |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical Architecture RFC v1.0 — read this first |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Technical Architecture RFC **v1.1** — read this first |
+
+**Discipline:** RFC first, then implement. Litmus test: can it run unattended for six months?
 
 Planned companions (create as implementation starts):
 
-- `prompts/` — versioned agent prompt contracts  
+- `prompts/<agent>/vX.Y.md` — versioned agent prompt contracts  
 - `runbooks/` — kill-switch, incidents, cost  
 - `adr/` — short architecture decision records  
-
-When you ship a Social AI component, update `ARCHITECTURE.md` in the same change set.
