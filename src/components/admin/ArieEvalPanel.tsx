@@ -247,6 +247,12 @@ export default function ArieEvalPanel() {
               {preview.confidence != null ? ` · confidence ${preview.confidence}` : ""}
             </p>
             <p className="mt-1 text-base leading-relaxed text-zinc-100">{preview.draftText}</p>
+            {preview.draftText === "[NO REPLY]" ? (
+              <p className="mt-2 text-xs text-amber-200/90">
+                System chose silence. Grade A/B if that was right; C/D if ActorRating should have had a
+                craft reply.
+              </p>
+            ) : null}
             <p className="mt-2 text-xs text-muted-foreground">
               {preview.promptVersion} · {preview.model}
               {preview.generationMs != null ? ` · ${preview.generationMs}ms` : ""}
