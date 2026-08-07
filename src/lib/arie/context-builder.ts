@@ -37,6 +37,17 @@ function siteOrigin(): string {
   )
 }
 
+/** True when the tweet likely refers to this title (avoids random filmography focus). */
+export function textMentionsTitle(text: string, title: string): boolean {
+  const needle = title.trim().toLowerCase()
+  if (needle.length < 4) return false
+  const hay = text.toLowerCase()
+  if (hay.includes(needle)) return true
+  // Allow matching without subtitle after colon
+  const head = needle.split(":")[0]?.trim() ?? ""
+  return head.length >= 6 && hay.includes(head)
+}
+
 function rateHref(movieSlug: string | null, actorSlug: string | null): string | null {
   if (!movieSlug || !actorSlug) return null
   return `${siteOrigin()}/rate/${movieSlug}/${actorSlug}`
@@ -129,20 +140,23 @@ export async function buildContextPackage(
   const primaryActor = entities.actors[0] ?? null
   const primaryMovie = entities.movies[0] ?? null
 
-  // Prefer a performance that connects primary actor to a graph movie / director neighborhood
+  // Focus must be tweet-aligned. Never fall back to a random filmography hit
+  // (Batch-1: Marsden → The Notebook on a Cyclops/Secret Wars rumor).
   let focus = graph.performances.find(
     (p) =>
-      primaryActor &&
-      p.actorId === primaryActor.id &&
-      (primaryMovie ? p.movieId === primaryMovie.id : true),
+      Boolean(primaryActor) &&
+      Boolean(primaryMovie) &&
+      p.actorId === primaryActor!.id &&
+      p.movieId === primaryMovie!.id,
   )
   if (!focus && primaryActor) {
-    focus = graph.performances.find((p) => p.actorId === primaryActor.id)
+    focus = graph.performances.find(
+      (p) => p.actorId === primaryActor.id && textMentionsTitle(input.text, p.movieTitle),
+    )
   }
   if (!focus && primaryMovie) {
     focus = graph.performances.find((p) => p.movieId === primaryMovie.id)
   }
-  if (!focus) focus = graph.performances[0]
 
   let movieCard: ContextPackage["movie"] = primaryMovie
     ? {
@@ -204,14 +218,18 @@ export async function buildContextPackage(
       select: { knownFor: true },
     })
     actorCard = { ...actorCard, knownFor: full?.knownFor ?? null }
-    facts.push(
-      fact({
-        fact_id: `actor:${actorCard.id}`,
-        type: "identity",
-        text: `${actorCard.name} is in the ActorRating catalog.`,
-        entity_refs: [`actor:${actorCard.id}`],
-      }),
-    )
+    // Do not emit "in the ActorRating catalog" — models copy it as empty promo replies.
+    if (actorCard.knownFor?.trim()) {
+      facts.push(
+        fact({
+          fact_id: `actor:${actorCard.id}:known_for`,
+          type: "identity",
+          text: `${actorCard.name} is often associated with ${actorCard.knownFor.trim()}.`,
+          value: actorCard.knownFor.trim(),
+          entity_refs: [`actor:${actorCard.id}`],
+        }),
+      )
+    }
     if (actorCard.slug) {
       links.push({
         rel: "actor",
@@ -266,15 +284,20 @@ export async function buildContextPackage(
       filmCount: films.length,
       notableFilms: films.map((f) => `${f.title} (${f.year})`),
     }
-    facts.push(
-      fact({
-        fact_id: `director:${directorName}`,
-        type: "director",
-        text: `${directorName} has ${films.length}+ films in ActorRating (sample).`,
-        value: directorName,
-        entity_refs: [`director:${directorName}`],
-      }),
-    )
+    if (films.length) {
+      facts.push(
+        fact({
+          fact_id: `director:${directorName}`,
+          type: "director",
+          text: `${directorName} directed ${films
+            .slice(0, 3)
+            .map((f) => `${f.title} (${f.year})`)
+            .join(", ")}.`,
+          value: directorName,
+          entity_refs: [`director:${directorName}`],
+        }),
+      )
+    }
   }
 
   let radar: ContextPackage["radar"] = null
@@ -369,6 +392,24 @@ export async function buildContextPackage(
       href: rateHref(p.movieSlug, p.actorSlug),
       note: p.director ? `Dir. ${p.director}` : p.tier,
     }))
+
+  // Only expose aggregates the tweet can use — never a silent filmography dump.
+  for (const p of topPerformances) {
+    const aligned =
+      (focus && p.actorId === focus.actorId && p.movieId === focus.movieId) ||
+      textMentionsTitle(input.text, p.movieTitle)
+    if (!aligned) continue
+    if (typeof p.seededAggregate !== "number") continue
+    facts.push(
+      fact({
+        fact_id: `perf:agg:${p.movieId}:${p.actorId}`,
+        type: "aggregate_score",
+        text: `${p.actorName} in ${p.movieTitle} (${p.movieYear}): aggregate ${p.seededAggregate}/10 on ActorRating`,
+        value: p.seededAggregate,
+        entity_refs: [`actor:${p.actorId}`, `movie:${p.movieId}`],
+      }),
+    )
+  }
 
   // Similar actors: co-stars on shared director/movies (lightweight)
   const similarActors: ContextPackage["similarActors"] = []
