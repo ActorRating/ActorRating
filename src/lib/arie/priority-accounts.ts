@@ -12,6 +12,7 @@ export const ARIE_PRIORITY_HANDLES = new Set([
   // ⭐⭐⭐⭐⭐ reply distribution
   "boinkbuzz",
   "chaoscrave",
+  "chaoscrave_",
   // ⭐⭐⭐⭐
   "filmupdates",
   "deadline",
@@ -40,6 +41,7 @@ export const ARIE_PRIORITY_HANDLES = new Set([
 export const ARIE_DISTRIBUTION_RANK: Record<string, number> = {
   boinkbuzz: 5,
   chaoscrave: 5,
+  chaoscrave_: 5,
   filmupdates: 4,
   deadline: 4,
   discussingfilm: 3,
