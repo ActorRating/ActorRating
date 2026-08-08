@@ -4,7 +4,7 @@ import { isPriorityAuthor } from "@/lib/arie/priority-accounts"
 
 /** Casting / role attachment — keep tight; bare "stars" alone is too noisy. */
 const CASTING_RE =
-  /\b(joins?|cast|casting|boards?|in talks|signs? on|tapped|reunite[sd]?|reuniting|set to (?:star|appear|return)|will (?:star|appear|return|play)|plays? (?:the )?role|reprises?|officially cast|final (?:appearance|movie|film|time)|last dance|\d+-year run)\b/i
+  /\b(joins?|cast|casting|boards?|in talks|signs? on|tapped|reunite[sd]?|reuniting|set to (?:star|appear|return)|will (?:star|appear|return|play)|(?:being )?considered to (?:play|star|join|portray)|to play|auditioned for|rumou?red (?:to (?:play|join|star)|for)|plays? (?:the )?role|reprises?|officially cast|final (?:appearance|movie|film|time)|last dance|\d+-year run)\b/i
 const CRAFT_RE =
   /\b(performance|acting|actor|actress|oscar|emmy|craft|role|character|scene[- ]stealing)\b/i
 

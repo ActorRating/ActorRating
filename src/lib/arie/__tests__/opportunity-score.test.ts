@@ -112,7 +112,7 @@ describe("arie opportunity score", () => {
 
     const farewell = scoreOpportunity({
       text: "Elizabeth Olsen officially confirms Avengers: Secret Wars will be her final movie as the Scarlet Witch, bringing her iconic 13-year run to an end.",
-      authorHandle: "chaoscrave",
+      authorHandle: "chaoscrave_",
       entities: {
         actors: [{ id: "a1", name: "Elizabeth Olsen", slug: "elizabeth-olsen", confidence: 90 }],
         movies: [],
@@ -121,6 +121,32 @@ describe("arie opportunity score", () => {
       },
     })
     expect(farewell.decision).toBe("process")
+  })
+
+  it("processes 'considered to play' casting rumors on priority accounts", () => {
+    const r = scoreOpportunity({
+      text: "Matt Wood is being considered to play Wolverine in the new ‘X-MEN’ film. (via: @Forbes)",
+      authorHandle: "boinkbuzz",
+      entities: {
+        actors: [],
+        movies: [
+          {
+            id: "m1",
+            title: "X-Men",
+            year: 2000,
+            slug: "x-men",
+            director: null,
+            genre: null,
+            indexingCohort: 0,
+            confidence: 80,
+          },
+        ],
+        directors: [],
+        unresolved: [],
+      },
+    })
+    expect(r.decision).toBe("process")
+    expect(r.reasonCodes).toEqual(expect.arrayContaining(["process_candidate"]))
   })
 
   it("penalizes classic gossip / politics relevance", () => {
