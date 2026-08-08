@@ -6,6 +6,11 @@ import { extractEntitiesFromText, type ExtractedEntities } from "@/lib/arie/enti
 import { traverseNeighborhood } from "@/lib/arie/graph"
 import { scoreOpportunity } from "@/lib/arie/opportunity-score"
 import {
+  asScoreNumber,
+  castingFocusActors,
+  priorRelevanceScore,
+} from "@/lib/arie/prior-work"
+import {
   CONTEXT_BUILDER_VERSION,
   type ArieFact,
   type ContextPackage,
@@ -423,11 +428,11 @@ export async function buildContextPackage(
 
   const castingNews = isCastingNewsText(input.text)
 
-  // Batch-3b: query each named actor's priors directly.
-  // Graph topPerformances can be dominated by co-cast on a shared movie title,
-  // leaving primary-actor priors empty → forced [NO REPLY].
+  // Batch-3c: focus actors in the tweet head (ignore “interested in X” tags)
+  // and prefer franchise-relevant priors over pure top aggregate.
   if (castingNews) {
-    for (const actor of entities.actors.slice(0, 3)) {
+    const focusActors = castingFocusActors(input.text, entities.actors)
+    for (const actor of focusActors) {
       const priors = await prisma.performance.findMany({
         where: {
           userId: SYSTEM_USER_ID,
@@ -438,27 +443,43 @@ export async function buildContextPackage(
         select: {
           actorId: true,
           movieId: true,
+          character: true,
           seededAggregateScore: true,
           actor: { select: { name: true } },
           movie: { select: { title: true, year: true } },
         },
         orderBy: [{ seededAggregateScore: "desc" }, { order: "asc" }],
-        take: 3,
+        take: 12,
       })
+
+      const ranked = priors
+        .map((p) => {
+          const score = asScoreNumber(p.seededAggregateScore)
+          if (score == null) return null
+          if (focus && p.actorId === focus.actorId && p.movieId === focus.movieId) return null
+          return {
+            p,
+            score,
+            rel: priorRelevanceScore(input.text, p.movie.title, p.character),
+          }
+        })
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        .sort((a, b) => b.rel - a.rel || b.score - a.score)
+
       let added = 0
-      for (const p of priors) {
-        if (typeof p.seededAggregateScore !== "number") continue
-        if (focus && p.actorId === focus.actorId && p.movieId === focus.movieId) continue
-        const factId = `perf:prior:${p.movieId}:${p.actorId}`
-        if (factIds.has(`perf:agg:${p.movieId}:${p.actorId}`) || factIds.has(factId)) continue
+      for (const row of ranked) {
+        const factId = `perf:prior:${row.p.movieId}:${row.p.actorId}`
+        if (factIds.has(`perf:agg:${row.p.movieId}:${row.p.actorId}`) || factIds.has(factId)) {
+          continue
+        }
         factIds.add(factId)
         facts.push(
           fact({
             fact_id: factId,
             type: "aggregate_score",
-            text: `Prior work — ${p.actor.name} in ${p.movie.title} (${p.movie.year}): aggregate ${p.seededAggregateScore}/10 on ActorRating (not a score for the newly announced role)`,
-            value: p.seededAggregateScore,
-            entity_refs: [`actor:${p.actorId}`, `movie:${p.movieId}`],
+            text: `Prior work — ${row.p.actor.name} in ${row.p.movie.title} (${row.p.movie.year}): aggregate ${row.score}/10 on ActorRating (not a score for the newly announced role)`,
+            value: row.score,
+            entity_refs: [`actor:${row.p.actorId}`, `movie:${row.p.movieId}`],
           }),
         )
         added += 1

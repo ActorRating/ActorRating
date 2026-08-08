@@ -3,9 +3,14 @@ import { prisma } from "@/lib/prisma"
 import { loadBrandConstitution } from "@/lib/arie/constitution"
 import { groqJsonCompletion } from "@/lib/arie/groq"
 import { arieLog } from "@/lib/arie/log"
+import {
+  asScoreNumber,
+  formatPriorWorkReply,
+  pickPriorWorkFact,
+} from "@/lib/arie/prior-work"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.4"
+const PROMPT_VERSION = "reply-writer@preview-0.5"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -80,21 +85,29 @@ export function resolveDraftAction(input: {
 /**
  * Deterministic casting reply from a Prior work fact when the LLM refuses or fails grounding.
  */
-export function buildPriorWorkFallback(facts: ArieFact[]): {
+export function buildPriorWorkFallback(
+  facts: ArieFact[],
+  sourceText = "",
+): {
   reply: string
   claims: Array<{ span: string; fact_id: string }>
   reason: string
 } | null {
-  const prior = facts.find(
-    (f) => f.type === "aggregate_score" && f.fact_id.startsWith("perf:prior:") && typeof f.value === "number",
-  )
-  if (!prior || typeof prior.value !== "number") return null
+  const prior = pickPriorWorkFact(facts, sourceText)
+  if (!prior) return null
+  const score = asScoreNumber(prior.value)
+  if (score == null) return null
 
   const m = prior.text.match(/^Prior work — (.+?) in (.+?) \((\d+)\): aggregate/i)
   if (!m) return null
   const [, name, movie, year] = m
-  const score = prior.value
-  const reply = `${name}'s prior work in ${movie} (${year}) sits at ${score}/10 on ActorRating — curious how that craft translates here.`
+  const reply = formatPriorWorkReply({
+    name,
+    movie,
+    year,
+    score,
+    seed: `${sourceText}|${prior.fact_id}`,
+  })
   return {
     reply,
     claims: [{ span: `${score}/10`, fact_id: prior.fact_id }],
@@ -148,6 +161,8 @@ export async function previewReplyDraft(
     "Return STRICT JSON with keys: action, confidence (0-100), reason, reply, claims.",
     'action must be \"reply\" or \"no_reply\".',
     "If context.facts includes Prior work aggregates on casting_news, you SHOULD reply using one — do not choose no_reply just because the new film lacks a score.",
+    "Write a DISTINCT craft-first sentence each time. Forbidden stock endings: \"curious how that craft translates here\", \"curious how that translates\".",
+    "Vary structure — do not always open with \"prior work in\". Prefer specific film + score + casting context.",
     "If you truly have zero usable facts, use action=no_reply and reply=\"\".",
     "NEVER paraphrase the tweet as the whole reply.",
     "NEVER say anyone is \"in the ActorRating catalog\".",
@@ -198,7 +213,7 @@ export async function previewReplyDraft(
 
   if (!result.ok) {
     await arieLog("warn", "preview", "draft_failed", { reason: result.reason })
-    const fallback = buildPriorWorkFallback(pkg.facts)
+    const fallback = buildPriorWorkFallback(pkg.facts, pkg.event.text)
     if (!fallback) return { ok: false, reason: result.reason }
     resolved = { action: "reply", reply: fallback.reply, reason: `${fallback.reason}_after_${result.reason}` }
     claims = fallback.claims
@@ -228,7 +243,7 @@ export async function previewReplyDraft(
     })
 
     if (resolved.action === "no_reply") {
-      const fallback = buildPriorWorkFallback(pkg.facts)
+      const fallback = buildPriorWorkFallback(pkg.facts, pkg.event.text)
       if (fallback) {
         resolved = { action: "reply", reply: fallback.reply, reason: fallback.reason }
         claims = fallback.claims
