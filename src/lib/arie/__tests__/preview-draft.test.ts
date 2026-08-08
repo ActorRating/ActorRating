@@ -1,6 +1,6 @@
 import { NO_REPLY_TEXT, resolveDraftAction } from "@/lib/arie/preview-draft"
 import type { ArieFact } from "@/lib/arie/types"
-import { textMentionsTitle } from "@/lib/arie/context-builder"
+import { isCastingNewsText, textMentionsTitle } from "@/lib/arie/context-builder"
 
 const fact = (partial: Pick<ArieFact, "fact_id" | "type" | "text">): ArieFact => ({
   ...partial,
@@ -80,5 +80,28 @@ describe("textMentionsTitle", () => {
     expect(
       textMentionsTitle("James Marsden final Cyclops in Secret Wars", "The Notebook"),
     ).toBe(false)
+  })
+})
+
+describe("isCastingNewsText", () => {
+  it("detects casting and farewell phrases", () => {
+    expect(
+      isCastingNewsText(
+        "Saoirse Ronan has begun filming — she will play Linda McCartney opposite Paul Mescal",
+      ),
+    ).toBe(true)
+    expect(
+      isCastingNewsText(
+        "Sadie Sink’s MCU character has now been revealed. She is in fact Jean Grey.",
+      ),
+    ).toBe(true)
+    expect(
+      isCastingNewsText("Jason Clarke Joins Action-Thriller Supermax From Amazon MGM"),
+    ).toBe(true)
+    expect(
+      isCastingNewsText(
+        "Chris Evans officially confirms Avengers: Secret Wars will be his final time wearing the suit",
+      ),
+    ).toBe(true)
   })
 })

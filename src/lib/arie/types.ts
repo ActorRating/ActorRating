@@ -1,6 +1,6 @@
 /** ARIE Sprint 2 — shared types for Context Packages & Opportunity Score. */
 
-export const CONTEXT_BUILDER_VERSION = "context-builder@2.1"
+export const CONTEXT_BUILDER_VERSION = "context-builder@2.2"
 
 export type ArieFact = {
   fact_id: string

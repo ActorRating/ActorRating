@@ -48,6 +48,13 @@ export function textMentionsTitle(text: string, title: string): boolean {
   return head.length >= 6 && hay.includes(head)
 }
 
+/** Casting / farewell / audition signal — keep in sync with Opportunity CASTING_RE intent. */
+export function isCastingNewsText(text: string): boolean {
+  return /\b(joins?|cast|casting|boards?|in talks|signs? on|tapped|reunite[sd]?|reuniting|set to (?:star|appear|return)|setting .{3,60} to star|will (?:star|appear|return|play)|(?:being )?considered to (?:play|star|join|portray)|to play|to star|auditioned for|rumou?red (?:to (?:play|join|star)|for)|plays? (?:the )?role|reprises?|officially cast|final (?:appearance|movie|film|time)|last dance|\d+-year run|multi-film deal|character (?:has )?(?:now )?been revealed|revealed as|is in fact)\b/i.test(
+    text,
+  )
+}
+
 function rateHref(movieSlug: string | null, actorSlug: string | null): string | null {
   if (!movieSlug || !actorSlug) return null
   return `${siteOrigin()}/rate/${movieSlug}/${actorSlug}`
@@ -394,21 +401,53 @@ export async function buildContextPackage(
     }))
 
   // Only expose aggregates the tweet can use — never a silent filmography dump.
+  const factIds = new Set<string>()
   for (const p of topPerformances) {
     const aligned =
       (focus && p.actorId === focus.actorId && p.movieId === focus.movieId) ||
       textMentionsTitle(input.text, p.movieTitle)
     if (!aligned) continue
     if (typeof p.seededAggregate !== "number") continue
+    const factId = `perf:agg:${p.movieId}:${p.actorId}`
+    factIds.add(factId)
     facts.push(
       fact({
-        fact_id: `perf:agg:${p.movieId}:${p.actorId}`,
+        fact_id: factId,
         type: "aggregate_score",
         text: `${p.actorName} in ${p.movieTitle} (${p.movieYear}): aggregate ${p.seededAggregate}/10 on ActorRating`,
         value: p.seededAggregate,
         entity_refs: [`actor:${p.actorId}`, `movie:${p.movieId}`],
       }),
     )
+  }
+
+  const castingNews = isCastingNewsText(input.text)
+
+  // Batch-3: casting / farewell news often names a film not in AR yet.
+  // Emit strongest prior-work aggregates so the writer can craft a grounded reply
+  // instead of forced [NO REPLY].
+  if (castingNews) {
+    const actorIds = entities.actors.slice(0, 3).map((a) => a.id)
+    for (const actorId of actorIds) {
+      const priors = topPerformances
+        .filter((p) => p.actorId === actorId && typeof p.seededAggregate === "number")
+        .sort((a, b) => (b.seededAggregate ?? 0) - (a.seededAggregate ?? 0))
+        .slice(0, 2)
+      for (const p of priors) {
+        const factId = `perf:prior:${p.movieId}:${p.actorId}`
+        if (factIds.has(`perf:agg:${p.movieId}:${p.actorId}`) || factIds.has(factId)) continue
+        factIds.add(factId)
+        facts.push(
+          fact({
+            fact_id: factId,
+            type: "aggregate_score",
+            text: `Prior work — ${p.actorName} in ${p.movieTitle} (${p.movieYear}): aggregate ${p.seededAggregate}/10 on ActorRating (not a score for the newly announced role)`,
+            value: p.seededAggregate,
+            entity_refs: [`actor:${p.actorId}`, `movie:${p.movieId}`],
+          }),
+        )
+      }
+    }
   }
 
   // Similar actors: co-stars on shared director/movies (lightweight)
@@ -442,11 +481,10 @@ export async function buildContextPackage(
     }
   }
 
-  const castingNews = /\b(joins?|cast|casting|boards?|in talks)\b/i.test(input.text)
   const currentTrend = castingNews
     ? {
         label: "casting_news",
-        note: "Event looks like casting / attachment news — prefer craft comps over gossip.",
+        note: "Casting / role news — use prior-work aggregates for craft comps; never invent a score for the unreleased role.",
       }
     : entities.actors.length
       ? {

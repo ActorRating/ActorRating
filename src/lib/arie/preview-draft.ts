@@ -5,7 +5,7 @@ import { groqJsonCompletion } from "@/lib/arie/groq"
 import { arieLog } from "@/lib/arie/log"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.2"
+const PROMPT_VERSION = "reply-writer@preview-0.3"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -128,6 +128,7 @@ export async function previewReplyDraft(
     "NEVER invent film titles, casts, scores, or quotes.",
     "You may ONLY assert numeric or structured facts that appear in context.facts (cite fact_id in claims).",
     "Prefer radar / aggregate_score / collaboration facts tied to titles mentioned in the tweet.",
+    "On casting_news: if the announced film has no AR score, cite a Prior work aggregate for the actor and frame it as prior craft — never as a score for the new unreleased role.",
     "Tone: craft-first, curious, never promotional CTAs.",
     "Prefer under 240 characters when possible; max 280.",
     "",
