@@ -5,7 +5,7 @@ import { groqJsonCompletion } from "@/lib/arie/groq"
 import { arieLog } from "@/lib/arie/log"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.3"
+const PROMPT_VERSION = "reply-writer@preview-0.4"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -77,6 +77,31 @@ export function resolveDraftAction(input: {
   return { action: "reply", reply, reason: "grounded" }
 }
 
+/**
+ * Deterministic casting reply from a Prior work fact when the LLM refuses or fails grounding.
+ */
+export function buildPriorWorkFallback(facts: ArieFact[]): {
+  reply: string
+  claims: Array<{ span: string; fact_id: string }>
+  reason: string
+} | null {
+  const prior = facts.find(
+    (f) => f.type === "aggregate_score" && f.fact_id.startsWith("perf:prior:") && typeof f.value === "number",
+  )
+  if (!prior || typeof prior.value !== "number") return null
+
+  const m = prior.text.match(/^Prior work — (.+?) in (.+?) \((\d+)\): aggregate/i)
+  if (!m) return null
+  const [, name, movie, year] = m
+  const score = prior.value
+  const reply = `${name}'s prior work in ${movie} (${year}) sits at ${score}/10 on ActorRating — curious how that craft translates here.`
+  return {
+    reply,
+    claims: [{ span: `${score}/10`, fact_id: prior.fact_id }],
+    reason: "prior_work_fallback",
+  }
+}
+
 function isNearParaphrase(source: string, reply: string): boolean {
   const srcTokens = tokenize(source)
   const repTokens = tokenize(reply)
@@ -122,13 +147,13 @@ export async function previewReplyDraft(
     "You MUST obey the Brand Constitution below.",
     "Return STRICT JSON with keys: action, confidence (0-100), reason, reply, claims.",
     'action must be \"reply\" or \"no_reply\".',
-    "If you cannot add ONE grounded ActorRating insight the parent tweet does not already say, use action=no_reply and reply=\"\".",
+    "If context.facts includes Prior work aggregates on casting_news, you SHOULD reply using one — do not choose no_reply just because the new film lacks a score.",
+    "If you truly have zero usable facts, use action=no_reply and reply=\"\".",
     "NEVER paraphrase the tweet as the whole reply.",
     "NEVER say anyone is \"in the ActorRating catalog\".",
     "NEVER invent film titles, casts, scores, or quotes.",
     "You may ONLY assert numeric or structured facts that appear in context.facts (cite fact_id in claims).",
-    "Prefer radar / aggregate_score / collaboration facts tied to titles mentioned in the tweet.",
-    "On casting_news: if the announced film has no AR score, cite a Prior work aggregate for the actor and frame it as prior craft — never as a score for the new unreleased role.",
+    "On casting_news: cite a Prior work aggregate and frame it as prior craft — never as a score for the new unreleased role.",
     "Tone: craft-first, curious, never promotional CTAs.",
     "Prefer under 240 characters when possible; max 280.",
     "",
@@ -162,42 +187,78 @@ export async function previewReplyDraft(
     user: `Context package (authoritative):\n${user}`,
   })
 
+  let model = "none"
+  let generationMs = 0
+  let promptTokens = 0
+  let completionTokens = 0
+  let resolved: { action: "reply" | "no_reply"; reply: string; reason: string }
+  let claims: Array<{ span: string; fact_id: string }> = []
+  let confidence = 0
+  let draftReason = ""
+
   if (!result.ok) {
     await arieLog("warn", "preview", "draft_failed", { reason: result.reason })
-    return { ok: false, reason: result.reason }
+    const fallback = buildPriorWorkFallback(pkg.facts)
+    if (!fallback) return { ok: false, reason: result.reason }
+    resolved = { action: "reply", reply: fallback.reply, reason: `${fallback.reason}_after_${result.reason}` }
+    claims = fallback.claims
+    confidence = 55
+    draftReason = resolved.reason
+    model = "fallback/prior-work"
+  } else {
+    model = `groq/${result.model}`
+    generationMs = result.generationMs
+    promptTokens = result.usage.promptTokens
+    completionTokens = result.usage.completionTokens
+
+    const raw = result.json as Record<string, unknown>
+    const modelReply = typeof raw.reply === "string" ? raw.reply.trim() : ""
+    claims = Array.isArray(raw.claims)
+      ? (raw.claims as Array<{ span?: string; fact_id?: string }>)
+          .filter((c) => c && typeof c.fact_id === "string")
+          .map((c) => ({ span: String(c.span ?? ""), fact_id: String(c.fact_id) }))
+      : []
+
+    resolved = resolveDraftAction({
+      modelAction: typeof raw.action === "string" ? raw.action : "reply",
+      reply: modelReply,
+      claims,
+      facts: pkg.facts,
+      sourceText: pkg.event.text,
+    })
+
+    if (resolved.action === "no_reply") {
+      const fallback = buildPriorWorkFallback(pkg.facts)
+      if (fallback) {
+        resolved = { action: "reply", reply: fallback.reply, reason: fallback.reason }
+        claims = fallback.claims
+        confidence = 60
+        draftReason = fallback.reason
+      }
+    }
+
+    if (resolved.action === "reply" && !draftReason) {
+      const modelConfidence =
+        typeof raw.confidence === "number" && Number.isFinite(raw.confidence)
+          ? Math.max(0, Math.min(100, Math.round(raw.confidence)))
+          : 0
+      confidence = modelConfidence
+      draftReason = typeof raw.reason === "string" ? raw.reason : resolved.reason
+    } else if (resolved.action === "no_reply") {
+      confidence = Math.min(
+        typeof raw.confidence === "number" && Number.isFinite(raw.confidence)
+          ? Math.round(raw.confidence)
+          : 0,
+        40,
+      )
+      draftReason = `${typeof raw.reason === "string" ? raw.reason : ""} [${resolved.reason}]`.trim()
+    }
   }
-
-  const raw = result.json as Record<string, unknown>
-  const modelReply = typeof raw.reply === "string" ? raw.reply.trim() : ""
-  const claims = Array.isArray(raw.claims)
-    ? (raw.claims as Array<{ span?: string; fact_id?: string }>)
-        .filter((c) => c && typeof c.fact_id === "string")
-        .map((c) => ({ span: String(c.span ?? ""), fact_id: String(c.fact_id) }))
-    : []
-
-  const resolved = resolveDraftAction({
-    modelAction: typeof raw.action === "string" ? raw.action : "reply",
-    reply: modelReply,
-    claims,
-    facts: pkg.facts,
-    sourceText: pkg.event.text,
-  })
-
-  const modelConfidence =
-    typeof raw.confidence === "number" && Number.isFinite(raw.confidence)
-      ? Math.max(0, Math.min(100, Math.round(raw.confidence)))
-      : 0
-  const confidence = resolved.action === "no_reply" ? Math.min(modelConfidence, 40) : modelConfidence
 
   const draft = {
     action: resolved.action,
     confidence,
-    reason:
-      resolved.action === "no_reply"
-        ? `${typeof raw.reason === "string" ? raw.reason : ""} [${resolved.reason}]`.trim()
-        : typeof raw.reason === "string"
-          ? raw.reason
-          : "",
+    reason: draftReason,
     reply: resolved.reply,
     claims: resolved.action === "reply" ? claims : [],
     prompt_version: PROMPT_VERSION,
@@ -216,10 +277,10 @@ export async function previewReplyDraft(
       draftJson: draft as unknown as Prisma.InputJsonValue,
       confidence,
       promptVersion: PROMPT_VERSION,
-      model: `groq/${result.model}`,
-      generationMs: result.generationMs,
-      promptTokens: result.usage.promptTokens,
-      completionTokens: result.usage.completionTokens,
+      model,
+      generationMs,
+      promptTokens,
+      completionTokens,
     },
   })
 
@@ -240,9 +301,9 @@ export async function previewReplyDraft(
     coveragePercent: pkg.coverage.percent,
     coverage: pkg.coverage,
     contextPackageId: pkg.package_id,
-    model: `groq/${result.model}`,
-    generationMs: result.generationMs,
-    promptTokens: result.usage.promptTokens,
-    completionTokens: result.usage.completionTokens,
+    model,
+    generationMs,
+    promptTokens,
+    completionTokens,
   }
 }

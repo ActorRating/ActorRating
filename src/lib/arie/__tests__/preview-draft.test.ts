@@ -1,9 +1,12 @@
-import { NO_REPLY_TEXT, resolveDraftAction } from "@/lib/arie/preview-draft"
+import { buildPriorWorkFallback, NO_REPLY_TEXT, resolveDraftAction } from "@/lib/arie/preview-draft"
 import type { ArieFact } from "@/lib/arie/types"
 import { isCastingNewsText, textMentionsTitle } from "@/lib/arie/context-builder"
 
-const fact = (partial: Pick<ArieFact, "fact_id" | "type" | "text">): ArieFact => ({
+const fact = (
+  partial: Pick<ArieFact, "fact_id" | "type" | "text"> & { value?: number | string | null },
+): ArieFact => ({
   ...partial,
+  value: partial.value,
   entity_refs: [],
   source: "actorrating_db",
   as_of: new Date().toISOString(),
@@ -15,6 +18,7 @@ describe("resolveDraftAction", () => {
       fact_id: "perf:agg:1:1",
       type: "aggregate_score",
       text: "Actor in Film: aggregate 8.2/10 on ActorRating",
+      value: 8.2,
     }),
   ]
 
@@ -66,6 +70,23 @@ describe("resolveDraftAction", () => {
     })
     expect(r.action).toBe("reply")
     expect(r.reason).toBe("grounded")
+  })
+})
+
+describe("buildPriorWorkFallback", () => {
+  it("builds a prior-work fallback draft", () => {
+    const fallback = buildPriorWorkFallback([
+      fact({
+        fact_id: "perf:prior:m1:a1",
+        type: "aggregate_score",
+        text: "Prior work — Chris Evans in Knives Out (2019): aggregate 8.1/10 on ActorRating (not a score for the newly announced role)",
+        value: 8.1,
+      }),
+    ])
+    expect(fallback?.reason).toBe("prior_work_fallback")
+    expect(fallback?.reply).toContain("Knives Out")
+    expect(fallback?.reply).toContain("8.1/10")
+    expect(fallback?.claims[0]?.fact_id).toBe("perf:prior:m1:a1")
   })
 })
 

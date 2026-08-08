@@ -423,17 +423,32 @@ export async function buildContextPackage(
 
   const castingNews = isCastingNewsText(input.text)
 
-  // Batch-3: casting / farewell news often names a film not in AR yet.
-  // Emit strongest prior-work aggregates so the writer can craft a grounded reply
-  // instead of forced [NO REPLY].
+  // Batch-3b: query each named actor's priors directly.
+  // Graph topPerformances can be dominated by co-cast on a shared movie title,
+  // leaving primary-actor priors empty → forced [NO REPLY].
   if (castingNews) {
-    const actorIds = entities.actors.slice(0, 3).map((a) => a.id)
-    for (const actorId of actorIds) {
-      const priors = topPerformances
-        .filter((p) => p.actorId === actorId && typeof p.seededAggregate === "number")
-        .sort((a, b) => (b.seededAggregate ?? 0) - (a.seededAggregate ?? 0))
-        .slice(0, 2)
+    for (const actor of entities.actors.slice(0, 3)) {
+      const priors = await prisma.performance.findMany({
+        where: {
+          userId: SYSTEM_USER_ID,
+          actorId: actor.id,
+          tier: { in: ["LEAD", "SUPPORTING"] },
+          movie: { isFeaturette: false },
+        },
+        select: {
+          actorId: true,
+          movieId: true,
+          seededAggregateScore: true,
+          actor: { select: { name: true } },
+          movie: { select: { title: true, year: true } },
+        },
+        orderBy: [{ seededAggregateScore: "desc" }, { order: "asc" }],
+        take: 3,
+      })
+      let added = 0
       for (const p of priors) {
+        if (typeof p.seededAggregateScore !== "number") continue
+        if (focus && p.actorId === focus.actorId && p.movieId === focus.movieId) continue
         const factId = `perf:prior:${p.movieId}:${p.actorId}`
         if (factIds.has(`perf:agg:${p.movieId}:${p.actorId}`) || factIds.has(factId)) continue
         factIds.add(factId)
@@ -441,11 +456,13 @@ export async function buildContextPackage(
           fact({
             fact_id: factId,
             type: "aggregate_score",
-            text: `Prior work — ${p.actorName} in ${p.movieTitle} (${p.movieYear}): aggregate ${p.seededAggregate}/10 on ActorRating (not a score for the newly announced role)`,
-            value: p.seededAggregate,
+            text: `Prior work — ${p.actor.name} in ${p.movie.title} (${p.movie.year}): aggregate ${p.seededAggregateScore}/10 on ActorRating (not a score for the newly announced role)`,
+            value: p.seededAggregateScore,
             entity_refs: [`actor:${p.actorId}`, `movie:${p.movieId}`],
           }),
         )
+        added += 1
+        if (added >= 2) break
       }
     }
   }
