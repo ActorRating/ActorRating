@@ -148,7 +148,7 @@ function tokenize(s: string): string[] {
  */
 export async function previewReplyDraft(
   pkg: ContextPackage,
-  opts: { inboundEventId?: string | null } = {},
+  opts: { inboundEventId?: string | null; inReplyToTweetId?: string | null } = {},
 ): Promise<PreviewDraftResult> {
   if (pkg.opportunity.decision === "ignore") {
     return { ok: false, reason: "opportunity_ignored" }
@@ -299,6 +299,7 @@ export async function previewReplyDraft(
       inboundEventId: opts.inboundEventId ?? null,
       sourceText: pkg.event.text,
       authorHandle: pkg.event.author_handle ?? null,
+      inReplyToTweetId: opts.inReplyToTweetId?.trim() || null,
       opportunityScore: pkg.opportunity.score,
       coveragePercent: pkg.coverage.percent,
       coverage: pkg.coverage as unknown as Prisma.InputJsonValue,

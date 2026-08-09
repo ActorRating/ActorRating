@@ -16,6 +16,7 @@ type Preview = {
   id: string
   sourceText: string
   authorHandle: string | null
+  inReplyToTweetId?: string | null
   opportunityScore: number
   coveragePercent: number
   coverage: { slots: CoverageSlots; present: number; total: number; percent: number }
@@ -30,6 +31,11 @@ type Preview = {
   scoreAccuracy: number | null
   scoreBrandVoice: number | null
   notes: string | null
+  publishStatus?: string | null
+  publishMode?: string | null
+  publishedTweetId?: string | null
+  publishedAt?: string | null
+  publishError?: string | null
 }
 
 type QueueStats = {
@@ -64,14 +70,12 @@ type SubKey = (typeof SUBS)[number][0]
 const NEXT_CLIENT_TIMEOUT_MS = 95_000
 
 const BULK_PLACEHOLDER = `@boinkbuzz
-Paste a real casting/news tweet here.
+1850000000000000000
+Paste a real casting/news tweet + optional tweet id/URL on the line under @handle.
 
 ---
-@chaoscrave
-Paste another tweet.
-
----
-@filmupdates
+@chaoscrave_
+https://x.com/chaoscrave_/status/1850000000000000001
 Paste another tweet.`
 
 export default function ArieEvalPanel() {
@@ -81,6 +85,8 @@ export default function ArieEvalPanel() {
   const [queue, setQueue] = useState<QueueStats>({ pending: 0, done: 0, error: 0, total: 0 })
   const [bulkText, setBulkText] = useState(BULK_PLACEHOLDER)
   const [notes, setNotes] = useState("")
+  const [replyTweetId, setReplyTweetId] = useState("")
+  const [editableDraft, setEditableDraft] = useState("")
   const [subsTouched, setSubsTouched] = useState(false)
   const [subs, setSubs] = useState<Record<SubKey, number>>({
     relevance: 3,
@@ -112,6 +118,8 @@ export default function ArieEvalPanel() {
     previewRef.current = p
     setPreview(p)
     setNotes(p?.notes ?? "")
+    setReplyTweetId(p?.inReplyToTweetId ?? "")
+    setEditableDraft(p?.draftText ?? "")
     setSubsTouched(false)
     setSubs({
       relevance: p?.scoreRelevance ?? 3,
@@ -199,13 +207,25 @@ export default function ArieEvalPanel() {
       if (data.queue) setQueue(data.queue)
       setUngraded((u) => u + 1)
       setTotal((t) => t + 1)
-      setMessage(
-        data.kind === "ignored"
-          ? "Opportunity ignored — grade if silence was correct"
-          : data.kind === "no_reply"
-            ? "Model/system chose [NO REPLY]"
-            : "Draft ready",
-      )
+      if (data.publish?.ok) {
+        setMessage(`Draft ready · AUTO-POSTED ${data.publish.tweetId}`)
+      } else if (data.publish && !data.publish.ok && data.publish.reason !== "auto_publish_disabled" && data.publish.reason !== "publish_disabled" && data.publish.reason !== "missing_tweet_id") {
+        setMessage(
+          data.kind === "ignored"
+            ? "Opportunity ignored — grade if silence was correct"
+            : data.kind === "no_reply"
+              ? "Model/system chose [NO REPLY]"
+              : `Draft ready · auto-publish skipped (${data.publish.reason})`,
+        )
+      } else {
+        setMessage(
+          data.kind === "ignored"
+            ? "Opportunity ignored — grade if silence was correct"
+            : data.kind === "no_reply"
+              ? "Model/system chose [NO REPLY]"
+              : "Draft ready",
+        )
+      }
     } catch (err) {
       const aborted =
         (err instanceof Error && err.name === "AbortError") ||
@@ -225,6 +245,41 @@ export default function ArieEvalPanel() {
     } finally {
       window.clearTimeout(timer)
       if (!opts.nested) endBusy()
+    }
+  }
+
+  async function publishLive() {
+    if (!preview) return
+    beginBusy()
+    setMessage(null)
+    try {
+      const res = await fetch(`/api/admin/arie/previews/${preview.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inReplyToTweetId: replyTweetId,
+          text: editableDraft,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(typeof data.error === "string" ? data.error : `Publish failed (${res.status})`)
+      }
+      applyPreview({
+        ...preview,
+        draftText: editableDraft,
+        inReplyToTweetId: replyTweetId,
+        publishStatus: "PUBLISHED",
+        publishMode: "MANUAL",
+        publishedTweetId: data.tweetId,
+        publishedAt: new Date().toISOString(),
+        publishError: null,
+      })
+      setMessage(`Posted · ${data.url ?? data.tweetId}`)
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Publish failed")
+    } finally {
+      endBusy()
     }
   }
 
@@ -426,7 +481,12 @@ export default function ArieEvalPanel() {
               Generated draft
               {preview.confidence != null ? ` · confidence ${preview.confidence}` : ""}
             </p>
-            <p className="mt-1 text-base leading-relaxed text-zinc-100">{preview.draftText}</p>
+            <textarea
+              value={editableDraft}
+              onChange={(e) => setEditableDraft(e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-zinc-100"
+            />
             {silence ? (
               <p className="mt-2 text-xs text-amber-200/90">
                 System chose silence/ignore. Grade A/B if that was right; C/D if ActorRating should
@@ -436,8 +496,44 @@ export default function ArieEvalPanel() {
             <p className="mt-2 text-xs text-muted-foreground">
               {preview.promptVersion} · {preview.model}
               {preview.generationMs != null ? ` · ${preview.generationMs}ms` : ""}
+              {preview.publishStatus ? ` · publish ${preview.publishStatus}` : ""}
+              {preview.publishedTweetId ? ` · x.com/i/web/status/${preview.publishedTweetId}` : ""}
             </p>
           </div>
+
+          {!silence ? (
+            <div className="space-y-2 rounded-lg border border-[#FFD700]/30 bg-[#FFD700]/5 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FFD700]/80">
+                Soft-launch · Approve &amp; Post
+              </p>
+              <label className="block text-xs text-muted-foreground">
+                Source tweet id or URL
+                <input
+                  value={replyTweetId}
+                  onChange={(e) => setReplyTweetId(e.target.value)}
+                  placeholder="1850… or https://x.com/…/status/1850…"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={
+                  busy ||
+                  preview.publishStatus === "PUBLISHED" ||
+                  !replyTweetId.trim() ||
+                  !editableDraft.trim()
+                }
+                onClick={() => void publishLive()}
+                className="rounded-lg border border-[#FFD700] bg-[#FFD700]/15 px-3 py-2 text-sm font-semibold text-[#FFD700] disabled:opacity-50"
+              >
+                {preview.publishStatus === "PUBLISHED" ? "Already posted" : "Approve & Post reply"}
+              </button>
+              <p className="text-[11px] text-muted-foreground">
+                Requires Coolify env: ARIE_PUBLISH_ENABLED=true + X OAuth write keys. Auto needs
+                ARIE_AUTO_PUBLISH_ENABLED=true and a tweet id in the queue block.
+              </p>
+            </div>
+          ) : null}
 
           <div>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600">

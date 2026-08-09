@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
     id: `q_${Date.now().toString(36)}_${idx}`,
     authorHandle: p.authorHandle,
     text: p.text,
+    tweetId: p.tweetId ?? null,
     status: "pending",
     createdAt: now,
   }))

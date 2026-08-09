@@ -10,8 +10,8 @@ export default function AdminAriePage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground">ARIE eval</h1>
           <p className="text-sm text-muted-foreground">
-            Sprint 2 feature-complete — validation only. Blind-grade in batches of ~25; improve the
-            Context Builder only between batches. Freeze BASELINE.md before any Sprint 3 work.
+            Soft-launch: grade drafts, then <span className="text-[#FFD700]">Approve &amp; Post</span>{" "}
+            for real replies. Auto-post is optional behind env kill switches — see docs/arie/SOFT_LAUNCH.md.
           </p>
         </div>
         <Link

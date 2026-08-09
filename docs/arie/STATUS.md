@@ -1,19 +1,15 @@
-# ARIE status — Sprint 2 feature-complete
+# ARIE status — Soft-launch (real-world testing)
 
-**Effective:** 2026-08-07  
-**Mode:** Validation only  
+**Effective:** 2026-08-09  
+**Mode:** Supervised live replies + narrow auto-publish  
 
-Sprint 2 is **feature-complete**. From this point forward:
-
-| Allowed | Not allowed |
+| Allowed | Kill switches |
 | --- | --- |
-| Evaluate previews (`/admin/arie`) | New product features |
-| Find patterns every 25 drafts | New agents |
-| Improve Context Builder / Opportunity Score **only when batch data justifies it** | Sprint 3 publish / QA pipeline work |
-| Freeze Validation Corpus v1 | Continuously tweaking while grading |
-| Freeze [BASELINE.md](./BASELINE.md) after corpus | Prompt rewrites “to help the AI” mid-batch |
+| Grade + **Approve & Post** from `/admin/arie` | `ARIE_PUBLISH_ENABLED=false` stops **all** posts |
+| Narrow auto-post when flags + tweet id + opp clear | `ARIE_AUTO_PUBLISH_ENABLED=false` stops auto only |
+| Continue validation batches | Daily cap `ARIE_AUTO_PUBLISH_DAILY_CAP` (default 12) |
 
-**Next engineering work** starts only after [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) is green and BASELINE.md is frozen.
+**Not yet:** original posts, quote tweets, n8n publisher nodes, full QA agent.
 
-How to validate: [VALIDATION.md](./VALIDATION.md)  
-Corpus: [corpus/README.md](./corpus/README.md)
+How to enable live replies — see [SOFT_LAUNCH.md](./SOFT_LAUNCH.md).  
+Exit gates for broader automation: [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) · [BASELINE.md](./BASELINE.md)

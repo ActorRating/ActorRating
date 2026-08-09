@@ -706,17 +706,31 @@ enum ArieHumanGrade {
   D
 }
 
+enum AriePublishStatus {
+  DRAFT
+  PUBLISHED
+  FAILED
+  SKIPPED
+}
+
+enum AriePublishMode {
+  MANUAL
+  AUTO
+}
+
 /// Sprint 2+ human eval loop — labeled drafts become the training goldset.
 model AriePreviewEval {
-  id                 String          @id @default(cuid())
+  id                 String            @id @default(cuid())
   inboundEventId     String?
-  sourceText         String          @db.Text
+  sourceText         String            @db.Text
   authorHandle       String?
+  /// Source tweet id when known (for live reply).
+  inReplyToTweetId   String?
   opportunityScore   Int
   coveragePercent    Int
   coverage           Json
   contextPackage     Json
-  draftText          String          @db.Text
+  draftText          String            @db.Text
   draftJson          Json?
   confidence         Int?
   promptVersion      String
@@ -733,14 +747,44 @@ model AriePreviewEval {
   scoreAccuracy      Int?
   /// 1–5: Did it sound like ActorRating?
   scoreBrandVoice    Int?
-  notes              String?         @db.Text
+  notes              String?           @db.Text
   gradedAt           DateTime?
   gradedByEmail      String?
-  createdAt          DateTime        @default(now())
+  publishStatus      AriePublishStatus @default(DRAFT)
+  publishMode        AriePublishMode?
+  publishedTweetId   String?
+  publishedAt        DateTime?
+  publishError       String?
+  createdAt          DateTime          @default(now())
+
+  socialPosts ArieSocialPost[]
 
   @@index([humanGrade, createdAt])
   @@index([createdAt])
   @@index([opportunityScore])
   @@index([coveragePercent])
   @@index([promptVersion])
+  @@index([publishStatus, createdAt])
+  @@index([inReplyToTweetId])
+}
+
+/// Published (or attempted) X posts owned by the Publisher choke point.
+model ArieSocialPost {
+  id               String           @id @default(cuid())
+  previewEvalId    String?
+  platform         AriePlatform     @default(X)
+  externalPostId   String?
+  inReplyToTweetId String?
+  text             String           @db.Text
+  mode             AriePublishMode
+  status           AriePublishStatus
+  errorMessage     String?
+  createdAt        DateTime         @default(now())
+
+  previewEval AriePreviewEval? @relation(fields: [previewEvalId], references: [id], onDelete: SetNull)
+
+  @@unique([platform, externalPostId])
+  @@index([previewEvalId])
+  @@index([createdAt])
+  @@index([status, createdAt])
 }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { extractTweetId } from "@/lib/arie/x"
 
 export const EVAL_QUEUE_KEY = "eval_queue_v1"
 
@@ -6,6 +7,8 @@ export type EvalQueueItem = {
   id: string
   authorHandle: string
   text: string
+  /** Optional source tweet id / URL for live reply. */
+  tweetId?: string | null
   status: "pending" | "in_progress" | "done" | "error"
   error?: string
   previewId?: string
@@ -17,13 +20,15 @@ export type EvalQueueState = {
   updatedAt: string
 }
 
-export function parseBulkQueueText(raw: string): Array<{ authorHandle: string; text: string }> {
+export function parseBulkQueueText(
+  raw: string,
+): Array<{ authorHandle: string; text: string; tweetId?: string }> {
   const chunks = raw
     .split(/\n\s*---\s*\n/)
     .map((c) => c.trim())
     .filter(Boolean)
 
-  const out: Array<{ authorHandle: string; text: string }> = []
+  const out: Array<{ authorHandle: string; text: string; tweetId?: string }> = []
 
   for (const chunk of chunks) {
     const lines = chunk.split("\n")
@@ -31,9 +36,17 @@ export function parseBulkQueueText(raw: string): Array<{ authorHandle: string; t
     const handleMatch = first.match(/^@?([A-Za-z0-9_]{1,30})\s*$/)
     if (!handleMatch) continue
     const authorHandle = handleMatch[1].toLowerCase()
-    const text = lines.slice(1).join("\n").trim()
+    let rest = lines.slice(1)
+    let tweetId: string | undefined
+    const second = rest[0]?.trim() ?? ""
+    const id = extractTweetId(second)
+    if (id && (second === id || /status\/\d+/i.test(second) || /^\d{5,30}$/.test(second))) {
+      tweetId = id
+      rest = rest.slice(1)
+    }
+    const text = rest.join("\n").trim()
     if (!text) continue
-    out.push({ authorHandle, text })
+    out.push({ authorHandle, text, tweetId })
   }
 
   return out
