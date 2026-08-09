@@ -126,12 +126,28 @@ export async function postReplyTweet(input: {
 
   const bodyText = await res.text().catch(() => "")
   if (!res.ok) {
+    let detail = ""
+    try {
+      const parsed = JSON.parse(bodyText) as {
+        detail?: string
+        title?: string
+        errors?: Array<{ message?: string }>
+      }
+      detail =
+        parsed.detail ||
+        parsed.title ||
+        parsed.errors?.map((e) => e.message).filter(Boolean).join("; ") ||
+        ""
+    } catch {
+      detail = bodyText.slice(0, 200)
+    }
     await arieLog("error", "x", "reply_failed", {
       status: res.status,
       body: bodyText.slice(0, 400),
       replyTo,
     })
-    return { ok: false, reason: `x_http_${res.status}`, status: res.status }
+    const suffix = detail ? `: ${detail}` : ""
+    return { ok: false, reason: `x_http_${res.status}${suffix}`.slice(0, 300), status: res.status }
   }
 
   let tweetId = ""
