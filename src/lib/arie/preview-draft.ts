@@ -10,7 +10,7 @@ import {
 } from "@/lib/arie/prior-work"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.5"
+const PROMPT_VERSION = "reply-writer@preview-0.6"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -65,6 +65,13 @@ export function resolveDraftAction(input: {
 
   if (/actorrating catalog/i.test(reply)) {
     return { action: "no_reply", reply: NO_REPLY_TEXT, reason: "catalog_promo" }
+  }
+
+  if (
+    /curious how that (craft )?translates/i.test(reply) ||
+    /solid craft context for this casting talk/i.test(reply)
+  ) {
+    return { action: "no_reply", reply: NO_REPLY_TEXT, reason: "stock_phrase" }
   }
 
   if (isNearParaphrase(input.sourceText, reply)) {
@@ -161,8 +168,10 @@ export async function previewReplyDraft(
     "Return STRICT JSON with keys: action, confidence (0-100), reason, reply, claims.",
     'action must be \"reply\" or \"no_reply\".',
     "If context.facts includes Prior work aggregates on casting_news, you SHOULD reply using one — do not choose no_reply just because the new film lacks a score.",
-    "Write a DISTINCT craft-first sentence each time. Forbidden stock endings: \"curious how that craft translates here\", \"curious how that translates\".",
-    "Vary structure — do not always open with \"prior work in\". Prefer specific film + score + casting context.",
+    "Write a DISTINCT craft-first sentence each time.",
+    "Forbidden stock phrases: \"curious how that craft translates here\", \"curious how that translates\", \"solid craft context for this casting talk\".",
+    "Vary structure — do not always open with \"prior work in\" or \"[Name]'s [Film] is\". Prefer specific film + score + casting context.",
+    "When multiple Prior work facts exist, prefer the one thematically closest to the tweet (franchise, tone, genre) over the highest score alone.",
     "If you truly have zero usable facts, use action=no_reply and reply=\"\".",
     "NEVER paraphrase the tweet as the whole reply.",
     "NEVER say anyone is \"in the ActorRating catalog\".",

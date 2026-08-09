@@ -49,6 +49,19 @@ describe("resolveDraftAction", () => {
     })
     expect(r.action).toBe("reply")
   })
+
+  it("coerces stock phrase replies so fallback can replace them", () => {
+    const r = resolveDraftAction({
+      modelAction: "reply",
+      reply:
+        "Foo's Film (2020) is 7/10 on ActorRating — solid craft context for this casting talk.",
+      claims: [{ fact_id: "perf:agg:1:1" }],
+      facts: grounding,
+      sourceText: "Big casting announcement for a different title",
+    })
+    expect(r.action).toBe("no_reply")
+    expect(r.reason).toBe("stock_phrase")
+  })
 })
 
 describe("prior-work selection", () => {
@@ -74,6 +87,7 @@ describe("prior-work selection", () => {
     )
     expect(fallback?.reply).toContain("X-Men")
     expect(fallback?.reply).not.toContain("curious how that craft translates here")
+    expect(fallback?.reply).not.toMatch(/solid craft context for this casting talk/i)
   })
 
   it("ignores actors only after interested-in clause", () => {

@@ -48,26 +48,44 @@ export async function groqJsonCompletion(opts: {
   const model = opts.model ?? process.env.ARIE_GROQ_MODEL ?? "llama-3.3-70b-versatile"
   const started = Date.now()
   const maxAttempts = 3
+  const perAttemptMs = Number(process.env.ARIE_GROQ_TIMEOUT_MS ?? 25_000)
   let lastStatus = 0
   let lastBody = ""
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: opts.system },
-          { role: "user", content: opts.user },
-        ],
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(perAttemptMs),
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: opts.system },
+            { role: "user", content: opts.user },
+          ],
+        }),
+      })
+    } catch (err) {
+      const timedOut =
+        (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
+        (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "TimeoutError")
+      await arieLog("error", "groq", timedOut ? "request_timeout" : "request_network_error", {
+        attempt,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      if (attempt < maxAttempts) {
+        await sleep(400 * attempt * attempt)
+        continue
+      }
+      return { ok: false, reason: timedOut ? "groq_timeout" : "groq_network_error" }
+    }
 
     if (!res.ok) {
       lastStatus = res.status
@@ -79,7 +97,8 @@ export async function groqJsonCompletion(opts: {
       })
       if (attempt < maxAttempts && shouldRetryStatus(res.status)) {
         const retryAfter = Number(res.headers.get("retry-after") || "0")
-        const waitMs = Math.max(retryAfter * 1000, 400 * attempt * attempt)
+        // Cap wait so admin eval UI cannot freeze for minutes on 429
+        const waitMs = Math.min(8_000, Math.max(retryAfter * 1000, 400 * attempt * attempt))
         await sleep(waitMs)
         continue
       }

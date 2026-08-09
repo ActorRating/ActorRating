@@ -6,7 +6,7 @@ export type EvalQueueItem = {
   id: string
   authorHandle: string
   text: string
-  status: "pending" | "done" | "error"
+  status: "pending" | "in_progress" | "done" | "error"
   error?: string
   previewId?: string
   createdAt: string
@@ -64,8 +64,16 @@ export async function saveEvalQueue(state: EvalQueueState): Promise<EvalQueueSta
 export function queueStats(items: EvalQueueItem[]) {
   return {
     pending: items.filter((i) => i.status === "pending").length,
+    inProgress: items.filter((i) => i.status === "in_progress").length,
     done: items.filter((i) => i.status === "done").length,
     error: items.filter((i) => i.status === "error").length,
     total: items.length,
   }
+}
+
+/** Reset stuck in_progress rows (e.g. client aborted, worker died). */
+export function resetStaleInProgress(items: EvalQueueItem[]): EvalQueueItem[] {
+  return items.map((i) =>
+    i.status === "in_progress" ? { ...i, status: "pending" as const, error: undefined } : i,
+  )
 }

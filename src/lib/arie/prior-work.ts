@@ -41,36 +41,191 @@ export function asScoreNumber(v: unknown): number | null {
   return null
 }
 
-/** Higher = better prior for this tweet (franchise/title/character overlap). */
+/** Short/common title words that falsely match tweet filler ("going back to…"). */
+const WEAK_TITLE_TOKENS = new Set([
+  "want",
+  "back",
+  "with",
+  "from",
+  "that",
+  "this",
+  "love",
+  "life",
+  "night",
+  "time",
+  "film",
+  "movie",
+  "part",
+  "story",
+  "house",
+  "last",
+  "first",
+  "good",
+  "best",
+  "next",
+  "year",
+  "years",
+  "days",
+  "into",
+  "over",
+  "under",
+  "after",
+  "before",
+  "about",
+  "just",
+  "only",
+  "very",
+  "more",
+  "most",
+  "some",
+  "when",
+  "what",
+  "your",
+  "their",
+  "been",
+  "have",
+  "will",
+  "make",
+  "made",
+  "like",
+  "come",
+  "goes",
+  "going",
+  "here",
+  "there",
+  "world",
+  "little",
+  "great",
+  "true",
+  "real",
+  "american",
+])
+
+function significantTitleTokens(title: string): string[] {
+  return title
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((x) => x.length > 3 && !WEAK_TITLE_TOKENS.has(x))
+}
+
+/**
+ * Tweet cues → title/genre affinity for casting comps
+ * (e.g. Crawl water-horror sequel → Fall over a romcom).
+ */
+const THEME_PACKS: Array<{
+  tweet: string[]
+  titles: string[]
+  genres: string[]
+  boost: number
+}> = [
+  {
+    tweet: [
+      "crawl",
+      "water",
+      "ocean",
+      "shark",
+      "alligator",
+      "crocodile",
+      "creature",
+      "sleeper hit",
+    ],
+    titles: [
+      "fall",
+      "crawl",
+      "the meg",
+      "47 meters",
+      "deep blue",
+      "the shallows",
+      "jaws",
+      "prey",
+      "a quiet place",
+      "don't breathe",
+    ],
+    genres: ["horror", "thriller", "action", "adventure"],
+    boost: 14,
+  },
+  {
+    tweet: ["supermax", "prison", "action-thriller", "action thriller"],
+    titles: ["mudbound", "zero dark", "sicario", "the town", "prisoners"],
+    genres: ["thriller", "action", "crime", "drama"],
+    boost: 10,
+  },
+  {
+    tweet: ["romcom", "romantic comedy", "romance"],
+    titles: ["want you back", "anyone but you", "crazy rich"],
+    genres: ["comedy", "romance"],
+    boost: 10,
+  },
+]
+
+/** Higher = better prior for this tweet (franchise/title/character/theme overlap). */
 export function priorRelevanceScore(
   tweet: string,
   movieTitle: string,
   character?: string | null,
+  genre?: string | null,
 ): number {
   const t = tweet.toLowerCase()
   const title = movieTitle.toLowerCase()
   let score = 0
 
-  for (const w of title.split(/[^a-z0-9]+/).filter((x) => x.length > 3)) {
-    if (t.includes(w)) score += 4
+  const titleTokens = significantTitleTokens(movieTitle)
+  let tokenHits = 0
+  for (const w of titleTokens) {
+    if (t.includes(w)) {
+      score += 4
+      tokenHits += 1
+    }
   }
+  // Prefer real multi-token title overlap; single weak hits are ignored above
+  if (tokenHits >= 2) score += 4
+  if (title.length > 5 && t.includes(title)) score += 8
+
   if (character) {
     const c = character.toLowerCase()
-    for (const w of c.split(/[^a-z0-9]+/).filter((x) => x.length > 3)) {
+    for (const w of c.split(/[^a-z0-9]+/).filter((x) => x.length > 3 && !WEAK_TITLE_TOKENS.has(x))) {
       if (t.includes(w)) score += 6
     }
   }
 
   const packs: string[][] = [
     ["x-men", "xmen", "cyclops", "wolverine", "mutant", "jean grey", "professor x"],
-    ["avengers", "marvel", "mcu", "captain america", "scarlet witch", "iron man", "spider-man", "spiderman"],
+    [
+      "avengers",
+      "marvel",
+      "mcu",
+      "captain america",
+      "scarlet witch",
+      "iron man",
+      "spider-man",
+      "spiderman",
+      "captain britain",
+    ],
     ["star wars", "jedi", "sith"],
-    ["batman", "gotham", "dc"],
+    ["batman", "gotham", "dc", "justice league", "superman"],
   ]
   for (const pack of packs) {
     const tweetHit = pack.some((k) => t.includes(k))
     const titleHit = pack.some((k) => title.includes(k))
     if (tweetHit && titleHit) score += 10
+  }
+
+  const genreLower = (genre ?? "").toLowerCase()
+  for (const theme of THEME_PACKS) {
+    const tweetHit = theme.tweet.some((k) => t.includes(k))
+    if (!tweetHit) continue
+    const titleHit = theme.titles.some((k) => title.includes(k))
+    const genreHit = theme.genres.some((g) => genreLower.includes(g))
+    if (titleHit) score += theme.boost
+    else if (genreHit) score += Math.round(theme.boost * 0.6)
+  }
+
+  // Soft penalty: romcom title when tweet is clearly creature/water thriller
+  if (
+    THEME_PACKS[0]!.tweet.some((k) => t.includes(k)) &&
+    /\b(want you back|romantic|rom-?com)\b/i.test(title + " " + genreLower)
+  ) {
+    score -= 8
   }
 
   return score
@@ -99,15 +254,24 @@ const TEMPLATES: Array<
   (p: { name: string; movie: string; year: string; score: string }) => string
 > = [
   (p) =>
-    `${p.name}'s ${p.movie} (${p.year}) is ${p.score}/10 on ActorRating — solid craft context for this casting talk.`,
-  (p) =>
-    `Craft check: ${p.name} in ${p.movie} clocks ${p.score}/10 with us.`,
+    `${p.name} in ${p.movie} (${p.year}) landed ${p.score}/10 on ActorRating — useful craft context for this casting.`,
+  (p) => `Craft check: ${p.name} in ${p.movie} clocks ${p.score}/10 with us.`,
   (p) =>
     `On ActorRating, ${p.name}'s ${p.movie} performance sits at ${p.score}/10 — a useful baseline here.`,
   (p) =>
     `${p.movie} (${p.year}) put ${p.name} at ${p.score}/10 on ActorRating; worth keeping in mind for this role news.`,
   (p) =>
-    `${p.name} already has a ${p.score}/10 mark from us for ${p.movie} — that craft history is the interesting part of this announcement.`,
+    `${p.name} already carries a ${p.score}/10 from us on ${p.movie} — that’s the craft history behind this announcement.`,
+  (p) =>
+    `For craft context: ${p.name}'s ${p.movie} is ${p.score}/10 on ActorRating.`,
+  (p) =>
+    `ActorRating has ${p.name} at ${p.score}/10 for ${p.movie} (${p.year}) — a concrete prior for this casting chatter.`,
+  (p) =>
+    `${p.score}/10 on ActorRating for ${p.name} in ${p.movie} — the number that actually informs this casting talk.`,
+  (p) =>
+    `Before this news: ${p.name}'s ${p.movie} (${p.year}) scored ${p.score}/10 with ActorRating.`,
+  (p) =>
+    `${p.name}'s marked ${p.score}/10 for ${p.movie} on ActorRating — that’s the craft signal here.`,
 ]
 
 export function formatPriorWorkReply(input: {

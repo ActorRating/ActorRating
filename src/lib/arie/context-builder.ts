@@ -446,7 +446,7 @@ export async function buildContextPackage(
           character: true,
           seededAggregateScore: true,
           actor: { select: { name: true } },
-          movie: { select: { title: true, year: true } },
+          movie: { select: { title: true, year: true, genre: true } },
         },
         orderBy: [{ seededAggregateScore: "desc" }, { order: "asc" }],
         take: 12,
@@ -460,7 +460,7 @@ export async function buildContextPackage(
           return {
             p,
             score,
-            rel: priorRelevanceScore(input.text, p.movie.title, p.character),
+            rel: priorRelevanceScore(input.text, p.movie.title, p.character, p.movie.genre),
           }
         })
         .filter((x): x is NonNullable<typeof x> => Boolean(x))

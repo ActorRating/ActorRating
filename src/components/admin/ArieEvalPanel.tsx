@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 type CoverageSlots = {
   actor: boolean
@@ -32,7 +32,13 @@ type Preview = {
   notes: string | null
 }
 
-type QueueStats = { pending: number; done: number; error: number; total: number }
+type QueueStats = {
+  pending: number
+  inProgress?: number
+  done: number
+  error: number
+  total: number
+}
 
 const SLOT_LABELS: Array<[keyof CoverageSlots, string]> = [
   ["actor", "Actor"],
@@ -53,6 +59,9 @@ const SUBS = [
 ] as const
 
 type SubKey = (typeof SUBS)[number][0]
+
+/** Client abort so buttons never stay disabled if the server hangs. */
+const NEXT_CLIENT_TIMEOUT_MS = 95_000
 
 const BULK_PLACEHOLDER = `@boinkbuzz
 Paste a real casting/news tweet here.
@@ -81,8 +90,26 @@ export default function ArieEvalPanel() {
   })
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const busyDepth = useRef(0)
+  const previewRef = useRef<Preview | null>(null)
+
+  const beginBusy = useCallback(() => {
+    busyDepth.current += 1
+    setBusy(true)
+  }, [])
+
+  const endBusy = useCallback(() => {
+    busyDepth.current = Math.max(0, busyDepth.current - 1)
+    if (busyDepth.current === 0) setBusy(false)
+  }, [])
+
+  const forceIdle = useCallback(() => {
+    busyDepth.current = 0
+    setBusy(false)
+  }, [])
 
   const applyPreview = useCallback((p: Preview | null) => {
+    previewRef.current = p
     setPreview(p)
     setNotes(p?.notes ?? "")
     setSubsTouched(false)
@@ -94,35 +121,35 @@ export default function ArieEvalPanel() {
     })
   }, [])
 
-  const refreshCounts = useCallback(async () => {
+  const refreshCounts = useCallback(async (opts: { unlock?: boolean } = {}) => {
     const [previewsRes, queueRes] = await Promise.all([
       fetch("/api/admin/arie/previews"),
-      fetch("/api/admin/arie/queue"),
+      fetch(`/api/admin/arie/queue${opts.unlock ? "?unlock=1" : ""}`),
     ])
     if (previewsRes.ok) {
       const data = await previewsRes.json()
       setUngraded(data.ungraded ?? 0)
       setTotal(data.total ?? 0)
-      if (!preview && data.preview) applyPreview(data.preview)
+      if (!previewRef.current && data.preview) applyPreview(data.preview)
     }
     if (queueRes.ok) {
       const q = await queueRes.json()
       setQueue({
         pending: q.pending ?? 0,
+        inProgress: q.inProgress ?? 0,
         done: q.done ?? 0,
         error: q.error ?? 0,
         total: q.total ?? 0,
       })
     }
-  }, [applyPreview, preview])
+  }, [applyPreview])
 
   useEffect(() => {
     void refreshCounts()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
-  }, [])
+  }, [refreshCounts])
 
   async function importQueue(replace: boolean) {
-    setBusy(true)
+    beginBusy()
     setMessage(null)
     try {
       const res = await fetch("/api/admin/arie/queue", {
@@ -136,6 +163,7 @@ export default function ArieEvalPanel() {
       }
       setQueue({
         pending: data.pending ?? 0,
+        inProgress: data.inProgress ?? 0,
         done: data.done ?? 0,
         error: data.error ?? 0,
         total: data.total ?? 0,
@@ -144,17 +172,23 @@ export default function ArieEvalPanel() {
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Import failed")
     } finally {
-      setBusy(false)
+      endBusy()
     }
   }
 
-  async function nextFromQueue() {
-    setBusy(true)
-    setMessage(null)
+  async function nextFromQueue(opts: { nested?: boolean } = {}) {
+    if (!opts.nested) beginBusy()
+    setMessage("Generating draft… (Groq can take up to ~1 min)")
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => controller.abort(), NEXT_CLIENT_TIMEOUT_MS)
     try {
-      const res = await fetch("/api/admin/arie/queue/next", { method: "POST" })
+      const res = await fetch("/api/admin/arie/queue/next", {
+        method: "POST",
+        signal: controller.signal,
+      })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (data.queue) setQueue(data.queue)
         throw new Error(
           typeof data.error === "string"
             ? `${data.error}${data.reason ? `: ${data.reason}` : ""}`
@@ -173,10 +207,24 @@ export default function ArieEvalPanel() {
             : "Draft ready",
       )
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Queue next failed")
-      await refreshCounts()
+      const aborted =
+        (err instanceof Error && err.name === "AbortError") ||
+        (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "AbortError")
+      setMessage(
+        aborted
+          ? "Timed out waiting for draft — try Next again (server may still finish that item)."
+          : err instanceof Error
+            ? err.message
+            : "Queue next failed",
+      )
+      try {
+        await refreshCounts()
+      } catch {
+        /* ignore */
+      }
     } finally {
-      setBusy(false)
+      window.clearTimeout(timer)
+      if (!opts.nested) endBusy()
     }
   }
 
@@ -186,7 +234,7 @@ export default function ArieEvalPanel() {
   ) {
     if (!preview) return
     const useSubs = overrideSubs ?? subs
-    setBusy(true)
+    beginBusy()
     setMessage(null)
     try {
       const res = await fetch(`/api/admin/arie/previews/${preview.id}`, {
@@ -202,18 +250,18 @@ export default function ArieEvalPanel() {
         }),
       })
       if (!res.ok) throw new Error(await res.text())
-      setMessage(`Saved ${grade}${queue.pending ? " — press N for next" : ""}`)
+      setMessage(`Saved ${grade}${queue.pending ? " — loading next…" : ""}`)
       applyPreview(null)
       setUngraded((u) => Math.max(0, u - 1))
       if (queue.pending > 0) {
-        await nextFromQueue()
+        await nextFromQueue({ nested: true })
       } else {
         await refreshCounts()
       }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Save failed")
     } finally {
-      setBusy(false)
+      endBusy()
     }
   }
 
@@ -264,8 +312,10 @@ export default function ArieEvalPanel() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-xs text-muted-foreground">
-        Ungraded: {ungraded} · Total: {total} · Queue pending: {queue.pending}/{queue.total}. Paste a
-        batch once, then <kbd className="rounded border border-border px-1">N</kbd> next ·{" "}
+        Ungraded: {ungraded} · Total: {total} · Queue pending: {queue.pending}/{queue.total}
+        {queue.inProgress ? ` · in progress: ${queue.inProgress}` : ""}
+        {queue.error > 0 ? ` · errors: ${queue.error}` : ""}. Paste a batch once, then{" "}
+        <kbd className="rounded border border-border px-1">N</kbd> next ·{" "}
         <kbd className="rounded border border-border px-1">A</kbd>/
         <kbd className="rounded border border-border px-1">B</kbd>/
         <kbd className="rounded border border-border px-1">C</kbd>/
@@ -310,8 +360,21 @@ export default function ArieEvalPanel() {
             onClick={() => void nextFromQueue()}
             className="rounded-lg border border-[#FFD700] bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700] disabled:opacity-50"
           >
-            Next from queue ({queue.pending})
+            {busy ? "Working…" : `Next from queue (${queue.pending})`}
           </button>
+          {busy || (queue.inProgress ?? 0) > 0 ? (
+            <button
+              type="button"
+              onClick={() => {
+                forceIdle()
+                setMessage("Unlocked UI — reclaimed any stuck in-progress item.")
+                void refreshCounts({ unlock: true })
+              }}
+              className="rounded-lg border border-amber-500/50 px-3 py-2 text-sm text-amber-200"
+            >
+              Unlock UI
+            </button>
+          ) : null}
         </div>
       </section>
 

@@ -1,12 +1,29 @@
 export const dynamic = "force-dynamic"
+export const maxDuration = 120
 
 import { NextResponse } from "next/server"
 import { requireAdminSession } from "@/lib/admin/requireAdmin"
 import { buildContextFromText } from "@/lib/arie/pipeline"
 import { previewReplyDraft, NO_REPLY_TEXT } from "@/lib/arie/preview-draft"
-import { loadEvalQueue, queueStats, saveEvalQueue } from "@/lib/arie/eval-queue"
+import { loadEvalQueue, queueStats, saveEvalQueue, type EvalQueueItem } from "@/lib/arie/eval-queue"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
+
+async function finalizeQueueItem(
+  itemId: string,
+  update: Partial<EvalQueueItem>,
+): Promise<EvalQueueItem[]> {
+  const latest = await loadEvalQueue()
+  const i = latest.items.findIndex((x) => x.id === itemId)
+  if (i < 0) return latest.items
+  // Only complete our claim — if Unlock reset to pending and another worker claimed later, skip.
+  if (latest.items[i]!.status !== "in_progress" && update.status !== "error") {
+    return latest.items
+  }
+  latest.items[i] = { ...latest.items[i]!, ...update }
+  await saveEvalQueue(latest)
+  return latest.items
+}
 
 /**
  * POST — generate draft for next pending queue item and mark it done.
@@ -19,10 +36,13 @@ export async function POST() {
   const state = await loadEvalQueue()
   const idx = state.items.findIndex((i) => i.status === "pending")
   if (idx < 0) {
-    return NextResponse.json({ error: "queue_empty", ...queueStats(state.items) }, { status: 404 })
+    return NextResponse.json({ error: "queue_empty", queue: queueStats(state.items) }, { status: 404 })
   }
 
-  const item = state.items[idx]
+  const item = state.items[idx]!
+  // Claim immediately so a duplicate Next (or Unlock → Next) cannot run the same tweet twice.
+  state.items[idx] = { ...item, status: "in_progress" }
+  await saveEvalQueue(state)
 
   try {
     const pkg = await buildContextFromText({
@@ -51,44 +71,33 @@ export async function POST() {
           generationMs: 0,
         },
       })
-      state.items[idx] = {
-        ...item,
-        status: "done",
-        previewId: row.id,
-      }
-      await saveEvalQueue(state)
+      const items = await finalizeQueueItem(item.id, { status: "done", previewId: row.id })
       return NextResponse.json({
         preview: serialize(row),
-        queue: queueStats(state.items),
+        queue: queueStats(items),
         kind: "ignored",
       })
     }
 
     const draft = await previewReplyDraft(pkg)
     if (!draft.ok) {
-      state.items[idx] = { ...item, status: "error", error: draft.reason }
-      await saveEvalQueue(state)
-      return NextResponse.json(
-        { error: draft.reason, queue: queueStats(state.items) },
-        { status: 422 },
-      )
+      const items = await finalizeQueueItem(item.id, { status: "error", error: draft.reason })
+      return NextResponse.json({ error: draft.reason, queue: queueStats(items) }, { status: 422 })
     }
 
     const row = await prisma.ariePreviewEval.findUnique({ where: { id: draft.previewId } })
-    state.items[idx] = { ...item, status: "done", previewId: draft.previewId }
-    await saveEvalQueue(state)
+    const items = await finalizeQueueItem(item.id, { status: "done", previewId: draft.previewId })
 
     return NextResponse.json({
       preview: row ? serialize(row) : null,
-      queue: queueStats(state.items),
+      queue: queueStats(items),
       kind: draft.draft.action === "no_reply" || draft.draft.reply === NO_REPLY_TEXT ? "no_reply" : "reply",
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    state.items[idx] = { ...item, status: "error", error: message }
-    await saveEvalQueue(state)
+    const items = await finalizeQueueItem(item.id, { status: "error", error: message })
     return NextResponse.json(
-      { error: "queue_next_failed", reason: message, queue: queueStats(state.items) },
+      { error: "queue_next_failed", reason: message, queue: queueStats(items) },
       { status: 500 },
     )
   }

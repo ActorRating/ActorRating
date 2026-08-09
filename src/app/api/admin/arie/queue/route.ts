@@ -6,16 +6,21 @@ import {
   loadEvalQueue,
   parseBulkQueueText,
   queueStats,
+  resetStaleInProgress,
   saveEvalQueue,
   type EvalQueueItem,
 } from "@/lib/arie/eval-queue"
 
-/** GET — queue status. */
-export async function GET() {
+/** GET — queue status. Pass ?unlock=1 to return stuck in_progress items to pending. */
+export async function GET(request: NextRequest) {
   const admin = await requireAdminSession()
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const state = await loadEvalQueue()
+  let state = await loadEvalQueue()
+  if (request.nextUrl.searchParams.get("unlock") === "1") {
+    const items = resetStaleInProgress(state.items)
+    state = await saveEvalQueue({ ...state, items })
+  }
   return NextResponse.json({
     ...queueStats(state.items),
     updatedAt: state.updatedAt,
@@ -78,7 +83,10 @@ export async function POST(request: NextRequest) {
   const existing = await loadEvalQueue()
   const items = body.replace
     ? incoming
-    : [...existing.items.filter((i) => i.status === "pending"), ...incoming]
+    : [
+        ...existing.items.filter((i) => i.status === "pending" || i.status === "in_progress"),
+        ...incoming,
+      ]
 
   const state = await saveEvalQueue({ items, updatedAt: now })
   return NextResponse.json({
