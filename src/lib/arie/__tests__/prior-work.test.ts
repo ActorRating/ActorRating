@@ -37,7 +37,7 @@ describe("prior-work helpers", () => {
     expect(priorRelevanceScore(tweet, "I Want You Back")).toBeLessThanOrEqual(0)
   })
 
-  it("formats without stock phrases", () => {
+  it("formats without stock phrases and invites discussion", () => {
     const reply = formatPriorWorkReply({
       name: "Chris Evans",
       movie: "Knives Out",
@@ -47,7 +47,9 @@ describe("prior-work helpers", () => {
     })
     expect(reply).not.toMatch(/curious how that craft translates here/i)
     expect(reply).not.toMatch(/solid craft context for this casting talk/i)
+    expect(reply).not.toMatch(/useful craft context for this casting/i)
     expect(reply).toContain("8.1")
+    expect(reply).toMatch(/\?/)
   })
 
   it("picks thematically closer prior fact", () => {

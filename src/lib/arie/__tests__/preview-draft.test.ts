@@ -88,6 +88,7 @@ describe("prior-work selection", () => {
     expect(fallback?.reply).toContain("X-Men")
     expect(fallback?.reply).not.toContain("curious how that craft translates here")
     expect(fallback?.reply).not.toMatch(/solid craft context for this casting talk/i)
+    expect(fallback?.reply).toMatch(/\?/)
   })
 
   it("ignores actors only after interested-in clause", () => {

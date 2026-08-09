@@ -10,7 +10,7 @@ import {
 } from "@/lib/arie/prior-work"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.6"
+const PROMPT_VERSION = "reply-writer@preview-0.7"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -69,7 +69,10 @@ export function resolveDraftAction(input: {
 
   if (
     /curious how that (craft )?translates/i.test(reply) ||
-    /solid craft context for this casting talk/i.test(reply)
+    /solid craft context for this casting talk/i.test(reply) ||
+    /useful craft context for this casting/i.test(reply) ||
+    /the number that actually informs this casting talk/i.test(reply) ||
+    /a concrete prior for this casting chatter/i.test(reply)
   ) {
     return { action: "no_reply", reply: NO_REPLY_TEXT, reason: "stock_phrase" }
   }
@@ -168,9 +171,10 @@ export async function previewReplyDraft(
     "Return STRICT JSON with keys: action, confidence (0-100), reason, reply, claims.",
     'action must be \"reply\" or \"no_reply\".',
     "If context.facts includes Prior work aggregates on casting_news, you SHOULD reply using one — do not choose no_reply just because the new film lacks a score.",
-    "Write a DISTINCT craft-first sentence each time.",
-    "Forbidden stock phrases: \"curious how that craft translates here\", \"curious how that translates\", \"solid craft context for this casting talk\".",
-    "Vary structure — do not always open with \"prior work in\" or \"[Name]'s [Film] is\". Prefer specific film + score + casting context.",
+    "Write a DISTINCT craft-first reply each time — engaging enough to earn replies/likes, never flat score dumps.",
+    "Preferred shape: one grounded ActorRating score + a short genuine question or hook that invites discussion.",
+    "Forbidden stock phrases: \"curious how that craft translates here\", \"curious how that translates\", \"solid craft context for this casting talk\", \"useful craft context for this casting\", \"the number that actually informs this casting talk\".",
+    "Vary structure — do not always open with \"prior work in\" or \"[Name]'s [Film] is\".",
     "When multiple Prior work facts exist, prefer the one thematically closest to the tweet (franchise, tone, genre) over the highest score alone.",
     "If you truly have zero usable facts, use action=no_reply and reply=\"\".",
     "NEVER paraphrase the tweet as the whole reply.",
@@ -178,7 +182,7 @@ export async function previewReplyDraft(
     "NEVER invent film titles, casts, scores, or quotes.",
     "You may ONLY assert numeric or structured facts that appear in context.facts (cite fact_id in claims).",
     "On casting_news: cite a Prior work aggregate and frame it as prior craft — never as a score for the new unreleased role.",
-    "Tone: craft-first, curious, never promotional CTAs.",
+    "Tone: craft-first, warm-dry, curious. Invite conversation. No rage bait, no follow/CTA spam, no clickbait.",
     "Prefer under 240 characters when possible; max 280.",
     "",
     "=== BRAND CONSTITUTION ===",

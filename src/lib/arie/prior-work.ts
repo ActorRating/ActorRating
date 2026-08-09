@@ -250,28 +250,30 @@ export function pickPriorWorkFact<
   return scored[0]?.f ?? null
 }
 
+/** Engaging but brand-safe: grounded score + a short hook that invites discussion. */
 const TEMPLATES: Array<
   (p: { name: string; movie: string; year: string; score: string }) => string
 > = [
   (p) =>
-    `${p.name} in ${p.movie} (${p.year}) landed ${p.score}/10 on ActorRating — useful craft context for this casting.`,
-  (p) => `Craft check: ${p.name} in ${p.movie} clocks ${p.score}/10 with us.`,
+    `${p.name}'s ${p.movie} (${p.year}) is ${p.score}/10 on ActorRating — does that craft baseline change how you read this casting?`,
   (p) =>
-    `On ActorRating, ${p.name}'s ${p.movie} performance sits at ${p.score}/10 — a useful baseline here.`,
+    `ActorRating has ${p.name} at ${p.score}/10 for ${p.movie} — what should we expect them to bring here?`,
   (p) =>
-    `${p.movie} (${p.year}) put ${p.name} at ${p.score}/10 on ActorRating; worth keeping in mind for this role news.`,
+    `${p.score}/10 on ActorRating for ${p.name} in ${p.movie} (${p.year}). Fair reference point for this news?`,
   (p) =>
-    `${p.name} already carries a ${p.score}/10 from us on ${p.movie} — that’s the craft history behind this announcement.`,
+    `${p.movie} put ${p.name} at ${p.score}/10 with us — the interesting question is whether that same register shows up in this role.`,
   (p) =>
-    `For craft context: ${p.name}'s ${p.movie} is ${p.score}/10 on ActorRating.`,
+    `Before this news hits the discourse: ${p.name}'s ${p.movie} sits at ${p.score}/10 on ActorRating. Agree with that read?`,
   (p) =>
-    `ActorRating has ${p.name} at ${p.score}/10 for ${p.movie} (${p.year}) — a concrete prior for this casting chatter.`,
+    `${p.name} already earned ${p.score}/10 from us on ${p.movie} — is that the right craft bar for this announcement?`,
   (p) =>
-    `${p.score}/10 on ActorRating for ${p.name} in ${p.movie} — the number that actually informs this casting talk.`,
+    `Craft check from us: ${p.name} in ${p.movie} = ${p.score}/10. Which part of that performance do you want more of here?`,
   (p) =>
-    `Before this news: ${p.name}'s ${p.movie} (${p.year}) scored ${p.score}/10 with ActorRating.`,
+    `On ActorRating, ${p.name}'s ${p.movie} lands ${p.score}/10 — curious what you think transfers to this project.`,
   (p) =>
-    `${p.name}'s marked ${p.score}/10 for ${p.movie} on ActorRating — that’s the craft signal here.`,
+    `${p.name} · ${p.movie} · ${p.score}/10 on ActorRating. Does that number match your take going into this cast news?`,
+  (p) =>
+    `We have ${p.name} at ${p.score}/10 for ${p.movie} (${p.year}) — soft or strong floor for judging this move?`,
 ]
 
 export function formatPriorWorkReply(input: {
