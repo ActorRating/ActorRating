@@ -4,10 +4,11 @@ import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
 import { ARIE_CONSTITUTION_PATH, ARIE_CONSTITUTION_VERSION } from "@/lib/arie/config"
 import { extractEntitiesFromText, type ExtractedEntities } from "@/lib/arie/entity-extract"
 import { traverseNeighborhood } from "@/lib/arie/graph"
-import { scoreOpportunity } from "@/lib/arie/opportunity-score"
+import { CASTING_RE, scoreOpportunity } from "@/lib/arie/opportunity-score"
 import {
   asScoreNumber,
   castingFocusActors,
+  formatScoreDisplay,
   priorRelevanceScore,
 } from "@/lib/arie/prior-work"
 import {
@@ -53,11 +54,9 @@ export function textMentionsTitle(text: string, title: string): boolean {
   return head.length >= 6 && hay.includes(head)
 }
 
-/** Casting / farewell / audition signal — keep in sync with Opportunity CASTING_RE intent. */
+/** Casting / farewell / audition signal — shared with Opportunity CASTING_RE. */
 export function isCastingNewsText(text: string): boolean {
-  return /\b(joins?|cast|casting|boards?|in talks|signs? on|tapped|reunite[sd]?|reuniting|set to (?:star|appear|return)|setting .{3,60} to star|will (?:star|appear|return|play)|(?:being )?considered to (?:play|star|join|portray)|to play|to star|auditioned for|rumou?red (?:to (?:play|join|star)|for)|plays? (?:the )?role|reprises?|officially cast|final (?:appearance|movie|film|time)|last dance|\d+-year run|multi-film deal|character (?:has )?(?:now )?been revealed|revealed as|is in fact)\b/i.test(
-    text,
-  )
+  return CASTING_RE.test(text)
 }
 
 function rateHref(movieSlug: string | null, actorSlug: string | null): string | null {
@@ -477,8 +476,8 @@ export async function buildContextPackage(
           fact({
             fact_id: factId,
             type: "aggregate_score",
-            text: `Prior work — ${row.p.actor.name} in ${row.p.movie.title} (${row.p.movie.year}): aggregate ${row.score}/10 on ActorRating (not a score for the newly announced role)`,
-            value: row.score,
+            text: `Prior work — ${row.p.actor.name} in ${row.p.movie.title} (${row.p.movie.year}): aggregate ${formatScoreDisplay(row.score)}/10 on ActorRating (not a score for the newly announced role)`,
+            value: Number(formatScoreDisplay(row.score)),
             entity_refs: [`actor:${row.p.actorId}`, `movie:${row.p.movieId}`],
           }),
         )

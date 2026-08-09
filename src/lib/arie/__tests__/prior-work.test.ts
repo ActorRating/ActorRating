@@ -1,6 +1,8 @@
 import {
   castingFocusActors,
   formatPriorWorkReply,
+  formatScoreDisplay,
+  polishReplyCopy,
   pickPriorWorkFact,
   priorRelevanceScore,
 } from "@/lib/arie/prior-work"
@@ -48,8 +50,15 @@ describe("prior-work helpers", () => {
     expect(reply).not.toMatch(/curious how that craft translates here/i)
     expect(reply).not.toMatch(/solid craft context for this casting talk/i)
     expect(reply).not.toMatch(/useful craft context for this casting/i)
+    expect(reply).not.toMatch(/[\u2014\u2013]/)
     expect(reply).toContain("8.1")
     expect(reply).toMatch(/\?/)
+  })
+
+  it("caps scores at one decimal and replaces long dashes", () => {
+    expect(formatScoreDisplay(8.252)).toBe("8.3")
+    expect(formatScoreDisplay(7)).toBe("7")
+    expect(polishReplyCopy("Foo is 8.252/10 — solid?")).toBe("Foo is 8.3/10, solid?")
   })
 
   it("picks thematically closer prior fact", () => {

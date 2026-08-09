@@ -163,4 +163,46 @@ describe("arie opportunity score", () => {
     expect(r.breakdown.relevance).toBeLessThanOrEqual(25)
     expect(r.decision).toBe("ignore")
   })
+
+  it("processes multi-picture deals, early talks, and offered-the-lead", () => {
+    const actor = {
+      actors: [{ id: "a1", name: "Timothee Chalamet", slug: "timothee-chalamet", confidence: 90 }],
+      movies: [],
+      directors: [],
+      unresolved: [],
+    }
+    expect(
+      scoreOpportunity({
+        text: "Timothée Chalamet has reportedly signed a multi-picture deal with Warner Bros. to anchor a new young-adult fantasy franchise.",
+        authorHandle: "chaoscrave_",
+        entities: actor,
+      }).decision,
+    ).toBe("process")
+
+    expect(
+      scoreOpportunity({
+        text: "Glen Powell is in early talks to lead a new original action thriller at Sony.",
+        authorHandle: "boinkbuzz",
+        entities: {
+          actors: [{ id: "a1", name: "Glen Powell", slug: "glen-powell", confidence: 90 }],
+          movies: [],
+          directors: [],
+          unresolved: [],
+        },
+      }).decision,
+    ).toBe("process")
+
+    expect(
+      scoreOpportunity({
+        text: "Jacob Elordi has been offered the lead in Baz Luhrmann’s Elvis follow-up musical drama.",
+        authorHandle: "chaoscrave_",
+        entities: {
+          actors: [{ id: "a1", name: "Jacob Elordi", slug: "jacob-elordi", confidence: 90 }],
+          movies: [],
+          directors: [],
+          unresolved: [],
+        },
+      }).decision,
+    ).toBe("process")
+  })
 })

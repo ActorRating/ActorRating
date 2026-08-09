@@ -255,26 +255,47 @@ const TEMPLATES: Array<
   (p: { name: string; movie: string; year: string; score: string }) => string
 > = [
   (p) =>
-    `${p.name}'s ${p.movie} (${p.year}) is ${p.score}/10 on ActorRating — does that craft baseline change how you read this casting?`,
+    `${p.name}'s ${p.movie} (${p.year}) is ${p.score}/10 on ActorRating, does that craft baseline change how you read this casting?`,
   (p) =>
-    `ActorRating has ${p.name} at ${p.score}/10 for ${p.movie} — what should we expect them to bring here?`,
+    `ActorRating has ${p.name} at ${p.score}/10 for ${p.movie}, what should we expect them to bring here?`,
   (p) =>
     `${p.score}/10 on ActorRating for ${p.name} in ${p.movie} (${p.year}). Fair reference point for this news?`,
   (p) =>
-    `${p.movie} put ${p.name} at ${p.score}/10 with us — the interesting question is whether that same register shows up in this role.`,
+    `${p.movie} put ${p.name} at ${p.score}/10 with us, the interesting question is whether that same register shows up in this role.`,
   (p) =>
     `Before this news hits the discourse: ${p.name}'s ${p.movie} sits at ${p.score}/10 on ActorRating. Agree with that read?`,
   (p) =>
-    `${p.name} already earned ${p.score}/10 from us on ${p.movie} — is that the right craft bar for this announcement?`,
+    `${p.name} already earned ${p.score}/10 from us on ${p.movie}, is that the right craft bar for this announcement?`,
   (p) =>
     `Craft check from us: ${p.name} in ${p.movie} = ${p.score}/10. Which part of that performance do you want more of here?`,
   (p) =>
-    `On ActorRating, ${p.name}'s ${p.movie} lands ${p.score}/10 — curious what you think transfers to this project.`,
+    `On ActorRating, ${p.name}'s ${p.movie} lands ${p.score}/10, curious what you think transfers to this project.`,
   (p) =>
-    `${p.name} · ${p.movie} · ${p.score}/10 on ActorRating. Does that number match your take going into this cast news?`,
+    `${p.name}, ${p.movie}, ${p.score}/10 on ActorRating. Does that number match your take going into this cast news?`,
   (p) =>
-    `We have ${p.name} at ${p.score}/10 for ${p.movie} (${p.year}) — soft or strong floor for judging this move?`,
+    `We have ${p.name} at ${p.score}/10 for ${p.movie} (${p.year}), soft or strong floor for judging this move?`,
 ]
+
+/** At most one decimal place (7, 7.1 — never 7.144). */
+export function formatScoreDisplay(score: number): string {
+  const rounded = Math.round(score * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+/** Prefer commas over em/en dashes in public reply copy. */
+export function polishReplyCopy(reply: string): string {
+  return reply
+    .replace(/\u2014/g, ",")
+    .replace(/\u2013/g, ",")
+    .replace(/--+/g, ",")
+    .replace(/(\d+)\.(\d{2,})\s*(\/10)/g, (_, whole: string, frac: string, suf: string) => {
+      return `${formatScoreDisplay(Number(`${whole}.${frac}`))}${suf}`
+    })
+    .replace(/\s+,/g, ",")
+    .replace(/,([^\s])/g, ", $1")
+    .replace(/,{2,}/g, ",")
+    .trim()
+}
 
 export function formatPriorWorkReply(input: {
   name: string
@@ -287,11 +308,11 @@ export function formatPriorWorkReply(input: {
     Math.abs(
       [...input.seed].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 0),
     ) % TEMPLATES.length
-  const score = Number(input.score.toFixed(input.score % 1 === 0 ? 0 : 1))
-  return TEMPLATES[idx]!({
+  const reply = TEMPLATES[idx]!({
     name: input.name,
     movie: input.movie,
     year: input.year,
-    score: String(score),
+    score: formatScoreDisplay(input.score),
   })
+  return polishReplyCopy(reply)
 }

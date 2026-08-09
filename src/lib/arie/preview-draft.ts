@@ -7,10 +7,11 @@ import {
   asScoreNumber,
   formatPriorWorkReply,
   pickPriorWorkFact,
+  polishReplyCopy,
 } from "@/lib/arie/prior-work"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 
-const PROMPT_VERSION = "reply-writer@preview-0.7"
+const PROMPT_VERSION = "reply-writer@preview-0.8"
 export const NO_REPLY_TEXT = "[NO REPLY]"
 
 const GROUNDING_FACT_TYPES = new Set([
@@ -89,7 +90,7 @@ export function resolveDraftAction(input: {
     return { action: "no_reply", reply: NO_REPLY_TEXT, reason: "ungrounded_reply" }
   }
 
-  return { action: "reply", reply, reason: "grounded" }
+  return { action: "reply", reply: polishReplyCopy(reply), reason: "grounded" }
 }
 
 /**
@@ -183,6 +184,7 @@ export async function previewReplyDraft(
     "You may ONLY assert numeric or structured facts that appear in context.facts (cite fact_id in claims).",
     "On casting_news: cite a Prior work aggregate and frame it as prior craft — never as a score for the new unreleased role.",
     "Tone: craft-first, warm-dry, curious. Invite conversation. No rage bait, no follow/CTA spam, no clickbait.",
+    "Scores: at most ONE decimal place (7.1/10 not 7.144/10). Never use em dashes (—) or en dashes (–); use a comma instead.",
     "Prefer under 240 characters when possible; max 280.",
     "",
     "=== BRAND CONSTITUTION ===",
