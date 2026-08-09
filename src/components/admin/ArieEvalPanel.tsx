@@ -263,7 +263,10 @@ export default function ArieEvalPanel() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(typeof data.error === "string" ? data.error : `Publish failed (${res.status})`)
+        const err =
+          typeof data.error === "string" ? data.error : `Publish failed (${res.status})`
+        const extra = typeof data.xBody === "string" && data.xBody ? ` | ${data.xBody}` : ""
+        throw new Error(`${err}${extra}`.slice(0, 500))
       }
       applyPreview({
         ...preview,

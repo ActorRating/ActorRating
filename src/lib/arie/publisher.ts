@@ -20,7 +20,7 @@ export type PublishResult =
       mode: AriePublishMode
       previewId: string
     }
-  | { ok: false; reason: string; previewId?: string }
+  | { ok: false; reason: string; previewId?: string; xBody?: string }
 
 function startOfUtcDay(d = new Date()): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
@@ -143,7 +143,12 @@ export async function publishPreviewReply(input: {
         errorMessage: posted.reason,
       },
     })
-    return { ok: false, reason: posted.reason, previewId: preview.id }
+    return {
+      ok: false,
+      reason: posted.reason,
+      previewId: preview.id,
+      xBody: posted.xBody,
+    }
   }
 
   await prisma.ariePreviewEval.update({

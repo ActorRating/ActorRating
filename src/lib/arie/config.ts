@@ -58,15 +58,27 @@ export function arieXWriteCredentials(): {
   accessToken: string
   accessSecret: string
 } | null {
-  const apiKey = process.env.ARIE_X_API_KEY?.trim() || process.env.X_API_KEY?.trim()
-  const apiSecret = process.env.ARIE_X_API_SECRET?.trim() || process.env.X_API_SECRET?.trim()
+  const clean = (v: string | undefined) => {
+    if (!v) return ""
+    let s = v.trim()
+    // Coolify/people often paste secrets wrapped in quotes
+    if (
+      (s.startsWith('"') && s.endsWith('"')) ||
+      (s.startsWith("'") && s.endsWith("'"))
+    ) {
+      s = s.slice(1, -1).trim()
+    }
+    return s.replace(/\r?\n/g, "")
+  }
+  const apiKey = clean(process.env.ARIE_X_API_KEY) || clean(process.env.X_API_KEY)
+  const apiSecret = clean(process.env.ARIE_X_API_SECRET) || clean(process.env.X_API_SECRET)
   const accessToken =
-    process.env.ARIE_X_ACCESS_TOKEN?.trim() || process.env.X_ACCESS_TOKEN?.trim()
+    clean(process.env.ARIE_X_ACCESS_TOKEN) || clean(process.env.X_ACCESS_TOKEN)
   const accessSecret =
-    process.env.ARIE_X_ACCESS_SECRET?.trim() ||
-    process.env.ARIE_X_ACCESS_TOKEN_SECRET?.trim() ||
-    process.env.X_ACCESS_SECRET?.trim() ||
-    process.env.X_ACCESS_TOKEN_SECRET?.trim()
+    clean(process.env.ARIE_X_ACCESS_SECRET) ||
+    clean(process.env.ARIE_X_ACCESS_TOKEN_SECRET) ||
+    clean(process.env.X_ACCESS_SECRET) ||
+    clean(process.env.X_ACCESS_TOKEN_SECRET)
   if (!apiKey || !apiSecret || !accessToken || !accessSecret) return null
   return { apiKey, apiSecret, accessToken, accessSecret }
 }

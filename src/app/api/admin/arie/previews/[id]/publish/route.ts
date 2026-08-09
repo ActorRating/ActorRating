@@ -38,7 +38,10 @@ export async function POST(
           : result.reason === "missing_tweet_id" || result.reason === "not_publishable_draft"
             ? 400
             : 422
-    return NextResponse.json({ error: result.reason, previewId: id }, { status })
+    return NextResponse.json(
+      { error: result.reason, previewId: id, xBody: result.xBody ?? null },
+      { status },
+    )
   }
 
   return NextResponse.json({

@@ -91,7 +91,10 @@ function oauth1Header(opts: {
 export async function postReplyTweet(input: {
   text: string
   inReplyToTweetId: string
-}): Promise<{ ok: true; tweetId: string } | { ok: false; reason: string; status?: number }> {
+}): Promise<
+  | { ok: true; tweetId: string }
+  | { ok: false; reason: string; status?: number; xBody?: string }
+> {
   const creds = arieXWriteCredentials()
   if (!creds) {
     await arieLog("warn", "x", "missing_write_creds", {})
@@ -131,23 +134,35 @@ export async function postReplyTweet(input: {
       const parsed = JSON.parse(bodyText) as {
         detail?: string
         title?: string
-        errors?: Array<{ message?: string }>
+        reason?: string
+        type?: string
+        errors?: Array<{ message?: string; code?: number }>
       }
+      const errBits = parsed.errors
+        ?.map((e) => [e.code != null ? `code ${e.code}` : "", e.message ?? ""].filter(Boolean).join(" "))
+        .filter(Boolean)
       detail =
         parsed.detail ||
         parsed.title ||
-        parsed.errors?.map((e) => e.message).filter(Boolean).join("; ") ||
+        parsed.reason ||
+        (errBits?.length ? errBits.join("; ") : "") ||
+        parsed.type ||
         ""
     } catch {
       detail = bodyText.slice(0, 200)
     }
     await arieLog("error", "x", "reply_failed", {
       status: res.status,
-      body: bodyText.slice(0, 400),
+      body: bodyText.slice(0, 500),
       replyTo,
     })
-    const suffix = detail ? `: ${detail}` : ""
-    return { ok: false, reason: `x_http_${res.status}${suffix}`.slice(0, 300), status: res.status }
+    const suffix = detail ? `: ${detail}` : bodyText ? `: ${bodyText.slice(0, 180)}` : ""
+    return {
+      ok: false,
+      reason: `x_http_${res.status}${suffix}`.slice(0, 400),
+      status: res.status,
+      xBody: bodyText.slice(0, 500),
+    }
   }
 
   let tweetId = ""
