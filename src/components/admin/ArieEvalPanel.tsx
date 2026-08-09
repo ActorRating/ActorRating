@@ -70,13 +70,22 @@ type SubKey = (typeof SUBS)[number][0]
 const NEXT_CLIENT_TIMEOUT_MS = 95_000
 
 const BULK_PLACEHOLDER = `@boinkbuzz
-1850000000000000000
-Paste a real casting/news tweet + optional tweet id/URL on the line under @handle.
+https://x.com/boinkbuzz/status/1850000000000000000
+Paste a real casting/news tweet. Optional line 2 = tweet URL/id (for Open on X).
 
 ---
 @chaoscrave_
 https://x.com/chaoscrave_/status/1850000000000000001
 Paste another tweet.`
+
+function sourceTweetUrl(raw: string): string | null {
+  const s = raw.trim()
+  if (!s) return null
+  if (/^\d{5,30}$/.test(s)) return `https://x.com/i/web/status/${s}`
+  const m = s.match(/(?:twitter\.com|x\.com)\/[^/]+\/status\/(\d{5,30})/i)
+  if (m?.[1]) return `https://x.com/i/web/status/${m[1]}`
+  return null
+}
 
 export default function ArieEvalPanel() {
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -207,25 +216,13 @@ export default function ArieEvalPanel() {
       if (data.queue) setQueue(data.queue)
       setUngraded((u) => u + 1)
       setTotal((t) => t + 1)
-      if (data.publish?.ok) {
-        setMessage(`Draft ready · AUTO-POSTED ${data.publish.tweetId}`)
-      } else if (data.publish && !data.publish.ok && data.publish.reason !== "auto_publish_disabled" && data.publish.reason !== "publish_disabled" && data.publish.reason !== "missing_tweet_id") {
-        setMessage(
-          data.kind === "ignored"
-            ? "Opportunity ignored — grade if silence was correct"
-            : data.kind === "no_reply"
-              ? "Model/system chose [NO REPLY]"
-              : `Draft ready · auto-publish skipped (${data.publish.reason})`,
-        )
-      } else {
-        setMessage(
-          data.kind === "ignored"
-            ? "Opportunity ignored — grade if silence was correct"
-            : data.kind === "no_reply"
-              ? "Model/system chose [NO REPLY]"
-              : "Draft ready",
-        )
-      }
+      setMessage(
+        data.kind === "ignored"
+          ? "Opportunity ignored — grade if silence was correct"
+          : data.kind === "no_reply"
+            ? "Model/system chose [NO REPLY]"
+            : "Draft ready — Copy + Open on X to reply as a human",
+      )
     } catch (err) {
       const aborted =
         (err instanceof Error && err.name === "AbortError") ||
@@ -248,42 +245,28 @@ export default function ArieEvalPanel() {
     }
   }
 
-  async function publishLive() {
-    if (!preview) return
-    beginBusy()
-    setMessage(null)
-    try {
-      const res = await fetch(`/api/admin/arie/previews/${preview.id}/publish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inReplyToTweetId: replyTweetId,
-          text: editableDraft,
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        const err =
-          typeof data.error === "string" ? data.error : `Publish failed (${res.status})`
-        const extra = typeof data.xBody === "string" && data.xBody ? ` | ${data.xBody}` : ""
-        throw new Error(`${err}${extra}`.slice(0, 500))
-      }
-      applyPreview({
-        ...preview,
-        draftText: editableDraft,
-        inReplyToTweetId: replyTweetId,
-        publishStatus: "PUBLISHED",
-        publishMode: "MANUAL",
-        publishedTweetId: data.tweetId,
-        publishedAt: new Date().toISOString(),
-        publishError: null,
-      })
-      setMessage(`Posted · ${data.url ?? data.tweetId}`)
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Publish failed")
-    } finally {
-      endBusy()
+  async function copyDraft() {
+    const text = editableDraft.trim()
+    if (!text) {
+      setMessage("Nothing to copy")
+      return
     }
+    try {
+      await navigator.clipboard.writeText(text)
+      setMessage("Draft copied — open the tweet on X and paste as a reply")
+    } catch {
+      setMessage("Copy failed — select the draft and copy manually")
+    }
+  }
+
+  function openSourceOnX() {
+    const url = sourceTweetUrl(replyTweetId)
+    if (!url) {
+      setMessage("Add a source tweet id or URL first")
+      return
+    }
+    window.open(url, "_blank", "noopener,noreferrer")
+    setMessage("Opened source on X — paste the copied draft as your reply")
   }
 
   async function saveGrade(
@@ -507,7 +490,12 @@ export default function ArieEvalPanel() {
           {!silence ? (
             <div className="space-y-2 rounded-lg border border-[#FFD700]/30 bg-[#FFD700]/5 p-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#FFD700]/80">
-                Soft-launch · Approve &amp; Post
+                Soft-launch · human reply on X
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Current X API auth cannot reply to arbitrary third-party posts. Workflow: edit draft →
+                Copy → Open on X → paste as reply yourself. Publisher API remains for future
+                mention/own-post cases only — not used for cold third-party replies.
               </p>
               <label className="block text-xs text-muted-foreground">
                 Source tweet id or URL
@@ -518,23 +506,24 @@ export default function ArieEvalPanel() {
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground"
                 />
               </label>
-              <button
-                type="button"
-                disabled={
-                  busy ||
-                  preview.publishStatus === "PUBLISHED" ||
-                  !replyTweetId.trim() ||
-                  !editableDraft.trim()
-                }
-                onClick={() => void publishLive()}
-                className="rounded-lg border border-[#FFD700] bg-[#FFD700]/15 px-3 py-2 text-sm font-semibold text-[#FFD700] disabled:opacity-50"
-              >
-                {preview.publishStatus === "PUBLISHED" ? "Already posted" : "Approve & Post reply"}
-              </button>
-              <p className="text-[11px] text-muted-foreground">
-                Requires Coolify env: ARIE_PUBLISH_ENABLED=true + X OAuth write keys. Auto needs
-                ARIE_AUTO_PUBLISH_ENABLED=true and a tweet id in the queue block.
-              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !editableDraft.trim()}
+                  onClick={() => void copyDraft()}
+                  className="rounded-lg border border-[#FFD700] bg-[#FFD700]/15 px-3 py-2 text-sm font-semibold text-[#FFD700] disabled:opacity-50"
+                >
+                  Copy draft
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || !sourceTweetUrl(replyTweetId)}
+                  onClick={() => openSourceOnX()}
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-[#FFD700]/40 disabled:opacity-50"
+                >
+                  Open on X
+                </button>
+              </div>
             </div>
           ) : null}
 

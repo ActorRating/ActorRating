@@ -10,8 +10,9 @@ export default function AdminAriePage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground">ARIE eval</h1>
           <p className="text-sm text-muted-foreground">
-            Soft-launch: grade drafts, then <span className="text-[#FFD700]">Approve &amp; Post</span>{" "}
-            for real replies. Auto-post is optional behind env kill switches — see docs/arie/SOFT_LAUNCH.md.
+            Soft-launch: grade drafts, then <span className="text-[#FFD700]">Copy</span> +{" "}
+            <span className="text-[#FFD700]">Open on X</span> to reply as a human. X API cannot
+            cold-reply to third-party posts under current auth — see docs/arie/SOFT_LAUNCH.md.
           </p>
         </div>
         <Link
