@@ -84,7 +84,8 @@
     "resend": "^4.0.0",
     "server-only": "^0.0.1",
     "swr": "^2.3.4",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

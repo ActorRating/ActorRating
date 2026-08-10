@@ -592,22 +592,95 @@ model ArieInboundEvent {
 }
 
 /// Scored content opportunity derived from an inbound event (or calendar seed).
+/// contentType: "reply" (Sprint 2) | "original" (Original Content Engine).
 model ArieOpportunity {
   id               String   @id @default(cuid())
   inboundEventId   String?
+  /// reply | original
+  contentType      String   @default("reply")
   format           String?
   status           String   @default("open")
   opportunityScore Int?
   scoreBreakdown   Json?
   priorityAuthor   Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
 
-  inboundEvent ArieInboundEvent? @relation(fields: [inboundEventId], references: [id], onDelete: SetNull)
+  /// Original Content Opportunity Score (0–100) — separate from reply Opportunity Score.
+  originalScore          Int?
+  originalScoreBreakdown Json?
+  /// Cluster key so Deadline + Variety reporting the same casting = one opportunity.
+  dedupeKey              String?
+  expiresAt              DateTime?
+  /// NEW | SCORED | ELIGIBLE | CONCEPTS_GENERATED | CONCEPT_SELECTED | DRAFT_GENERATED |
+  /// QA_PASSED | QA_FAILED | READY | APPROVED | PUBLISHED | IGNORED | EXPIRED | REJECTED | FAILED | DUPLICATE
+  originalStatus         String?
+  concepts               Json?
+  selectedConceptId      String?
+  selectedConcept        Json?
+  conceptRankMeta        Json?
+  visualSpec             Json?
+  finalDraft             String?            @db.Text
+  draftJson              Json?
+  qaResult               Json?
+  publishStatus          AriePublishStatus  @default(DRAFT)
+  publishMode            AriePublishMode?
+  publishedTweetId       String?
+  publishedAt            DateTime?
+  publishError           String?
+  approvedAt             DateTime?
+  approvedByEmail        String?
+  ignoredReason          String?
+  /// { concept?, writer?, qa? }
+  promptVersions         Json?
+  /// Generation metadata (models, tokens, latency per stage)
+  modelMeta              Json?
+  conceptGenCount        Int                @default(0)
+  draftGenCount          Int                @default(0)
+  qaRunCount             Int                @default(0)
+
+  /// Taxonomy: comparison | ranking | data_radar | question_debate | observation_analysis
+  contentFormat          String?
+  /// Source event attribution (distribution signal, not prestige ranking).
+  sourceHandle           String?
+  sourcePostId           String?
+  sourceType             String?
+  sourceUrl              String?
+  sourceTimestamp        DateTime?
+  /// Heuristic prediction snapshot — frozen once published (never overwrite with hindsight).
+  prediction             Json?
+  predictionVersion      String?
+  predictionLockedAt     DateTime?
+  predictedScore         Int?
+  predictedTier          String?
+  /// Immutable published copy + hash for idempotent/dedupe checks.
+  publishedText          String?            @db.Text
+  contentHash            String?
+  /// Stable utm_content / first-party attribution key (defaults to opportunity id).
+  attributionCode        String?
+  /// Lineage snapshot at approve/publish (ids + prompt versions).
+  lineage                Json?
+  /// Soft lock for publish idempotency (PUBLISHING state + lease).
+  publishLockUntil       DateTime?
+  publishAttemptId       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inboundEvent   ArieInboundEvent?   @relation(fields: [inboundEventId], references: [id], onDelete: SetNull)
   contextPackage ArieContextPackage?
+  socialPosts    ArieSocialPost[]
 
   @@index([status, createdAt])
   @@index([inboundEventId])
+  @@index([contentType, originalStatus, createdAt])
+  @@index([dedupeKey])
+  @@index([expiresAt])
+  @@index([originalScore])
+  @@index([publishStatus, createdAt])
+  @@index([contentFormat])
+  @@index([sourceHandle])
+  @@index([contentHash])
+  @@index([attributionCode])
+  @@unique([publishAttemptId])
 }
 
 /// Persisted Context Package snapshot (Sprint 2) — agents consume this, not raw DB.
@@ -772,6 +845,7 @@ model AriePreviewEval {
 model ArieSocialPost {
   id               String           @id @default(cuid())
   previewEvalId    String?
+  opportunityId    String?
   platform         AriePlatform     @default(X)
   externalPostId   String?
   inReplyToTweetId String?
@@ -781,10 +855,65 @@ model ArieSocialPost {
   errorMessage     String?
   createdAt        DateTime         @default(now())
 
-  previewEval AriePreviewEval? @relation(fields: [previewEvalId], references: [id], onDelete: SetNull)
+  /// Measurement + attribution (originals; nullable for replies).
+  contentFormat       String?
+  attributionCode     String?
+  predictedScore      Int?
+  predictionVersion   String?
+  /// Native X metrics (nullable until fetched).
+  impressions         Int?
+  likes               Int?
+  replies             Int?
+  reposts             Int?
+  quotes              Int?
+  bookmarks           Int?
+  profileVisits       Int?
+  followerDelta       Int?
+  linkClicks          Int?
+  engagementRate      Float?
+  /// ActorRating first-party metrics.
+  actorRatingClicks   Int?
+  actorRatingSessions Int?
+  ratingsCreated      Int?
+  waitlistSignups     Int?
+  metricsUpdatedAt    DateTime?
+
+  previewEval     AriePreviewEval?     @relation(fields: [previewEvalId], references: [id], onDelete: SetNull)
+  opportunity     ArieOpportunity?     @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  metricSnapshots ArieMetricSnapshot[]
 
   @@unique([platform, externalPostId])
   @@index([previewEvalId])
+  @@index([opportunityId])
   @@index([createdAt])
   @@index([status, createdAt])
+  @@index([attributionCode])
+}
+
+/// Time-window metric trajectory for learning (1h / 6h / 24h / 72h / 7d).
+model ArieMetricSnapshot {
+  id                  String   @id @default(cuid())
+  socialPostId        String
+  /// 1h | 6h | 24h | 72h | 7d
+  window              String
+  capturedAt          DateTime @default(now())
+  impressions         Int?
+  likes               Int?
+  replies             Int?
+  reposts             Int?
+  quotes              Int?
+  bookmarks           Int?
+  profileVisits       Int?
+  followerDelta       Int?
+  linkClicks          Int?
+  actorRatingClicks   Int?
+  actorRatingSessions Int?
+  ratingsCreated      Int?
+  waitlistSignups     Int?
+
+  socialPost ArieSocialPost @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+
+  @@unique([socialPostId, window])
+  @@index([capturedAt])
+  @@index([window, capturedAt])
 }

@@ -1,14 +1,17 @@
-# ARIE status — Soft-launch (human-on-X)
+# ARIE status — Originals A–D hardened (pre-deploy)
 
-**Effective:** 2026-08-09  
-**Mode:** Draft → copy → human reply on X (third-party). Auto-publish **disabled**.
+**Effective:** 2026-08-10  
+**Modes:**
 
-| Allowed | Not allowed |
+1. **Reply soft-launch (human-on-X)** — `/admin/arie`
+2. **Original Content Engine** — `/admin/arie/originals` with prediction + metrics schema
+
+| Flag | Default |
 | --- | --- |
-| Grade drafts in `/admin/arie` | API cold-reply to third-party posts (X 403) |
-| **Copy draft** + **Open on X** for human paste | Enabling `ARIE_AUTO_PUBLISH_ENABLED` for soft-launch |
-| Keep validating Context / Opportunity / writer between batches | Bypassing X mention/author reply restriction |
+| `ARIE_PUBLISH_ENABLED` | **false** |
+| `ARIE_ORIGINAL_PUBLISH_ENABLED` | **false** |
+| `ARIE_AUTO_PUBLISH_ENABLED` | **false** |
 
-**Publisher** code remains as the future write choke point; soft-launch UI does not use it for third-party replies.
+Human Approve → Publisher → X remains the only original write path. Idempotent publish lock prevents double-post.
 
-Docs: [SOFT_LAUNCH.md](./SOFT_LAUNCH.md) · Exit gates: [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) · [BASELINE.md](./BASELINE.md)
+Docs: [ORIGINALS.md](./ORIGINALS.md) · [SOFT_LAUNCH.md](./SOFT_LAUNCH.md)

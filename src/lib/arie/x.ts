@@ -177,3 +177,93 @@ export async function postReplyTweet(input: {
   await arieLog("info", "x", "reply_posted", { tweetId, replyTo })
   return { ok: true, tweetId }
 }
+
+/**
+ * Post a standalone original tweet as @ActorRating (OAuth 1.0a).
+ * Only call from Publisher after kill-switch + human-approval checks.
+ * Does not attach reply/quote metadata.
+ */
+export async function postOriginalTweet(input: {
+  text: string
+}): Promise<
+  | { ok: true; tweetId: string }
+  | { ok: false; reason: string; status?: number; xBody?: string }
+> {
+  const creds = arieXWriteCredentials()
+  if (!creds) {
+    await arieLog("warn", "x", "missing_write_creds", {})
+    return { ok: false, reason: "missing_write_credentials" }
+  }
+
+  const text = input.text.trim()
+  if (!text || text.length > 280) {
+    return { ok: false, reason: "invalid_text_length" }
+  }
+
+  const url = "https://api.twitter.com/2/tweets"
+  const authorization = oauth1Header({
+    method: "POST",
+    url,
+    ...creds,
+  })
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: authorization,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text }),
+  })
+
+  const bodyText = await res.text().catch(() => "")
+  if (!res.ok) {
+    let detail = ""
+    try {
+      const parsed = JSON.parse(bodyText) as {
+        detail?: string
+        title?: string
+        reason?: string
+        type?: string
+        errors?: Array<{ message?: string; code?: number }>
+      }
+      const errBits = parsed.errors
+        ?.map((e) =>
+          [e.code != null ? `code ${e.code}` : "", e.message ?? ""].filter(Boolean).join(" "),
+        )
+        .filter(Boolean)
+      detail =
+        parsed.detail ||
+        parsed.title ||
+        parsed.reason ||
+        (errBits?.length ? errBits.join("; ") : "") ||
+        parsed.type ||
+        ""
+    } catch {
+      detail = bodyText.slice(0, 200)
+    }
+    await arieLog("error", "x", "original_failed", {
+      status: res.status,
+      body: bodyText.slice(0, 500),
+    })
+    const suffix = detail ? `: ${detail}` : bodyText ? `: ${bodyText.slice(0, 180)}` : ""
+    return {
+      ok: false,
+      reason: `x_http_${res.status}${suffix}`.slice(0, 400),
+      status: res.status,
+      xBody: bodyText.slice(0, 500),
+    }
+  }
+
+  let tweetId = ""
+  try {
+    const data = JSON.parse(bodyText) as { data?: { id?: string } }
+    tweetId = data.data?.id ?? ""
+  } catch {
+    return { ok: false, reason: "invalid_x_response" }
+  }
+  if (!tweetId) return { ok: false, reason: "missing_tweet_id" }
+
+  await arieLog("info", "x", "original_posted", { tweetId })
+  return { ok: true, tweetId }
+}

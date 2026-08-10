@@ -1326,6 +1326,11 @@ Sprint 5  Radar Generator · Comparison Cards · Leaderboards
 Sprint 6  Learning Engine · Analytics · Experiments · Admin Dashboard
 ```
 
+### 15.0a Original Content Engine (2026-08 acceleration)
+
+Product priority shifted originals ahead of arbitrary third-party API replies (X 403).  
+**Implemented (A–D):** extend `ArieOpportunity` + Original Opportunity Score + concepts + writer + visual **spec** + QA + human Publisher path. Details: [ORIGINALS.md](./ORIGINALS.md). Image rendering remains Sprint 5. Auto original publish remains OFF.
+
 Architecture is frozen. **Build Sprint 1 now.**
 
 ### 15.1 Sprint 1 exit criteria

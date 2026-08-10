@@ -64,6 +64,7 @@ export async function processInboundEvent(eventId: string): Promise<{
     const opp = await prisma.arieOpportunity.create({
       data: {
         inboundEventId: event.id,
+        contentType: "reply",
         format: opportunity.suggestedFormat,
         status: opportunity.decision === "process" ? "open" : "ignored",
         opportunityScore: opportunity.score,

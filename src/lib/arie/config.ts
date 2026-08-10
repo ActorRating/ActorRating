@@ -15,6 +15,15 @@ export function arieAutoPublishEnabled(): boolean {
   return process.env.ARIE_AUTO_PUBLISH_ENABLED === "true"
 }
 
+/**
+ * Human-approved original posts via Publisher.
+ * Default OFF. Still requires ARIE_PUBLISH_ENABLED=true at the choke point.
+ * Does NOT enable unattended publishing.
+ */
+export function arieOriginalPublishEnabled(): boolean {
+  return process.env.ARIE_ORIGINAL_PUBLISH_ENABLED === "true"
+}
+
 export function arieAutoPublishMinOpportunity(): number {
   const raw = Number(process.env.ARIE_AUTO_PUBLISH_MIN_OPPORTUNITY ?? "72")
   return Number.isFinite(raw) ? raw : 72

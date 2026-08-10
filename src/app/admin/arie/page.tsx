@@ -15,12 +15,20 @@ export default function AdminAriePage() {
             cold-reply to third-party posts under current auth — see docs/arie/SOFT_LAUNCH.md.
           </p>
         </div>
-        <Link
-          href="/admin/arie/stats"
-          className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
-        >
-          Stats
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/arie/originals"
+            className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
+          >
+            Originals
+          </Link>
+          <Link
+            href="/admin/arie/stats"
+            className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
+          >
+            Stats
+          </Link>
+        </div>
       </header>
       <ArieEvalPanel />
     </div>

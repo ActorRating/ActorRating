@@ -20,6 +20,10 @@ We **do not** attempt to bypass that. Soft-launch does **not** API-post cold rep
 
 Auto-publish stays **off** (`ARIE_AUTO_PUBLISH_ENABLED` unset / not `true`).
 
+## Originals (parallel track)
+
+Strategic original publishing is documented in [ORIGINALS.md](./ORIGINALS.md) (`/admin/arie/originals`). That path uses `postOriginalTweet` via Publisher and requires `ARIE_ORIGINAL_PUBLISH_ENABLED=true` **plus** human approval. It does not enable cold third-party replies.
+
 ## Publisher (kept, unused for cold replies)
 
 `Publisher` remains the only choke point that may call X write APIs (mention/own-post or future authorized cases). Soft-launch UI does **not** call Approve & Post for third-party cold replies.

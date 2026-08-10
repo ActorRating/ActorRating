@@ -4,13 +4,16 @@ Source of truth for ActorRating’s **cinema intelligence engine** (channel-agno
 
 | Doc | Role |
 | --- | --- |
-| [STATUS.md](./STATUS.md) | **Current mode: Sprint 2 feature-complete — validate only** |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | RFC **v1.2 FROZEN** |
+| [STATUS.md](./STATUS.md) | **Current:** reply soft-launch + Originals A–D |
+| [ORIGINALS.md](./ORIGINALS.md) | Original Content Opportunity Engine (A–D) |
+| [SOFT_LAUNCH.md](./SOFT_LAUNCH.md) | Human-on-X reply workflow / X 403 |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | RFC **v1.2** (+ originals extension note) |
 | [BRAND_CONSTITUTION.md](./BRAND_CONSTITUTION.md) | Permanent law for every agent |
 | [VALIDATION.md](./VALIDATION.md) | Blind grade · batch 25 · prediction accuracy |
-| [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) | Gates before Sprint 3 |
-| [BASELINE.md](./BASELINE.md) | Freeze after first corpus |
-| [corpus/](./corpus/) | Validation Corpus v1 |
+| [SPRINT2_EXIT.md](./SPRINT2_EXIT.md) | Reply validation gates |
+| [BASELINE.md](./BASELINE.md) | Reply writer checkpoint |
+| [prompts/](./prompts/) | Versioned agent prompts (originals v1.0) |
+| [corpus/](./corpus/) | Validation corpus |
 
-**Now:** evaluate → pattern → justified builder/score fix → freeze baseline.  
-**Not now:** new features, agents, or Sprint 3.
+**Now:** operate reply eval + originals command center (`/admin/arie`, `/admin/arie/originals`).  
+**Not now:** unattended publishing, image renderer, X API bypass, auto prompt mutation.
