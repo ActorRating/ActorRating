@@ -26,6 +26,19 @@ type PipelineResult = {
   errors?: string[]
 }
 
+type MachineEval = {
+  grade?: string
+  scores?: {
+    truthfulness?: number
+    usefulness?: number
+    framing?: number
+    brandVoice?: number
+  }
+  summary?: string
+  failures?: string[]
+  deterministicFlags?: string[]
+}
+
 type ValCase = {
   id: string
   corpusItemId: string
@@ -46,6 +59,8 @@ type ValCase = {
   gradeNotes: string | null
   pipelineResult: PipelineResult | null
   opportunityId: string | null
+  machineEval?: MachineEval | null
+  machineGradedAt?: string | null
 }
 
 type Batch = {
@@ -75,6 +90,8 @@ export default function ArieValidationPanel() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null)
+  const [reportMarkdown, setReportMarkdown] = useState<string>("")
+  const [copyFlash, setCopyFlash] = useState<string | null>(null)
 
   const loadList = useCallback(async () => {
     const res = await fetch("/api/admin/arie/validation")
@@ -94,6 +111,10 @@ export default function ArieValidationPanel() {
       if (!res.ok) return
       const data = await res.json()
       setDetail(data.batch as Batch)
+      const md =
+        (data.batch?.aggregateMetrics as { analyticsReportMarkdown?: string } | null)
+          ?.analyticsReportMarkdown ?? ""
+      setReportMarkdown(md)
       const firstReview = (data.batch.cases as ValCase[] | undefined)?.find(
         (c) => c.selectedForReview && !c.humanGrade,
       )
@@ -189,6 +210,63 @@ export default function ArieValidationPanel() {
     })
   }
 
+  async function autoGradeAll() {
+    if (!selectedId) return
+    await run("autograde", async () => {
+      const res = await fetch(`/api/admin/arie/validation/${selectedId}/auto-grade`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "auto-grade failed")
+      setReportMarkdown(data.reportMarkdown ?? "")
+      setMessage(
+        `Machine-graded ${data.graded} cases (errors ${data.errors}) · A/B ${data.machineAbRatePercent ?? "—"}%`,
+      )
+      await loadDetail(selectedId)
+      await loadList()
+    })
+  }
+
+  async function refreshReport() {
+    if (!selectedId) return
+    await run("report", async () => {
+      const res = await fetch(`/api/admin/arie/validation/${selectedId}/report`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "report failed")
+      setReportMarkdown(data.markdown ?? "")
+      setMessage("Analytics report refreshed")
+      await loadDetail(selectedId)
+    })
+  }
+
+  async function copyReport(format: "markdown" | "json") {
+    if (!selectedId) return
+    await run("copy", async () => {
+      if (format === "markdown") {
+        let md = reportMarkdown
+        if (!md) {
+          const res = await fetch(`/api/admin/arie/validation/${selectedId}/report`)
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || "report failed")
+          md = data.markdown ?? ""
+          setReportMarkdown(md)
+        }
+        await navigator.clipboard.writeText(md)
+        setCopyFlash("Markdown copied")
+      } else {
+        const res = await fetch(`/api/admin/arie/validation/${selectedId}/report`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "report failed")
+        await navigator.clipboard.writeText(JSON.stringify(data.report, null, 2))
+        if (data.markdown) setReportMarkdown(data.markdown)
+        setCopyFlash("JSON copied")
+      }
+      setTimeout(() => setCopyFlash(null), 2000)
+    })
+  }
+
   const active = detail?.cases?.find((c) => c.id === activeCaseId) ?? null
   const metrics = detail?.aggregateMetrics as
     | {
@@ -199,8 +277,15 @@ export default function ArieValidationPanel() {
         selectedForReview?: number
         graded?: number
         gradeCounts?: Record<string, number>
+        machineEvaluation?: {
+          graded?: number
+          abRatePercent?: number | null
+          gradeCounts?: Record<string, number>
+        }
+        analyticsReportMarkdown?: string
       }
     | null
+  const machineEvalSummary = metrics?.machineEvaluation
 
   return (
     <div className="space-y-6">
@@ -325,10 +410,26 @@ export default function ArieValidationPanel() {
                   <Metric label="Avg opportunity" value={metrics.avgOpportunityScore ?? "—"} />
                   <Metric label="Avg factual conf" value={metrics.avgFactualConfidence ?? "—"} />
                   <Metric
-                    label="A/B rate"
+                    label="Human A/B"
                     value={
                       metrics.abRatePercent != null
-                        ? `${metrics.abRatePercent}% (${metrics.graded ?? 0} graded)`
+                        ? `${metrics.abRatePercent}% (${metrics.graded ?? 0})`
+                        : "—"
+                    }
+                  />
+                  <Metric
+                    label="Machine A/B"
+                    value={
+                      machineEvalSummary?.abRatePercent != null
+                        ? `${machineEvalSummary.abRatePercent}% (${machineEvalSummary.graded ?? 0})`
+                        : "—"
+                    }
+                  />
+                  <Metric
+                    label="Machine grades"
+                    value={
+                      machineEvalSummary?.gradeCounts
+                        ? `A${machineEvalSummary.gradeCounts.A ?? 0}/B${machineEvalSummary.gradeCounts.B ?? 0}/C${machineEvalSummary.gradeCounts.C ?? 0}/D${machineEvalSummary.gradeCounts.D ?? 0}`
                         : "—"
                     }
                   />
@@ -352,6 +453,40 @@ export default function ArieValidationPanel() {
                 >
                   Run all remaining
                 </Action>
+                <Action
+                  busy={busy}
+                  label="autograde"
+                  onClick={() => void autoGradeAll()}
+                  disabled={
+                    detail.status === "CREATED" || detail.status === "RUNNING"
+                  }
+                >
+                  {busy === "autograde" ? "Auto-grading…" : "Auto-grade all (LLM)"}
+                </Action>
+                <Action
+                  busy={busy}
+                  label="report"
+                  onClick={() => void refreshReport()}
+                  disabled={detail.status === "CREATED" || detail.status === "RUNNING"}
+                >
+                  Refresh analytics
+                </Action>
+                <Action
+                  busy={busy}
+                  label="copy"
+                  onClick={() => void copyReport("markdown")}
+                  disabled={detail.status === "CREATED" || detail.status === "RUNNING"}
+                >
+                  {copyFlash ?? "Copy markdown"}
+                </Action>
+                <Action
+                  busy={busy}
+                  label="copy"
+                  onClick={() => void copyReport("json")}
+                  disabled={detail.status === "CREATED" || detail.status === "RUNNING"}
+                >
+                  Copy JSON
+                </Action>
                 <label className="ml-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <input
                     type="checkbox"
@@ -361,6 +496,17 @@ export default function ArieValidationPanel() {
                   Review subset only
                 </label>
               </div>
+
+              {(reportMarkdown || metrics?.analyticsReportMarkdown) && (
+                <details className="rounded border border-white/10 p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-[#FFD700]">
+                    Analytics report preview (copyable)
+                  </summary>
+                  <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap text-[11px] text-muted-foreground">
+                    {reportMarkdown || metrics?.analyticsReportMarkdown}
+                  </pre>
+                </details>
+              )}
 
               <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
                 <ul className="max-h-[50vh] space-y-1 overflow-y-auto">
@@ -378,7 +524,13 @@ export default function ArieValidationPanel() {
                         <div className="flex justify-between">
                           <span>@{c.sourceHandle}</span>
                           <span className="text-muted-foreground">
-                            {c.humanGrade || (c.selectedForReview ? "review" : c.status)}
+                            {c.humanGrade
+                              ? `H:${c.humanGrade}`
+                              : c.machineEval?.grade
+                                ? `M:${c.machineEval.grade}`
+                                : c.selectedForReview
+                                  ? "review"
+                                  : c.status}
                           </span>
                         </div>
                         <p className="line-clamp-2 text-[11px] text-muted-foreground">
@@ -556,6 +708,28 @@ function CaseDetail({
       )}
 
       {c.errorMessage && <p className="text-xs text-red-400">{c.errorMessage}</p>}
+
+      {c.machineEval?.grade && (
+        <div className="rounded border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+          <div className="font-semibold text-emerald-300">
+            Machine grade: {c.machineEval.grade}
+            {c.machineEval.scores
+              ? ` · T${c.machineEval.scores.truthfulness}/U${c.machineEval.scores.usefulness}/F${c.machineEval.scores.framing}/V${c.machineEval.scores.brandVoice}`
+              : ""}
+          </div>
+          {c.machineEval.summary && (
+            <p className="mt-1 text-muted-foreground">{c.machineEval.summary}</p>
+          )}
+          {!!c.machineEval.failures?.length && (
+            <p className="mt-1 text-red-300/90">Failures: {c.machineEval.failures.join("; ")}</p>
+          )}
+          {!!c.machineEval.deterministicFlags?.length && (
+            <p className="mt-1 text-muted-foreground">
+              Flags: {c.machineEval.deterministicFlags.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
 
       {c.selectedForReview && (
         <div className="space-y-2 rounded border border-[#FFD700]/30 p-3">

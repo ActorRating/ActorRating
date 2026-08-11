@@ -47,9 +47,22 @@ Seed fixtures are for regression coverage — not to inflate “% good.”
 
 ## Grade
 
-A–D + 1–5: Truthfulness · Usefulness · Framing · Brand voice.
-
+### Human
+A–D + 1–5: Truthfulness · Usefulness · Framing · Brand voice.  
 Grades never rewrite `corpusSnapshot`, `pipelineResult`, or `arieVersions`.
+
+### Machine (LLM)
+Button: **Auto-grade all (LLM)** on any processed batch (`SAMPLED` / `GRADING` / `COMPLETE`).
+
+- Writes `machineEval` only — **never** overwrites `humanGrade`
+- Deterministic floors for fabricated / contradicted / should-ignore engagement
+- **Refresh analytics** rebuilds the report from frozen pipeline + grades
+- **Copy markdown** / **Copy JSON** for pasting into docs, Notion, Slack, etc.
+
+APIs:
+
+- `POST /api/admin/arie/validation/:id/auto-grade`
+- `GET /api/admin/arie/validation/:id/report`
 
 ## Migration
 

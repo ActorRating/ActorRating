@@ -984,6 +984,9 @@ model ArieValidationCase {
   gradeNotes        String?   @db.Text
   gradedAt          DateTime?
   gradedByEmail     String?
+  /// LLM / machine eval — never overwrites humanGrade. Safe to re-run.
+  machineEval       Json?
+  machineGradedAt   DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

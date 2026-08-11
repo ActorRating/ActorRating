@@ -941,6 +941,8 @@ export function serializeCase(c: {
   gradeNotes: string | null
   gradedAt: Date | null
   gradedByEmail: string | null
+  machineEval?: unknown
+  machineGradedAt?: Date | null
   createdAt: Date
   updatedAt: Date
 }) {
@@ -969,6 +971,8 @@ export function serializeCase(c: {
     gradeNotes: c.gradeNotes,
     gradedAt: c.gradedAt?.toISOString() ?? null,
     gradedByEmail: c.gradedByEmail,
+    machineEval: c.machineEval ?? null,
+    machineGradedAt: c.machineGradedAt?.toISOString() ?? null,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   }

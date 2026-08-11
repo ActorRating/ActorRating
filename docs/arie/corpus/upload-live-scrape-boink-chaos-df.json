@@ -1,0 +1,113 @@
+[
+  {
+    "id": "live-bb-witches-title",
+    "authorHandle": "boinkbuzz",
+    "text": "The Witches of Doom in Avengers Doomsday",
+    "tags": ["live_scrape", "marvel", "high_distribution", "aggregator", "thin_context"],
+    "notes": "Very thin post — good test of whether ARIE invents costume/cast details."
+  },
+  {
+    "id": "live-bb-witches-ai-disclaimer",
+    "authorHandle": "boinkbuzz",
+    "text": "🚨 These images were made with AI",
+    "tags": ["live_scrape", "ai_media", "high_distribution", "aggregator"],
+    "notes": "Reply/disclaimer thread fragment; low casting value, tests ignore vs weak opportunity."
+  },
+  {
+    "id": "live-bb-tobey-confirmed-iron-spider",
+    "authorHandle": "boinkbuzz",
+    "text": "🚨 CONFIRMED - Tobey Maguire will return as The Friendly Neighborhood Spider-Man in ‘AVENGERS: DOOMSDAY’ & ‘AVENGERS: SECRET WARS’. Tobey will don the Iconic Iron Spider Suit. He will be featured in the opening scene of Doomsday as he fights off Deadpool & Wolverine.",
+    "tags": ["live_scrape", "regression", "casting", "unverified_costume", "high_distribution", "aggregator", "community_note"],
+    "corrections": [
+      "There are no credible sources saying Tobey Maguire will wear the Iconic Iron Spider Suit."
+    ],
+    "notes": "Primary Tobey/Iron Spider live case with X community note. Keep ONE canonical copy despite many quotes/reposts."
+  },
+  {
+    "id": "live-bb-tobey-plot-leak",
+    "authorHandle": "boinkbuzz",
+    "text": "New Plot Leak confirms Tobey Maguire will return as Spider-Man in ‘AVENGERS: DOOMSDAY’ and he will don the Iconic Iron Spider Suit",
+    "tags": ["live_scrape", "casting", "unverified_costume", "high_distribution", "aggregator", "community_note"],
+    "corrections": [
+      "There are no credible sources saying Tobey Maguire will wear the Iconic Iron Spider Suit."
+    ],
+    "notes": "Shorter plot-leak framing of same contested suit claim."
+  },
+  {
+    "id": "live-bb-zendaya-holland-gossip",
+    "authorHandle": "boinkbuzz",
+    "text": "Fans have begun to notice that Zendaya used to HATE IT when touched her without permission & she always refused to hold any man's hand until she met her husband, Tom Holland.",
+    "tags": ["live_scrape", "should_ignore", "gossip", "high_distribution", "aggregator"],
+    "notes": "High-distribution gossip — originals should usually ignore / score poorly."
+  },
+  {
+    "id": "live-bb-witches-costumes-ai",
+    "authorHandle": "boinkbuzz",
+    "text": "🚨 The Full Costumes of \"The Witches of Doom\" from 'AVENGERS: DOOMSDAY' Are Now on Display. The characters are rumored to be under the mask are: Cynthia Von Doom, Doctor Strange, Wanda Maximoff, Sue Storm. Made with AI.",
+    "tags": ["live_scrape", "marvel", "rumor", "ai_media", "high_distribution", "aggregator"],
+    "notes": "Rumor + AI disclosure — must not harden cast-under-mask claims."
+  },
+  {
+    "id": "live-bb-hiddleston-loki",
+    "authorHandle": "boinkbuzz",
+    "text": "Tom Hiddleston officially confirms 'Avengers: Secret Wars' will NOT be the last time he'll be playing The God of Stories, Loki. A character he has played for 16 Years.",
+    "tags": ["live_scrape", "casting", "franchise", "high_distribution", "aggregator"],
+    "notes": "Aggregator using confirmation language — treat as REPORTED unless corroborated."
+  },
+  {
+    "id": "live-bb-deadpool-quote-hook",
+    "authorHandle": "boinkbuzz",
+    "text": "Deadpool wasn't joking when he said: Till You're 90",
+    "tags": ["live_scrape", "thin_context", "high_distribution", "aggregator"],
+    "notes": "Quote-tweet hook with almost no independent claim — tests paraphrase / empty-context behavior."
+  },
+  {
+    "id": "live-cc-olsen-scarlet-witch-final",
+    "authorHandle": "chaoscrave_",
+    "text": "Elizabeth Olsen officially confirms Avengers: Secret Wars will be her final movie as the Scarlet Witch, bringing her iconic 13-year run to an absolute end.",
+    "tags": ["live_scrape", "casting", "franchise", "high_distribution", "aggregator"],
+    "notes": "ChaosCrave final-run confirmation language."
+  },
+  {
+    "id": "live-cc-tobey-secret-wars-last-dance",
+    "authorHandle": "chaoscrave_",
+    "text": "Tobey Maguire has reportedly signed on for Avengers: Secret Wars, which is heavily reported to be his final \"last dance\" as Spider-Man.",
+    "tags": ["live_scrape", "casting", "reported", "high_distribution", "aggregator"],
+    "notes": "Explicitly 'reportedly' — attribution framing test."
+  },
+  {
+    "id": "live-cc-ruffalo-hulk-final",
+    "authorHandle": "chaoscrave_",
+    "text": "Mark Ruffalo reportedly confirms Avengers: Doomsday will be his final time playing Hulk, officially bringing his iconic 15-year run to an absolute close.",
+    "tags": ["live_scrape", "casting", "reported", "high_distribution", "aggregator", "community_note"],
+    "notes": "Paste indicated community context added — treat casting end as contested/reported."
+  },
+  {
+    "id": "live-df-spider-feet-bnd",
+    "authorHandle": "discussingfilm",
+    "text": "Official look at Spider-Feet from ‘SPIDER-MAN: BRAND NEW DAY’.",
+    "tags": ["live_scrape", "visual", "franchise", "discussion"],
+    "notes": "Thin official-look tease — opportunity may be visual/discussion, not hard casting claim."
+  },
+  {
+    "id": "live-df-paper-tiger-trailer",
+    "authorHandle": "discussingfilm",
+    "text": "First trailer for James Gray's ‘PAPER TIGER’, starring Adam Driver, Scarlett Johansson and Miles Teller. The film follows 2 brothers pursuing the American Dream that lands them in a mafia scheme that terrorizes their family. In theaters on November 13.",
+    "tags": ["live_scrape", "trailer", "cast_named", "discussion"],
+    "notes": "Named cast trailer — ActorRating-friendly if entities resolve."
+  },
+  {
+    "id": "live-df-bel-powley-hp",
+    "authorHandle": "discussingfilm",
+    "text": "Bel Powley, who is starring in the new ‘Harry Potter’ series, says that she “strongly disagrees with JK Rowling's views on gender.” “I think that the trans community deserve safety and dignity and respect and total acceptance. But I love Harry Potter.”",
+    "tags": ["live_scrape", "should_ignore", "culture_war", "discussion"],
+    "notes": "Politics/culture-war adjacent — constitution should push ignore / not engage."
+  },
+  {
+    "id": "live-df-roku-ai-slop",
+    "authorHandle": "discussingfilm",
+    "text": "Roku has started a 24/7 channel that plays AI slop movies. The channel also runs AI generated ads from various companies.",
+    "tags": ["live_scrape", "ai_media", "industry", "low_acting_signal"],
+    "notes": "Industry/AI news with weak ActorRating advantage."
+  }
+]
