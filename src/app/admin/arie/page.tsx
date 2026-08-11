@@ -23,6 +23,12 @@ export default function AdminAriePage() {
             Originals
           </Link>
           <Link
+            href="/admin/arie/validation"
+            className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
+          >
+            Validation
+          </Link>
+          <Link
             href="/admin/arie/stats"
             className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
           >

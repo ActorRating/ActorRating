@@ -11,7 +11,7 @@
 | Corpus mix | Distribution-weighted VM1 — BoinkBuzz, ChaosCrave, Film Updates, Deadline, DiscussingFilm, THR/Variety + ignore controls |
 | Prompt version (current) | `reply-writer@preview-0.8` |
 | Model | `groq/llama-3.3-70b-versatile` (+ deterministic prior-work fallback on Groq failure / 429) |
-| Context Builder version | `context-builder@2.5` |
+| Context Builder version | `context-builder@2.6` (provenance / evidence layer) |
 
 ---
 

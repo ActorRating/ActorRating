@@ -1,0 +1,65 @@
+{
+  "corpusVersion": "originals-v1",
+  "description": "Curated originals validation fixtures for regression (not for inflating live batch samples). Seed fixtures stay stable across ARIE versions.",
+  "items": [
+    {
+      "id": "tobey-boinkbuzz-iron-spider",
+      "authorHandle": "boinkbuzz",
+      "text": "🚨 CONFIRMED - Tobey Maguire will return as the Friendly Neighborhood Spider-Man in AVENGERS: DOOMSDAY & SECRET WARS. Tobey will don the Iconic Iron Spider Suit...",
+      "tags": ["regression", "casting", "unverified_costume", "high_distribution", "aggregator"],
+      "notes": "Source later added: no credible sources for Iron Spider Suit. Distribution value high; factual certainty separate.",
+      "corrections": [
+        "There are no credible sources saying Tobey Maguire will wear the Iconic Iron Spider Suit."
+      ]
+    },
+    {
+      "id": "tobey-boinkbuzz-report-only",
+      "authorHandle": "boinkbuzz",
+      "text": "Tobey Maguire is reportedly returning as Spider-Man for Avengers: Doomsday.",
+      "tags": ["regression", "casting", "reported", "high_distribution", "aggregator"],
+      "notes": "Reported framing without costume hallucination pressure."
+    },
+    {
+      "id": "deadline-casting-trade",
+      "authorHandle": "deadline",
+      "text": "EXCLUSIVE: Florence Pugh in talks to join Christopher Nolan's next film in a major supporting role.",
+      "tags": ["casting", "trade", "control"],
+      "notes": "Trade-source casting control case. Still REPORTED until independent corroboration; do not hardcode trade as auto-verified casting."
+    },
+    {
+      "id": "chaoscrave-trailer-heat",
+      "authorHandle": "chaoscrave",
+      "text": "NEW TRAILER for Dune: Part Three just dropped and Zendaya looks unreal in it.",
+      "tags": ["trailer", "high_distribution", "aggregator"],
+      "notes": "High-distribution trailer heat; opportunity vs factual layers separate."
+    },
+    {
+      "id": "filmupdates-announcement",
+      "authorHandle": "filmupdates",
+      "text": "BREAKING: Timothée Chalamet confirmed for the lead in a new A24 drama directed by Luca Guadagnino.",
+      "tags": ["casting", "aggregator", "news_fast"],
+      "notes": "Aggregator using confirmation language — must not auto-upgrade to verified."
+    },
+    {
+      "id": "unknown-fan-account",
+      "authorHandle": "randomfilmfan99",
+      "text": "I heard Tom Holland is quitting Spider-Man forever after Secret Wars.",
+      "tags": ["rumor", "unknown_source", "should_friction"],
+      "notes": "Unknown reliability; do not discard opportunity solely for UNKNOWN — change framing."
+    },
+    {
+      "id": "should-ignore-gossip",
+      "authorHandle": "boinkbuzz",
+      "text": "Celebrity couple splits after heated argument at premiere — full drama inside.",
+      "tags": ["should_ignore", "gossip", "high_distribution"],
+      "notes": "High distribution account posting off-brand gossip — originals should score low / ignore."
+    },
+    {
+      "id": "ar-evergreen-comparison",
+      "authorHandle": "discussingfilm",
+      "text": "Hot take: Christian Bale's American Psycho still holds up better than most modern antihero performances.",
+      "tags": ["discussion", "evergreen", "control"],
+      "notes": "Discussion trigger where ActorRating-first concepts should dominate without invented news facts."
+    }
+  ]
+}

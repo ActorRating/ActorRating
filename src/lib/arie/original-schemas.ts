@@ -18,6 +18,8 @@ export const originalConceptSchema = z.object({
   visualPotential: z.string().default(""),
   estimatedStrength: z.number().min(0).max(100).default(50),
   riskFlags: z.array(z.string()).default([]),
+  requiresAttribution: z.boolean().optional(),
+  groundedInUncertainClaim: z.boolean().optional(),
 })
 
 export const originalConceptsResponseSchema = z.object({
@@ -86,6 +88,18 @@ export const semanticQaResponseSchema = z.object({
     .optional(),
   errors: z.array(z.string()).optional(),
   warnings: z.array(z.string()).optional(),
+  issues: z
+    .array(
+      z.object({
+        type: z.string(),
+        severity: z.enum(["HIGH", "MEDIUM", "LOW"]).optional(),
+        claim: z.string().optional(),
+        status: z.string().optional(),
+        requiresAttribution: z.boolean().optional(),
+        detail: z.string().optional(),
+      }),
+    )
+    .optional(),
   summary: z.string().optional(),
 })
 
@@ -107,6 +121,8 @@ export function parseConceptsWithZod(
     visualPotential: c.visualPotential,
     estimatedStrength: Math.round(c.estimatedStrength),
     riskFlags: c.riskFlags,
+    requiresAttribution: c.requiresAttribution,
+    groundedInUncertainClaim: c.groundedInUncertainClaim,
   }))
   const distinct = conceptsAreDistinct(concepts)
   if (!distinct.ok) {

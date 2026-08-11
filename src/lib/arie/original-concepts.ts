@@ -33,7 +33,8 @@ export function rankOriginalConcepts(
   selected: OriginalConcept
   explanation: string
 } {
-  const ranked = concepts.map((c) => {
+  const annotated = concepts.map((c) => annotateConceptEvidence(c, ctx.package))
+  const ranked = annotated.map((c) => {
     const scores = scoreConcept(c, ctx)
     const totalScore = Math.round(
       0.2 * scores.actorRatingAdvantage +
@@ -52,6 +53,7 @@ export function rankOriginalConcepts(
   const explanation = [
     `Selected ${selected.id} (${selected.format}) at ${selected.totalScore}.`,
     `Advantage: ${selected.actorRatingAdvantage}`,
+    selected.requiresAttribution ? "Requires attribution (reported evidence)." : "Fully AR-grounded preferred path.",
     `Hook: ${selected.hook}`,
     ranked.length > 1
       ? `Runner-up: ${ranked[1]!.id} ${ranked[1]!.format} (${ranked[1]!.totalScore}).`
@@ -61,6 +63,29 @@ export function rankOriginalConcepts(
     .join(" ")
 
   return { ranked, selected, explanation }
+}
+
+/** Prefer concepts that need fewer unsupported assumptions while still riding the news cycle. */
+function annotateConceptEvidence(c: OriginalConcept, pkg: ContextPackage): OriginalConcept {
+  const uncertain = (pkg.evidence?.uncertain.length ?? 0) + (pkg.evidence?.contradicted.length ?? 0)
+  const reported = pkg.evidence?.reported.length ?? 0
+  const assumesEvent =
+    /\b(returns?|joins?|will|doomsday|secret wars|iron spider|confirmed)\b/i.test(
+      `${c.hook} ${c.angle} ${c.discussionQuestion}`,
+    )
+  const requiresAttribution =
+    c.requiresAttribution ??
+    Boolean((reported > 0 || uncertain > 0) && assumesEvent)
+  const groundedInUncertainClaim =
+    c.groundedInUncertainClaim ?? Boolean(assumesEvent && (uncertain > 0 || reported > 0))
+  const riskFlags = [...(c.riskFlags ?? [])]
+  if (requiresAttribution && !riskFlags.includes("requires_attribution")) {
+    riskFlags.push("requires_attribution")
+  }
+  if (groundedInUncertainClaim && !riskFlags.includes("uncertain_event_dependence")) {
+    riskFlags.push("uncertain_event_dependence")
+  }
+  return { ...c, requiresAttribution, groundedInUncertainClaim, riskFlags }
 }
 
 function scoreConcept(
@@ -74,17 +99,24 @@ function scoreConcept(
   const genericNews =
     /is back|returns as|joins|will star|what do you think\??$/i.test(c.hook) &&
     c.dataUsed.length === 0
+  const uncertainPenalty = c.groundedInUncertainClaim ? 18 : 0
+  const attributionPenalty = c.requiresAttribution && c.dataUsed.length === 0 ? 10 : 0
+  const arGroundedBoost =
+    !c.groundedInUncertainClaim && c.dataUsed.length > 0 && hasData ? 12 : 0
 
   return {
     actorRatingAdvantage: clamp01to100(
       (c.actorRatingAdvantage.length > 20 ? 70 : 40) +
         c.dataUsed.length * 8 +
-        (hasData ? 10 : -15),
+        (hasData ? 10 : -15) +
+        arGroundedBoost -
+        uncertainPenalty,
     ),
     originality: clamp01to100(
       (genericNews ? 25 : 70) +
         (c.format === "DISCUSSION_DEBATE" || c.format === "COMPARISON" ? 10 : 0) -
-        (c.riskFlags.includes("news_paraphrase") ? 30 : 0),
+        (c.riskFlags.includes("news_paraphrase") ? 30 : 0) -
+        attributionPenalty,
     ),
     discussionPotential: clamp01to100(
       (c.discussionQuestion.includes("?") ? 75 : 40) +
@@ -117,6 +149,26 @@ function slimContextForConcepts(pkg: ContextPackage) {
     event: pkg.event,
     opportunity_reply_score: pkg.opportunity.score,
     coverage: pkg.coverage,
+    writerMode: pkg.writerMode,
+    factualConfidence: pkg.factualConfidence,
+    sourceProvenance: pkg.sourceProvenance
+      ? {
+          handle: pkg.sourceProvenance.handle,
+          reliabilityClass: pkg.sourceProvenance.reliabilityClass,
+          distributionPriority: pkg.sourceProvenance.distributionPriority,
+        }
+      : null,
+    evidence: pkg.evidence
+      ? {
+          writerMode: pkg.evidence.writerMode,
+          factualConfidence: pkg.evidence.factualConfidence,
+          confirmed: pkg.evidence.confirmed.map((c) => c.text).slice(0, 8),
+          reported: pkg.evidence.reported.map((c) => c.text).slice(0, 6),
+          uncertain: pkg.evidence.uncertain.map((c) => c.text).slice(0, 6),
+          contradicted: pkg.evidence.contradicted.map((c) => c.text).slice(0, 4),
+          missingEvidence: pkg.evidence.missingEvidence,
+        }
+      : null,
     actor: pkg.actor,
     actors: pkg.actors,
     movie: pkg.movie,
@@ -190,7 +242,7 @@ export async function generateOriginalConcepts(input: {
   const user = JSON.stringify(
     {
       instruction:
-        "Generate up to 3 DISTINCT original-content concepts. Return JSON { concepts: [...] }. Use ONLY facts in context. Never invent ratings.",
+        "Generate up to 3 DISTINCT original-content concepts. Return JSON { concepts: [...] }. Prefer concepts grounded in confirmed ActorRating data. If a concept depends on REPORTED/UNVERIFIED news, set requiresAttribution=true. Prefer discussion/hypothetical framing when evidence is weak. Never invent ratings.",
       originalScore: input.originalScore,
       context: slimContextForConcepts(input.package),
     },

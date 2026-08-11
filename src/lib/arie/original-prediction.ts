@@ -37,6 +37,21 @@ export type OriginalPredictionSnapshot = {
     entityFamiliarity: number
     prioritySourceBoost: number
   }
+  /**
+   * Sprint 2.5 — expose dimensions for future measurement (not used in score).
+   * Opportunity vs factual confidence remain separate.
+   */
+  measurementDimensions?: {
+    opportunityScore: number
+    factualConfidence: number | null
+    sourceDistributionPriority: string | null
+    sourceReliabilityClass: string | null
+    conceptFormat: string | null
+    writerVersion: string | null
+    qaOutcome: string | null
+    humanApprovalOutcome: string | null
+    publishedOutcome: string | null
+  }
   notes: string
 }
 
@@ -60,6 +75,16 @@ export function buildOriginalPrediction(input: {
   contentFormat: string
   priorityAuthor?: boolean
   coveragePercent?: number
+  /** Optional Sprint 2.5 measurement surfaces — not used in predicted score. */
+  measurement?: {
+    factualConfidence?: number | null
+    sourceDistributionPriority?: string | null
+    sourceReliabilityClass?: string | null
+    writerVersion?: string | null
+    qaOutcome?: string | null
+    humanApprovalOutcome?: string | null
+    publishedOutcome?: string | null
+  }
 }): OriginalPredictionSnapshot {
   const b = input.originalScore.breakdown
   const conceptStrength = clamp(
@@ -121,8 +146,19 @@ export function buildOriginalPrediction(input: {
     predictionModelVersion: ORIGINAL_PREDICTION_VERSION,
     predictionCreatedAt: new Date().toISOString(),
     predictionFactors: factors,
+    measurementDimensions: {
+      opportunityScore: input.originalScore.score,
+      factualConfidence: input.measurement?.factualConfidence ?? null,
+      sourceDistributionPriority: input.measurement?.sourceDistributionPriority ?? null,
+      sourceReliabilityClass: input.measurement?.sourceReliabilityClass ?? null,
+      conceptFormat: input.concept?.format ?? input.contentFormat ?? null,
+      writerVersion: input.measurement?.writerVersion ?? null,
+      qaOutcome: input.measurement?.qaOutcome ?? null,
+      humanApprovalOutcome: input.measurement?.humanApprovalOutcome ?? null,
+      publishedOutcome: input.measurement?.publishedOutcome ?? null,
+    },
     notes:
-      "Heuristic Opportunity Prediction (not ML). Buckets are coarse ranges for later calibration — never overwrite after publish.",
+      "Heuristic Opportunity Prediction (not ML). Buckets are coarse ranges for later calibration — never overwrite after publish. measurementDimensions are logged separately from predictedScore.",
   }
 }
 

@@ -1,6 +1,6 @@
 # ARIE Original Content Engine
 
-**Milestone:** A–D + pre-deploy measurement hardening  
+**Milestone:** A–D + Sprint 2.5 Truth / Provenance hardening  
 **Status:** Ready for supervised experiment (auto-publish OFF)  
 **Auto original publish:** OFF (`ARIE_ORIGINAL_PUBLISH_ENABLED=false` by default)  
 **Master publish:** OFF (`ARIE_PUBLISH_ENABLED=false` by default)
@@ -11,7 +11,7 @@
 Inbound Event
 → Opportunity (contentType=original)
 → Original Opportunity Score
-→ Context Package
+→ Context Package (+ claims / evidence / sourceProvenance)
 → Concepts + selected concept / format taxonomy
 → Writer + visual spec + prompt versions
 → Deterministic QA + Constitution + Semantic QA
@@ -23,13 +23,52 @@ Inbound Event
 → ActorRating attribution (utm_content=opportunityId)
 ```
 
+## Sprint 2.5 — Provenance
+
+**SOURCE CLAIM ≠ VERIFIED FACT.**
+
+Context Package now includes:
+
+- `claims[]` with status: VERIFIED | REPORTED | UNVERIFIED | CONTRADICTED | UNKNOWN
+- `sourceProvenance` — `distributionPriority` and `reliabilityClass` are separate
+- `evidence` — confirmed / reported / uncertain / contradicted + missingEvidence
+- `factualConfidence` + `writerMode` (VERIFIED_EVENT | REPORTED_EVENT | DISCUSSION)
+
+Writer prompts: `original-writer/v1.1.md` (v1.0 preserved).  
+QA prompts: `original-qa/v1.1.md` (v1.0 preserved).  
+Brand Constitution: v1.1.
+
+Opportunity score and factual confidence remain independent dimensions.
+
+## Validation batches (pre–Sprint 3)
+
+Admin: [`/admin/arie/validation`](/admin/arie/validation)
+
+Immutable runs:
+
+```
+Validation Batch
+├── batch ID
+├── corpus version (originals-v1 / upload:sha / hybrid)
+├── ARIE/prompt versions (frozen at run)
+├── source distribution
+├── timestamp
+├── pipeline results (every case)
+├── sampled cases (edge / stratified subset)
+├── human grades
+└── aggregate metrics
+```
+
+Does **not** auto-publish. Does **not** change provenance or scoring weights. Production originals remain at `/admin/arie/originals`.
+
 Prediction is **never** overwritten after `predictionLockedAt` (set on successful publish).
 
 ## Prediction
 
 Deterministic heuristic `original-prediction@v1.0` — not ML.
 
-Fields: `predictedScore`, `predictedTier`, factor map, coarse buckets for impressions / engagement / profile visits / AR clicks.
+Fields: `predictedScore`, `predictedTier`, factor map, coarse buckets for impressions / engagement / profile visits / AR clicks.  
+`measurementDimensions` logs opportunity vs factual confidence / source classes for future analysis (does not change score weights).
 
 ## Metrics
 

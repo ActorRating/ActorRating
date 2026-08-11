@@ -18,6 +18,7 @@ import {
   type OpportunityResult,
 } from "@/lib/arie/types"
 import { computeContextCoverage } from "@/lib/arie/coverage"
+import { buildEvidenceLayer, type CorroborationInput } from "@/lib/arie/provenance"
 
 const DIM_KEYS = [
   "emotionalRangeDepth",
@@ -129,9 +130,13 @@ export async function buildContextPackage(
     authorHandle?: string | null
     authorId?: string | null
     externalId?: string | null
+    sourceUrl?: string | null
     ageMinutes?: number
     entities?: ExtractedEntities
     opportunity?: OpportunityResult
+    /** Later corrections / walk-backs attached to the story (timestamps preserved on claims). */
+    corrections?: string[]
+    corroborations?: CorroborationInput[]
   },
 ): Promise<ContextPackage> {
   const entities = input.entities ?? (await extractEntitiesFromText(prisma, input.text))
@@ -550,6 +555,17 @@ export async function buildContextPackage(
 
   const packageId = randomUUID()
 
+  const { source, claims, evidence } = buildEvidenceLayer({
+    text: input.text,
+    authorHandle: input.authorHandle,
+    externalId: input.externalId,
+    sourceUrl: input.sourceUrl,
+    entities,
+    facts,
+    corrections: input.corrections,
+    corroborations: input.corroborations,
+  })
+
   const base: Omit<ContextPackage, "coverage"> = {
     package_id: packageId,
     created_at: asOf(),
@@ -579,6 +595,11 @@ export async function buildContextPackage(
     similarActors,
     links,
     facts,
+    claims,
+    sourceProvenance: source,
+    evidence,
+    factualConfidence: evidence.factualConfidence,
+    writerMode: evidence.writerMode,
     brand: {
       constitution_version: ARIE_CONSTITUTION_VERSION,
       constitution_path: ARIE_CONSTITUTION_PATH,

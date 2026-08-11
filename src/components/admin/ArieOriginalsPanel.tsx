@@ -31,8 +31,19 @@ type Opportunity = {
   finalDraft: string | null
   qaResult: {
     passed?: boolean
-    deterministic?: { passed: boolean; errors: string[]; warnings: string[] }
-    semantic?: { passed: boolean; confidence: number; summary: string; errors: string[] }
+    deterministic?: {
+      passed: boolean
+      errors: string[]
+      warnings: string[]
+      issues?: Array<Record<string, unknown>>
+    }
+    semantic?: {
+      passed: boolean
+      confidence: number
+      summary: string
+      errors: string[]
+      issues?: Array<Record<string, unknown>>
+    }
   } | null
   publishStatus: string
   publishedTweetId: string | null
@@ -41,6 +52,27 @@ type Opportunity = {
     percent?: number
     slots?: Record<string, boolean>
   } | null
+  factualConfidence?: number | null
+  writerMode?: string | null
+  sourceProvenance?: {
+    handle?: string | null
+    reliabilityClass?: string
+    distributionPriority?: string
+    distributionRank?: number
+  } | null
+  evidence?: {
+    confirmed?: Array<{ text: string; status: string }>
+    reported?: Array<{ text: string; status: string }>
+    uncertain?: Array<{ text: string; status: string }>
+    contradicted?: Array<{ text: string; status: string }>
+    missingEvidence?: string[]
+    potentialConflicts?: string[]
+    factualConfidence?: number
+    writerMode?: string
+    sourceSummary?: string
+    confidenceSummary?: string
+  } | null
+  claims?: Array<Record<string, unknown>> | null
   event: {
     text: string
     authorHandle: string | null
@@ -63,6 +95,7 @@ type Opportunity = {
     predictedProfileVisitsBucket?: string
     predictedActorRatingClicksBucket?: string
     predictionFactors?: Record<string, number>
+    measurementDimensions?: Record<string, unknown>
     notes?: string
   } | null
   attributionCode?: string | null
@@ -375,6 +408,74 @@ export default function ArieOriginalsPanel() {
                 </p>
               </header>
 
+              {(detail.evidence || detail.sourceProvenance || detail.factualConfidence != null) && (
+                <section className="rounded-lg border border-white/15 p-3 text-sm">
+                  <h3 className="font-semibold text-[#FFD700]">Evidence / confidence</h3>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                    <div>
+                      <div className="text-muted-foreground">Opportunity</div>
+                      <div className="text-lg font-semibold text-[#FFD700]">
+                        {detail.originalScore ?? "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Factual confidence</div>
+                      <div className="text-lg font-semibold">
+                        {detail.factualConfidence ?? detail.evidence?.factualConfidence ?? "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Distribution</div>
+                      <div className="font-semibold">
+                        {detail.sourceProvenance?.distributionPriority ?? "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Reliability</div>
+                      <div className="font-semibold">
+                        {detail.sourceProvenance?.reliabilityClass ?? "—"}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Source @{detail.sourceProvenance?.handle || detail.event?.authorHandle || "unknown"} ·
+                    writerMode {detail.writerMode ?? detail.evidence?.writerMode ?? "—"}
+                  </p>
+                  <ClaimList label="Confirmed" items={detail.evidence?.confirmed} />
+                  <ClaimList label="Reported" items={detail.evidence?.reported} />
+                  <ClaimList label="Uncertain" items={detail.evidence?.uncertain} />
+                  <ClaimList label="Contradicted" items={detail.evidence?.contradicted} />
+                  {!!detail.evidence?.missingEvidence?.length && (
+                    <p className="mt-2 text-xs text-amber-300/90">
+                      Missing: {detail.evidence.missingEvidence.join(" · ")}
+                    </p>
+                  )}
+                  {!!detail.evidence?.potentialConflicts?.length && (
+                    <p className="mt-1 text-xs text-red-300/90">
+                      Conflicts: {detail.evidence.potentialConflicts.join(" · ")}
+                    </p>
+                  )}
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs text-muted-foreground">
+                      Evidence / Grounding (debug)
+                    </summary>
+                    <pre className="mt-2 max-h-64 overflow-auto rounded bg-black/60 p-2 text-[11px] text-muted-foreground">
+                      {JSON.stringify(
+                        {
+                          writerMode: detail.writerMode,
+                          factualConfidence: detail.factualConfidence,
+                          sourceProvenance: detail.sourceProvenance,
+                          evidence: detail.evidence,
+                          claims: detail.claims,
+                        },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </details>
+                </section>
+              )}
+
               {(detail.prediction || detail.predictedScore != null) && (
                 <section className="rounded-lg border border-[#FFD700]/30 bg-[#FFD700]/5 p-3 text-sm">
                   <h3 className="font-semibold text-[#FFD700]">
@@ -650,15 +751,6 @@ export default function ArieOriginalsPanel() {
                 </div>
               </section>
 
-              {detail.visualSpec && (
-                <section>
-                  <h3 className="mb-1 text-sm font-semibold">Visual spec</h3>
-                  <pre className="max-h-48 overflow-auto rounded bg-black/60 p-2 text-[11px] text-muted-foreground">
-                    {JSON.stringify(detail.visualSpec, null, 2)}
-                  </pre>
-                </section>
-              )}
-
               {detail.qaResult && (
                 <section className="space-y-1 text-sm">
                   <h3 className="font-semibold">
@@ -681,6 +773,33 @@ export default function ArieOriginalsPanel() {
                       {detail.qaResult.semantic.summary}
                     </p>
                   )}
+                  {!!detail.qaResult.deterministic?.issues?.length && (
+                    <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                      {detail.qaResult.deterministic.issues.map((iss, i) => (
+                        <li key={i}>
+                          {String(iss.tier ?? "issue").toUpperCase()} · {String(iss.type)}
+                          {iss.status ? ` · ${String(iss.status)}` : ""}
+                          {iss.claim ? ` — ${String(iss.claim).slice(0, 120)}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+
+              {detail.visualSpec && (
+                <section>
+                  <h3 className="mb-1 text-sm font-semibold">
+                    Visual spec{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {detail.visualSpec.eligible === false
+                        ? `· ineligible (${String(detail.visualSpec.reason ?? "n/a")})`
+                        : "· eligible"}
+                    </span>
+                  </h3>
+                  <pre className="max-h-48 overflow-auto rounded bg-black/60 p-2 text-[11px] text-muted-foreground">
+                    {JSON.stringify(detail.visualSpec, null, 2)}
+                  </pre>
                 </section>
               )}
 
@@ -704,6 +823,28 @@ export default function ArieOriginalsPanel() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function ClaimList({
+  label,
+  items,
+}: {
+  label: string
+  items?: Array<{ text: string; status: string }>
+}) {
+  if (!items?.length) return null
+  return (
+    <div className="mt-2">
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <ul className="mt-0.5 space-y-0.5 text-xs">
+        {items.slice(0, 6).map((c, i) => (
+          <li key={i}>
+            <span className="text-muted-foreground">[{c.status}]</span> {c.text}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

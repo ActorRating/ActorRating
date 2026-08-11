@@ -1,8 +1,8 @@
 /** Original Content Opportunity types, statuses, formats, and runtime validators. */
 
 export const ORIGINAL_CONCEPT_PROMPT_VERSION = "original-concept@v1.0"
-export const ORIGINAL_WRITER_PROMPT_VERSION = "original-writer@v1.0"
-export const ORIGINAL_QA_PROMPT_VERSION = "original-qa@v1.0"
+export const ORIGINAL_WRITER_PROMPT_VERSION = "original-writer@v1.1"
+export const ORIGINAL_QA_PROMPT_VERSION = "original-qa@v1.1"
 
 export const ORIGINAL_STATUSES = [
   "NEW",
@@ -85,6 +85,10 @@ export type OriginalConcept = {
   visualPotential: string
   estimatedStrength: number
   riskFlags: string[]
+  /** Sprint 2.5 — concept depends on REPORTED/UNVERIFIED event claims. */
+  requiresAttribution?: boolean
+  /** Prefer false when concept is fully grounded in ActorRating data. */
+  groundedInUncertainClaim?: boolean
   scores?: ConceptScoreBreakdown
   totalScore?: number
 }
@@ -136,10 +140,25 @@ export type OriginalDraft = {
   claims: string[]
 }
 
+export type QaIssueSeverity = "HIGH" | "MEDIUM" | "LOW"
+export type QaIssueTier = "hard_fail" | "warning"
+
+export type QaIssue = {
+  type: string
+  severity: QaIssueSeverity
+  tier: QaIssueTier
+  claim?: string
+  status?: string
+  requiresAttribution?: boolean
+  detail?: string
+}
+
 export type DeterministicQaResult = {
   passed: boolean
   errors: string[]
   warnings: string[]
+  /** Structured claim/grounding issues (Sprint 2.5). */
+  issues: QaIssue[]
 }
 
 export type SemanticQaResult = {
@@ -157,6 +176,7 @@ export type SemanticQaResult = {
   }
   errors: string[]
   warnings: string[]
+  issues: QaIssue[]
   summary: string
 }
 

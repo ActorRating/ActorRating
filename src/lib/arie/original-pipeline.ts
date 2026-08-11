@@ -69,6 +69,15 @@ export async function ingestOriginalOpportunity(input: {
   externalId?: string | null
   payload?: Record<string, unknown>
   heatHint?: number | null
+  /** Optional fixture corrections (wiring only — provenance rules unchanged). */
+  corrections?: string[]
+  corroborations?: Array<{ handle: string; text: string; contradicts?: boolean }>
+  sourceUrl?: string | null
+  /**
+   * When set, appends to dedupeKey so validation batches never collide with
+   * production opportunities or each other. Does not change score weights.
+   */
+  dedupeNamespace?: string | null
 }): Promise<
   | {
       ok: true
@@ -133,9 +142,12 @@ export async function ingestOriginalOpportunity(input: {
     authorHandle: input.authorHandle,
     authorId: input.authorId,
     externalId: event.externalId,
+    sourceUrl: input.sourceUrl ?? sourceUrl,
     ageMinutes,
     entities,
     opportunity: replyOpp,
+    corrections: input.corrections,
+    corroborations: input.corroborations,
   })
 
   const originalScore = scoreOriginalOpportunity({
@@ -147,13 +159,18 @@ export async function ingestOriginalOpportunity(input: {
     heatHint: input.heatHint,
   })
 
-  const dedupeKey = buildOriginalDedupeKey({
+  const baseDedupe = buildOriginalDedupeKey({
     eventType: originalScore.eventType,
     entities,
     text,
   })
+  const dedupeKey = input.dedupeNamespace
+    ? `${input.dedupeNamespace}:${baseDedupe}`
+    : baseDedupe
 
-  const existing = await prisma.arieOpportunity.findFirst({
+  const existing = input.dedupeNamespace
+    ? null
+    : await prisma.arieOpportunity.findFirst({
     where: {
       contentType: "original",
       dedupeKey,
@@ -673,6 +690,7 @@ export async function approveOriginalOpportunity(input: {
     opp.contentFormat || mapConceptFormatToTaxonomy(concept?.format ?? "DISCUSSION_DEBATE")
 
   // Freeze prediction at approve if not already locked (never overwrite after publish lock)
+  const prompts = (opp.promptVersions as Record<string, string> | null) ?? {}
   let prediction = opp.prediction as ReturnType<typeof buildOriginalPrediction> | null
   if (!opp.predictionLockedAt || !prediction) {
     prediction = buildOriginalPrediction({
@@ -681,10 +699,22 @@ export async function approveOriginalOpportunity(input: {
       contentFormat,
       priorityAuthor: opp.priorityAuthor,
       coveragePercent: pkg?.coverage?.percent,
+      measurement: {
+        factualConfidence: pkg?.factualConfidence ?? null,
+        sourceDistributionPriority: pkg?.sourceProvenance?.distributionPriority ?? null,
+        sourceReliabilityClass: pkg?.sourceProvenance?.reliabilityClass ?? null,
+        writerVersion: prompts.writer ?? prompts["original-writer"] ?? null,
+        qaOutcome: opp.qaResult
+          ? (opp.qaResult as { passed?: boolean }).passed
+            ? "passed"
+            : "failed"
+          : null,
+        humanApprovalOutcome: "approved",
+        publishedOutcome: "not_published",
+      },
     })
   }
 
-  const prompts = (opp.promptVersions as Record<string, string> | null) ?? {}
   const lineage = {
     inboundEventId: opp.inboundEventId,
     opportunityId: opp.id,

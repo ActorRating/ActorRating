@@ -56,7 +56,24 @@ Use for analysis; primary split is **by source account**.
 | `trailer_bo` | Trailers, posters, box office |
 | `should_ignore` | Must not engage |
 
-## File format
+## Originals validation corpus
+
+[`originals-v1.json`](./originals-v1.json) — curated seed fixtures for **regression**, not for inflating live validation samples.
+
+Includes the Tobey Maguire / BoinkBuzz / Iron Spider case (with the later correction that there are no credible sources for the suit claim).
+
+Use via `/admin/arie/validation`:
+
+1. Create batch with **Include originals-v1 seed fixtures** (optional JSON upload merges in).
+2. Run `score_only` or `full_pipeline`.
+3. Grade only the sampled edge-case subset.
+4. Each batch freezes corpus snapshot + ARIE/prompt versions for version comparisons.
+
+Seed fixtures ≠ live sample inflation. Metrics cover the full batch; humans grade the review subset.
+
+**Distribution priority ≠ reliability class.** Do not treat BoinkBuzz (or any aggregator) as “ignore” — treat their claims by evidence status.
+
+## File format (replies)
 
 [`corpus-v1.jsonl`](./corpus-v1.jsonl) — one JSON object per line:
 

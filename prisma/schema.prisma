@@ -917,3 +917,82 @@ model ArieMetricSnapshot {
   @@index([capturedAt])
   @@index([window, capturedAt])
 }
+
+/// Immutable/versioned originals validation batch (scientific evaluation — not production publishing).
+/// Re-running the same corpus always creates a NEW batch so ARIE versions remain comparable.
+model ArieValidationBatch {
+  id                 String    @id @default(cuid())
+  name               String
+  /// e.g. originals-v1 | originals-v1+upload:sha8 | upload:sha8
+  corpusVersion      String
+  /// Frozen input posts at create time (never mutated after create).
+  corpusSnapshot     Json
+  /// Frozen ARIE/prompt/builder versions captured at run start.
+  arieVersions       Json?
+  /// Source handle histogram at create time.
+  sourceDistribution Json?
+  /// CREATED | RUNNING | SAMPLED | GRADING | COMPLETE | FAILED
+  status             String    @default("CREATED")
+  /// score_only | full_pipeline
+  runMode            String    @default("score_only")
+  sampleConfig       Json?
+  aggregateMetrics   Json?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdByEmail     String?
+  notes              String?   @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  cases ArieValidationCase[]
+
+  @@index([status, createdAt])
+  @@index([corpusVersion, createdAt])
+}
+
+/// One source post inside a validation batch + frozen pipeline result + optional human grade.
+model ArieValidationCase {
+  id                String    @id @default(cuid())
+  batchId           String
+  /// Stable id within corpusSnapshot
+  corpusItemId      String
+  sourceHandle      String?
+  sourceText        String    @db.Text
+  sourceUrl         String?
+  sourcePostId      String?
+  /// seed_fixture | uploaded
+  inputOrigin       String
+  tags              String[]  @default([])
+  opportunityId     String?
+  /// Frozen pipeline snapshot (score, evidence, draft, QA…) — write-once after run.
+  pipelineResult    Json?
+  sampleReasons     String[]  @default([])
+  selectedForReview Boolean   @default(false)
+  reviewPriority    Int       @default(0)
+  /// pending | ingested | pipeline_done | pipeline_error | graded
+  status            String    @default("pending")
+  errorMessage      String?
+  humanGrade        ArieHumanGrade?
+  /// 1–5 factual integrity / attribution correctness
+  scoreTruthfulness Int?
+  /// 1–5 discussion + ActorRating usefulness under uncertainty
+  scoreUsefulness   Int?
+  /// 1–5 framing (verified vs reported vs discussion)
+  scoreFraming      Int?
+  /// 1–5 brand voice
+  scoreBrandVoice   Int?
+  gradeNotes        String?   @db.Text
+  gradedAt          DateTime?
+  gradedByEmail     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  batch ArieValidationBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, corpusItemId])
+  @@index([batchId, selectedForReview])
+  @@index([batchId, humanGrade])
+  @@index([batchId, status])
+  @@index([opportunityId])
+  @@index([sourceHandle])
+}

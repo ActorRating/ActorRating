@@ -84,7 +84,14 @@ function serializeOpp(row: {
     metricsUpdatedAt: Date | null
   }>
 }) {
-  const pkg = row.contextPackage?.package as { coverage?: unknown } | null
+  const pkg = row.contextPackage?.package as {
+    coverage?: unknown
+    evidence?: unknown
+    sourceProvenance?: unknown
+    factualConfidence?: number | null
+    writerMode?: string | null
+    claims?: unknown
+  } | null
   const publishedPost =
     row.socialPosts?.find((p) => p.status === "PUBLISHED") ?? row.socialPosts?.[0] ?? null
   return {
@@ -135,6 +142,11 @@ function serializeOpp(row: {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     coverage: pkg?.coverage ?? null,
+    evidence: pkg?.evidence ?? null,
+    sourceProvenance: pkg?.sourceProvenance ?? null,
+    factualConfidence: pkg?.factualConfidence ?? null,
+    writerMode: pkg?.writerMode ?? null,
+    claims: pkg?.claims ?? null,
     event: row.inboundEvent
       ? {
           id: row.inboundEvent.id,

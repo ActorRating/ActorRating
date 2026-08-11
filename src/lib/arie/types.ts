@@ -1,6 +1,13 @@
 /** ARIE Sprint 2 — shared types for Context Packages & Opportunity Score. */
 
-export const CONTEXT_BUILDER_VERSION = "context-builder@2.5"
+import type {
+  ArieClaim,
+  EvidenceBundle,
+  SourceProvenance,
+  WriterEvidenceMode,
+} from "@/lib/arie/provenance"
+
+export const CONTEXT_BUILDER_VERSION = "context-builder@2.6"
 
 export type ArieFact = {
   fact_id: string
@@ -115,6 +122,15 @@ export type ContextPackage = {
   similarActors: Array<{ id: string; name: string; slug: string | null; note: string }>
   links: ArieLink[]
   facts: ArieFact[]
+  /**
+   * Sprint 2.5 — provenance-aware claims (SOURCE CLAIM ≠ VERIFIED FACT).
+   * Every externally-derived factual claim should appear here with status.
+   */
+  claims: ArieClaim[]
+  sourceProvenance: SourceProvenance | null
+  evidence: EvidenceBundle | null
+  factualConfidence: number | null
+  writerMode: WriterEvidenceMode | null
   brand: {
     constitution_version: string
     constitution_path: string

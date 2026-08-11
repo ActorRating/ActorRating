@@ -35,9 +35,10 @@ export function buildVisualSpec(input: {
         caption: "ActorRating radar dimensions (verified).",
         assetRequirements: ["radar_chart_template"],
         eligible: dims.length >= 3,
-        reason: dims.length >= 3 ? undefined : "insufficient_radar_dims",
+        reason: dims.length >= 3 ? undefined : "missing_numeric_data",
       }
     }
+    return ineligibleNumeric("radar_comparison", "Radar visual requested but required numeric radar dims missing.")
   }
 
   if (
@@ -70,6 +71,7 @@ export function buildVisualSpec(input: {
 
     const related = pkg.relatedPerformances.slice(0, 4)
     if (related.length >= 2) {
+      // Entity relationships exist but numeric comparison cannot be computed.
       return {
         type: "performance_comparison",
         title: "Related performances",
@@ -81,12 +83,17 @@ export function buildVisualSpec(input: {
         })),
         layout: "list",
         caption:
-          "Related performances from ActorRating graph (scores may be unavailable).",
+          "Related performances from ActorRating graph (scores unavailable — not eligible as numeric comparison).",
         assetRequirements: ["comparison_card"],
         eligible: false,
-        reason: "related_without_numeric_scores",
+        reason: "missing_numeric_data",
       }
     }
+
+    return ineligibleNumeric(
+      concept.format === "COMPARISON" ? "actor_comparison" : "ranked_list",
+      "Comparison/ranking visual requires at least two numeric performance scores.",
+    )
   }
 
   if (pkg.communityRating && typeof pkg.communityRating.avg10 === "number") {
@@ -143,5 +150,22 @@ export function buildVisualSpec(input: {
     assetRequirements: [],
     eligible: false,
     reason: "no_verified_visual_data",
+  }
+}
+
+function ineligibleNumeric(
+  type: VisualSpec["type"],
+  caption: string,
+): VisualSpec {
+  return {
+    type,
+    title: "",
+    subjects: [],
+    data: [],
+    layout: "none",
+    caption,
+    assetRequirements: [],
+    eligible: false,
+    reason: "missing_numeric_data",
   }
 }

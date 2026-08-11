@@ -4,6 +4,7 @@ import { groqJsonCompletion } from "@/lib/arie/groq"
 import { arieLog } from "@/lib/arie/log"
 import { buildVisualSpec } from "@/lib/arie/original-visual"
 import { loadAriePrompt } from "@/lib/arie/prompt-loader"
+import { slimEvidenceForWriter } from "@/lib/arie/provenance"
 import type { ContextPackage } from "@/lib/arie/types"
 import {
   ORIGINAL_WRITER_PROMPT_VERSION,
@@ -49,9 +50,13 @@ export async function generateOriginalDraft(input: {
   const constitution = await loadBrandConstitution()
   let promptBody: string
   try {
-    promptBody = await loadAriePrompt("original-writer/v1.0.md")
+    promptBody = await loadAriePrompt("original-writer/v1.1.md")
   } catch {
-    promptBody = FALLBACK_WRITER
+    try {
+      promptBody = await loadAriePrompt("original-writer/v1.0.md")
+    } catch {
+      promptBody = FALLBACK_WRITER
+    }
   }
 
   const system = [
@@ -62,16 +67,20 @@ export async function generateOriginalDraft(input: {
     "",
     `Prompt version: ${ORIGINAL_WRITER_PROMPT_VERSION}`,
     `Hard max characters: ${X_ORIGINAL_MAX_CHARS}`,
+    `Writer mode: ${input.package.writerMode ?? "DISCUSSION"}`,
+    `Factual confidence: ${input.package.factualConfidence ?? "unknown"}`,
   ].join("\n")
 
   const allowedNumbers = collectAllowedNumbers(input.package)
+  const grounding = slimEvidenceForWriter(input.package)
 
   const user = JSON.stringify({
     instruction:
-      "Write ONE original X post from the selected concept + context. JSON: { text, confidence, claims[], entities[] }. Only use numbers from allowedNumbers. No news paraphrase. End with a specific discussion question when natural.",
+      "Write ONE original X post from the selected concept + evidence grounding. JSON: { text, confidence, claims[], entities[] }. Only use numbers from allowedNumbers. Never upgrade REPORTED/UNVERIFIED/CONTRADICTED into verified facts. Prefer confirmed ActorRating insight + discussion when news is uncertain.",
     concept: input.concept,
     visualSpec: visual,
     allowedNumbers,
+    evidence: grounding,
     context: {
       event: input.package.event,
       actor: input.package.actor,
@@ -81,8 +90,16 @@ export async function generateOriginalDraft(input: {
       radar: input.package.radar,
       topPerformances: input.package.topPerformances.slice(0, 6),
       facts: input.package.facts.slice(0, 16),
+      claims: (input.package.claims ?? []).slice(0, 24).map((c) => ({
+        status: c.status,
+        predicate: c.predicate,
+        text: c.text,
+        requiresAttribution: c.requiresAttribution,
+      })),
       links: input.package.links.slice(0, 6),
       coverage: input.package.coverage,
+      writerMode: input.package.writerMode,
+      factualConfidence: input.package.factualConfidence,
     },
   })
 
@@ -100,7 +117,6 @@ export async function generateOriginalDraft(input: {
   }
 
   let text = validated.data.text.trim()
-  // Strip wrapping quotes
   if (
     (text.startsWith('"') && text.endsWith('"')) ||
     (text.startsWith("'") && text.endsWith("'"))
@@ -115,7 +131,6 @@ export async function generateOriginalDraft(input: {
   }
 
   if (text.length > X_ORIGINAL_MAX_CHARS) {
-    // Soft trim at last sentence boundary under limit
     const truncated = text.slice(0, X_ORIGINAL_MAX_CHARS - 1)
     const cut = Math.max(truncated.lastIndexOf("?"), truncated.lastIndexOf("."), truncated.lastIndexOf("!"))
     text = (cut > 80 ? truncated.slice(0, cut + 1) : truncated).trim()
@@ -136,6 +151,12 @@ export async function generateOriginalDraft(input: {
         : []),
       ...(input.package.event.author_handle
         ? [{ kind: "source_account", value: input.package.event.author_handle }]
+        : []),
+      ...(input.package.writerMode
+        ? [{ kind: "writer_mode", value: input.package.writerMode }]
+        : []),
+      ...(typeof input.package.factualConfidence === "number"
+        ? [{ kind: "factual_confidence", value: String(input.package.factualConfidence) }]
         : []),
     ],
     confidence:
@@ -161,7 +182,6 @@ export function collectAllowedNumbers(pkg: ContextPackage): number[] {
   const add = (n: unknown) => {
     if (typeof n === "number" && Number.isFinite(n)) {
       nums.add(n)
-      // also allow one-decimal display forms
       nums.add(Math.round(n * 10) / 10)
     }
   }
@@ -186,7 +206,6 @@ export function collectAllowedNumbers(pkg: ContextPackage): number[] {
 /** Detect numeric literals in draft that are not in allowed set (tolerance for ints). */
 export function findInventedNumbers(text: string, allowed: number[]): string[] {
   const allowedSet = new Set(allowed.map((n) => Number(n.toFixed(4))))
-  // Also allow integers that match floor of allowed decimals
   for (const n of [...allowed]) {
     allowedSet.add(Math.floor(n))
     allowedSet.add(Math.round(n))
@@ -196,14 +215,10 @@ export function findInventedNumbers(text: string, allowed: number[]): string[] {
   let m: RegExpExecArray | null
   while ((m = re.exec(text))) {
     const raw = m[0]
-    // skip obvious years already in allowed; skip lonely "1" in #1 often OK if we allow 1
     const num = Number(raw)
     if (!Number.isFinite(num)) continue
-    // Allow small ordinals commonly used in copy (#1–#10) without DB backing
     if (num >= 1 && num <= 10 && Number.isInteger(num)) continue
-    // Allow character counts / percentages only if present
     if (allowedSet.has(num) || allowedSet.has(Number(num.toFixed(1)))) continue
-    // year-looking without evidence
     invented.push(raw)
   }
   return [...new Set(invented)]
@@ -211,4 +226,5 @@ export function findInventedNumbers(text: string, allowed: number[]): string[] {
 
 const FALLBACK_WRITER = `You are ARIE Original Writer for ActorRating (X/Twitter).
 Write one concise original post (<=280 chars). Strong first line. Use only allowedNumbers. Invite a specific conversation question. No hashtag spam, no fake confirmed language, no invented stats.
+SOURCE CLAIM ≠ VERIFIED FACT. Use attribution for reported claims. Prefer confirmed ActorRating data.
 Return JSON: { "text": "...", "confidence": 0-100, "claims": [], "entities": [] }`

@@ -4,7 +4,7 @@
  */
 
 export const ARIE_CONSTITUTION_PATH = "docs/arie/BRAND_CONSTITUTION.md"
-export const ARIE_CONSTITUTION_VERSION = "1.0"
+export const ARIE_CONSTITUTION_VERSION = "1.1"
 
 export function ariePublishEnabled(): boolean {
   return process.env.ARIE_PUBLISH_ENABLED === "true"
