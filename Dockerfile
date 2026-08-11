@@ -83,6 +83,11 @@ RUN ./node_modules/.bin/esbuild scripts/seed-invite-codes.ts \
     --external:@prisma/client \
     --outfile=scripts/seed-invite-codes.js
 
+# Stage Prisma CLI + transitive deps for the runner.
+# Next standalone traces @prisma/client but not the `prisma` CLI package (never imported by the server).
+RUN node scripts/docker-stage-prisma-cli.js /opt/prisma-cli/node_modules \
+  && /opt/prisma-cli/node_modules/.bin/prisma -v
+
 # ------------ Production runner (no full app source, no `npm` start) ------------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -126,6 +131,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-invite-codes.js ./sc
 # Coolify Scheduled Task: `node scripts/run-waitlist-invite-cron.js`
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-waitlist-invite-cron.js ./scripts/run-waitlist-invite-cron.js
 
+# Merge Prisma CLI into standalone node_modules (does not replace traced @prisma/client).
+# Coolify pre-deploy hooks can then use: ./node_modules/.bin/prisma migrate deploy
+COPY --from=builder /opt/prisma-cli/node_modules /tmp/prisma-cli-modules
+RUN cp -a /tmp/prisma-cli-modules/. ./node_modules/ \
+  && rm -rf /tmp/prisma-cli-modules \
+  && mkdir -p ./node_modules/.bin \
+  && ln -sfn ../prisma/build/index.js ./node_modules/.bin/prisma \
+  && chown -R nextjs:nodejs ./node_modules \
+  && test -d ./node_modules/prisma \
+  && test -x ./node_modules/.bin/prisma \
+  && ./node_modules/.bin/prisma -v
+
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp
 
@@ -140,9 +157,8 @@ EXPOSE 3000
 # Do NOT use `next start` or `npm start` here: run the standalone `server.js`
 # generated under `.next/standalone` (copied to WORKDIR root above).
 #
-# DB migrations are NOT run here — the standalone runner image is intentionally
-# minimal and does not include the Prisma CLI or @prisma/engines (~100 MB).
-# Run `npx prisma migrate deploy` as a separate pre-deploy step in Coolify
-# (Lifecycle Hook → Before Start), or apply migrations manually via the
-# Supabase SQL editor before deploying a schema change.
+# Prisma CLI is installed at /app/node_modules/prisma (merged from the builder).
+# DB migrations are NOT run on container start — Coolify remains responsible for
+# `./node_modules/.bin/prisma migrate deploy` (or equivalent) as a pre-deploy step,
+# or apply migrations manually via the Supabase SQL editor before deploying a schema change.
 CMD ["./docker-entrypoint.sh"]
