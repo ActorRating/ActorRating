@@ -2,6 +2,7 @@ import { createHash } from "crypto"
 import type { ExtractedEntities } from "@/lib/arie/entity-extract"
 import { CASTING_RE } from "@/lib/arie/opportunity-score"
 import { isPriorityAuthor } from "@/lib/arie/priority-accounts"
+import { evaluateScoutExclusion } from "@/lib/arie/scout-exclusions"
 import type { ContextPackage } from "@/lib/arie/types"
 import type {
   OriginalEventType,
@@ -22,9 +23,13 @@ const CONTROVERSY_RE =
   /\b(backlash|controversy|divisive|criticized for (?:the )?performance|acting debate)\b/i
 
 const GOSSIP_RE =
-  /\b(dating|divorces?|split|pregnant|scandal|beef|feud|wedding|married|marriage|girlfriend|boyfriend|engaged)\b/i
+  /\b(dating|divorces?|split(?:s|ting)?|pregnant|scandal|beef|feud|wedding|married|marriage|girlfriend|boyfriend|engaged|couple splits?|heated argument|premiere drama)\b/i
 const MUSIC_PROMO_RE = /\b(music video|album|single|billboard|tour dates?|concert)\b/i
-const POLITICS_RE = /\b(election|president|congress|democrat|republican)\b/i
+const POLITICS_RE =
+  /\b(election|president|congress|democrat|republican|antitrust suit|threatens to pull)\b/i
+const BUSINESS_NEWS_RE =
+  /\b(revenues? slide|earnings shoot|quarterly earnings|corporate earnings|box office hits \$\d)\b/i
+const AI_GENERIC_RE = /\b(ai slop|ai persona label|ai generated ads|these images were made with ai)\b/i
 
 /**
  * Deterministic Original Content Opportunity Score.
@@ -34,6 +39,8 @@ const POLITICS_RE = /\b(election|president|congress|democrat|republican)\b/i
 export function scoreOriginalOpportunity(input: {
   text: string
   authorHandle?: string | null
+  /** Optional corpus/validation tags (should_ignore, gossip, …). */
+  tags?: string[]
   entities: ExtractedEntities
   context?: Pick<
     ContextPackage,
@@ -177,6 +184,20 @@ export function scoreOriginalOpportunity(input: {
     eligible = false
     reasonCodes.push("missing_core_entities")
   }
+
+  const scoutExclusion = evaluateScoutExclusion({
+    text: input.text,
+    authorHandle: input.authorHandle,
+    tags: input.tags,
+    entities: input.entities,
+    dataScore: data,
+    offBrand,
+  })
+  if (scoutExclusion.excluded) {
+    eligible = false
+    reasonCodes.push(scoutExclusion.code ?? "scout_excluded")
+  }
+
   if (eligible) reasonCodes.push("original_eligible")
   else reasonCodes.push("original_ineligible")
 
@@ -208,7 +229,13 @@ export function classifyOriginalEventType(text: string): OriginalEventType {
 }
 
 export function isOffBrandOriginal(text: string): boolean {
-  return GOSSIP_RE.test(text) || MUSIC_PROMO_RE.test(text) || POLITICS_RE.test(text)
+  return (
+    GOSSIP_RE.test(text) ||
+    MUSIC_PROMO_RE.test(text) ||
+    POLITICS_RE.test(text) ||
+    BUSINESS_NEWS_RE.test(text) ||
+    AI_GENERIC_RE.test(text)
+  )
 }
 
 /**

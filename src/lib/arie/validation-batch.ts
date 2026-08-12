@@ -26,6 +26,15 @@ import { CONTEXT_BUILDER_VERSION } from "@/lib/arie/types"
 import { ORIGINAL_PREDICTION_VERSION } from "@/lib/arie/original-prediction"
 import type { ContextPackage } from "@/lib/arie/types"
 
+function validationGroqPaceMs(): number {
+  return Number(process.env.ARIE_VALIDATION_GROQ_PACE_MS ?? 1500)
+}
+
+async function paceValidationGroq(): Promise<void> {
+  const ms = validationGroqPaceMs()
+  if (ms > 0) await new Promise((r) => setTimeout(r, ms))
+}
+
 export const ORIGINALS_CORPUS_VERSION = "originals-v1"
 export const VALIDATION_LAYER_VERSION = "validation-batch@v1.0"
 
@@ -459,6 +468,9 @@ export function computeAggregateMetrics(
     scoreUsefulness: number | null
     scoreFraming: number | null
     scoreBrandVoice: number | null
+    scoreTimely?: number | null
+    scoreNative?: number | null
+    scoreInteresting?: number | null
     pipelineResult: PipelineResultSnapshot | null
     tags: string[]
     sourceHandle: string | null
@@ -555,6 +567,15 @@ export function computeAggregateMetrics(
       brandVoice: avg(
         graded.map((c) => c.scoreBrandVoice).filter((n): n is number => typeof n === "number"),
       ),
+      timely: avg(
+        graded.map((c) => c.scoreTimely).filter((n): n is number => typeof n === "number"),
+      ),
+      native: avg(
+        graded.map((c) => c.scoreNative).filter((n): n is number => typeof n === "number"),
+      ),
+      interesting: avg(
+        graded.map((c) => c.scoreInteresting).filter((n): n is number => typeof n === "number"),
+      ),
     },
     bySourceHandle: byHandle,
     computedAt: new Date().toISOString(),
@@ -621,6 +642,7 @@ export async function runValidationBatch(
         corrections: item?.corrections,
         corroborations: item?.corroborations,
         heatHint: item?.heatHint,
+        tags: item?.tags ?? c.tags,
         dedupeNamespace: `val:${batchId}`,
         payload: {
           validationBatchId: batchId,
@@ -671,6 +693,7 @@ export async function runValidationBatch(
       let visualReason: string | null = null
 
       if (batch.runMode === "full_pipeline" && ingested.eligible) {
+        await paceValidationGroq()
         const concepts = await generateConceptsForOpportunity(oppId, { bypassGovernor: true })
         if (concepts.ok) {
           stages.concepts = "ok"
@@ -679,12 +702,14 @@ export async function runValidationBatch(
             format: concepts.selected.format,
             hook: concepts.selected.hook,
           }
+          await paceValidationGroq()
           const draft = await generateDraftForOpportunity(oppId, { bypassGovernor: true })
           if (draft.ok) {
             stages.draft = "ok"
             draftText = draft.draft.text
             visualEligible = draft.visual?.eligible ?? null
             visualReason = draft.visual?.reason ?? null
+            await paceValidationGroq()
             const qa = await runQaForOpportunity(oppId, { bypassGovernor: true })
             if (qa.ok) {
               stages.qa = "ok"
@@ -851,6 +876,9 @@ export async function gradeValidationCase(input: {
   scoreUsefulness?: number
   scoreFraming?: number
   scoreBrandVoice?: number
+  scoreTimely?: number
+  scoreNative?: number
+  scoreInteresting?: number
   gradeNotes?: string
   gradedByEmail?: string | null
 }): Promise<{ ok: true } | { ok: false; reason: string }> {
@@ -864,6 +892,12 @@ export async function gradeValidationCase(input: {
     return { ok: false, reason: "batch_not_ready" }
   }
 
+  const pipeline = row.pipelineResult as PipelineResultSnapshot | null
+  const hasDraft = Boolean(pipeline?.draftText?.trim())
+  if (!hasDraft && input.humanGrade) {
+    return { ok: false, reason: "grade_requires_draft" }
+  }
+
   const clamp = (n: number | undefined) =>
     typeof n === "number" ? Math.max(1, Math.min(5, Math.round(n))) : null
 
@@ -875,6 +909,9 @@ export async function gradeValidationCase(input: {
       scoreUsefulness: clamp(input.scoreUsefulness),
       scoreFraming: clamp(input.scoreFraming),
       scoreBrandVoice: clamp(input.scoreBrandVoice),
+      scoreTimely: clamp(input.scoreTimely),
+      scoreNative: clamp(input.scoreNative),
+      scoreInteresting: clamp(input.scoreInteresting),
       gradeNotes: input.gradeNotes?.trim() || null,
       gradedAt: new Date(),
       gradedByEmail: input.gradedByEmail ?? null,
@@ -893,6 +930,10 @@ export async function gradeValidationCase(input: {
       scoreUsefulness: c.id === input.caseId ? clamp(input.scoreUsefulness) : c.scoreUsefulness,
       scoreFraming: c.id === input.caseId ? clamp(input.scoreFraming) : c.scoreFraming,
       scoreBrandVoice: c.id === input.caseId ? clamp(input.scoreBrandVoice) : c.scoreBrandVoice,
+      scoreTimely: c.id === input.caseId ? clamp(input.scoreTimely) : c.scoreTimely,
+      scoreNative: c.id === input.caseId ? clamp(input.scoreNative) : c.scoreNative,
+      scoreInteresting:
+        c.id === input.caseId ? clamp(input.scoreInteresting) : c.scoreInteresting,
       pipelineResult: c.pipelineResult as PipelineResultSnapshot | null,
       tags: c.tags,
       sourceHandle: c.sourceHandle,
@@ -938,6 +979,9 @@ export function serializeCase(c: {
   scoreUsefulness: number | null
   scoreFraming: number | null
   scoreBrandVoice: number | null
+  scoreTimely: number | null
+  scoreNative: number | null
+  scoreInteresting: number | null
   gradeNotes: string | null
   gradedAt: Date | null
   gradedByEmail: string | null
@@ -968,6 +1012,9 @@ export function serializeCase(c: {
     scoreUsefulness: c.scoreUsefulness,
     scoreFraming: c.scoreFraming,
     scoreBrandVoice: c.scoreBrandVoice,
+    scoreTimely: c.scoreTimely,
+    scoreNative: c.scoreNative,
+    scoreInteresting: c.scoreInteresting,
     gradeNotes: c.gradeNotes,
     gradedAt: c.gradedAt?.toISOString() ?? null,
     gradedByEmail: c.gradedByEmail,

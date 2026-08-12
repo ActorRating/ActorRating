@@ -29,6 +29,12 @@ export default function AdminArieValidationPage() {
             Originals
           </Link>
           <Link
+            href="/admin/arie/intelligence"
+            className="rounded-lg border border-white/20 px-3 py-2 text-sm text-muted-foreground"
+          >
+            Daily Intelligence
+          </Link>
+          <Link
             href="/admin/arie/stats"
             className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
           >

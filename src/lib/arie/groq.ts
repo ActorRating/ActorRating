@@ -23,6 +23,28 @@ function shouldRetryStatus(status: number): boolean {
   return status === 429 || status === 437 || status >= 500
 }
 
+function isTransientGroqFailure(reason: string): boolean {
+  return (
+    reason.startsWith("groq_http_429") ||
+    reason.startsWith("groq_http_437") ||
+    reason.startsWith("groq_http_5") ||
+    reason === "groq_timeout" ||
+    reason === "groq_network_error"
+  )
+}
+
+/** Exported for pipeline — do not mark opportunities FAILED on transient Groq errors. */
+export function isTransientInferenceFailure(reason: string): boolean {
+  return isTransientGroqFailure(reason)
+}
+
+function groqRetryWaitMs(attempt: number, retryAfterHeader: number): number {
+  const base = 400 * attempt * attempt
+  const fromHeader = retryAfterHeader * 1000
+  const cap = Number(process.env.ARIE_GROQ_RETRY_CAP_MS ?? 15_000)
+  return Math.min(cap, Math.max(fromHeader, base) + Math.floor(Math.random() * 250))
+}
+
 /**
  * Sprint 1 Groq client stub — JSON chat completions with cost metering.
  * Disabled cleanly when GROQ_API_KEY / budget band blocks paid calls.
@@ -47,7 +69,7 @@ export async function groqJsonCompletion(opts: {
 
   const model = opts.model ?? process.env.ARIE_GROQ_MODEL ?? "llama-3.3-70b-versatile"
   const started = Date.now()
-  const maxAttempts = 3
+  const maxAttempts = Number(process.env.ARIE_GROQ_MAX_ATTEMPTS ?? 5)
   const perAttemptMs = Number(process.env.ARIE_GROQ_TIMEOUT_MS ?? 25_000)
   let lastStatus = 0
   let lastBody = ""
@@ -97,8 +119,7 @@ export async function groqJsonCompletion(opts: {
       })
       if (attempt < maxAttempts && shouldRetryStatus(res.status)) {
         const retryAfter = Number(res.headers.get("retry-after") || "0")
-        // Cap wait so admin eval UI cannot freeze for minutes on 429
-        const waitMs = Math.min(8_000, Math.max(retryAfter * 1000, 400 * attempt * attempt))
+        const waitMs = groqRetryWaitMs(attempt, retryAfter)
         await sleep(waitMs)
         continue
       }

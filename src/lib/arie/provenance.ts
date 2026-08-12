@@ -124,6 +124,8 @@ const PRIMARY_HANDLES = new Set([
 const IRON_SPIDER_RE = /\biron\s*spider\b/i
 const RETURN_RE =
   /\b(returns?|returning|will return|set to return|reprises?|coming back|back as)\b/i
+const FRANCHISE_EXIT_RE =
+  /\b(final (?:time|movie|appearance|performance)|last (?:time|dance|movie|appearance)|bringing .* run to an (?:absolute )?(?:close|end)|signed on for)\b/i
 const CASTING_JOIN_RE =
   /\b(joins?|cast|casting|boards?|will (?:star|play|appear)|set to (?:star|play)|tapped|officially cast)\b/i
 const CONFIRMED_LANG_RE = /\b(confirmed|officially confirmed|breaking)\b/i
@@ -324,7 +326,10 @@ export function buildEvidenceLayer(input: {
             ? 55
             : 35
 
-  const castingSignal = CASTING_JOIN_RE.test(input.text) || RETURN_RE.test(input.text)
+  const castingSignal =
+    CASTING_JOIN_RE.test(input.text) ||
+    RETURN_RE.test(input.text) ||
+    FRANCHISE_EXIT_RE.test(input.text)
   const primaryActor = input.entities.actors[0]
 
   if (castingSignal && primaryActor) {
@@ -360,7 +365,11 @@ export function buildEvidenceLayer(input: {
     claims.push({
       id: claimId("cast", primaryActor.id, titleObj),
       subject: primaryActor.name,
-      predicate: RETURN_RE.test(input.text) ? "reported_return" : "reported_casting",
+      predicate: FRANCHISE_EXIT_RE.test(input.text)
+        ? "reported_franchise_exit"
+        : RETURN_RE.test(input.text)
+          ? "reported_return"
+          : "reported_casting",
       object: titleObj,
       status,
       provenance: status === "VERIFIED" ? "system" : "source_assertion",
@@ -497,13 +506,14 @@ export function buildEvidenceLayer(input: {
     })
   }
 
-  const evidence = packageEvidence(claims, source)
+  const evidence = packageEvidence(claims, source, input.text)
   return { source, claims, evidence }
 }
 
 export function packageEvidence(
   claims: ArieClaim[],
   source: SourceProvenance,
+  sourceText?: string,
 ): EvidenceBundle {
   const confirmed = claims.filter((c) => c.status === "VERIFIED")
   const reported = claims.filter((c) => c.status === "REPORTED")
@@ -520,8 +530,8 @@ export function packageEvidence(
 
   const potentialConflicts = contradicted.map((c) => c.text)
 
-  const factualConfidence = computeFactualConfidence(claims)
-  const writerMode = selectWriterMode(claims)
+  const factualConfidence = computeFactualConfidence(claims, source)
+  const writerMode = selectWriterMode(claims, source, sourceText)
 
   return {
     confirmed,
@@ -537,7 +547,10 @@ export function packageEvidence(
   }
 }
 
-export function computeFactualConfidence(claims: ArieClaim[]): number {
+export function computeFactualConfidence(
+  claims: ArieClaim[],
+  source?: SourceProvenance,
+): number {
   if (!claims.length) return 40
   const weights = { VERIFIED: 1, REPORTED: 0.45, UNVERIFIED: 0.2, CONTRADICTED: 0, UNKNOWN: 0.25 }
   // Weight event claims more than identity facts
@@ -553,20 +566,62 @@ export function computeFactualConfidence(claims: ArieClaim[]): number {
     num += weights[c.status] * c.confidence * w
     den += 100 * w
   }
-  return Math.max(0, Math.min(100, Math.round(num / Math.max(1, den) * 100)))
-}
+  let score = Math.max(0, Math.min(100, Math.round((num / Math.max(1, den)) * 100)))
 
-export function selectWriterMode(claims: ArieClaim[]): WriterEvidenceMode {
   const eventClaims = claims.filter(
     (c) =>
       c.provenance === "source_assertion" &&
       (c.predicate.includes("casting") ||
         c.predicate.includes("return") ||
+        c.predicate.includes("franchise_exit") ||
+        c.predicate === "costume_claim"),
+  )
+  const hasVerifiedEvent = eventClaims.some((c) => c.status === "VERIFIED")
+
+  // Aggregators without independent corroboration must not score 90+ on news claims alone.
+  if (
+    source &&
+    (source.reliabilityClass === "AGGREGATOR" ||
+      source.reliabilityClass === "UNKNOWN" ||
+      source.reliabilityClass === "FAN_ACCOUNT") &&
+    !hasVerifiedEvent
+  ) {
+    score = Math.min(score, eventClaims.length > 0 ? 72 : 85)
+  }
+
+  return score
+}
+
+export function selectWriterMode(
+  claims: ArieClaim[],
+  source?: SourceProvenance,
+  sourceText?: string,
+): WriterEvidenceMode {
+  const eventClaims = claims.filter(
+    (c) =>
+      c.provenance === "source_assertion" &&
+      (c.predicate.includes("casting") ||
+        c.predicate.includes("return") ||
+        c.predicate.includes("franchise_exit") ||
         c.predicate === "costume_claim" ||
         c.predicate === "movie_mentioned_in_source"),
   )
+
+  const unreliableSource =
+    source &&
+    (source.reliabilityClass === "AGGREGATOR" ||
+      source.reliabilityClass === "UNKNOWN" ||
+      source.reliabilityClass === "FAN_ACCOUNT")
+
+  const newsLanguage =
+    typeof sourceText === "string" &&
+    /\b(reportedly|reports? that|officially confirms|confirmed|in talks|final time|final movie)\b/i.test(
+      sourceText,
+    )
+
   if (!eventClaims.length) {
-    // Pure ActorRating evergreen angle
+    // Never upgrade aggregator-reported news to VERIFIED_EVENT without verified event claims.
+    if (unreliableSource && newsLanguage) return "REPORTED_EVENT"
     return claims.some((c) => c.status === "VERIFIED" && c.provenance === "actorrating_db")
       ? "VERIFIED_EVENT"
       : "DISCUSSION"
@@ -577,6 +632,9 @@ export function selectWriterMode(claims: ArieClaim[]): WriterEvidenceMode {
       return "REPORTED_EVENT"
     }
     return "DISCUSSION"
+  }
+  if (unreliableSource && eventClaims.some((c) => c.status !== "VERIFIED")) {
+    return "REPORTED_EVENT"
   }
   if (eventClaims.every((c) => c.status === "VERIFIED")) return "VERIFIED_EVENT"
   if (eventClaims.some((c) => c.status === "REPORTED")) return "REPORTED_EVENT"

@@ -12,6 +12,7 @@ import {
   type OriginalConcept,
   type OriginalScoreResult,
 } from "@/lib/arie/original-types"
+import { validateConceptPayloads } from "@/lib/arie/concept-payload"
 import { parseConceptsWithZod } from "@/lib/arie/original-schemas"
 
 function clamp01to100(n: number): number {
@@ -98,11 +99,17 @@ function scoreConcept(
     Boolean(ctx.package.radar)
   const genericNews =
     /is back|returns as|joins|will star|what do you think\??$/i.test(c.hook) &&
-    c.dataUsed.length === 0
+    c.dataUsed.length === 0 &&
+    !c.actorRatingPayloadPresent
   const uncertainPenalty = c.groundedInUncertainClaim ? 18 : 0
   const attributionPenalty = c.requiresAttribution && c.dataUsed.length === 0 ? 10 : 0
   const arGroundedBoost =
-    !c.groundedInUncertainClaim && c.dataUsed.length > 0 && hasData ? 12 : 0
+    (c.actorRatingPayloadPresent || !c.groundedInUncertainClaim) &&
+    c.dataUsed.length > 0 &&
+    hasData
+      ? 12
+      : 0
+  const payloadPenalty = c.actorRatingPayloadPresent === false ? 35 : 0
 
   return {
     actorRatingAdvantage: clamp01to100(
@@ -110,7 +117,9 @@ function scoreConcept(
         c.dataUsed.length * 8 +
         (hasData ? 10 : -15) +
         arGroundedBoost -
-        uncertainPenalty,
+        uncertainPenalty -
+        payloadPenalty +
+        (c.actorRatingPayloadPresent ? 15 : 0),
     ),
     originality: clamp01to100(
       (genericNews ? 25 : 70) +
@@ -270,13 +279,30 @@ export async function generateOriginalConcepts(input: {
     id: c.id || `c${i + 1}-${randomUUID().slice(0, 6)}`,
   }))
 
-  const distinct = conceptsAreDistinct(withIds)
+  const { concepts: payloadValidated, rejected } = validateConceptPayloads(
+    withIds,
+    input.package,
+  )
+  if (!payloadValidated.length) {
+    await arieLog("warn", "original", "all_concepts_rejected_payload", {
+      rejected: rejected.map((r) => r.reason),
+    })
+    return { ok: false, reason: "no_actorrating_native_concepts" }
+  }
+  if (rejected.length) {
+    await arieLog("info", "original", "concepts_rejected_payload", {
+      rejected,
+      kept: payloadValidated.length,
+    })
+  }
+
+  const distinct = conceptsAreDistinct(payloadValidated)
   if (!distinct.ok) {
     await arieLog("warn", "original", "concepts_not_distinct", { reason: distinct.reason })
     // Soft-fail: still rank but flag
   }
 
-  const { ranked, selected, explanation } = rankOriginalConcepts(withIds, {
+  const { ranked, selected, explanation } = rankOriginalConcepts(payloadValidated, {
     score: input.originalScore,
     package: input.package,
   })

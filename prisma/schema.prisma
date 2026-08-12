@@ -981,6 +981,12 @@ model ArieValidationCase {
   scoreFraming      Int?
   /// 1–5 brand voice
   scoreBrandVoice   Int?
+  /// 1–5 would someone care right now (Creator Unlock)
+  scoreTimely       Int?
+  /// 1–5 uniquely ActorRating vs generic news account
+  scoreNative       Int?
+  /// 1–5 would a person stop and reply
+  scoreInteresting  Int?
   gradeNotes        String?   @db.Text
   gradedAt          DateTime?
   gradedByEmail     String?

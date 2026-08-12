@@ -28,3 +28,10 @@ export * from "@/lib/arie/original-constitution"
 export * from "@/lib/arie/original-metrics"
 export * from "@/lib/arie/original-schemas"
 export * from "@/lib/arie/prompt-loader"
+export * from "@/lib/arie/scout-exclusions"
+export {
+  deriveActorRatingPayload,
+  isGenericNewsConcept,
+  validateConceptPayloads,
+} from "@/lib/arie/concept-payload"
+export * from "@/lib/arie/intelligence"

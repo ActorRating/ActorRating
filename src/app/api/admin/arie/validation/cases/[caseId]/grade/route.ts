@@ -26,6 +26,9 @@ export async function POST(
     scoreUsefulness: body.scoreUsefulness,
     scoreFraming: body.scoreFraming,
     scoreBrandVoice: body.scoreBrandVoice,
+    scoreTimely: body.scoreTimely,
+    scoreNative: body.scoreNative,
+    scoreInteresting: body.scoreInteresting,
     gradeNotes: typeof body.gradeNotes === "string" ? body.gradeNotes : undefined,
     gradedByEmail: admin.email ?? null,
   })

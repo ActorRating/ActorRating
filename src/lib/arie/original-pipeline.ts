@@ -32,6 +32,8 @@ import {
 import { extractTweetId } from "@/lib/arie/x"
 import { isPriorityAuthor } from "@/lib/arie/priority-accounts"
 import { generateOriginalDraft } from "@/lib/arie/original-writer"
+import { isTransientInferenceFailure } from "@/lib/arie/groq"
+import { evaluateScoutExclusion } from "@/lib/arie/scout-exclusions"
 import { scoreOpportunity } from "@/lib/arie/opportunity-score"
 import type { ContextPackage } from "@/lib/arie/types"
 import { CONTEXT_BUILDER_VERSION } from "@/lib/arie/types"
@@ -77,6 +79,8 @@ export async function ingestOriginalOpportunity(input: {
    * When set, appends to dedupeKey so validation batches never collide with
    * production opportunities or each other. Does not change score weights.
    */
+  /** Optional validation/corpus tags for Scout hard NO rules. */
+  tags?: string[]
   dedupeNamespace?: string | null
 }): Promise<
   | {
@@ -153,6 +157,7 @@ export async function ingestOriginalOpportunity(input: {
   const originalScore = scoreOriginalOpportunity({
     text,
     authorHandle: input.authorHandle,
+    tags: input.tags,
     entities,
     context,
     ageMinutes,
@@ -396,18 +401,43 @@ export async function generateConceptsForOpportunity(
     return { ok: false, reason: "not_eligible" }
   }
 
+  const scout = evaluateScoutExclusion({
+    text: pkg.event.text,
+    authorHandle: pkg.event.author_handle,
+    offBrand: score.reasonCodes.some((c) => c.startsWith("scout_") || c === "off_brand_topic"),
+    dataScore: score.breakdown.data,
+  })
+  if (scout.excluded) {
+    await prisma.arieOpportunity.update({
+      where: { id: opp.id },
+      data: {
+        originalStatus: "IGNORED",
+        status: "ignored",
+        ignoredReason: scout.code ?? "scout_excluded",
+      },
+    })
+    return { ok: false, reason: scout.code ?? "scout_excluded" }
+  }
+
   const gen = await generateOriginalConcepts({
     package: pkg,
     originalScore: score,
     bypassGovernor: opts?.bypassGovernor ?? true,
   })
   if (!gen.ok) {
+    const transient = isTransientInferenceFailure(gen.reason)
     await prisma.arieOpportunity.update({
       where: { id: opp.id },
       data: {
         conceptGenCount: { increment: 1 },
-        originalStatus: "FAILED",
-        modelMeta: { lastError: gen.reason, stage: "concepts" } as Prisma.InputJsonValue,
+        ...(transient
+          ? {}
+          : { originalStatus: "FAILED" }),
+        modelMeta: {
+          lastError: gen.reason,
+          stage: "concepts",
+          transient,
+        } as Prisma.InputJsonValue,
       },
     })
     return { ok: false, reason: gen.reason }
@@ -507,6 +537,7 @@ export async function generateDraftForOpportunity(
     bypassGovernor: opts?.bypassGovernor ?? true,
   })
   if (!gen.ok) {
+    const transient = isTransientInferenceFailure(gen.reason)
     await prisma.arieOpportunity.update({
       where: { id: opp.id },
       data: {
@@ -515,6 +546,7 @@ export async function generateDraftForOpportunity(
           ...((opp.modelMeta as object) ?? {}),
           lastError: gen.reason,
           stage: "draft",
+          transient,
         } as Prisma.InputJsonValue,
       },
     })

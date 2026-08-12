@@ -56,6 +56,9 @@ type ValCase = {
   scoreUsefulness: number | null
   scoreFraming: number | null
   scoreBrandVoice: number | null
+  scoreTimely: number | null
+  scoreNative: number | null
+  scoreInteresting: number | null
   gradeNotes: string | null
   pipelineResult: PipelineResult | null
   opportunityId: string | null
@@ -199,6 +202,9 @@ export default function ArieValidationPanel() {
           scoreUsefulness: c?.scoreUsefulness ?? undefined,
           scoreFraming: c?.scoreFraming ?? undefined,
           scoreBrandVoice: c?.scoreBrandVoice ?? undefined,
+          scoreTimely: c?.scoreTimely ?? undefined,
+          scoreNative: c?.scoreNative ?? undefined,
+          scoreInteresting: c?.scoreInteresting ?? undefined,
           gradeNotes: c?.gradeNotes ?? undefined,
         }),
       })
@@ -629,7 +635,10 @@ function CaseDetail({
       | "scoreTruthfulness"
       | "scoreUsefulness"
       | "scoreFraming"
-      | "scoreBrandVoice",
+      | "scoreBrandVoice"
+      | "scoreTimely"
+      | "scoreNative"
+      | "scoreInteresting",
     n: number,
   ) => void
 }) {
@@ -734,6 +743,11 @@ function CaseDetail({
       {c.selectedForReview && (
         <div className="space-y-2 rounded border border-[#FFD700]/30 p-3">
           <h3 className="text-sm font-semibold text-[#FFD700]">Human grade</h3>
+          {!r?.draftText && (
+            <p className="text-xs text-amber-300/90">
+              Grade only cases with a draft — infrastructure failures are tracked separately.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {(["A", "B", "C", "D"] as const).map((g) => (
               <button
@@ -754,6 +768,9 @@ function CaseDetail({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {(
               [
+                ["Timely", "scoreTimely"],
+                ["Native", "scoreNative"],
+                ["Interesting", "scoreInteresting"],
                 ["Truth", "scoreTruthfulness"],
                 ["Useful", "scoreUsefulness"],
                 ["Framing", "scoreFraming"],

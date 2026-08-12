@@ -22,6 +22,12 @@ export default function AdminArieOriginalsPage() {
             Reply eval
           </Link>
           <Link
+            href="/admin/arie/intelligence"
+            className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
+          >
+            Daily Intelligence
+          </Link>
+          <Link
             href="/admin/arie/validation"
             className="rounded-lg border border-[#FFD700]/40 bg-[#FFD700]/10 px-3 py-2 text-sm font-semibold text-[#FFD700]"
           >

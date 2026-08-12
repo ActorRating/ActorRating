@@ -74,6 +74,18 @@ export type OriginalEventType =
   | "other"
   | "ignore"
 
+export type ActorRatingPayloadType =
+  | "performance_score"
+  | "comparison"
+  | "career_trajectory"
+  | "actor_comparison"
+  | "award_context"
+  | "franchise_context"
+  | "historical_context"
+  | "community_signal"
+  | "director_pattern"
+  | "radar_craft"
+
 export type OriginalConcept = {
   id: string
   format: OriginalFormat
@@ -89,6 +101,10 @@ export type OriginalConcept = {
   requiresAttribution?: boolean
   /** Prefer false when concept is fully grounded in ActorRating data. */
   groundedInUncertainClaim?: boolean
+  /** Creator Unlock — explicit ActorRating-native payload signal. */
+  actorRatingPayloadPresent?: boolean
+  payloadType?: ActorRatingPayloadType | null
+  payloadSummary?: string | null
   scores?: ConceptScoreBreakdown
   totalScore?: number
 }
