@@ -75,6 +75,11 @@ export async function ingestOriginalOpportunity(input: {
   corrections?: string[]
   corroborations?: Array<{ handle: string; text: string; contradicts?: boolean }>
   sourceUrl?: string | null
+  /** Source post publication time (X created_at) — used for timing score. */
+  sourceCreatedAt?: Date | null
+  discoveryMethod?: string | null
+  discoveryRunId?: string | null
+  discoveryCandidateId?: string | null
   /**
    * When set, appends to dedupeKey so validation batches never collide with
    * production opportunities or each other. Does not change score weights.
@@ -91,6 +96,8 @@ export async function ingestOriginalOpportunity(input: {
       eligible: boolean
       deduped: boolean
       duplicateOfId?: string
+      inboundDeduped?: boolean
+      opportunityCreated?: boolean
     }
   | { ok: false; reason: string }
 > {
@@ -124,13 +131,67 @@ export async function ingestOriginalOpportunity(input: {
     authorId: input.authorId,
     text,
     payload: { ...(input.payload ?? {}), arieContentType: "original" },
+    sourceCreatedAt: input.sourceCreatedAt ?? null,
+    discoveryMethod: input.discoveryMethod ?? null,
+    discoveryRunId: input.discoveryRunId ?? null,
+    discoveryCandidateId: input.discoveryCandidateId ?? null,
     // Skip reply pipeline — we build original-specific opportunity below.
     process: false,
   })
   if (!ingested.ok) return { ok: false, reason: ingested.reason }
 
   const event = ingested.event
-  const ageMinutes = Math.max(0, (Date.now() - event.receivedAt.getTime()) / 60_000)
+
+  // Idempotent: one inbound event → at most one production original opportunity.
+  // Validation batches use dedupeNamespace and intentionally create isolated rows.
+  if (ingested.deduped && !input.dedupeNamespace) {
+    const existingOpp = await prisma.arieOpportunity.findFirst({
+      where: {
+        inboundEventId: event.id,
+        contentType: "original",
+        originalStatus: { notIn: ["DUPLICATE"] },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+    if (existingOpp) {
+      // Refresh discovery lineage on inbound without changing creation provenance.
+      await prisma.arieInboundEvent.update({
+        where: { id: event.id },
+        data: {
+          ...(input.discoveryMethod
+            ? { discoveryMethod: event.discoveryMethod ?? input.discoveryMethod }
+            : {}),
+          ...(input.discoveryRunId ? { discoveryRunId: input.discoveryRunId } : {}),
+          ...(input.discoveryCandidateId
+            ? { discoveryCandidateId: input.discoveryCandidateId }
+            : {}),
+          ...(input.sourceCreatedAt && !event.sourceCreatedAt
+            ? { sourceCreatedAt: input.sourceCreatedAt }
+            : {}),
+        },
+      })
+      await arieLog("info", "original", "inbound_opportunity_deduped", {
+        opportunityId: existingOpp.id,
+        inboundEventId: event.id,
+        externalId,
+      })
+      return {
+        ok: true,
+        opportunityId: existingOpp.id,
+        originalStatus: existingOpp.originalStatus ?? "SCORED",
+        originalScore: existingOpp.originalScore ?? 0,
+        eligible: (existingOpp.originalStatus ?? "") !== "IGNORED",
+        deduped: true,
+        duplicateOfId: existingOpp.id,
+        inboundDeduped: true,
+        opportunityCreated: false,
+      }
+    }
+    // Inbound exists but no opportunity yet (crash recovery) — fall through to create one.
+  }
+
+  const referenceTime = input.sourceCreatedAt ?? event.sourceCreatedAt ?? event.receivedAt
+  const ageMinutes = Math.max(0, (Date.now() - referenceTime.getTime()) / 60_000)
   const entities = await extractEntitiesFromText(prisma, text)
 
   // Reply score still computed for context package compatibility / dual view
@@ -224,7 +285,7 @@ export async function ingestOriginalOpportunity(input: {
         sourcePostId,
         sourceType,
         sourceUrl,
-        sourceTimestamp: event.receivedAt,
+        sourceTimestamp: referenceTime,
         attributionCode: originalAttributionCode(existing.id),
       },
     })
@@ -252,6 +313,8 @@ export async function ingestOriginalOpportunity(input: {
       eligible: (existing.originalStatus ?? "") !== "IGNORED",
       deduped: true,
       duplicateOfId: existing.id,
+      opportunityCreated: false,
+      inboundDeduped: ingested.deduped,
     }
   }
 
@@ -285,7 +348,7 @@ export async function ingestOriginalOpportunity(input: {
       sourcePostId,
       sourceType,
       sourceUrl,
-      sourceTimestamp: event.receivedAt,
+      sourceTimestamp: referenceTime,
       attributionCode: null, // set to opp.id after create
     },
   })
@@ -329,6 +392,8 @@ export async function ingestOriginalOpportunity(input: {
     originalScore: originalScore.score,
     eligible: originalScore.eligible,
     deduped: false,
+    opportunityCreated: true,
+    inboundDeduped: ingested.deduped,
   }
 }
 

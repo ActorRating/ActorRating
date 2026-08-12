@@ -5,6 +5,19 @@
 **Auto original publish:** OFF (`ARIE_ORIGINAL_PUBLISH_ENABLED=false` by default)  
 **Master publish:** OFF (`ARIE_PUBLISH_ENABLED=false` by default)
 
+## Discovery upstream (V1)
+
+Production originals can enter via **Discovery Engine** (automatic) or manual admin ingest (validation/testing).
+
+```
+X read API → DiscoveryCandidate → ArieInboundEvent → ingestOriginalOpportunity
+```
+
+- Discovery: [DISCOVERY.md](./DISCOVERY.md)
+- Default: `ARIE_DISCOVERY_ENABLED=false`
+- Discovery priority ≠ Original Opportunity Score
+- Daily Intelligence: `/admin/arie/intelligence`
+
 ## Measurement lineage
 
 ```

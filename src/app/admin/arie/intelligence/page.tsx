@@ -16,6 +16,12 @@ export default function AdminArieIntelligencePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/admin/arie/discovery"
+            className="rounded-lg border border-white/20 px-3 py-2 text-sm text-muted-foreground"
+          >
+            Discovery
+          </Link>
+          <Link
             href="/admin/arie/originals"
             className="rounded-lg border border-white/20 px-3 py-2 text-sm text-muted-foreground"
           >

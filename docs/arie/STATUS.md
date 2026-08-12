@@ -9,6 +9,8 @@
 | --- | --- |
 | `/admin/arie` | Reply evaluation / intelligence |
 | `/admin/arie/originals` | Production original-content pipeline |
+| `/admin/arie/intelligence` | Daily Intelligence — ranked original candidates |
+| `/admin/arie/discovery` | Discovery Engine health + sources (V1, off by default) |
 | `/admin/arie/validation` | Scientific validation batches (immutable) |
 
 Sprint 3 has **not** started.
@@ -20,8 +22,11 @@ Sprint 3 has **not** started.
 | `ARIE_PUBLISH_ENABLED` | **false** |
 | `ARIE_ORIGINAL_PUBLISH_ENABLED` | **false** |
 | `ARIE_AUTO_PUBLISH_ENABLED` | **false** |
+| `ARIE_DISCOVERY_ENABLED` | **false** |
 
-UI/API request bodies cannot override these flags. Publisher is the only X write path (`postReplyTweet` / `postOriginalTweet`).
+Discovery V1 is implemented but **off by default**. See [DISCOVERY.md](./DISCOVERY.md). Publishing remains disabled. No reply automation. No browser/X bypass.
+
+UI/API request bodies cannot override publish flags. Publisher is the only X write path (`postReplyTweet` / `postOriginalTweet`).
 
 ## Validation
 

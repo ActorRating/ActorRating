@@ -35,3 +35,8 @@ export {
   validateConceptPayloads,
 } from "@/lib/arie/concept-payload"
 export * from "@/lib/arie/intelligence"
+export * from "@/lib/arie/discovery/types"
+export { computeDiscoveryPriority, velocityStatusFromHistory } from "@/lib/arie/discovery/priority"
+export { runDiscoveryEngine } from "@/lib/arie/discovery/run"
+export { loadDiscoveryDashboard } from "@/lib/arie/discovery/admin"
+export { observationalHealth, getCapabilityCache } from "@/lib/arie/discovery/capabilities"

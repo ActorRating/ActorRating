@@ -1,0 +1,83 @@
+[
+  {
+    "sourceType": "account",
+    "handle": "deadline",
+    "enabled": true,
+    "priority": 90,
+    "topicTags": ["casting", "trailer", "franchise"],
+    "pollIntervalMinutes": 10,
+    "maxCandidatesPerPoll": 10
+  },
+  {
+    "sourceType": "account",
+    "handle": "discussingfilm",
+    "enabled": true,
+    "priority": 85,
+    "topicTags": ["trailer", "Marvel", "DC"],
+    "pollIntervalMinutes": 10,
+    "maxCandidatesPerPoll": 10
+  },
+  {
+    "sourceType": "account",
+    "handle": "filmupdates",
+    "enabled": true,
+    "priority": 85,
+    "topicTags": ["casting", "sequel", "remake"],
+    "pollIntervalMinutes": 10,
+    "maxCandidatesPerPoll": 10
+  },
+  {
+    "sourceType": "account",
+    "handle": "variety",
+    "enabled": true,
+    "priority": 80,
+    "topicTags": ["casting", "Oscar", "directors"],
+    "pollIntervalMinutes": 15,
+    "maxCandidatesPerPoll": 8
+  },
+  {
+    "sourceType": "account",
+    "handle": "thr",
+    "enabled": true,
+    "priority": 80,
+    "topicTags": ["casting", "franchise"],
+    "pollIntervalMinutes": 15,
+    "maxCandidatesPerPoll": 8
+  },
+  {
+    "sourceType": "account",
+    "handle": "boinkbuzz",
+    "enabled": true,
+    "priority": 75,
+    "topicTags": ["trailer", "Marvel", "Spider-Man"],
+    "pollIntervalMinutes": 10,
+    "maxCandidatesPerPoll": 10
+  },
+  {
+    "sourceType": "account",
+    "handle": "chaoscrave",
+    "enabled": true,
+    "priority": 75,
+    "topicTags": ["trailer", "franchise"],
+    "pollIntervalMinutes": 10,
+    "maxCandidatesPerPoll": 10
+  },
+  {
+    "sourceType": "keyword",
+    "query": "(casting OR trailer OR sequel) (Marvel OR DC OR Netflix OR HBO) lang:en -is:retweet",
+    "enabled": true,
+    "priority": 60,
+    "topicTags": ["casting", "trailer", "Marvel", "DC"],
+    "pollIntervalMinutes": 15,
+    "maxCandidatesPerPoll": 15
+  },
+  {
+    "sourceType": "keyword",
+    "query": "(Christopher Nolan OR Oscar OR adaptation) lang:en -is:retweet",
+    "enabled": false,
+    "priority": 50,
+    "topicTags": ["directors", "Oscar", "adaptation"],
+    "pollIntervalMinutes": 20,
+    "maxCandidatesPerPoll": 10
+  }
+]

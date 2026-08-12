@@ -54,6 +54,7 @@ type Candidate = {
 type Summary = {
   date: string
   totalOpportunities: number
+  scanned?: number
   worthAttention: number
   exceptional: number
   withDraft: number
@@ -126,7 +127,7 @@ export default function ArieIntelligencePanel() {
       <div className="rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Today · {summary.date}</div>
         <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <Stat label="Scanned" value={summary.totalOpportunities} />
+          <Stat label="Scanned" value={summary.scanned ?? summary.totalOpportunities} />
           <Stat label="Worth attention" value={summary.worthAttention} />
           <Stat label="Exceptional" value={summary.exceptional} />
           <Stat label="With draft" value={summary.withDraft} />

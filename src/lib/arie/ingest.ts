@@ -13,6 +13,10 @@ export type IngestEventInput = {
   payload?: Record<string, unknown>
   /** When true (default), run Sprint 2 pipeline after insert. */
   process?: boolean
+  sourceCreatedAt?: Date | null
+  discoveryMethod?: string | null
+  discoveryRunId?: string | null
+  discoveryCandidateId?: string | null
 }
 
 /**
@@ -61,6 +65,10 @@ export async function ingestInboundEvent(input: IngestEventInput) {
         text,
         payload: (input.payload ?? {}) as Prisma.InputJsonValue,
         decision: "PENDING",
+        sourceCreatedAt: input.sourceCreatedAt ?? null,
+        discoveryMethod: input.discoveryMethod ?? null,
+        discoveryRunId: input.discoveryRunId ?? null,
+        discoveryCandidateId: input.discoveryCandidateId ?? null,
       },
     })
 

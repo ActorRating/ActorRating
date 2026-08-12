@@ -38,6 +38,31 @@ export function arieIngestEnabled(): boolean {
   return process.env.ARIE_INGEST_ENABLED !== "false"
 }
 
+/** Discovery Engine V1 — default OFF until explicitly enabled. */
+export function arieDiscoveryEnabled(): boolean {
+  return process.env.ARIE_DISCOVERY_ENABLED === "true"
+}
+
+export function arieDiscoveryMaxCandidatesPerRun(): number {
+  const raw = Number(process.env.ARIE_DISCOVERY_MAX_CANDIDATES_PER_RUN ?? "40")
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 40
+}
+
+export function arieDiscoveryMaxSourcesPerRun(): number {
+  const raw = Number(process.env.ARIE_DISCOVERY_MAX_SOURCES_PER_RUN ?? "8")
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 8
+}
+
+export function arieDiscoveryLookbackMinutes(): number {
+  const raw = Number(process.env.ARIE_DISCOVERY_LOOKBACK_MINUTES ?? "120")
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 120
+}
+
+export function arieDiscoveryIntervalMinutes(): number {
+  const raw = Number(process.env.ARIE_DISCOVERY_INTERVAL_MINUTES ?? "10")
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 10
+}
+
 export function arieServiceKey(): string | null {
   const key = process.env.ARIE_SERVICE_KEY?.trim()
   return key || null

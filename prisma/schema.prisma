@@ -582,13 +582,22 @@ model ArieInboundEvent {
   reasonCodes      String[]          @default([])
   processedAt      DateTime?
   errorMessage     String?
+  /// When the source post was published (X created_at) — distinct from receivedAt.
+  sourceCreatedAt  DateTime?
+  /// account_timeline | keyword_search | manual | admin_queue | validation
+  discoveryMethod  String?
+  discoveryRunId   String?
+  discoveryCandidateId String?
 
   opportunities ArieOpportunity[]
+  discoveryCandidate ArieDiscoveryCandidate? @relation(fields: [discoveryCandidateId], references: [id], onDelete: SetNull)
 
   @@unique([platform, externalId])
   @@index([receivedAt])
   @@index([decision, receivedAt])
   @@index([opportunityScore])
+  @@index([discoveryRunId])
+  @@index([discoveryMethod])
 }
 
 /// Scored content opportunity derived from an inbound event (or calendar seed).
@@ -1004,4 +1013,124 @@ model ArieValidationCase {
   @@index([batchId, status])
   @@index([opportunityId])
   @@index([sourceHandle])
+}
+
+/// Configurable discovery source (X account or keyword query). Not hardcoded in business logic.
+model ArieDiscoverySource {
+  id                   String    @id @default(cuid())
+  provider             String    @default("X")
+  /// account | keyword
+  sourceType           String
+  /// Stable key: account:handle or keyword:query
+  sourceKey            String
+  /// Account handle (no @) when sourceType=account
+  handle               String?
+  /// Search query when sourceType=keyword
+  query                String?
+  enabled              Boolean   @default(true)
+  /// Higher = polled first within run budget
+  priority             Int       @default(50)
+  topicTags            String[]  @default([])
+  pollIntervalMinutes  Int       @default(15)
+  maxCandidatesPerPoll Int       @default(10)
+  /// Cached X user id for account sources
+  authorId             String?
+  lastPolledAt         DateTime?
+  lastSeenPostId       String?
+  lastError            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  candidates ArieDiscoveryCandidate[]
+
+  @@unique([provider, sourceKey])
+  @@index([enabled, priority])
+  @@index([provider, sourceType])
+}
+
+/// One discovery job execution (observable, idempotent runs).
+model ArieDiscoveryRun {
+  id                   String    @id @default(cuid())
+  provider             String    @default("X")
+  /// RUNNING | SUCCESS | PARTIAL | RATE_LIMITED | ERROR | NO_RESULTS | DISABLED
+  status               String    @default("RUNNING")
+  startedAt            DateTime  @default(now())
+  completedAt          DateTime?
+  candidatesFound      Int       @default(0)
+  candidatesDeduped    Int       @default(0)
+  candidatesIngested   Int       @default(0)
+  candidatesRetried    Int       @default(0)
+  scoutExcluded        Int       @default(0)
+  /// Legacy alias mirrored from scoutExcluded for older dashboards.
+  scoutIgnored         Int       @default(0)
+  opportunityEligible  Int       @default(0)
+  opportunitiesCreated Int       @default(0)
+  opportunityDeduped   Int       @default(0)
+  inboundCreated       Int       @default(0)
+  inboundDeduped       Int       @default(0)
+  errors               Json?
+  rateLimitInfo        Json?
+  capabilitySnapshot   Json?
+  triggeredBy          String?
+
+  candidatesFirst  ArieDiscoveryCandidate[] @relation("CandidateFirstRun")
+  candidatesLast   ArieDiscoveryCandidate[] @relation("CandidateLastRun")
+
+  @@index([provider, startedAt])
+  @@index([status, startedAt])
+}
+
+/// A post discovered before/during ingest — full lineage to inbound event + opportunity.
+model ArieDiscoveryCandidate {
+  id                 String    @id @default(cuid())
+  provider           String    @default("X")
+  externalPostId     String
+  authorHandle       String?
+  authorId           String?
+  text               String    @db.Text
+  sourceUrl          String?
+  sourcePublishedAt  DateTime?
+  /// First time this post was discovered.
+  discoveredAt       DateTime  @default(now())
+  lastSeenAt         DateTime  @default(now())
+  /// account_timeline | keyword_search
+  discoveryMethod    String
+  /// First discovery run that created this candidate.
+  discoveryRunId     String
+  lastDiscoveryRunId String?
+  discoverySourceId  String?
+  discoveryPriority  Int       @default(0)
+  /// unknown | stale | active | accelerating — never fabricated without history
+  velocityStatus     String    @default("unknown")
+  publicMetrics      Json?
+  /// PENDING | INGESTING | INGESTED | ERROR
+  ingestStatus       String    @default("PENDING")
+  ingestStartedAt    DateTime?
+  ingestAttemptCount Int       @default(0)
+  ingestLeaseUntil   DateTime?
+  lastIngestError    String?
+  /// new | rediscovered | ingested
+  dedupeState        String    @default("new")
+  inboundEventId     String?
+  opportunityId      String?
+  /// pending | scout_excluded | score_ineligible | eligible | duplicate | error
+  scoutStatus        String    @default("pending")
+  originalScore      Int?
+  errorMessage       String?
+
+  firstRun      ArieDiscoveryRun      @relation("CandidateFirstRun", fields: [discoveryRunId], references: [id], onDelete: Cascade)
+  lastRun       ArieDiscoveryRun?     @relation("CandidateLastRun", fields: [lastDiscoveryRunId], references: [id], onDelete: SetNull)
+  source        ArieDiscoverySource?  @relation(fields: [discoverySourceId], references: [id], onDelete: SetNull)
+  inboundEvents ArieInboundEvent[]
+
+  @@unique([provider, externalPostId])
+  @@index([discoveryRunId])
+  @@index([lastDiscoveryRunId])
+  @@index([discoverySourceId])
+  @@index([discoveredAt])
+  @@index([lastSeenAt])
+  @@index([dedupeState])
+  @@index([ingestStatus])
+  @@index([scoutStatus])
+  @@index([discoveryPriority])
 }

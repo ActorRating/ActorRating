@@ -5,6 +5,7 @@
 import { prisma } from "@/lib/prisma"
 import type { OriginalConcept } from "@/lib/arie/original-types"
 import type { ContextPackage } from "@/lib/arie/types"
+import { loadDiscoveryStatsForIntelligence } from "@/lib/arie/discovery/admin"
 
 export type IntelligenceTier = "exceptional" | "strong" | "worth_attention" | "other"
 
@@ -53,6 +54,8 @@ export type DailyIntelligenceSummary = {
   exceptional: number
   withDraft: number
   qaReady: number
+  /** Posts discovered today (Discovery Engine). */
+  scanned?: number
   candidates: IntelligenceCandidate[]
 }
 
@@ -109,6 +112,8 @@ export async function loadDailyIntelligence(opts?: {
   const from = startOfUtcDay(day)
   const to = new Date(from.getTime() + 24 * 60 * 60 * 1000)
   const limit = opts?.limit ?? 5
+
+  const discoveryStats = await loadDiscoveryStatsForIntelligence(day)
 
   const rows = await prisma.arieOpportunity.findMany({
     where: {
@@ -214,6 +219,7 @@ export async function loadDailyIntelligence(opts?: {
   return {
     date: from.toISOString().slice(0, 10),
     totalOpportunities: rows.length,
+    scanned: discoveryStats.scanned,
     worthAttention: candidates.filter((c) => c.tier !== "other").length,
     exceptional: candidates.filter((c) => c.tier === "exceptional").length,
     withDraft: candidates.filter((c) => c.draftText).length,
