@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { buildContextPackage } from "@/lib/arie/context-builder"
-import { extractEntitiesFromText } from "@/lib/arie/entity-extract"
+import { extractEntitiesFromText, type ExtractedEntities } from "@/lib/arie/entity-extract"
 import { ingestInboundEvent } from "@/lib/arie/ingest"
 import { arieLog } from "@/lib/arie/log"
 import { generateOriginalConcepts } from "@/lib/arie/original-concepts"
@@ -54,11 +54,73 @@ async function loadPackageForOpportunity(
   return row.package as unknown as ContextPackage
 }
 
-function asScore(raw: unknown): OriginalScoreResult | null {
-  if (!raw || typeof raw !== "object") return null
-  const o = raw as OriginalScoreResult
-  if (typeof o.score !== "number" || !o.breakdown) return null
-  return o
+/** Statuses that may generate/regenerate concepts. Status is source of truth. */
+export const CONCEPT_GENERATION_ACTIVE_STATUSES = [
+  "ELIGIBLE",
+  "CONCEPTS_GENERATED",
+  "CONCEPT_SELECTED",
+  "DRAFT_GENERATED",
+  "QA_PASSED",
+  "QA_FAILED",
+  "READY",
+  "APPROVED",
+] as const
+
+export function isConceptGenerationActiveStatus(status: string | null | undefined): boolean {
+  return Boolean(status && (CONCEPT_GENERATION_ACTIVE_STATUSES as readonly string[]).includes(status))
+}
+
+/**
+ * Concept-generation eligibility: pipeline status is source of truth for
+ * ELIGIBLE+. IGNORED / REJECTED / DUPLICATE stay blocked. NEW/SCORED/null
+ * fall back to reconstructed score.eligible (flat breakdown-aware).
+ */
+export function evaluateConceptGenerationEligibility(input: {
+  originalStatus: string | null | undefined
+  score: OriginalScoreResult
+}): { ok: true } | { ok: false; reason: string } {
+  const status = input.originalStatus ?? null
+  if (status === "EXPIRED") return { ok: false, reason: "expired" }
+  if (status === "PUBLISHED" || status === "PUBLISHING") {
+    return { ok: false, reason: "already_published" }
+  }
+  if (status === "IGNORED" || status === "REJECTED" || status === "DUPLICATE" || status === "FAILED") {
+    return { ok: false, reason: "not_eligible" }
+  }
+  if (isConceptGenerationActiveStatus(status)) return { ok: true }
+  if (!input.score.eligible) return { ok: false, reason: "not_eligible" }
+  return { ok: true }
+}
+
+export function entitiesFromContextPackage(pkg: ContextPackage): ExtractedEntities {
+  const actors: ExtractedEntities["actors"] = []
+  const seen = new Set<string>()
+  const pushActor = (id: string, name: string, slug: string | null) => {
+    if (seen.has(id)) return
+    seen.add(id)
+    actors.push({ id, name, slug, confidence: 90 })
+  }
+  if (pkg.actor) pushActor(pkg.actor.id, pkg.actor.name, pkg.actor.slug)
+  for (const a of pkg.actors ?? []) pushActor(a.id, a.name, a.slug)
+  return {
+    actors,
+    movies: pkg.movie
+      ? [
+          {
+            id: pkg.movie.id,
+            title: pkg.movie.title,
+            year: pkg.movie.year,
+            slug: pkg.movie.slug,
+            director: pkg.movie.director,
+            genre: pkg.movie.genre,
+            indexingCohort: pkg.movie.indexingCohort,
+            confidence: 90,
+          },
+        ]
+      : [],
+    directors: pkg.director ? [{ name: pkg.director.name, confidence: 90 }] : [],
+    unresolved: pkg.unresolved ?? [],
+  }
 }
 
 /**
@@ -467,40 +529,20 @@ export async function generateConceptsForOpportunity(
   const pkg = await loadPackageForOpportunity(opp.id)
   if (!pkg) return { ok: false, reason: "missing_context" }
 
-  const score =
-    asScore(opp.originalScoreBreakdown) ??
-    ({
-      score: opp.originalScore ?? 0,
-      breakdown: { heat: 0, relevance: 0, visual: 0, discussion: 0, data: 0, timing: 0 },
-      eligible: (opp.originalScore ?? 0) >= 55,
-      reasonCodes: [],
-      eventType: "other",
-      velocity: "unknown",
-      actorRatingAdvantage: "",
-    } satisfies OriginalScoreResult)
-
-  // Re-hydrate eligible/advantage from stored breakdown extras if present
-  const stored = opp.originalScoreBreakdown as Record<string, unknown> | null
-  if (stored) {
-    if (typeof stored.eligible === "boolean") score.eligible = stored.eligible
-    if (typeof stored.actorRatingAdvantage === "string") {
-      score.actorRatingAdvantage = stored.actorRatingAdvantage
-    }
-    if (typeof stored.eventType === "string") {
-      score.eventType = stored.eventType as OriginalScoreResult["eventType"]
-    }
-    if (typeof stored.velocity === "string") {
-      score.velocity = stored.velocity as OriginalScoreResult["velocity"]
-    }
-  }
-
-  if (opp.originalStatus === "IGNORED" || !score.eligible) {
-    return { ok: false, reason: "not_eligible" }
-  }
+  const score = reconstructScore(opp)
+  const gate = evaluateConceptGenerationEligibility({
+    originalStatus: opp.originalStatus,
+    score,
+  })
+  if (!gate.ok) return { ok: false, reason: gate.reason }
+  // Active pipeline status is source of truth — don't let a flat/mis-parsed
+  // eligible flag fail generateOriginalConcepts.
+  if (isConceptGenerationActiveStatus(opp.originalStatus)) score.eligible = true
 
   const scout = evaluateScoutExclusion({
     text: pkg.event.text,
-    authorHandle: pkg.event.author_handle,
+    authorHandle: pkg.event.author_handle ?? opp.sourceHandle,
+    entities: entitiesFromContextPackage(pkg),
     offBrand: score.reasonCodes.some((c) => c.startsWith("scout_") || c === "off_brand_topic"),
     dataScore: score.breakdown.data,
   })
@@ -911,7 +953,7 @@ export async function setOriginalStatus(
   return { ok: true }
 }
 
-function reconstructScore(opp: {
+export function reconstructScore(opp: {
   originalScore: number | null
   originalScoreBreakdown: unknown
 }): OriginalScoreResult {
