@@ -64,7 +64,7 @@
   },
   {
     "sourceType": "keyword",
-    "query": "(casting OR trailer OR sequel) (Marvel OR DC OR Netflix OR HBO) lang:en -is:retweet",
+    "query": "(casting OR trailer OR sequel) (Marvel OR DC OR Netflix OR HBO) lang:en -is:retweet -is:reply",
     "enabled": true,
     "priority": 60,
     "topicTags": ["casting", "trailer", "Marvel", "DC"],
@@ -73,7 +73,7 @@
   },
   {
     "sourceType": "keyword",
-    "query": "(Christopher Nolan OR Oscar OR adaptation) lang:en -is:retweet",
+    "query": "(Christopher Nolan OR Oscar OR adaptation) lang:en -is:retweet -is:reply",
     "enabled": false,
     "priority": 50,
     "topicTags": ["directors", "Oscar", "adaptation"],

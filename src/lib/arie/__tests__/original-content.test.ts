@@ -1,6 +1,8 @@
 import {
   buildOriginalDedupeKey,
   classifyOriginalEventType,
+  incomingOutranksExistingCluster,
+  originalEventFamily,
   originalExpiresAt,
   scoreOriginalOpportunity,
 } from "@/lib/arie/original-score"
@@ -248,6 +250,23 @@ describe("original opportunity score", () => {
   })
 })
 
+function movieEntity(
+  id: string,
+  title: string,
+  confidence = 90,
+): ExtractedEntities["movies"][number] {
+  return {
+    id,
+    title,
+    year: 2026,
+    slug: title.toLowerCase().replace(/\s+/g, "-"),
+    director: null,
+    genre: "Action",
+    indexingCohort: 1,
+    confidence,
+  }
+}
+
 describe("original dedupe + expiration", () => {
   it("builds same dedupe key for same casting cluster", () => {
     const a = buildOriginalDedupeKey({
@@ -261,6 +280,132 @@ describe("original dedupe + expiration", () => {
       text: "BREAKING: DiCaprio boards Nolan project",
     })
     expect(a).toBe(b)
+  })
+
+  it("clusters trailer/franchise posts about the same primary movie", () => {
+    const doomsday: ExtractedEntities = {
+      actors: [{ id: "a-rdj", name: "Robert Downey Jr.", slug: "rdj", confidence: 80 }],
+      movies: [movieEntity("m-doomsday", "Avengers: Doomsday", 95)],
+      directors: [],
+      unresolved: [],
+    }
+    const fanA = buildOriginalDedupeKey({
+      eventType: "trailer",
+      entities: doomsday,
+      text: "Avengers: Doomsday trailer is here",
+    })
+    const fanB = buildOriginalDedupeKey({
+      eventType: "franchise",
+      entities: {
+        ...doomsday,
+        actors: [
+          ...doomsday.actors,
+          { id: "a-extra", name: "Extra Actor", slug: "extra", confidence: 50 },
+        ],
+      },
+      text: "New Avengers: Doomsday sequel trailer dropped",
+    })
+    expect(originalEventFamily("trailer")).toBe("trailer_franchise")
+    expect(originalEventFamily("franchise")).toBe("trailer_franchise")
+    expect(fanA).toBe(fanB)
+  })
+
+  it("keeps distinct titles as distinct events", () => {
+    const doomsday = buildOriginalDedupeKey({
+      eventType: "trailer",
+      entities: {
+        actors: [],
+        movies: [movieEntity("m-doomsday", "Avengers: Doomsday")],
+        directors: [],
+        unresolved: [],
+      },
+      text: "Avengers: Doomsday trailer",
+    })
+    const spider = buildOriginalDedupeKey({
+      eventType: "trailer",
+      entities: {
+        actors: [],
+        movies: [movieEntity("m-spider", "Spider-Man: Brand New Day")],
+        directors: [],
+        unresolved: [],
+      },
+      text: "Spider-Man trailer",
+    })
+    expect(doomsday).not.toBe(spider)
+  })
+
+  it("keeps casting events distinct from trailer family and from other castings", () => {
+    const movie = movieEntity("m-odyssey", "The Odyssey")
+    const trailer = buildOriginalDedupeKey({
+      eventType: "trailer",
+      entities: { actors: [], movies: [movie], directors: [], unresolved: [] },
+      text: "The Odyssey trailer",
+    })
+    const pugh = buildOriginalDedupeKey({
+      eventType: "casting",
+      entities: {
+        actors: [{ id: "a-pugh", name: "Florence Pugh", slug: "fp", confidence: 95 }],
+        movies: [movie],
+        directors: [],
+        unresolved: [],
+      },
+      text: "Florence Pugh joins The Odyssey",
+    })
+    const leo = buildOriginalDedupeKey({
+      eventType: "casting",
+      entities: {
+        actors: [{ id: "a-leo", name: "Leonardo DiCaprio", slug: "leonardo-dicaprio", confidence: 95 }],
+        movies: [movie],
+        directors: [],
+        unresolved: [],
+      },
+      text: "Leonardo DiCaprio joins The Odyssey",
+    })
+    expect(trailer).not.toBe(pugh)
+    expect(pugh).not.toBe(leo)
+  })
+
+  it("prefers trusted/priority source over a fan when replacing a cluster winner", () => {
+    expect(
+      incomingOutranksExistingCluster({
+        incomingEligible: true,
+        incomingHandle: "filmupdates",
+        incomingScore: 88,
+        existingHandle: "ganastasiou88",
+        existingScore: 70,
+        existingStatus: "ELIGIBLE",
+      }),
+    ).toBe(true)
+    expect(
+      incomingOutranksExistingCluster({
+        incomingEligible: true,
+        incomingHandle: "ganastasiou88",
+        incomingScore: 90,
+        existingHandle: "thr",
+        existingScore: 82,
+        existingStatus: "ELIGIBLE",
+      }),
+    ).toBe(false)
+    expect(
+      incomingOutranksExistingCluster({
+        incomingEligible: true,
+        incomingHandle: "variety",
+        incomingScore: 90,
+        existingHandle: "ganastasiou88",
+        existingScore: 60,
+        existingStatus: "DRAFT_GENERATED",
+      }),
+    ).toBe(false)
+    expect(
+      incomingOutranksExistingCluster({
+        incomingEligible: true,
+        incomingHandle: "deadline",
+        incomingScore: 90,
+        existingHandle: "filmupdates",
+        existingScore: 88,
+        existingStatus: "PUBLISHED",
+      }),
+    ).toBe(false)
   })
 
   it("sets shorter TTL for casting than ranking debates", () => {

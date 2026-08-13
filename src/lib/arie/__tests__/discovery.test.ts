@@ -14,9 +14,11 @@ import {
 } from "@/lib/arie/discovery/priority"
 import {
   buildTweetUrl,
+  isConversationFragmentText,
   normalizeXTweet,
   normalizeXTimeline,
   resolveAuthorHandle,
+  withKeywordReplyFilter,
 } from "@/lib/arie/discovery/normalize"
 import {
   buildUserTimelineParams,
@@ -243,6 +245,73 @@ describe("G/H — account timeline excludes replies and retweets", () => {
   it("search clamp does not add exclude (search uses query filters)", () => {
     expect(clampSearchMaxResults(15, 7)).toBe(10) // API min 10
     expect(clampTimelineMaxResults(15, 7)).toBe(7)
+  })
+})
+
+describe("keyword search reply filtering", () => {
+  it("appends -is:reply when missing and preserves -is:retweet", () => {
+    const q = withKeywordReplyFilter(
+      "(casting OR trailer) lang:en -is:retweet",
+    )
+    expect(q).toContain("-is:retweet")
+    expect(q).toContain("-is:reply")
+    expect(q.match(/-is:reply/gi)?.length).toBe(1)
+  })
+
+  it("does not duplicate -is:reply", () => {
+    const q = withKeywordReplyFilter(
+      "(casting OR trailer) lang:en -is:retweet -is:reply",
+    )
+    expect(q).toBe("(casting OR trailer) lang:en -is:retweet -is:reply")
+  })
+
+  it("default keyword queries include -is:reply and -is:retweet", () => {
+    const { loadDefaultDiscoverySources } = jest.requireActual<
+      typeof import("@/lib/arie/discovery/sources")
+    >("@/lib/arie/discovery/sources")
+    const keywords = loadDefaultDiscoverySources().filter((s) => s.sourceType === "keyword")
+    expect(keywords.length).toBeGreaterThan(0)
+    for (const src of keywords) {
+      expect(src.query).toMatch(/-is:retweet/i)
+      expect(src.query).toMatch(/-is:reply/i)
+    }
+  })
+})
+
+describe("conversation fragment heuristic", () => {
+  it("detects leading @username replies", () => {
+    expect(isConversationFragmentText("@apasserbyfan this trailer is mid")).toBe(true)
+    expect(isConversationFragmentText("@omegasupreme228 @thr shut up")).toBe(true)
+    expect(isConversationFragmentText("@weerwolfdolf")).toBe(true)
+  })
+
+  it("keeps standalone posts and quote-style copy", () => {
+    expect(isConversationFragmentText("Official Avengers: Doomsday trailer is here")).toBe(false)
+    expect(isConversationFragmentText("The new Netflix film looks incredible")).toBe(false)
+    expect(
+      isConversationFragmentText("Deadline reports Florence Pugh is in talks to join Nolan."),
+    ).toBe(false)
+  })
+
+  it("normalizeXTweet drops leading-@ fragments and keeps quote-like posts", () => {
+    const usersById = new Map([["u1", { id: "u1", username: "apasserbyfan" }]])
+    expect(
+      normalizeXTweet({
+        tweet: { id: "r1", text: "@filmupdates yeah this looks mid", author_id: "u1" },
+        usersById,
+        discoveryMethod: "keyword_search",
+      }),
+    ).toBeNull()
+    const kept = normalizeXTweet({
+      tweet: {
+        id: "q1",
+        text: "Official trailer for Avengers: Doomsday just dropped",
+        author_id: "u1",
+      },
+      usersById,
+      discoveryMethod: "keyword_search",
+    })
+    expect(kept?.externalPostId).toBe("q1")
   })
 })
 

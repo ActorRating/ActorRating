@@ -8,6 +8,7 @@ import { generateOriginalConcepts } from "@/lib/arie/original-concepts"
 import { runOriginalQa } from "@/lib/arie/original-qa"
 import {
   buildOriginalDedupeKey,
+  incomingOutranksExistingCluster,
   originalExpiresAt,
   scoreOriginalOpportunity,
 } from "@/lib/arie/original-score"
@@ -245,7 +246,19 @@ export async function ingestOriginalOpportunity(input: {
     orderBy: { createdAt: "desc" },
   })
 
-  if (existing && existing.id) {
+  const incomingWinsCluster =
+    existing &&
+    existing.id &&
+    incomingOutranksExistingCluster({
+      incomingEligible: originalScore.eligible,
+      incomingHandle: sourceHandle,
+      incomingScore: originalScore.score,
+      existingHandle: existing.sourceHandle,
+      existingScore: existing.originalScore,
+      existingStatus: existing.originalStatus,
+    })
+
+  if (existing && existing.id && !incomingWinsCluster) {
     // Mark inbound as processed and create a DUPLICATE stub for audit (optional: skip create)
     await prisma.arieInboundEvent.update({
       where: { id: event.id },
@@ -318,6 +331,8 @@ export async function ingestOriginalOpportunity(input: {
     }
   }
 
+  const replaceClusterId = incomingWinsCluster && existing?.id ? existing.id : null
+
   const originalStatus: OriginalStatus = !originalScore.eligible
     ? "IGNORED"
     : "ELIGIBLE"
@@ -385,13 +400,30 @@ export async function ingestOriginalOpportunity(input: {
     eligible: originalScore.eligible,
   })
 
+  if (replaceClusterId) {
+    await prisma.arieOpportunity.update({
+      where: { id: replaceClusterId },
+      data: {
+        originalStatus: "DUPLICATE",
+        status: "duplicate",
+        ignoredReason: `duplicate_of:${opp.id}`,
+      },
+    })
+    await arieLog("info", "original", "cluster_winner_replaced", {
+      opportunityId: opp.id,
+      replacedId: replaceClusterId,
+      dedupeKey,
+    })
+  }
+
   return {
     ok: true,
     opportunityId: opp.id,
     originalStatus: opp.originalStatus ?? "SCORED",
     originalScore: originalScore.score,
     eligible: originalScore.eligible,
-    deduped: false,
+    deduped: Boolean(replaceClusterId),
+    duplicateOfId: replaceClusterId ?? undefined,
     opportunityCreated: true,
     inboundDeduped: ingested.deduped,
   }

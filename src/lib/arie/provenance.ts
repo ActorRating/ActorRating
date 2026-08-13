@@ -147,6 +147,20 @@ export function classifySourceReliability(
   return "UNKNOWN"
 }
 
+const TRUSTED_ORIGINAL_SOURCE_CLASSES: ReadonlySet<SourceReliabilityClass> = new Set([
+  "PRIMARY",
+  "TRADE",
+  "AGGREGATOR",
+  "SPECIALIST",
+  "ESTABLISHED_ENTERTAINMENT_MEDIA",
+])
+
+/** Trade / aggregator / specialist / primary / priority — safe Original sources. */
+export function isTrustedOriginalSource(handle: string | null | undefined): boolean {
+  if (isPriorityAuthor(handle)) return true
+  return TRUSTED_ORIGINAL_SOURCE_CLASSES.has(classifySourceReliability(handle))
+}
+
 export function classifyDistributionPriority(
   handle: string | null | undefined,
 ): DistributionPriority {

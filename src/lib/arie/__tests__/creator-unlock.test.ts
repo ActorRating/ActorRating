@@ -9,7 +9,14 @@ import {
 } from "@/lib/arie/concept-payload"
 import { buildEvidenceLayer } from "@/lib/arie/provenance"
 import { isTransientInferenceFailure } from "@/lib/arie/groq"
-import { computeIntelligenceScore, tierFromScore } from "@/lib/arie/intelligence"
+import {
+  applyIntelligenceQualityGate,
+  computeIntelligenceScore,
+  intelligenceQualifiesForAttention,
+  selectIntelligenceAttentionCandidates,
+  tierFromScore,
+  type IntelligenceCandidate,
+} from "@/lib/arie/intelligence"
 import { scoreOriginalOpportunity } from "@/lib/arie/original-score"
 import type { ExtractedEntities } from "@/lib/arie/entity-extract"
 import type { ContextPackage } from "@/lib/arie/types"
@@ -203,6 +210,40 @@ describe("Scout hard NO rules", () => {
     expect(r.excluded).toBe(false)
   })
 
+  it("excludes UNKNOWN conversational commentary without a news assertion", () => {
+    const netflix = evaluateScoutExclusion({
+      text: "Netflix really fell off — I just watched this and it looks mid.",
+      authorHandle: "weerwolfdolf",
+    })
+    expect(netflix.excluded).toBe(true)
+    expect(netflix.reason).toBe("unknown_source_not_news")
+
+    const inflammatory = evaluateScoutExclusion({
+      text: "This movie is trash I really hate this hot take.",
+      authorHandle: "omegasupreme228",
+    })
+    expect(inflammatory.excluded).toBe(true)
+    expect(inflammatory.reason).toBe("unknown_source_not_news")
+  })
+
+  it("does not auto-reject UNKNOWN sources with a credible news assertion", () => {
+    const r = evaluateScoutExclusion({
+      text: "Official trailer for Avengers: Doomsday just dropped.",
+      authorHandle: "ganastasiou88",
+    })
+    expect(r.excluded).toBe(false)
+  })
+
+  it("preserves trusted TRADE / AGGREGATOR / priority sources", () => {
+    for (const handle of ["filmupdates", "thr", "variety", "deadline"]) {
+      const r = evaluateScoutExclusion({
+        text: "I think this official trailer for Animals just dropped — first look is here.",
+        authorHandle: handle,
+      })
+      expect(r.excluded).toBe(false)
+    }
+  })
+
   it("scoreOriginalOpportunity marks gossip ineligible via scout", () => {
     const score = scoreOriginalOpportunity({
       text: "Fans notice Zendaya refused to hold hands until she met Tom Holland.",
@@ -326,6 +367,99 @@ describe("Daily Intelligence ranking", () => {
     })
     expect(withDraft).toBeGreaterThan(base)
     expect(tierFromScore(withDraft)).toBe("exceptional")
+  })
+
+  it("keeps trusted/priority sources as strong/worth-attention", () => {
+    for (const handle of ["filmupdates", "thr", "variety"]) {
+      expect(
+        intelligenceQualifiesForAttention({
+          sourceHandle: handle,
+          sourceReliability: handle === "filmupdates" ? "AGGREGATOR" : "TRADE",
+          payloadPresent: false,
+        }),
+      ).toBe(true)
+      const gated = applyIntelligenceQualityGate({
+        intelligenceScore: 82,
+        sourceHandle: handle,
+        payloadPresent: false,
+      })
+      expect(gated.tier).toBe("strong")
+      expect(gated.intelligenceScore).toBe(82)
+    }
+  })
+
+  it("demotes UNKNOWN/non-priority without payload below worth-attention", () => {
+    expect(
+      intelligenceQualifiesForAttention({
+        sourceHandle: "ganastasiou88",
+        sourceReliability: "UNKNOWN",
+        payloadPresent: false,
+      }),
+    ).toBe(false)
+    const gated = applyIntelligenceQualityGate({
+      intelligenceScore: 78,
+      sourceHandle: "ganastasiou88",
+      sourceReliability: "UNKNOWN",
+      payloadPresent: false,
+    })
+    expect(gated.tier).toBe("other")
+    expect(gated.intelligenceScore).toBeLessThanOrEqual(64)
+  })
+
+  it("allows UNKNOWN through when ActorRating payload is present", () => {
+    const gated = applyIntelligenceQualityGate({
+      intelligenceScore: 80,
+      sourceHandle: "randomfan",
+      sourceReliability: "UNKNOWN",
+      payloadPresent: true,
+    })
+    expect(gated.tier).toBe("strong")
+    expect(gated.intelligenceScore).toBe(80)
+  })
+
+  it("does not pad the attention list with unqualified UNKNOWN candidates", () => {
+    const stub = (partial: Partial<IntelligenceCandidate>): IntelligenceCandidate => ({
+      id: partial.id ?? "x",
+      tier: partial.tier ?? "other",
+      intelligenceScore: partial.intelligenceScore ?? 50,
+      originalScore: 70,
+      originalStatus: "ELIGIBLE",
+      distributionPriority: null,
+      sourceReliability: partial.sourceReliability ?? null,
+      factualConfidence: null,
+      writerMode: null,
+      actorRatingAdvantage: null,
+      whyNow: null,
+      sourceHandle: partial.sourceHandle ?? null,
+      sourceText: null,
+      concepts: null,
+      selectedConcept: null,
+      draftText: null,
+      qaPassed: null,
+      qaSummary: null,
+      actorRatingPayload: null,
+      evidenceSummary: null,
+      visualEligible: null,
+      visualReason: null,
+      publishStatus: "none",
+      expiresAt: null,
+      createdAt: new Date().toISOString(),
+    })
+    const top = selectIntelligenceAttentionCandidates(
+      [
+        stub({ id: "fu", tier: "strong", intelligenceScore: 88, sourceHandle: "filmupdates" }),
+        stub({ id: "thr", tier: "strong", intelligenceScore: 82, sourceHandle: "thr" }),
+        stub({
+          id: "fan",
+          tier: "other",
+          intelligenceScore: 64,
+          sourceHandle: "ganastasiou88",
+          sourceReliability: "UNKNOWN",
+        }),
+      ],
+      5,
+    )
+    expect(top.map((c) => c.id)).toEqual(["fu", "thr"])
   })
 })
 

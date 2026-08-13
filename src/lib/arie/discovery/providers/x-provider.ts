@@ -9,7 +9,7 @@ import {
   observationalHealth,
   shouldAttemptCapability,
 } from "@/lib/arie/discovery/capabilities"
-import { normalizeXTimeline } from "@/lib/arie/discovery/normalize"
+import { normalizeXTimeline, withKeywordReplyFilter } from "@/lib/arie/discovery/normalize"
 import type {
   AccountSourceRequest,
   DiscoveryFetchResult,
@@ -119,7 +119,7 @@ export class XDiscoveryProvider implements DiscoveryProvider {
   }
 
   async searchPosts(input: KeywordSourceRequest): Promise<DiscoveryFetchResult> {
-    const query = input.query.trim()
+    const query = withKeywordReplyFilter(input.query.trim())
     if (!query) return { ok: false, reason: "query_required" }
 
     if (!shouldAttemptCapability("recent_search")) {

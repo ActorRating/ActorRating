@@ -3,7 +3,10 @@
  * Code-level guardrails the LLM cannot override.
  */
 
-import { classifySourceReliability } from "@/lib/arie/provenance"
+import {
+  classifySourceReliability,
+  isTrustedOriginalSource,
+} from "@/lib/arie/provenance"
 import type { ExtractedEntities } from "@/lib/arie/entity-extract"
 
 export type ScoutExclusionReason =
@@ -16,6 +19,7 @@ export type ScoutExclusionReason =
   | "engagement_bait"
   | "should_ignore_tag"
   | "unknown_source_rumor"
+  | "unknown_source_not_news"
   | "no_actorrating_advantage"
   | "off_brand_topic"
 
@@ -60,6 +64,15 @@ const CASTING_NEWS_RE =
 
 const UNKNOWN_RUMOR_RE =
   /\b(i heard|my source says|trust me|leaked|rumor has it|insider says)\b/i
+
+const COMMENTARY_RE =
+  /\b(i think|imo\b|imho|tbh|ngl|lmao|idk|just watched|just finished|just saw|they should(?:'ve| have)|this is so|can't wait|so excited|looks mid|fell off|overrated|underrated|hot take|unpopular opinion|my opinion|watching this|on netflix (?:right now|tonight)|am i the only|why does (?:nobody|everyone)|this (?:movie|show|film|one) is (?:trash|garbage|awful|amazing|boring)|so (?:boring|mid|bad))\b/i
+
+const FIRST_PERSON_TAKE_RE =
+  /\b(i (?:just|really|can't|don't|do not|love|hate|wish|hope|feel|thought|would|wouldn't))\b/i
+
+const NEWS_ASSERTION_RE =
+  /\b(exclusive:?|breaking:?|officially\s+(?:confirms?|announces?|cast|reveals?)|(?:has been|is officially)\s+cast|in talks|reportedly|reports?\s+that|is reporting|according to|sources?\s+say|confirmed\s+(?:for|as|to|that)|announces?|announced|official\s+(?:trailer|teaser|first look)|trailer\s+(?:drops?|debuts?|arrives|is\s+(?:out|here|online)|released)|teaser\s+(?:drops?|debuts?|arrives)|first look|joins?\s+(?:the\s+)?(?:cast|film|movie|franchise)|will\s+(?:star|play|direct|return|reprise)|set to\s+(?:star|play|direct|return|join)|casting\s+(?:announcement|news|revealed)|now streaming|coming to\s+(?:theaters|netflix|hbo|disney|prime)|hits theaters)\b/i
 
 const SHOULD_IGNORE_TAG_RE = /should_ignore|gossip|culture_war|politics|irrelevant|weak_angle|no_ar_advantage/i
 
@@ -133,6 +146,19 @@ export function evaluateScoutExclusion(input: {
     return { excluded: true, reason: "unknown_source_rumor", code: "scout_unknown_rumor" }
   }
 
+  if (
+    !isTrustedOriginalSource(input.authorHandle) &&
+    (reliability === "UNKNOWN" || reliability === "FAN_ACCOUNT") &&
+    isConversationalCommentary(text) &&
+    !hasCredibleNewsAssertion(text)
+  ) {
+    return {
+      excluded: true,
+      reason: "unknown_source_not_news",
+      code: "scout_unknown_source_not_news",
+    }
+  }
+
   if (typeof input.dataScore === "number" && input.dataScore < 3 && !hasFilmEntities) {
     return { excluded: true, reason: "no_actorrating_advantage", code: "scout_no_ar_advantage" }
   }
@@ -145,4 +171,14 @@ export function sourceUsesReportedNewsLanguage(text: string): boolean {
   return /\b(reportedly|reports? that|is reporting|according to|sources say|if confirmed|alleged(?:ly)?|in talks|will be his final|will be her final|officially confirms)\b/i.test(
     text,
   )
+}
+
+/** Credible event/news assertion — UNKNOWN sources with this may remain eligible. */
+export function hasCredibleNewsAssertion(text: string): boolean {
+  return sourceUsesReportedNewsLanguage(text) || NEWS_ASSERTION_RE.test(text)
+}
+
+/** Conversational / commentary voice — not a news post. */
+export function isConversationalCommentary(text: string): boolean {
+  return COMMENTARY_RE.test(text) || FIRST_PERSON_TAKE_RE.test(text)
 }

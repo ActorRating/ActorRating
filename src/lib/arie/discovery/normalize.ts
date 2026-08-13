@@ -33,6 +33,28 @@ export function normalizeHandle(handle: string | null | undefined): string | nul
 }
 
 /**
+ * Keyword search has no `exclude=` param — reply/retweet filters are query operators.
+ * Append `-is:reply` when missing. Do not strip or rewrite existing `-is:retweet`.
+ */
+export function withKeywordReplyFilter(query: string): string {
+  const q = query.trim()
+  if (!q) return q
+  if (/(^|\s)-is:reply(\s|$)/i.test(q)) return q
+  return `${q} -is:reply`
+}
+
+/**
+ * Conservative conversation-fragment heuristic (no extra X tweet fields).
+ * Drops posts whose text is reply-addressing (`@user …`). Quote tweets typically
+ * do not start with @handle and are kept.
+ */
+export function isConversationFragmentText(text: string): boolean {
+  const t = text.trim()
+  if (!t.startsWith("@")) return false
+  return /^@[A-Za-z0-9_]{1,15}(?:\s+@[A-Za-z0-9_]{1,15})*(?:\s|$)/.test(t)
+}
+
+/**
  * Resolve author handle with fallbacks:
  * 1. Expanded user from includes
  * 2. Configured discovery source handle (account timeline)
@@ -54,6 +76,7 @@ export function normalizeXTweet(input: {
 }): RawDiscoveryPost | null {
   const text = input.tweet.text?.trim() ?? ""
   if (!text || !input.tweet.id) return null
+  if (isConversationFragmentText(text)) return null
 
   const authorId = input.tweet.author_id ?? null
   const user = authorId ? input.usersById.get(authorId) : undefined

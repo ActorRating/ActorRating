@@ -2,6 +2,7 @@ import { createHash } from "crypto"
 import type { ExtractedEntities } from "@/lib/arie/entity-extract"
 import { CASTING_RE } from "@/lib/arie/opportunity-score"
 import { isPriorityAuthor } from "@/lib/arie/priority-accounts"
+import { classifySourceReliability } from "@/lib/arie/provenance"
 import { evaluateScoutExclusion } from "@/lib/arie/scout-exclusions"
 import type { ContextPackage } from "@/lib/arie/types"
 import type {
@@ -239,36 +240,118 @@ export function isOffBrandOriginal(text: string): boolean {
 }
 
 /**
- * Dedupe key: event type + sorted entity ids (or normalized names) — no day bucket,
- * so Deadline + Variety same casting collapse.
+ * Event family for clustering. Trailer + franchise share a family so two
+ * Doomsday trailer posts collapse; casting stays its own family.
+ */
+export function originalEventFamily(eventType: OriginalEventType): string {
+  if (eventType === "trailer" || eventType === "franchise") return "trailer_franchise"
+  return eventType
+}
+
+/** Highest-confidence, then longest title — prefer "Avengers: Doomsday" over "Avengers". */
+export function primaryMovieId(entities: ExtractedEntities): string | null {
+  if (!entities.movies.length) return null
+  const sorted = [...entities.movies].sort((a, b) => {
+    if (b.confidence !== a.confidence) return b.confidence - a.confidence
+    return b.title.length - a.title.length
+  })
+  return sorted[0]?.id ?? null
+}
+
+export function primaryActorId(entities: ExtractedEntities): string | null {
+  return entities.actors[0]?.id ?? null
+}
+
+/**
+ * Event-cluster key: family + primary movie (not the full actor set).
+ * Casting also includes primary actor so two different castings stay distinct.
+ * No day bucket — Deadline + Variety same event still collapse.
  */
 export function buildOriginalDedupeKey(input: {
   eventType: OriginalEventType
   entities: ExtractedEntities
   text: string
 }): string {
-  const actors = input.entities.actors
-    .map((a) => `a:${a.id}`)
-    .sort()
-    .join(",")
-  const movies = input.entities.movies
-    .map((m) => `m:${m.id}`)
-    .sort()
-    .join(",")
-  const directors = input.entities.directors
-    .map((d) => `d:${normalizeName(d.name)}`)
-    .sort()
-    .join(",")
-  const base = [input.eventType, actors || "a:none", movies || "m:none", directors || "d:none"].join(
-    "|",
-  )
-  // Fallback fingerprint when entities missing
+  const family = originalEventFamily(input.eventType)
+  const movie = primaryMovieId(input.entities)
+  const moviePart = movie ? `m:${movie}` : "m:none"
   const textFinger = createHash("sha1")
     .update(normalizeName(input.text).slice(0, 160))
     .digest("hex")
     .slice(0, 12)
-  const material = actors || movies ? base : `${base}|t:${textFinger}`
+
+  let material: string
+  if (family === "trailer_franchise") {
+    material = movie ? `${family}|${moviePart}` : `${family}|${moviePart}|t:${textFinger}`
+  } else if (family === "casting") {
+    const actorPart = primaryActorId(input.entities) ? `a:${primaryActorId(input.entities)}` : "a:none"
+    if (movie || actorPart !== "a:none") {
+      material = `${family}|${moviePart}|${actorPart}`
+    } else {
+      material = `${family}|${moviePart}|${actorPart}|t:${textFinger}`
+    }
+  } else if (movie) {
+    material = `${family}|${moviePart}`
+  } else {
+    material = `${family}|${moviePart}|t:${textFinger}`
+  }
   return createHash("sha1").update(material).digest("hex").slice(0, 24)
+}
+
+const RELIABILITY_RANK: Record<string, number> = {
+  PRIMARY: 50,
+  TRADE: 40,
+  AGGREGATOR: 30,
+  SPECIALIST: 25,
+  ESTABLISHED_ENTERTAINMENT_MEDIA: 20,
+  FAN_ACCOUNT: 0,
+  UNKNOWN: 0,
+}
+
+const CLUSTER_LOCKED_STATUSES = new Set([
+  "CONCEPTS_GENERATED",
+  "CONCEPT_SELECTED",
+  "DRAFT_GENERATED",
+  "QA_PASSED",
+  "QA_FAILED",
+  "READY",
+  "APPROVED",
+  "PUBLISHING",
+  "PUBLISHED",
+])
+
+export function originalSourceQualityRank(input: {
+  authorHandle?: string | null
+  originalScore?: number | null
+}): number {
+  const rel = classifySourceReliability(input.authorHandle)
+  const relPts = RELIABILITY_RANK[rel] ?? 0
+  const priPts = isPriorityAuthor(input.authorHandle) ? 10 : 0
+  const scorePts = typeof input.originalScore === "number" ? input.originalScore / 1000 : 0
+  return relPts + priPts + scorePts
+}
+
+/** Incoming eligible post outranks an existing cluster winner (reliability, then score). */
+export function incomingOutranksExistingCluster(input: {
+  incomingEligible: boolean
+  incomingHandle?: string | null
+  incomingScore: number
+  existingHandle?: string | null
+  existingScore?: number | null
+  existingStatus?: string | null
+}): boolean {
+  if (!input.incomingEligible) return false
+  if (input.existingStatus && CLUSTER_LOCKED_STATUSES.has(input.existingStatus)) return false
+  return (
+    originalSourceQualityRank({
+      authorHandle: input.incomingHandle,
+      originalScore: input.incomingScore,
+    }) >
+    originalSourceQualityRank({
+      authorHandle: input.existingHandle,
+      originalScore: input.existingScore,
+    })
+  )
 }
 
 /** Expiration TTL by event type. */

@@ -14,6 +14,11 @@ Discovery does **not** decide final editorial quality. Scout remains the gate.
 - **One post → one inbound → ≤1 production original opportunity**
 - **Observational health** — admin/dashboard never live-probes X (no 3-call probe)
 - **Account timelines** — `exclude=replies,retweets`
+- **Keyword search** — `-is:retweet -is:reply` (query operators; no extra tweet fields)
+- **Conversation fragments** — text starting with `@username` is dropped at normalize
+- **Scout** — UNKNOWN + commentary + no news assertion → `unknown_source_not_news`
+- **Daily Intelligence** — strong/worth-attention requires trusted source, priority author, or AR payload
+- **Event cluster** — trailer/franchise share a family keyed by primary movie; casting stays its own family
 - **Author handle fallback** from configured source account
 - **Kill switch is real** — no `force=true` bypass of `ARIE_DISCOVERY_ENABLED`
 - **DISABLED** status when flag off (not ERROR)
@@ -111,6 +116,8 @@ Discovery priority inputs: source priority, recency, engagement metrics, keyword
 ## Deduplication
 
 Primary identity: **`provider + externalPostId`** (`ArieDiscoveryCandidate` unique constraint).
+
+Event cluster (second level): family + primary movie. Trailer and franchise share `trailer_franchise`. Casting is its own family and uses primary actor (not the full actor set). Winner prefers source reliability/priority, then original score. Losers are `DUPLICATE`.
 
 Production discovery is isolated from validation (`dedupeNamespace: val:{batchId}`).
 

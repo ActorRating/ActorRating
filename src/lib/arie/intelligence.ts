@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma"
 import type { OriginalConcept } from "@/lib/arie/original-types"
 import type { ContextPackage } from "@/lib/arie/types"
 import { loadDiscoveryStatsForIntelligence } from "@/lib/arie/discovery/admin"
+import { isPriorityAuthor } from "@/lib/arie/priority-accounts"
+import { isTrustedOriginalSource } from "@/lib/arie/provenance"
 
 export type IntelligenceTier = "exceptional" | "strong" | "worth_attention" | "other"
 
@@ -100,6 +102,55 @@ export function tierFromScore(score: number): IntelligenceTier {
   return "other"
 }
 
+/**
+ * Strong / worth-attention requires trusted source, priority author, or AR payload.
+ * UNKNOWN/non-priority without payload stay `other` even if raw score is high.
+ */
+export function intelligenceQualifiesForAttention(input: {
+  sourceReliability?: string | null
+  sourceHandle?: string | null
+  payloadPresent?: boolean
+}): boolean {
+  if (input.payloadPresent) return true
+  if (isPriorityAuthor(input.sourceHandle)) return true
+  if (isTrustedOriginalSource(input.sourceHandle)) return true
+  const rel = (input.sourceReliability ?? "").toUpperCase()
+  return (
+    rel === "PRIMARY" ||
+    rel === "TRADE" ||
+    rel === "AGGREGATOR" ||
+    rel === "SPECIALIST" ||
+    rel === "ESTABLISHED_ENTERTAINMENT_MEDIA"
+  )
+}
+
+export function applyIntelligenceQualityGate(input: {
+  intelligenceScore: number
+  sourceReliability?: string | null
+  sourceHandle?: string | null
+  payloadPresent?: boolean
+}): { intelligenceScore: number; tier: IntelligenceTier } {
+  if (intelligenceQualifiesForAttention(input)) {
+    return {
+      intelligenceScore: input.intelligenceScore,
+      tier: tierFromScore(input.intelligenceScore),
+    }
+  }
+  return {
+    intelligenceScore: Math.min(input.intelligenceScore, 64),
+    tier: "other",
+  }
+}
+
+export function selectIntelligenceAttentionCandidates(
+  candidates: IntelligenceCandidate[],
+  limit: number,
+): IntelligenceCandidate[] {
+  const attention = candidates.filter((c) => c.tier !== "other")
+  const pool = attention.length > 0 ? attention : candidates
+  return pool.slice(0, limit)
+}
+
 function startOfUtcDay(d = new Date()): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
 }
@@ -150,7 +201,7 @@ export async function loadDailyIntelligence(opts?: {
         }
       : null
 
-    const intelligenceScore = computeIntelligenceScore({
+    const rawScore = computeIntelligenceScore({
       originalScore: row.originalScore,
       distributionPriority: src?.distributionPriority ?? null,
       distributionRank: src?.distributionRank,
@@ -160,11 +211,17 @@ export async function loadDailyIntelligence(opts?: {
       payloadPresent: payload?.present,
       writerMode: pkg?.writerMode ?? evidence?.writerMode ?? null,
     })
+    const gated = applyIntelligenceQualityGate({
+      intelligenceScore: rawScore,
+      sourceReliability: src?.reliabilityClass ?? null,
+      sourceHandle: row.sourceHandle,
+      payloadPresent: payload?.present,
+    })
 
     return {
       id: row.id,
-      tier: tierFromScore(intelligenceScore),
-      intelligenceScore,
+      tier: gated.tier,
+      intelligenceScore: gated.intelligenceScore,
       originalScore: row.originalScore,
       originalStatus: row.originalStatus,
       distributionPriority: src?.distributionPriority ?? null,
@@ -213,8 +270,7 @@ export async function loadDailyIntelligence(opts?: {
   })
 
   candidates.sort((a, b) => b.intelligenceScore - a.intelligenceScore)
-  const strong = candidates.filter((c) => c.intelligenceScore >= 65)
-  const top = (strong.length >= limit ? strong : candidates).slice(0, limit)
+  const top = selectIntelligenceAttentionCandidates(candidates, limit)
 
   return {
     date: from.toISOString().slice(0, 10),
