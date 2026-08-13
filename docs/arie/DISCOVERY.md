@@ -52,15 +52,20 @@ Future providers (RSS, trade feeds) can implement the same interface. Only **X**
 
 ## X API capabilities used (read-only)
 
-Bearer token (`ARIE_X_BEARER_TOKEN` / `X_BEARER_TOKEN`):
+Discovery authenticates **GET** requests with, in order:
 
-| Endpoint | Capability | Notes |
+1. **OAuth 1.0a user context** — same four credentials Publisher already uses (`ARIE_X_API_KEY`, `ARIE_X_API_SECRET`, `ARIE_X_ACCESS_TOKEN`, `ARIE_X_ACCESS_SECRET`)
+2. **Optional app-only Bearer** — `ARIE_X_BEARER_TOKEN` / `X_BEARER_TOKEN` if OAuth 1.0a is not configured
+
+Bearer is **not required** when OAuth 1.0a user-context credentials are present.
+
+| Endpoint | Capability | Auth |
 | --- | --- | --- |
-| `GET /2/users/by/username/:username` | User lookup | Required for account sources |
-| `GET /2/users/:id/tweets` | Account timeline | Primary account discovery |
-| `GET /2/tweets/search/recent` | Recent search | Requires elevated access on many plans |
+| `GET /2/users/by/username/:username` | User lookup | OAuth 1.0a or Bearer |
+| `GET /2/users/:id/tweets` | Account timeline | OAuth 1.0a or Bearer |
+| `GET /2/tweets/search/recent` | Recent search | OAuth 1.0a or Bearer |
 
-**No write operations.** Discovery never calls `postReplyTweet`, `postOriginalTweet`, or Publisher.
+**No write operations.** Discovery never calls `postReplyTweet`, `postOriginalTweet`, or Publisher. OAuth 1.0a is used for **read GET only** in this module.
 
 If a capability is unavailable on the current X plan, the admin UI shows it as **blocked** — no workaround, no fake data.
 

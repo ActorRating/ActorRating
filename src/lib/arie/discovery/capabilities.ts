@@ -5,7 +5,12 @@
  */
 
 import type { DiscoveryProviderCapability } from "@/lib/arie/discovery/types"
-import { arieXBearerToken } from "@/lib/arie/config"
+import {
+  arieXBearerToken,
+  arieXReadAuthConfigured,
+  arieXReadAuthMethod,
+  arieXWriteConfigured,
+} from "@/lib/arie/config"
 
 export type CapabilityState = "available" | "unavailable" | "unknown"
 
@@ -33,30 +38,44 @@ export function resetCapabilityCacheForTests(): void {
 export function observationalHealth(): {
   ok: boolean
   provider: string
+  authConfigured: boolean
+  authMethod: "oauth1_user_context" | "bearer" | "none"
+  oauth1Configured: boolean
   bearerConfigured: boolean
   capabilities: CapabilityCache
   lastError?: string
 } {
+  const authMethod = arieXReadAuthMethod()
+  const authConfigured = arieXReadAuthConfigured()
+  const oauth1Configured = arieXWriteConfigured()
   const bearerConfigured = Boolean(arieXBearerToken())
-  if (!bearerConfigured) {
+
+  if (!authConfigured) {
     return {
       ok: false,
       provider: "X",
+      authConfigured: false,
+      authMethod: "none",
+      oauth1Configured: false,
       bearerConfigured: false,
       capabilities: {
         user_lookup: "unavailable",
         user_timeline: "unavailable",
         recent_search: "unavailable",
       },
-      lastError: "missing_bearer",
+      lastError: "missing_auth",
     }
   }
+
   const caps = getCapabilityCache()
   const anyAvailable = Object.values(caps).some((s) => s === "available" || s === "unknown")
   return {
     ok: anyAvailable,
     provider: "X",
-    bearerConfigured: true,
+    authConfigured: true,
+    authMethod,
+    oauth1Configured,
+    bearerConfigured,
     capabilities: caps,
   }
 }

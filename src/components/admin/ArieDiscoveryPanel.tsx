@@ -13,6 +13,9 @@ type Dashboard = {
   }
   health: {
     ok: boolean
+    authConfigured?: boolean
+    authMethod?: string
+    oauth1Configured?: boolean
     bearerConfigured: boolean
     capabilityStates?: Record<string, string>
     lastError?: string
@@ -153,8 +156,20 @@ export default function ArieDiscoveryPanel() {
             <dd>{data.provider}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Bearer token</dt>
-            <dd>{data.health.bearerConfigured ? "Configured" : "Missing"}</dd>
+            <dt className="text-muted-foreground">Auth configured</dt>
+            <dd className={data.health.authConfigured ? "text-green-400" : "text-red-400"}>
+              {data.health.authConfigured ? "Yes" : "No"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">Auth method</dt>
+            <dd>
+              {data.health.authMethod === "oauth1_user_context"
+                ? "OAuth 1.0a user context"
+                : data.health.authMethod === "bearer"
+                  ? "Bearer (app-only)"
+                  : "None"}
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Health mode</dt>

@@ -440,8 +440,8 @@ export async function runDiscoveryEngine(opts?: {
 
   const sources = await listEnabledDiscoverySources(maxSources)
 
-  if (!health.bearerConfigured) {
-    errors.push({ code: "missing_bearer" })
+  if (!health.authConfigured) {
+    errors.push({ code: "missing_auth" })
   }
 
   try {

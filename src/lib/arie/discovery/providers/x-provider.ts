@@ -1,5 +1,6 @@
 /**
- * X Discovery Provider — read/search only via Bearer token API v2.
+ * X Discovery Provider — read/search only via X API v2.
+ * Auth: OAuth 1.0a user-context (preferred) or optional Bearer.
  * Health is observational (no live probes).
  */
 
@@ -39,6 +40,9 @@ export class XDiscoveryProvider implements DiscoveryProvider {
     return {
       ok: h.ok,
       provider: h.provider,
+      authConfigured: h.authConfigured,
+      authMethod: h.authMethod,
+      oauth1Configured: h.oauth1Configured,
       bearerConfigured: h.bearerConfigured,
       // Map capability states to booleans for older UI: unavailable=false, else true (attemptable)
       capabilities: {

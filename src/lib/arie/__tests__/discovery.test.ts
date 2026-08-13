@@ -287,6 +287,8 @@ describe("capability cache — no permanent false negatives", () => {
     const h = observationalHealth()
     expect(h.provider).toBe("X")
     expect(h.capabilities).toBeDefined()
+    expect(h.authConfigured).toBeDefined()
+    expect(["oauth1_user_context", "bearer", "none"]).toContain(h.authMethod)
   })
 })
 

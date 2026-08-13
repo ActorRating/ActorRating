@@ -44,6 +44,9 @@ export type RawDiscoveryPost = {
 export type DiscoveryProviderHealth = {
   ok: boolean
   provider: string
+  authConfigured: boolean
+  authMethod: "oauth1_user_context" | "bearer" | "none"
+  oauth1Configured: boolean
   bearerConfigured: boolean
   capabilities: Record<DiscoveryProviderCapability, boolean>
   lastError?: string

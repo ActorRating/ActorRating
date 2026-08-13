@@ -85,6 +85,23 @@ export function arieXBearerToken(): string | null {
   return process.env.ARIE_X_BEARER_TOKEN?.trim() || process.env.X_BEARER_TOKEN?.trim() || null
 }
 
+/** Read-auth method Discovery may use. Never returns secret values. */
+export type ArieXReadAuthMethod = "oauth1_user_context" | "bearer" | "none"
+
+/**
+ * Discovery prefers existing OAuth 1.0a user-context credentials (same four
+ * env vars Publisher uses for writes). App-only Bearer remains optional.
+ */
+export function arieXReadAuthMethod(): ArieXReadAuthMethod {
+  if (arieXWriteCredentials()) return "oauth1_user_context"
+  if (arieXBearerToken()) return "bearer"
+  return "none"
+}
+
+export function arieXReadAuthConfigured(): boolean {
+  return arieXReadAuthMethod() !== "none"
+}
+
 /** User-context OAuth 1.0a credentials for posting as @ActorRating. */
 export function arieXWriteCredentials(): {
   apiKey: string

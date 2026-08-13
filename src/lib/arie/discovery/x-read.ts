@@ -1,11 +1,13 @@
 /**
- * X API v2 read helpers — Bearer token only. No write operations.
+ * X API v2 read helpers — no write operations.
+ * Auth: OAuth 1.0a user-context (existing ARIE_X_* credentials) or optional Bearer.
  * No live capability probes.
  */
 
-import { arieXBearerToken } from "@/lib/arie/config"
+import { arieXBearerToken, arieXWriteCredentials } from "@/lib/arie/config"
 import { arieLog } from "@/lib/arie/log"
 import { recordCapabilityResult } from "@/lib/arie/discovery/capabilities"
+import { buildOAuth1AuthorizationHeader } from "@/lib/arie/x-oauth1"
 
 export type XReadResponse<T> =
   | {
@@ -23,6 +25,39 @@ export type XReadResponse<T> =
       body?: string
     }
 
+export type XReadAuthHeader =
+  | { ok: true; authorization: string; method: "oauth1_user_context" | "bearer" }
+  | { ok: false; reason: "missing_auth" }
+
+/**
+ * Build a read Authorization header. Prefers OAuth 1.0a user-context.
+ * Never returns credential values.
+ */
+export function buildXReadAuthorization(input: {
+  method: string
+  url: string
+  query?: Record<string, string>
+}): XReadAuthHeader {
+  const creds = arieXWriteCredentials()
+  if (creds) {
+    return {
+      ok: true,
+      method: "oauth1_user_context",
+      authorization: buildOAuth1AuthorizationHeader({
+        method: input.method,
+        url: input.url,
+        query: input.query,
+        creds,
+      }),
+    }
+  }
+  const token = arieXBearerToken()
+  if (token) {
+    return { ok: true, method: "bearer", authorization: `Bearer ${token}` }
+  }
+  return { ok: false, reason: "missing_auth" }
+}
+
 function parseRateLimit(res: Response): {
   remaining: number | null
   reset: number | null
@@ -35,15 +70,10 @@ function parseRateLimit(res: Response): {
   }
 }
 
-export async function xBearerGet<T>(
+export async function xReadGet<T>(
   path: string,
   searchParams?: Record<string, string>,
 ): Promise<XReadResponse<T>> {
-  const token = arieXBearerToken()
-  if (!token) {
-    return { ok: false, reason: "missing_bearer" }
-  }
-
   const url = new URL(`https://api.twitter.com/2${path}`)
   if (searchParams) {
     for (const [k, v] of Object.entries(searchParams)) {
@@ -51,10 +81,24 @@ export async function xBearerGet<T>(
     }
   }
 
+  const query: Record<string, string> = {}
+  url.searchParams.forEach((value, key) => {
+    query[key] = value
+  })
+
+  const auth = buildXReadAuthorization({
+    method: "GET",
+    url: `${url.origin}${url.pathname}`,
+    query,
+  })
+  if (!auth.ok) {
+    return { ok: false, reason: "missing_auth" }
+  }
+
   let res: Response
   try {
     res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: auth.authorization },
       signal: AbortSignal.timeout(25_000),
     })
   } catch (err) {
@@ -104,6 +148,9 @@ export async function xBearerGet<T>(
     return { ok: false, reason: "invalid_json", status: res.status, body: bodyText.slice(0, 300) }
   }
 }
+
+/** @deprecated Use xReadGet — kept as alias for existing imports. */
+export const xBearerGet = xReadGet
 
 export type XTweetFields = {
   id: string
@@ -181,7 +228,7 @@ export function buildUserTimelineParams(input: {
 
 export async function xLookupUserByUsername(username: string) {
   const handle = username.replace(/^@/, "").trim()
-  const result = await xBearerGet<XUserLookupResponse>(
+  const result = await xReadGet<XUserLookupResponse>(
     `/users/by/username/${encodeURIComponent(handle)}`,
     { "user.fields": USER_FIELDS },
   )
@@ -202,7 +249,7 @@ export async function xFetchUserTimeline(input: {
   startTime?: string | null
 }) {
   const params = buildUserTimelineParams(input)
-  const result = await xBearerGet<XTimelineResponse>(
+  const result = await xReadGet<XTimelineResponse>(
     `/users/${encodeURIComponent(input.userId)}/tweets`,
     params,
   )
@@ -230,7 +277,7 @@ export async function xSearchRecent(input: {
   }
   if (input.startTime) params.start_time = input.startTime
 
-  const result = await xBearerGet<XSearchResponse>("/tweets/search/recent", params)
+  const result = await xReadGet<XSearchResponse>("/tweets/search/recent", params)
   recordCapabilityResult("recent_search", {
     ok: result.ok,
     status: result.ok ? result.status : result.status,
