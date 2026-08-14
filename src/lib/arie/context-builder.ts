@@ -2,7 +2,12 @@ import { createHash, randomUUID } from "crypto"
 import type { PrismaClient } from "@prisma/client"
 import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
 import { ARIE_CONSTITUTION_PATH, ARIE_CONSTITUTION_VERSION } from "@/lib/arie/config"
-import { extractEntitiesFromText, type ExtractedEntities } from "@/lib/arie/entity-extract"
+import {
+  constrainEntitiesToSource,
+  extractEntitiesFromText,
+  isAcceptableMovieTitleMention,
+  type ExtractedEntities,
+} from "@/lib/arie/entity-extract"
 import { traverseNeighborhood } from "@/lib/arie/graph"
 import { CASTING_RE, scoreOpportunity } from "@/lib/arie/opportunity-score"
 import {
@@ -46,13 +51,13 @@ function siteOrigin(): string {
 
 /** True when the tweet likely refers to this title (avoids random filmography focus). */
 export function textMentionsTitle(text: string, title: string): boolean {
-  const needle = title.trim().toLowerCase()
-  if (needle.length < 4) return false
-  const hay = text.toLowerCase()
-  if (hay.includes(needle)) return true
-  // Allow matching without subtitle after colon
-  const head = needle.split(":")[0]?.trim() ?? ""
-  return head.length >= 6 && hay.includes(head)
+  if (isAcceptableMovieTitleMention(text, title)) return true
+  const head = title.trim().split(":")[0]?.trim() ?? ""
+  return (
+    head.length >= 6 &&
+    head.toLowerCase() !== title.trim().toLowerCase() &&
+    isAcceptableMovieTitleMention(text, head)
+  )
 }
 
 /** Casting / farewell / audition signal — shared with Opportunity CASTING_RE. */
@@ -139,7 +144,8 @@ export async function buildContextPackage(
     corroborations?: CorroborationInput[]
   },
 ): Promise<ContextPackage> {
-  const entities = input.entities ?? (await extractEntitiesFromText(prisma, input.text))
+  const extracted = input.entities ?? (await extractEntitiesFromText(prisma, input.text))
+  const entities = constrainEntitiesToSource(input.text, extracted)
   const opportunity =
     input.opportunity ??
     scoreOpportunity({
@@ -154,7 +160,8 @@ export async function buildContextPackage(
   const links: ContextPackage["links"] = []
 
   const primaryActor = entities.actors[0] ?? null
-  const primaryMovie = entities.movies[0] ?? null
+  const primaryMovie =
+    entities.movies.find((m) => isAcceptableMovieTitleMention(input.text, m.title)) ?? null
 
   // Focus must be tweet-aligned. Never fall back to a random filmography hit
   // (Batch-1: Marsden → The Notebook on a Cyclops/Secret Wars rumor).

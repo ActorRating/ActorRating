@@ -1,7 +1,11 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { buildContextPackage } from "@/lib/arie/context-builder"
-import { extractEntitiesFromText, type ExtractedEntities } from "@/lib/arie/entity-extract"
+import {
+  extractEntitiesFromText,
+  isAcceptableMovieTitleMention,
+  type ExtractedEntities,
+} from "@/lib/arie/entity-extract"
 import { ingestInboundEvent } from "@/lib/arie/ingest"
 import { arieLog } from "@/lib/arie/log"
 import { generateOriginalConcepts } from "@/lib/arie/original-concepts"
@@ -89,6 +93,28 @@ export function evaluateConceptGenerationEligibility(input: {
   }
   if (isConceptGenerationActiveStatus(status)) return { ok: true }
   if (!input.score.eligible) return { ok: false, reason: "not_eligible" }
+  return { ok: true }
+}
+
+/**
+ * Block concept generation when the context movie is not a source-supported
+ * work mention (generic "Focus Country" / "film festival" poison).
+ * Actor/director-only opportunities remain allowed.
+ */
+export function evaluateSourceSubjectMatch(input: {
+  text: string
+  package: Pick<ContextPackage, "movie" | "actor" | "director" | "actors">
+}): { ok: true } | { ok: false; reason: "source_subject_mismatch" | "no_source_subject" } {
+  const movieTitle = input.package.movie?.title?.trim()
+  if (movieTitle && !isAcceptableMovieTitleMention(input.text, movieTitle)) {
+    return { ok: false, reason: "source_subject_mismatch" }
+  }
+  const hasMovie = Boolean(movieTitle) && isAcceptableMovieTitleMention(input.text, movieTitle!)
+  const hasActor = Boolean(input.package.actor) || (input.package.actors?.length ?? 0) > 0
+  const hasDirector = Boolean(input.package.director)
+  if (!hasMovie && !hasActor && !hasDirector) {
+    return { ok: false, reason: "no_source_subject" }
+  }
   return { ok: true }
 }
 
@@ -556,6 +582,11 @@ export async function generateConceptsForOpportunity(
       },
     })
     return { ok: false, reason: scout.code ?? "scout_excluded" }
+  }
+
+  const subject = evaluateSourceSubjectMatch({ text: pkg.event.text, package: pkg })
+  if (!subject.ok) {
+    return { ok: false, reason: subject.reason }
   }
 
   const gen = await generateOriginalConcepts({

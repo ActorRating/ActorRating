@@ -134,6 +134,15 @@ describe("textMentionsTitle", () => {
       textMentionsTitle("James Marsden in Avengers: Secret Wars as Cyclops", "Avengers: Secret Wars"),
     ).toBe(true)
   })
+
+  it("does not treat generic film/focus compounds as title mentions", () => {
+    expect(textMentionsTitle("international film festival", "Film")).toBe(false)
+    expect(textMentionsTitle("Japan 2026 Focus Country", "Focus")).toBe(false)
+  })
+
+  it("still matches an explicit Focus (2015) mention", () => {
+    expect(textMentionsTitle("Focus (2015), starring Will Smith", "Focus")).toBe(true)
+  })
 })
 
 describe("isCastingNewsText", () => {

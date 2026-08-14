@@ -28,6 +28,7 @@ import { generateOriginalConcepts } from "@/lib/arie/original-concepts"
 import {
   entitiesFromContextPackage,
   evaluateConceptGenerationEligibility,
+  evaluateSourceSubjectMatch,
   generateConceptsForOpportunity,
   reconstructScore,
 } from "@/lib/arie/original-pipeline"
@@ -405,5 +406,138 @@ describe("generateConceptsForOpportunity eligibility path", () => {
         data: expect.objectContaining({ originalStatus: "IGNORED" }),
       }),
     )
+  })
+
+  it("blocks Busan/Focus Country poison: Focus (2015) package cannot generate concepts", async () => {
+    const busan =
+      "Busan's Asian Contents & Film Market Names Japan 2026 Focus Country for Producer Hub"
+    const poisoned = filmupdatesPackage(busan)
+    poisoned.movie = {
+      id: "m-focus",
+      title: "Focus",
+      year: 2015,
+      slug: "focus",
+      director: "Glenn Ficarra",
+      genre: "Crime",
+      indexingCohort: 1,
+    }
+    poisoned.actor = {
+      id: "a-will",
+      name: "Will Smith",
+      slug: "will-smith",
+      knownFor: "Focus",
+    }
+    poisoned.actors = [{ id: "a-will", name: "Will Smith", slug: "will-smith", role: "primary" }]
+    prismaMock.arieOpportunity.findUnique.mockResolvedValue({
+      id: "opp-busan",
+      contentType: "original",
+      originalStatus: "ELIGIBLE",
+      originalScore: 77,
+      originalScoreBreakdown: filmupdatesFlatBreakdown,
+      conceptGenCount: 0,
+      expiresAt: new Date(Date.now() + 36 * 3600_000),
+      sourceHandle: "filmupdates",
+      promptVersions: {},
+    })
+    prismaMock.arieContextPackage.findFirst.mockResolvedValue({ package: poisoned })
+
+    const res = await generateConceptsForOpportunity("opp-busan", { bypassGovernor: true })
+    expect(res).toEqual({ ok: false, reason: "source_subject_mismatch" })
+    expect(generateConceptsMock).not.toHaveBeenCalled()
+  })
+
+  it("still generates concepts for a real Animals trailer opportunity", async () => {
+    const animalsText =
+      "Ben Affleck and Kerry Washington star in the official trailer for Netflix's Animals"
+    const pkg = filmupdatesPackage(animalsText)
+    pkg.movie = {
+      id: "m-animals",
+      title: "Animals",
+      year: 2026,
+      slug: "animals",
+      director: null,
+      genre: null,
+      indexingCohort: 1,
+    }
+    pkg.actor = {
+      id: "a-affleck",
+      name: "Ben Affleck",
+      slug: "ben-affleck",
+      knownFor: null,
+    }
+    pkg.actors = [{ id: "a-affleck", name: "Ben Affleck", slug: "ben-affleck", role: "primary" }]
+    prismaMock.arieOpportunity.findUnique.mockResolvedValue({
+      id: "opp-animals",
+      contentType: "original",
+      originalStatus: "ELIGIBLE",
+      originalScore: 88,
+      originalScoreBreakdown: filmupdatesFlatBreakdown,
+      conceptGenCount: 0,
+      expiresAt: new Date(Date.now() + 36 * 3600_000),
+      sourceHandle: "thr",
+      promptVersions: {},
+    })
+    prismaMock.arieContextPackage.findFirst.mockResolvedValue({ package: pkg })
+
+    const res = await generateConceptsForOpportunity("opp-animals", { bypassGovernor: true })
+    expect(res.ok).toBe(true)
+    expect(generateConceptsMock).toHaveBeenCalled()
+  })
+})
+
+describe("evaluateSourceSubjectMatch", () => {
+  const busan =
+    "Busan's Asian Contents & Film Market Names Japan 2026 Focus Country for Producer Hub"
+
+  it("rejects Focus (2015) as the subject of the Busan source", () => {
+    const r = evaluateSourceSubjectMatch({
+      text: busan,
+      package: {
+        movie: {
+          id: "m-focus",
+          title: "Focus",
+          year: 2015,
+          slug: "focus",
+          director: "Glenn Ficarra",
+          genre: "Crime",
+          indexingCohort: 1,
+        },
+        actor: {
+          id: "a-will",
+          name: "Will Smith",
+          slug: "will-smith",
+          knownFor: null,
+        },
+        actors: [],
+        director: { name: "Richard Pearce", filmCount: 1, notableFilms: ["Film (1965)"] },
+      },
+    })
+    expect(r).toEqual({ ok: false, reason: "source_subject_mismatch" })
+  })
+
+  it("accepts Animals when the source is the Netflix trailer", () => {
+    const r = evaluateSourceSubjectMatch({
+      text: "Ben Affleck and Kerry Washington star in the official trailer for Netflix's Animals",
+      package: {
+        movie: {
+          id: "m-animals",
+          title: "Animals",
+          year: 2026,
+          slug: "animals",
+          director: null,
+          genre: null,
+          indexingCohort: 1,
+        },
+        actor: {
+          id: "a-affleck",
+          name: "Ben Affleck",
+          slug: "ben-affleck",
+          knownFor: null,
+        },
+        actors: [],
+        director: null,
+      },
+    })
+    expect(r).toEqual({ ok: true })
   })
 })
