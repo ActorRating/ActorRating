@@ -13,6 +13,10 @@ import {
 } from "@/lib/arie/priority-accounts"
 import type { ArieFact, ContextPackage } from "@/lib/arie/types"
 import type { ExtractedEntities } from "@/lib/arie/entity-extract"
+import {
+  classifyTitleMentionRole,
+  pickSourceEventTitle,
+} from "@/lib/arie/title-mention-role"
 
 export const CLAIM_STATUSES = [
   "VERIFIED",
@@ -213,6 +217,12 @@ function extractMovieTitlesFromText(text: string): string[] {
     const t = m[1]?.trim()
     if (t && t.split(/\s+/).length >= 2) titles.push(t)
   }
+  // "return/join … in/to Title Case Phrase"
+  for (const m of text.matchAll(
+    /\b(?:returns?|returning|will\s+return|joins?|joining|cast|casting|star(?:s|ring)?|play(?:s|ing)?)\b[^.]{0,60}?\b(?:in|to|for)\s+([A-Z][\w'’:&-]*(?:\s+(?:of|the|and|a|an|:)?\s*[A-Z][\w'’:&-]*){0,6})/g,
+  )) {
+    if (m[1]) titles.push(m[1].trim())
+  }
   return [...new Set(titles)].slice(0, 6)
 }
 
@@ -351,58 +361,77 @@ export function buildEvidenceLayer(input: {
       ...input.entities.movies.map((m) => m.title),
       ...extractMovieTitlesFromText(input.text),
     ]
-    const titleObj = titles[0] ?? "an upcoming project"
-    let status: ClaimStatus = "REPORTED"
-    let contradictionCount = 0
-    const corroborationCount = trustedSupports.length
-    let verifiedAt: string | null = null
-    let confidence = baseReportedConfidence
+    // Bind casting/return to a current-event title — never a historical mention
+    // (e.g. "performance as Rue in The Hunger Games").
+    const eventPick = pickSourceEventTitle(input.text, titles)
+    const historicalOnly =
+      titles.length > 0 &&
+      titles.every((t) => classifyTitleMentionRole(input.text, t) === "historical")
+    // No resolvable titles (Tobey-style rumor with no catalog movie): keep generic object.
+    // Historical-only titles: do not invent a casting/return claim about them.
+    const titleObj = eventPick?.title ?? (historicalOnly ? null : titles.length === 0 ? "an upcoming project" : null)
 
-    // Conflicting later evidence → CONTRADICTED (deterministic; LLM does not adjudicate).
-    if (
-      trustedContradicts.some(
-        (c) =>
-          c.contradicts ||
-          /\b(will not|won't|not returning|not joining|denied)\b/i.test(c.text),
-      )
-    ) {
-      status = "CONTRADICTED"
-      contradictionCount = trustedContradicts.length || 1
-      confidence = 20
-    } else if (trustedSupports.length > 0) {
-      // Independent PRIMARY/TRADE corroboration upgrades casting/return to VERIFIED.
-      status = "VERIFIED"
-      verifiedAt = trustedSupports[0]?.observedAt ?? observedAt
-      confidence = Math.min(92, 70 + trustedSupports.length * 8)
-    }
+    if (titleObj) {
+      let status: ClaimStatus = "REPORTED"
+      let contradictionCount = 0
+      const corroborationCount = trustedSupports.length
+      let verifiedAt: string | null = null
+      let confidence = baseReportedConfidence
 
-    claims.push({
-      id: claimId("cast", primaryActor.id, titleObj),
-      subject: primaryActor.name,
-      predicate: FRANCHISE_EXIT_RE.test(input.text)
+      // Conflicting later evidence → CONTRADICTED (deterministic; LLM does not adjudicate).
+      if (
+        trustedContradicts.some(
+          (c) =>
+            c.contradicts ||
+            /\b(will not|won't|not returning|not joining|denied)\b/i.test(c.text),
+        )
+      ) {
+        status = "CONTRADICTED"
+        contradictionCount = trustedContradicts.length || 1
+        confidence = 20
+      } else if (trustedSupports.length > 0) {
+        // Independent PRIMARY/TRADE corroboration upgrades casting/return to VERIFIED.
+        status = "VERIFIED"
+        verifiedAt = trustedSupports[0]?.observedAt ?? observedAt
+        confidence = Math.min(92, 70 + trustedSupports.length * 8)
+      }
+
+      const titleRole =
+        titleObj === "an upcoming project"
+          ? ("event" as const)
+          : classifyTitleMentionRole(input.text, titleObj)
+      const predicate = FRANCHISE_EXIT_RE.test(input.text)
         ? "reported_franchise_exit"
-        : RETURN_RE.test(input.text)
+        : RETURN_RE.test(input.text) && titleRole === "event"
           ? "reported_return"
-          : "reported_casting",
-      object: titleObj,
-      status,
-      provenance: status === "VERIFIED" ? "system" : "source_assertion",
-      confidence,
-      sourceType: "inbound_event",
-      sourceHandle: handle,
-      sourceUrl: source.sourceUrl,
-      observedAt,
-      verifiedAt,
-      corroborationCount,
-      contradictionCount,
-      text:
-        status === "VERIFIED"
-          ? `${primaryActor.name} casting/return involving ${titleObj} corroborated by trusted source(s).`
-          : status === "CONTRADICTED"
-            ? `${primaryActor.name} casting/return involving ${titleObj} is contradicted by later evidence.`
-            : `${handle ?? "source"} reports ${primaryActor.name} casting/return involving ${titleObj}.`,
-      requiresAttribution: status !== "VERIFIED",
-    })
+          : "reported_casting"
+
+      claims.push({
+        id: claimId("cast", primaryActor.id, titleObj),
+        subject: primaryActor.name,
+        predicate,
+        object: titleObj,
+        status,
+        provenance: status === "VERIFIED" ? "system" : "source_assertion",
+        confidence,
+        sourceType: "inbound_event",
+        sourceHandle: handle,
+        sourceUrl: source.sourceUrl,
+        observedAt,
+        verifiedAt,
+        corroborationCount,
+        contradictionCount,
+        text:
+          status === "VERIFIED"
+            ? `${primaryActor.name} casting/return involving ${titleObj} corroborated by trusted source(s).`
+            : status === "CONTRADICTED"
+              ? `${primaryActor.name} casting/return involving ${titleObj} is contradicted by later evidence.`
+              : `${handle ?? "source"} reports ${primaryActor.name} ${
+                  predicate === "reported_return" ? "return" : "casting"
+                } involving ${titleObj}.`,
+        requiresAttribution: status !== "VERIFIED",
+      })
+    }
   }
 
   // Iron Spider / similar unverifiable costume-detail claims

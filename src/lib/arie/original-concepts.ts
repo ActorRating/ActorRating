@@ -329,4 +329,5 @@ const FALLBACK_CONCEPT_PROMPT = `You are ARIE Concept Strategist for ActorRating
 Generate up to 3 DISTINCT concepts from formats: RANKING, COMPARISON, RADAR_VISUAL, HISTORICAL_CONTEXT, DISCUSSION_DEBATE.
 Each concept needs: format, hook, angle, actorRatingAdvantage, discussionQuestion, dataUsed[], visualPotential, estimatedStrength 0-100, riskFlags[].
 Never invent ActorRating numbers. Event is the trigger; ActorRating data is the differentiator.
+Never turn a historical mention (e.g. performance as Rue in The Hunger Games) into a new/current return or casting event.
 Return JSON only: { "concepts": [ ... ] }`

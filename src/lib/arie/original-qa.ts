@@ -11,6 +11,10 @@ import {
   findUnsupportedAssertions,
   slimEvidenceForWriter,
 } from "@/lib/arie/provenance"
+import {
+  collectCandidateEventTitles,
+  findSourceEventMismatches,
+} from "@/lib/arie/title-mention-role"
 import type { ContextPackage } from "@/lib/arie/types"
 import {
   ORIGINAL_QA_PROMPT_VERSION,
@@ -152,9 +156,44 @@ export function runDeterministicOriginalQa(input: {
     errors.push(`${u.type}:${u.status}`)
   }
 
+  // Source-event grounding: attribution does NOT override.
+  // Historical filmography mentions must not become current return/casting claims.
+  const sourceText = input.package.event.text ?? ""
+  const candidateTitles = collectCandidateEventTitles({
+    sourceText,
+    draftText: text,
+    packageMovieTitle: input.package.movie?.title ?? null,
+    entityMovieTitles: [
+      ...(input.package.movie?.title ? [input.package.movie.title] : []),
+      ...input.package.facts
+        .map((f) => {
+          const m = f.text.match(/\bin ([^(]+?) \(\d{4}\)/i)
+          return m?.[1]?.trim() ?? null
+        })
+        .filter((t): t is string => Boolean(t)),
+    ],
+    claimObjects: claims.map((c) => c.object),
+  })
+  const eventMismatches = findSourceEventMismatches(text, sourceText, candidateTitles)
+  for (const m of eventMismatches) {
+    issues.push({
+      type: m.type,
+      severity: "HIGH",
+      tier: "hard_fail",
+      claim: m.title,
+      detail: m.detail,
+    })
+    errors.push(m.type)
+  }
+
   // Soft warning: reported path with attribution OK
   const reported = claims.filter((c) => c.status === "REPORTED" && c.requiresAttribution)
-  if (reported.length && draftHasAttribution(text) && !unsupported.length) {
+  if (
+    reported.length &&
+    draftHasAttribution(text) &&
+    !unsupported.length &&
+    !eventMismatches.length
+  ) {
     warnings.push("reported_claim_attributed")
     issues.push({
       type: "REPORTED_WITH_ATTRIBUTION",

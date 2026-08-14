@@ -8,6 +8,7 @@ import {
   isAcceptableMovieTitleMention,
   type ExtractedEntities,
 } from "@/lib/arie/entity-extract"
+import { pickSourceEventTitle, classifyTitleMentionRole } from "@/lib/arie/title-mention-role"
 import { traverseNeighborhood } from "@/lib/arie/graph"
 import { CASTING_RE, scoreOpportunity } from "@/lib/arie/opportunity-score"
 import {
@@ -160,11 +161,29 @@ export async function buildContextPackage(
   const links: ContextPackage["links"] = []
 
   const primaryActor = entities.actors[0] ?? null
+  // Prefer the source-event title when multiple movies are present.
+  // Historical mentions (e.g. "as Rue in The Hunger Games") must not become package.movie.
+  const eventMovieTitle =
+    pickSourceEventTitle(
+      input.text,
+      entities.movies.map((m) => m.title),
+    )?.title ?? null
   const primaryMovie =
-    entities.movies.find((m) => isAcceptableMovieTitleMention(input.text, m.title)) ?? null
+    (eventMovieTitle
+      ? entities.movies.find(
+          (m) => m.title.toLowerCase() === eventMovieTitle.toLowerCase(),
+        )
+      : null) ??
+    entities.movies.find(
+      (m) =>
+        isAcceptableMovieTitleMention(input.text, m.title) &&
+        classifyTitleMentionRole(input.text, m.title) !== "historical",
+    ) ??
+    null
 
   // Focus must be tweet-aligned. Never fall back to a random filmography hit
   // (Batch-1: Marsden → The Notebook on a Cyclops/Secret Wars rumor).
+  // Also never promote a historical-only title mention into the news subject.
   let focus = graph.performances.find(
     (p) =>
       Boolean(primaryActor) &&
@@ -174,7 +193,10 @@ export async function buildContextPackage(
   )
   if (!focus && primaryActor) {
     focus = graph.performances.find(
-      (p) => p.actorId === primaryActor.id && textMentionsTitle(input.text, p.movieTitle),
+      (p) =>
+        p.actorId === primaryActor.id &&
+        textMentionsTitle(input.text, p.movieTitle) &&
+        classifyTitleMentionRole(input.text, p.movieTitle) !== "historical",
     )
   }
   if (!focus && primaryMovie) {
