@@ -407,3 +407,107 @@ describe("findSourceEventMismatches + Original QA", () => {
     expect(mismatches.some((m) => m.type === "HISTORICAL_AS_CURRENT_EVENT")).toBe(true)
   })
 })
+
+describe("Come With Me — legitimate attributed casting + prior-work comparison", () => {
+  const SOURCE =
+    "'Come With Me,' Psychological Thriller Starring Theo Rossi and Ron Perlman, Sells to Vertical and Gets First Trailer (Exclusive)"
+  const DRAFT =
+    "THR is reporting Ron Perlman and Theo Rossi are set to star in 'Come With Me'. How will their performances compare to past work like Ron in 'A Stoning in Fulham County' (1988) or Theo in 'The Getback' (2023)?"
+
+  const entities: ExtractedEntities = {
+    actors: [
+      { id: "a-ron", name: "Ron Perlman", slug: "ron-perlman", confidence: 95 },
+      { id: "a-theo", name: "Theo Rossi", slug: "theo-rossi", confidence: 95 },
+    ],
+    movies: [
+      {
+        id: "m-cwm",
+        title: "Come With Me",
+        year: 2026,
+        slug: "come-with-me",
+        director: null,
+        genre: null,
+        indexingCohort: 1,
+        confidence: 90,
+      },
+    ],
+    directors: [],
+    unresolved: [],
+  }
+
+  const priorFacts = [
+    {
+      fact_id: "perf:prior:stoning",
+      type: "aggregate_score" as const,
+      text: "Prior work — Ron Perlman in A Stoning in Fulham County (1988): aggregate 7.1/10 on ActorRating (not a score for the newly announced role)",
+      value: 7.1,
+      source: "actorrating_db" as const,
+      as_of: new Date().toISOString(),
+      entity_refs: ["actor:a-ron"],
+    },
+    {
+      fact_id: "perf:prior:getback",
+      type: "aggregate_score" as const,
+      text: "Prior work — Theo Rossi in The Getback (2023): aggregate 6.8/10 on ActorRating (not a score for the newly announced role)",
+      value: 6.8,
+      source: "actorrating_db" as const,
+      as_of: new Date().toISOString(),
+      entity_refs: ["actor:a-theo"],
+    },
+  ]
+
+  it("classifies Come With Me as the source event (headline starring/trailer)", () => {
+    expect(classifyTitleMentionRole(SOURCE, "Come With Me")).toBe("event")
+  })
+
+  it("does not treat prior-work titles in the draft as current-event mismatches", () => {
+    const mismatches = findSourceEventMismatches(DRAFT, SOURCE, [
+      "Come With Me",
+      "A Stoning in Fulham County",
+      "The Getback",
+    ])
+    expect(mismatches).toEqual([])
+  })
+
+  it("deterministic QA passes for the attributed THR draft with prior-work years", () => {
+    const { claims } = buildEvidenceLayer({
+      text: SOURCE,
+      authorHandle: "thr",
+      entities,
+      facts: priorFacts,
+    })
+    const qa = runDeterministicOriginalQa({
+      draft: draft(DRAFT),
+      concept,
+      package: barePkg({
+        event: { text: SOURCE, platform: "X", author_handle: "thr" },
+        movie: {
+          id: "m-cwm",
+          title: "Come With Me",
+          year: 2026,
+          slug: "come-with-me",
+          director: null,
+          genre: null,
+          indexingCohort: 1,
+        },
+        actor: {
+          id: "a-ron",
+          name: "Ron Perlman",
+          slug: "ron-perlman",
+          knownFor: null,
+        },
+        actors: [
+          { id: "a-ron", name: "Ron Perlman", slug: "ron-perlman", role: "primary" },
+          { id: "a-theo", name: "Theo Rossi", slug: "theo-rossi", role: "mentioned" },
+        ],
+        claims,
+        facts: priorFacts,
+        writerMode: "REPORTED_EVENT",
+      }),
+    })
+    expect(qa.errors).not.toContain("SOURCE_EVENT_MISMATCH")
+    expect(qa.errors).not.toContain("HISTORICAL_AS_CURRENT_EVENT")
+    expect(qa.errors.filter((e) => e.startsWith("invented_numbers"))).toEqual([])
+    expect(qa.passed).toBe(true)
+  })
+})

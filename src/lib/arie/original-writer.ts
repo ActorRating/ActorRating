@@ -185,10 +185,19 @@ export function collectAllowedNumbers(pkg: ContextPackage): number[] {
       nums.add(Math.round(n * 10) / 10)
     }
   }
-  for (const f of pkg.facts) add(f.value)
+  for (const f of pkg.facts) {
+    add(f.value)
+    // Prior-work / catalog years cited in fact text — e.g. "… (1988): aggregate"
+    for (const ym of f.text.matchAll(/\((\d{4})\)/g)) {
+      add(Number(ym[1]))
+    }
+  }
   for (const p of pkg.topPerformances) {
     add(p.seededAggregate)
     add(p.ratingCount)
+    add(p.movieYear)
+  }
+  for (const p of pkg.relatedPerformances ?? []) {
     add(p.movieYear)
   }
   if (pkg.radar) {

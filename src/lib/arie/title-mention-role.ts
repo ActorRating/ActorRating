@@ -60,13 +60,21 @@ function roleAtSpan(text: string, span: { start: number; end: number }): TitleMe
   const right = text.slice(span.end, span.end + WINDOW)
   const nearLeft = left.slice(-52)
 
+  // Headline subjects often have brief descriptors before the event cue:
+  // "'Come With Me,' Psychological Thriller Starring … Gets First Trailer"
+  const rightEventCue =
+    EVENT_RIGHT_RE.test(right) ||
+    /\b(?:starring|stars|starred|trailer|teaser|first\s+look|sells?\s+to|premiere|casting|cast\b|joins?)\b/i.test(
+      right,
+    )
+
   // Current return/cast/trailer framing wins. Important: "will return as X in Title"
   // must NOT be treated as historical "as Role in Title".
   const event =
     EVENT_RETURN_TO_RE.test(nearLeft) ||
     EVENT_FOR_TITLE_RE.test(nearLeft) ||
     EVENT_LEFT_RE.test(nearLeft) ||
-    EVENT_RIGHT_RE.test(right) ||
+    rightEventCue ||
     /\b(?:will\s+)?(?:return(?:ing|s)?|reprise|reprising|join(?:s|ing)?|cast)\b/i.test(nearLeft)
 
   if (event) return "event"
@@ -206,6 +214,14 @@ function draftAssertsCurrentEventAboutTitle(draft: string, title: string): boole
   for (const span of spans) {
     const left = draft.slice(Math.max(0, span.start - LOCAL), span.start)
     const right = draft.slice(span.end, span.end + 24)
+    // Explicit prior-work / comparison framing is not a current-event claim.
+    if (
+      /\b(?:past\s+work|prior\s+work|previous\s+work|like\s+\w+\s+in|compared?\s+to|compare(?:d)?\s+to)\b/i.test(
+        left,
+      )
+    ) {
+      continue
+    }
     // Require the event verb to target this title locally — do not let a
     // return about Title A poison Title B later in the same sentence.
     if (EVENT_RETURN_TO_RE.test(left)) return true
@@ -240,7 +256,8 @@ export function collectCandidateEventTitles(input: {
   for (const t of input.claimObjects ?? []) push(t)
   // Quoted titles in source / draft
   for (const m of `${input.sourceText}\n${input.draftText}`.matchAll(/['"“”]([^'"“”]{2,80})['"“”]/g)) {
-    push(m[1])
+    // Headlines often quote "'Come With Me,'" — strip trailing commas/punctuation.
+    push(m[1]?.replace(/[,:;]+$/g, "").trim())
   }
   // ALL-CAPS multi-word phrases from source (franchise style)
   for (const m of input.sourceText.matchAll(/\b([A-Z][A-Z0-9:&'\- ]{3,60})\b/g)) {
