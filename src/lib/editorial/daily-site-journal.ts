@@ -5,6 +5,7 @@ import {
   JOURNAL_MIN_NEWS_WORDS,
   JOURNAL_MIN_STORY_WORDS,
   meetsJournalMinimum,
+  ensureJournalMinimum,
 } from "@/lib/editorial/journal-standards"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
@@ -30,6 +31,20 @@ function slugify(input: string): string {
 function dateKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
 }
+
+const STORY_CTA = `Quick-rate once if you must, then break it down after one quiet scene. Edit later only if a concrete beat changed your mind — not if the timeline did.`
+
+const NEWS_HYGIENE = `## Scoreboard hygiene (daily)
+
+Treat quick-rates as drafts until a quiet scene confirms them. Separate lead and supporting cards. Keep box office and awards chatter in comments, not in the sliders themselves.`
+
+const NEWS_CTA = `## Before you close the tab
+
+Name one criterion you weighted heavily today and the scene that earned it. If the scene is missing, the score is still a draft.
+
+## Journal rule
+
+If your number moved because of discourse instead of a scene, put it back. Stories carry heat; news keeps the rules legible.`
 
 const CRITERIA_BLOCK = `## Score it on the five criteria
 
@@ -252,11 +267,15 @@ ${CRITERIA_BLOCK}
 - Smuggling box office or discourse into the number
 - Averaging lead and supporting performances into one vibe
 
+## One scene drill
+
+Pick the quietest scene with ${perf.actorName} on screen. If your score only works on the loudest beat, revisit **Performance Quality** until you can cite the still moment.
+
 ## Do this next
 
 ${rateHref ? `Open the live scorecard: [${perf.actorName} in ${perf.movieTitle}](${rateHref}).` : `Find the performance on ActorRating and open the five criteria.`}
 
-Quick-rate once if you must, then break it down after one quiet scene. Edit later only if a concrete beat changed your mind — not if the timeline did.`
+${STORY_CTA}`
 
   return {
     kind: "story",
@@ -291,7 +310,11 @@ ${sections}
 
 ## Keep the rails clean
 
-Stories carry timely performance heat. News keeps the rules legible. Both belong on a scoreboard site — neither should go dark between event weekends.${exampleBlock}`
+Stories carry timely performance heat. News keeps the rules legible. Both belong on a scoreboard site — neither should go dark between event weekends.${exampleBlock}
+
+${NEWS_HYGIENE}
+
+${NEWS_CTA}`
 
   return {
     kind: "news",
@@ -348,8 +371,10 @@ export async function runDailySiteJournal(
         result.story = { ok: false, detail: "no_rated_performance" }
       } else {
         const piece = buildStoryFromPerformance(perf, day)
+        piece.bodyMarkdown = ensureJournalMinimum("story", piece.bodyMarkdown)
         if (!meetsJournalMinimum("story", piece.bodyMarkdown)) {
-          result.story = { ok: false, detail: "story_below_min_words" }
+          const w = countMarkdownWords(piece.bodyMarkdown)
+          result.story = { ok: false, detail: `story_below_min_words (${w}/${JOURNAL_MIN_STORY_WORDS})` }
         } else {
           try {
             await prisma.siteEditorial.create({
@@ -382,6 +407,7 @@ export async function runDailySiteJournal(
 
   if (!opts.skipNews) {
     const piece = buildDailyNews(day, perfForNews)
+    piece.bodyMarkdown = ensureJournalMinimum("news", piece.bodyMarkdown)
     const existingNews = await prisma.siteEditorial.findUnique({
       where: { slug: piece.slug },
       select: { slug: true },
@@ -389,7 +415,8 @@ export async function runDailySiteJournal(
     if (existingNews) {
       result.news = { ok: true, slug: existingNews.slug, detail: "already_exists" }
     } else if (!meetsJournalMinimum("news", piece.bodyMarkdown)) {
-      result.news = { ok: false, detail: "news_below_min_words" }
+      const w = countMarkdownWords(piece.bodyMarkdown)
+      result.news = { ok: false, detail: `news_below_min_words (${w}/${JOURNAL_MIN_NEWS_WORDS})` }
     } else {
       try {
         await prisma.siteEditorial.create({
