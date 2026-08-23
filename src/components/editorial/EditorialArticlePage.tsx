@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { InstantNavLink } from "@/components/ui/InstantNavLink"
 import { HomeLayout } from "@/components/layout"
 import {
   renderEditorialMarkdown,
@@ -96,9 +96,9 @@ export async function EditorialArticlePage({
 
             <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-14 sm:pt-20 pb-12 sm:pb-16">
               <nav className="mb-8 text-sm text-zinc-500">
-                <Link href={meta.indexHref} className="hover:text-[#FFD700] transition-colors">
+                <InstantNavLink href={meta.indexHref} className="hover:text-[#FFD700] transition-colors">
                   {meta.indexLabel}
-                </Link>
+                </InstantNavLink>
                 <span className="mx-2 text-zinc-700">/</span>
                 <span className="text-zinc-400 line-clamp-1">{doc.title}</span>
               </nav>
@@ -174,7 +174,7 @@ export async function EditorialArticlePage({
                       const thumb = actorImg ?? poster
                       return (
                         <li key={`${entry.movieSlug}:${entry.actorSlug}`}>
-                          <Link
+                          <InstantNavLink
                             href={entry.ratePath}
                             className="group flex gap-3.5 overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] p-3 hover:border-[#FFD700]/30 transition-colors"
                           >
@@ -206,7 +206,7 @@ export async function EditorialArticlePage({
                                 </p>
                               )}
                             </div>
-                          </Link>
+                          </InstantNavLink>
                         </li>
                       )
                     })}

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from 'next/link'
+import { InstantNavLink } from '@/components/ui/InstantNavLink'
 import { useSession } from '@/components/providers/SessionProvider'
 import { Logo } from '../ui/Logo'
 import { useState, useEffect, useRef, FormEvent, type ReactNode } from 'react'
@@ -28,13 +28,13 @@ function DesktopNavLink({
   children: ReactNode
 }) {
   return (
-    <Link href={href} className={DESKTOP_LINK_CLASS}>
+    <InstantNavLink href={href} className={DESKTOP_LINK_CLASS}>
       {children}
       <span
         className="absolute bottom-0 left-2.5 right-2.5 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
         style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
       />
-    </Link>
+    </InstantNavLink>
   )
 }
 
@@ -227,43 +227,43 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
-                <Link
+                <InstantNavLink
                   key={`mobile-${link.href}`}
                   href={link.href}
                   className="px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200 rounded-lg hover:bg-white/5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
-                </Link>
+                </InstantNavLink>
               ))}
 
               {mounted && (
                 <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   {user ? (
-                    <Link
+                    <InstantNavLink
                       href="/profile"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20 inline-flex items-center justify-center gap-2"
                     >
                       <User className="w-4 h-4" aria-hidden />
                       {profileLabel}
-                    </Link>
+                    </InstantNavLink>
                   ) : (
                     <div className="flex w-full gap-3">
-                      <Link
+                      <InstantNavLink
                         href="/auth/signin"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
                       >
                         Sign In
-                      </Link>
-                      <Link
+                      </InstantNavLink>
+                      <InstantNavLink
                         href="/auth/register"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-white/10 border border-white/20"
                       >
                         Join Free
-                      </Link>
+                      </InstantNavLink>
                     </div>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { InstantNavLink } from "@/components/ui/InstantNavLink"
 import type { EditorialCard } from "@/lib/editorial/load-editorial"
 
 const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
@@ -22,7 +22,7 @@ export function EditorialIndexGrid({
           const image = item.coverImage ?? item.moviePoster ?? item.actorImage ?? null
           return (
             <li key={item.href}>
-              <Link
+              <InstantNavLink
                 href={item.href}
                 className="group flex gap-4 sm:gap-6 py-6 sm:py-7 items-start"
               >
@@ -58,7 +58,7 @@ export function EditorialIndexGrid({
                     />
                   </div>
                 )}
-              </Link>
+              </InstantNavLink>
             </li>
           )
         })}
@@ -72,7 +72,7 @@ export function EditorialIndexGrid({
         const image = item.coverImage ?? item.moviePoster ?? item.actorImage ?? null
         return (
           <li key={item.href}>
-            <Link
+            <InstantNavLink
               href={item.href}
               className="group flex flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] h-full hover:border-[#FFD700]/25 transition-colors"
             >
@@ -113,7 +113,7 @@ export function EditorialIndexGrid({
                   {item.description}
                 </p>
               </div>
-            </Link>
+            </InstantNavLink>
           </li>
         )
       })}

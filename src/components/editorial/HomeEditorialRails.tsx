@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { InstantNavLink } from "@/components/ui/InstantNavLink"
 import type { EditorialCard } from "@/lib/editorial/load-editorial"
 
 const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
@@ -52,12 +52,12 @@ function StoriesRail({ items }: { items: EditorialCard[] }) {
             Recent Stories
           </h2>
         </div>
-        <Link
+        <InstantNavLink
           href="/stories"
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All stories
-        </Link>
+        </InstantNavLink>
       </div>
 
       {hero && <FeaturedStoryCard item={hero} />}
@@ -89,12 +89,12 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
             Recent News
           </h2>
         </div>
-        <Link
+        <InstantNavLink
           href="/news"
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All news
-        </Link>
+        </InstantNavLink>
       </div>
 
       <ul className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
@@ -102,7 +102,7 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
           const image = item.coverImage ?? item.moviePoster ?? item.actorImage ?? null
           return (
             <li key={item.href}>
-              <Link
+              <InstantNavLink
                 href={item.href}
                 className="group flex gap-4 sm:gap-6 py-5 sm:py-6 items-start"
               >
@@ -134,7 +134,7 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
                     />
                   </div>
                 )}
-              </Link>
+              </InstantNavLink>
             </li>
           )
         })}
@@ -147,7 +147,7 @@ function FeaturedStoryCard({ item }: { item: EditorialCard }) {
   const image = item.coverImage ?? item.moviePoster ?? item.actorImage ?? null
 
   return (
-    <Link
+    <InstantNavLink
       href={item.href}
       className="group relative block overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] min-h-[260px] sm:min-h-[340px]"
     >
@@ -184,7 +184,7 @@ function FeaturedStoryCard({ item }: { item: EditorialCard }) {
           </p>
         </div>
       </div>
-    </Link>
+    </InstantNavLink>
   )
 }
 
@@ -192,7 +192,7 @@ function StoryPosterCard({ item }: { item: EditorialCard }) {
   const image = item.coverImage ?? item.moviePoster ?? item.actorImage ?? null
 
   return (
-    <Link
+    <InstantNavLink
       href={item.href}
       className="group flex flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] hover:border-[#FFD700]/25 transition-colors h-full"
     >
@@ -224,6 +224,6 @@ function StoryPosterCard({ item }: { item: EditorialCard }) {
           </h3>
         </div>
       </div>
-    </Link>
+    </InstantNavLink>
   )
 }

@@ -732,21 +732,12 @@ video {
   right: 0;
   width: 100%;
   z-index: 50;
-  pointer-events: none;
+  pointer-events: auto;
   background: rgb(0, 0, 0) !important;
   background-color: rgb(0, 0, 0) !important;
   border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
   transition: background 0.3s ease-in-out, border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out !important;
-}
-
-.navbar-cinematic nav,
-.navbar-cinematic .navbar-content,
-.navbar-cinematic a,
-.navbar-cinematic button,
-.navbar-cinematic input,
-.navbar-cinematic form {
-  pointer-events: auto;
 }
 
 .navbar-cinematic::before {
