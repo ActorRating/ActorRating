@@ -14,7 +14,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const doc = loadStoryBySlug(slug)
+  const doc = await loadStoryBySlug(slug)
   if (!doc) {
     return { title: "Story Not Found", robots: { index: false, follow: true } }
   }
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StoryPage({ params }: Props) {
   await connection()
   const { slug } = await params
-  const doc = loadStoryBySlug(slug)
+  const doc = await loadStoryBySlug(slug)
   if (!doc) notFound()
   return <EditorialArticlePage doc={doc} />
 }

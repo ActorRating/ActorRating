@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { connection } from "next/server"
 import { HomeLayout } from "@/components/layout"
 import { EditorialIndexGrid } from "@/components/editorial/EditorialIndexGrid"
-import { loadAllNews } from "@/lib/editorial/load-editorial"
+import { loadAllNewsAsync } from "@/lib/editorial/load-editorial"
 import { withEditorialCovers } from "@/lib/editorial/enrich-covers"
 
 export const dynamic = "force-dynamic"
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default async function NewsIndexPage() {
   await connection()
-  const news = await withEditorialCovers(loadAllNews())
+  const news = await withEditorialCovers(await loadAllNewsAsync())
 
   return (
     <HomeLayout>

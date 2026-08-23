@@ -28,6 +28,11 @@ export default function AdminNav() {
       match: (path: string) => path.startsWith('/admin/editorial'),
     },
     {
+      href: '/admin/radar-cards',
+      label: 'Radar Cards',
+      match: (path: string) => path.startsWith('/admin/radar-cards'),
+    },
+    {
       href: '/admin/arie',
       label: 'ARIE',
       match: (path: string) => path.startsWith('/admin/arie'),

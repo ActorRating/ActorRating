@@ -546,6 +546,38 @@ enum EditorialStatus {
   NEEDS_REGEN
 }
 
+enum SiteEditorialKind {
+  story
+  news
+}
+
+enum SiteEditorialStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Site journal articles (/stories, /news) published at runtime (daily cron / admin).
+/// Merged with markdown under content/stories and content/news at read time.
+model SiteEditorial {
+  id           String              @id @default(cuid())
+  kind         SiteEditorialKind
+  slug         String              @unique
+  title        String
+  description  String              @db.Text
+  bodyMarkdown String              @db.Text
+  publishedAt  DateTime
+  coverImage   String?
+  /// JSON array of { actorSlug, movieSlug }
+  related      Json?
+  status       SiteEditorialStatus @default(PUBLISHED)
+  source       String              @default("cron")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([kind, status, publishedAt])
+  @@index([status, publishedAt])
+}
+
 // ─── ARIE (ActorRating Intelligence Engine) — Sprint 1 ───────────────────────
 
 enum AriePlatform {

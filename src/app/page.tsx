@@ -14,8 +14,8 @@ import {
   allLandingRailLookupTargets,
 } from "@/lib/performances-page-targets";
 import {
-  loadAllNews,
-  loadAllStories,
+  loadAllNewsAsync,
+  loadAllStoriesAsync,
 } from "@/lib/editorial/load-editorial";
 import { withEditorialCovers } from "@/lib/editorial/enrich-covers";
 import { auth } from "@/auth";
@@ -77,9 +77,13 @@ export default async function Home() {
     /* DB/API unavailable during build or deploy — client still fetches */
   }
   const primaryRateHref = featuredHero.rateHref;
+  const [allStories, allNews] = await Promise.all([
+    loadAllStoriesAsync(),
+    loadAllNewsAsync(),
+  ]);
   const [recentStories, recentNews] = await Promise.all([
-    withEditorialCovers(loadAllStories().slice(0, 7)),
-    withEditorialCovers(loadAllNews().slice(0, 5)),
+    withEditorialCovers(allStories.slice(0, 7)),
+    withEditorialCovers(allNews.slice(0, 5)),
   ]);
   // JSON-LD structured data
   const jsonLd = {

@@ -1,11 +1,12 @@
 /**
- * Load editorial markdown from content/stories/*.md and content/news/*.md
- * (same gray-matter + marked pattern as curated lists).
+ * Load editorial markdown from content/stories/*.md and content/news/*.md,
+ * merged with published SiteEditorial rows from the database (daily cron).
  */
 import fs from "fs"
 import path from "path"
 import matter from "gray-matter"
 import { marked } from "marked"
+import { prisma } from "@/lib/prisma"
 
 export type EditorialKind = "story" | "news"
 
@@ -83,7 +84,27 @@ function parseRelated(
   })
 }
 
-function loadEditorialKind(kind: EditorialKind): ParsedEditorialDocument[] {
+function parseRelatedJson(value: unknown, label: string): EditorialRelated[] {
+  if (!value) return []
+  if (!Array.isArray(value)) {
+    console.warn(`[editorial] ${label}: related must be an array — ignoring`)
+    return []
+  }
+  const out: EditorialRelated[] = []
+  for (const e of value) {
+    if (!e || typeof e !== "object") continue
+    const row = e as { actorSlug?: unknown; movieSlug?: unknown }
+    if (typeof row.actorSlug !== "string" || typeof row.movieSlug !== "string") continue
+    out.push({
+      actorSlug: row.actorSlug.trim(),
+      movieSlug: row.movieSlug.trim(),
+    })
+  }
+  return out
+}
+
+/** Filesystem-only load (sync) — used by sitemap scripts. */
+export function loadEditorialKindFromFiles(kind: EditorialKind): ParsedEditorialDocument[] {
   const dir = resolveEditorialDir(kind)
   if (!dir) {
     console.warn(`[editorial] content/${kind === "story" ? "stories" : "news"} directory not found`)
@@ -125,20 +146,80 @@ function loadEditorialKind(kind: EditorialKind): ParsedEditorialDocument[] {
   return docs.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
 }
 
+async function loadEditorialKindFromDb(kind: EditorialKind): Promise<ParsedEditorialDocument[]> {
+  try {
+    const rows = await prisma.siteEditorial.findMany({
+      where: { kind, status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+    })
+    return rows.map((row) => ({
+      kind,
+      slug: row.slug,
+      title: row.title,
+      description: row.description,
+      publishedAt: row.publishedAt,
+      coverImage: row.coverImage,
+      related: parseRelatedJson(row.related, `db:${row.slug}`),
+      bodyMarkdown: row.bodyMarkdown,
+      fileMtime: row.updatedAt,
+    }))
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (
+      msg.includes("SiteEditorial") ||
+      msg.includes("does not exist") ||
+      msg.includes("P2021")
+    ) {
+      return []
+    }
+    console.warn(`[editorial] DB load failed for ${kind}:`, msg)
+    return []
+  }
+}
+
+function mergeEditorialDocs(
+  files: ParsedEditorialDocument[],
+  dbDocs: ParsedEditorialDocument[],
+): ParsedEditorialDocument[] {
+  const bySlug = new Map<string, ParsedEditorialDocument>()
+  // Files win on slug collision (hand-authored canon).
+  for (const doc of dbDocs) bySlug.set(doc.slug, doc)
+  for (const doc of files) bySlug.set(doc.slug, doc)
+  return [...bySlug.values()].sort(
+    (a, b) => b.publishedAt.getTime() - a.publishedAt.getTime(),
+  )
+}
+
+async function loadEditorialKind(kind: EditorialKind): Promise<ParsedEditorialDocument[]> {
+  const files = loadEditorialKindFromFiles(kind)
+  const dbDocs = await loadEditorialKindFromDb(kind)
+  return mergeEditorialDocs(files, dbDocs)
+}
+
+/** @deprecated Prefer loadAllStoriesAsync — sync file-only for scripts. */
 export function loadAllStories(): ParsedEditorialDocument[] {
+  return loadEditorialKindFromFiles("story")
+}
+
+/** @deprecated Prefer loadAllNewsAsync — sync file-only for scripts. */
+export function loadAllNews(): ParsedEditorialDocument[] {
+  return loadEditorialKindFromFiles("news")
+}
+
+export async function loadAllStoriesAsync(): Promise<ParsedEditorialDocument[]> {
   return loadEditorialKind("story")
 }
 
-export function loadAllNews(): ParsedEditorialDocument[] {
+export async function loadAllNewsAsync(): Promise<ParsedEditorialDocument[]> {
   return loadEditorialKind("news")
 }
 
-export function loadStoryBySlug(slug: string): ParsedEditorialDocument | null {
-  return loadAllStories().find((d) => d.slug === slug) ?? null
+export async function loadStoryBySlug(slug: string): Promise<ParsedEditorialDocument | null> {
+  return (await loadAllStoriesAsync()).find((d) => d.slug === slug) ?? null
 }
 
-export function loadNewsBySlug(slug: string): ParsedEditorialDocument | null {
-  return loadAllNews().find((d) => d.slug === slug) ?? null
+export async function loadNewsBySlug(slug: string): Promise<ParsedEditorialDocument | null> {
+  return (await loadAllNewsAsync()).find((d) => d.slug === slug) ?? null
 }
 
 export function renderEditorialMarkdown(markdown: string): string {

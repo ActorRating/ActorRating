@@ -422,18 +422,19 @@ function generateLists(outDir: string): number {
   return urls.length > 0 ? 1 : 0
 }
 
-/** Curated /stories/[slug] or /news/[slug] pages from content/{stories|news}/*.md */
-function generateEditorial(
+/** Curated /stories/[slug] or /news/[slug] pages from content/{stories|news}/*.md + SiteEditorial DB */
+async function generateEditorial(
   outDir: string,
   folder: "stories" | "news",
   pathPrefix: "/stories" | "/news",
   fileName: "stories.xml" | "news.xml",
-): number {
+): Promise<number> {
   const dir = path.join(REPO_ROOT, "content", folder)
   const urls: UrlEntry[] = []
+  const seen = new Set<string>()
 
   if (!fs.existsSync(dir)) {
-    console.warn(`[sitemap] content/${folder} missing at ${dir} — writing empty ${fileName}`)
+    console.warn(`[sitemap] content/${folder} missing at ${dir} — will try DB rows for ${fileName}`)
   } else {
     const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md") && !f.startsWith("_"))
     for (const file of files) {
@@ -449,12 +450,35 @@ function generateEditorial(
           if (!Number.isNaN(d.getTime())) lastModified = d
         }
       }
+      seen.add(slug)
       urls.push({
         url: `${BASE_URL}${pathPrefix}/${slug}`,
         lastModified,
         changeFrequency: "monthly",
         priority: 0.8,
       })
+    }
+  }
+
+  try {
+    const kind = folder === "stories" ? "story" : "news"
+    const rows = await prisma.siteEditorial.findMany({
+      where: { kind, status: "PUBLISHED" },
+      select: { slug: true, publishedAt: true, updatedAt: true },
+    })
+    for (const row of rows) {
+      if (seen.has(row.slug)) continue
+      urls.push({
+        url: `${BASE_URL}${pathPrefix}/${row.slug}`,
+        lastModified: row.updatedAt ?? row.publishedAt,
+        changeFrequency: "weekly",
+        priority: 0.75,
+      })
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (!msg.includes("SiteEditorial") && !msg.includes("P2021")) {
+      console.warn(`[sitemap] SiteEditorial merge skipped: ${msg}`)
     }
   }
 
@@ -875,8 +899,8 @@ async function generateAllInto(outDir: string): Promise<void> {
   const movieSitemapCount = await generateMovies(outDir)
   const performanceSitemapCount = await generatePerformances(outDir)
   const listSitemapCount = generateLists(outDir)
-  const storySitemapCount = generateEditorial(outDir, "stories", "/stories", "stories.xml")
-  const newsSitemapCount = generateEditorial(outDir, "news", "/news", "news.xml")
+  const storySitemapCount = await generateEditorial(outDir, "stories", "/stories", "stories.xml")
+  const newsSitemapCount = await generateEditorial(outDir, "news", "/news", "news.xml")
 
   await writeManifest(outDir, {
     actorSitemapCount,
@@ -917,8 +941,8 @@ async function main(): Promise<void> {
     const m = await generateMovies(LIVE_DIR)
     const p = await generatePerformances(LIVE_DIR)
     const l = generateLists(LIVE_DIR)
-    const s = generateEditorial(LIVE_DIR, "stories", "/stories", "stories.xml")
-    const n = generateEditorial(LIVE_DIR, "news", "/news", "news.xml")
+    const s = await generateEditorial(LIVE_DIR, "stories", "/stories", "stories.xml")
+    const n = await generateEditorial(LIVE_DIR, "news", "/news", "news.xml")
     await writeManifest(LIVE_DIR, {
       actorSitemapCount: a,
       movieSitemapCount: m,
