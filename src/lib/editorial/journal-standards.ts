@@ -16,6 +16,30 @@ export function tmdbPoster(path: string): string {
   return `https://image.tmdb.org/t/p/w1280/${clean}`
 }
 
+/** TMDB file paths that must never be used as editorial covers (verified NSFW / non-poster). */
+export const JOURNAL_BLOCKED_COVER_FILE_PATHS = new Set([
+  // Gap-fill typo: pasted as "Minari/Aftersun" but is explicit adult content on TMDB CDN.
+  "59X25MoRSOLoiOKhO5L6T35Fve2.jpg",
+])
+
+export function extractTmdbPosterFilePath(url: string | null | undefined): string | null {
+  if (!url) return null
+  const match = url.match(/\/t\/p\/w\d+\/([^/?#]+\.(?:jpg|jpeg|png|webp))$/i)
+  return match?.[1]?.toLowerCase() ?? null
+}
+
+export function isBlockedJournalCover(url: string | null | undefined): boolean {
+  const filePath = extractTmdbPosterFilePath(url)
+  if (!filePath) return false
+  return JOURNAL_BLOCKED_COVER_FILE_PATHS.has(filePath)
+}
+
+/** Drop blocked covers so runtime can fall back to a related movie poster from the DB. */
+export function sanitizeJournalCover(url: string | null | undefined): string | null {
+  if (!url || isBlockedJournalCover(url)) return null
+  return url
+}
+
 export function meetsJournalMinimum(kind: "story" | "news", bodyMarkdown: string): boolean {
   const n = countMarkdownWords(bodyMarkdown)
   return kind === "story" ? n >= JOURNAL_MIN_STORY_WORDS : n >= JOURNAL_MIN_NEWS_WORDS

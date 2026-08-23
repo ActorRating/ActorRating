@@ -9,6 +9,7 @@ import {
 } from "@/lib/editorial/load-editorial"
 import { enrichListEntries } from "@/lib/lists/enrich-entries"
 import { upgradeActorImageRes } from "@/lib/tmdb"
+import { isBlockedJournalCover, sanitizeJournalCover } from "@/lib/editorial/journal-standards"
 
 function upgradePosterRes(url: string | null | undefined): string | null {
   if (!url) return null
@@ -33,7 +34,7 @@ export async function withEditorialCovers(
       let moviePoster: string | null | undefined
 
       const frontmatterCover = doc.coverImage
-        ? (upgradePosterRes(doc.coverImage) ?? doc.coverImage)
+        ? sanitizeJournalCover(upgradePosterRes(doc.coverImage) ?? doc.coverImage)
         : null
 
       if (doc.related.length > 0) {
@@ -42,31 +43,32 @@ export async function withEditorialCovers(
             doc.related.slice(0, 3),
             `${doc.kind}:${doc.slug}`,
           )
-          const candidates: string[] = []
+          const posterCandidates: string[] = []
 
           for (const row of enriched) {
             if (!row?.exists) continue
-            const poster = upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl
+            const poster = sanitizeJournalCover(
+              upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
+            )
             const headshot = upgradeActorImageRes(row.actorImageUrl) ?? row.actorImageUrl
-            if (poster) candidates.push(poster)
-            if (headshot) candidates.push(headshot)
+            if (poster) posterCandidates.push(poster)
             if (!actorImage && headshot) actorImage = headshot
             if (!moviePoster && poster) moviePoster = poster
           }
 
           if (frontmatterCover) {
             cover = frontmatterCover
-          } else if (cover) {
-            candidates.unshift(cover)
+          } else if (cover && !isBlockedJournalCover(cover)) {
+            posterCandidates.unshift(cover)
             cover =
-              candidates.find((url) => url && !usedCovers.has(url)) ??
-              candidates.find(Boolean) ??
+              posterCandidates.find((url) => url && !usedCovers.has(url)) ??
+              posterCandidates.find(Boolean) ??
               cover ??
               null
           } else {
             cover =
-              candidates.find((url) => url && !usedCovers.has(url)) ??
-              candidates.find(Boolean) ??
+              posterCandidates.find((url) => url && !usedCovers.has(url)) ??
+              posterCandidates.find(Boolean) ??
               null
           }
         } catch {
@@ -75,6 +77,8 @@ export async function withEditorialCovers(
       } else if (frontmatterCover) {
         cover = frontmatterCover
       }
+
+      cover = sanitizeJournalCover(cover)
 
       if (cover) usedCovers.add(cover)
       if (!cover) return card
@@ -92,19 +96,19 @@ export async function withEditorialCovers(
 export async function resolveEditorialHeroImage(
   doc: ParsedEditorialDocument,
 ): Promise<string | null> {
-  if (doc.coverImage) return doc.coverImage
+  const fromFrontmatter = sanitizeJournalCover(doc.coverImage)
+  if (fromFrontmatter) return fromFrontmatter
   if (doc.related.length === 0) return null
   try {
-    const enriched = await enrichListEntries(doc.related.slice(0, 1), `${doc.kind}:${doc.slug}`)
-    const first = enriched[0]
-    if (!first?.exists) return null
-    return (
-      upgradePosterRes(first.moviePosterUrl) ??
-      first.moviePosterUrl ??
-      upgradeActorImageRes(first.actorImageUrl) ??
-      first.actorImageUrl ??
-      null
-    )
+    const enriched = await enrichListEntries(doc.related.slice(0, 3), `${doc.kind}:${doc.slug}`)
+    for (const row of enriched) {
+      if (!row?.exists) continue
+      const poster = sanitizeJournalCover(
+        upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
+      )
+      if (poster) return poster
+    }
+    return null
   } catch {
     return null
   }

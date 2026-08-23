@@ -6,6 +6,7 @@ import {
   JOURNAL_MIN_STORY_WORDS,
   meetsJournalMinimum,
   ensureJournalMinimum,
+  sanitizeJournalCover,
 } from "@/lib/editorial/journal-standards"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
@@ -283,7 +284,7 @@ ${STORY_CTA}`
     title,
     description,
     bodyMarkdown: body,
-    coverImage: perf.moviePoster || perf.actorImageUrl || null,
+    coverImage: perf.moviePoster || null,
     related:
       perf.actorSlug && perf.movieSlug
         ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]
@@ -322,7 +323,7 @@ ${NEWS_CTA}`
     title: topic.title,
     description: topic.description,
     bodyMarkdown: body,
-    coverImage: perf?.moviePoster || perf?.actorImageUrl || null,
+    coverImage: perf?.moviePoster || null,
     related:
       perf?.actorSlug && perf?.movieSlug
         ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]
