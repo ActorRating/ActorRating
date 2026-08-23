@@ -8,6 +8,8 @@ import {
   ensureJournalMinimum,
   sanitizeJournalCover,
 } from "@/lib/editorial/journal-standards"
+import { loadMarkdownCoverKeys } from "@/lib/editorial/load-journal-cover-keys"
+import { normalizeCoverKey } from "@/lib/editorial/resolve-editorial-cover"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
 
@@ -176,7 +178,25 @@ const NEWS_TOPICS: Array<{
   },
 ]
 
-async function pickRatedPerformance(prisma: PrismaClient): Promise<{
+async function collectUsedCoverKeys(
+  prisma: PrismaClient,
+  kind: SiteEditorialKind,
+): Promise<Set<string>> {
+  const keys = loadMarkdownCoverKeys(kind === "story" ? "story" : "news")
+  const rows = await prisma.siteEditorial.findMany({
+    where: { kind, status: "PUBLISHED", coverImage: { not: null } },
+    select: { coverImage: true },
+  })
+  for (const row of rows) {
+    if (row.coverImage) keys.add(normalizeCoverKey(row.coverImage))
+  }
+  return keys
+}
+
+async function pickRatedPerformance(
+  prisma: PrismaClient,
+  usedCoverKeys: Set<string>,
+): Promise<{
   actorId: string
   movieId: string
   actorName: string
@@ -234,8 +254,15 @@ async function pickRatedPerformance(prisma: PrismaClient): Promise<{
     GROUP BY r."actorId", r."movieId", a.name, a.slug, a."imageUrl", m.title, m.year, m.slug, m."posterUrl"
     HAVING COUNT(*) >= 1
     ORDER BY RANDOM()
-    LIMIT 1
+    LIMIT 40
   `
+  for (const row of rows) {
+    const poster = sanitizeJournalCover(row.moviePoster)
+    if (!poster) continue
+    if (!usedCoverKeys.has(normalizeCoverKey(poster))) {
+      return row
+    }
+  }
   return rows[0] ?? null
 }
 
@@ -284,7 +311,7 @@ ${STORY_CTA}`
     title,
     description,
     bodyMarkdown: body,
-    coverImage: perf.moviePoster || null,
+    coverImage: sanitizeJournalCover(perf.moviePoster) || null,
     related:
       perf.actorSlug && perf.movieSlug
         ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]
@@ -323,7 +350,7 @@ ${NEWS_CTA}`
     title: topic.title,
     description: topic.description,
     bodyMarkdown: body,
-    coverImage: perf?.moviePoster || null,
+    coverImage: sanitizeJournalCover(perf?.moviePoster) || null,
     related:
       perf?.actorSlug && perf?.movieSlug
         ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]
@@ -353,7 +380,10 @@ export async function runDailySiteJournal(
     news: { ok: false, detail: "skipped" },
   }
 
-  const perfForNews = await pickRatedPerformance(prisma)
+  const storyCoverKeys = await collectUsedCoverKeys(prisma, "story")
+  const newsCoverKeys = await collectUsedCoverKeys(prisma, "news")
+
+  const perfForNews = await pickRatedPerformance(prisma, newsCoverKeys)
 
   if (!opts.skipStory) {
     const existingStory = await prisma.siteEditorial.findFirst({
@@ -367,7 +397,7 @@ export async function runDailySiteJournal(
     if (existingStory) {
       result.story = { ok: true, slug: existingStory.slug, detail: "already_exists" }
     } else {
-      const perf = await pickRatedPerformance(prisma)
+      const perf = await pickRatedPerformance(prisma, storyCoverKeys)
       if (!perf) {
         result.story = { ok: false, detail: "no_rated_performance" }
       } else {
@@ -397,6 +427,8 @@ export async function runDailySiteJournal(
               slug: piece.slug,
               detail: `created (${countMarkdownWords(piece.bodyMarkdown)}w)`,
             }
+            const poster = piece.coverImage
+            if (poster) storyCoverKeys.add(normalizeCoverKey(poster))
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err)
             result.story = { ok: false, detail: msg }
@@ -439,6 +471,8 @@ export async function runDailySiteJournal(
           slug: piece.slug,
           detail: `created (${countMarkdownWords(piece.bodyMarkdown)}w)`,
         }
+        const poster = piece.coverImage
+        if (poster) newsCoverKeys.add(normalizeCoverKey(poster))
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         result.news = { ok: false, detail: msg }

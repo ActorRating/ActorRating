@@ -1,5 +1,6 @@
 /**
- * Attach poster/actor imagery to editorial cards from related performances.
+ * Attach poster imagery to editorial cards from related performances.
+ * Index pages: one unique, relevant cover per card (sequential de-dupe).
  */
 import "server-only"
 import {
@@ -9,107 +10,77 @@ import {
 } from "@/lib/editorial/load-editorial"
 import { enrichListEntries } from "@/lib/lists/enrich-entries"
 import { upgradeActorImageRes } from "@/lib/tmdb"
-import { isBlockedJournalCover, sanitizeJournalCover } from "@/lib/editorial/journal-standards"
-
-function upgradePosterRes(url: string | null | undefined): string | null {
-  if (!url) return null
-  return url
-    .replace("/t/p/w92/", "/t/p/w780/")
-    .replace("/t/p/w154/", "/t/p/w780/")
-    .replace("/t/p/w185/", "/t/p/w780/")
-    .replace("/t/p/w342/", "/t/p/w780/")
-    .replace("/t/p/w500/", "/t/p/w780/")
-}
+import {
+  buildEditorialCoverCandidates,
+  normalizeCoverKey,
+  pickEditorialHeroCover,
+  pickUniqueCover,
+} from "@/lib/editorial/resolve-editorial-cover"
 
 export async function withEditorialCovers(
   docs: ParsedEditorialDocument[],
 ): Promise<EditorialCard[]> {
-  const usedCovers = new Set<string>()
-
-  return Promise.all(
+  const enrichedBatch = await Promise.all(
     docs.map(async (doc) => {
-      const card = toEditorialCard(doc)
-      let cover = card.coverImage
-      let actorImage: string | null | undefined
-      let moviePoster: string | null | undefined
-
-      const frontmatterCover = doc.coverImage
-        ? sanitizeJournalCover(upgradePosterRes(doc.coverImage) ?? doc.coverImage)
-        : null
-
+      let enriched: Awaited<ReturnType<typeof enrichListEntries>> = []
       if (doc.related.length > 0) {
         try {
-          const enriched = await enrichListEntries(
-            doc.related.slice(0, 3),
+          enriched = await enrichListEntries(
+            doc.related.slice(0, 5),
             `${doc.kind}:${doc.slug}`,
           )
-          const posterCandidates: string[] = []
-
-          for (const row of enriched) {
-            if (!row?.exists) continue
-            const poster = sanitizeJournalCover(
-              upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
-            )
-            const headshot = upgradeActorImageRes(row.actorImageUrl) ?? row.actorImageUrl
-            if (poster) posterCandidates.push(poster)
-            if (!actorImage && headshot) actorImage = headshot
-            if (!moviePoster && poster) moviePoster = poster
-          }
-
-          if (frontmatterCover) {
-            cover = frontmatterCover
-          } else if (cover && !isBlockedJournalCover(cover)) {
-            posterCandidates.unshift(cover)
-            cover =
-              posterCandidates.find((url) => url && !usedCovers.has(url)) ??
-              posterCandidates.find(Boolean) ??
-              cover ??
-              null
-          } else {
-            cover =
-              posterCandidates.find((url) => url && !usedCovers.has(url)) ??
-              posterCandidates.find(Boolean) ??
-              null
-          }
         } catch {
-          if (frontmatterCover) cover = frontmatterCover
+          enriched = []
         }
-      } else if (frontmatterCover) {
-        cover = frontmatterCover
       }
+      return { doc, enriched }
+    }),
+  )
 
-      cover = sanitizeJournalCover(cover)
+  const usedCoverKeys = new Set<string>()
+  const cards: EditorialCard[] = []
 
-      if (cover) usedCovers.add(cover)
-      if (!cover) return card
+  for (const { doc, enriched } of enrichedBatch) {
+    const card = toEditorialCard(doc)
+    const candidates = buildEditorialCoverCandidates(doc, enriched)
+    const cover = pickUniqueCover(candidates, usedCoverKeys)
 
-      return {
+    let actorImage: string | null | undefined
+    let moviePoster: string | null | undefined
+    for (const row of enriched) {
+      if (!row?.exists) continue
+      const headshot = upgradeActorImageRes(row.actorImageUrl) ?? row.actorImageUrl
+      const poster = row.moviePosterUrl
+      if (!actorImage && headshot) actorImage = headshot
+      if (!moviePoster && poster) moviePoster = poster
+    }
+
+    if (cover) {
+      usedCoverKeys.add(normalizeCoverKey(cover))
+      cards.push({
         ...card,
         coverImage: cover,
         ...(actorImage ? { actorImage } : {}),
         ...(moviePoster ? { moviePoster } : {}),
-      }
-    }),
-  )
+      })
+    } else {
+      cards.push(card)
+    }
+  }
+
+  return cards
 }
 
 export async function resolveEditorialHeroImage(
   doc: ParsedEditorialDocument,
 ): Promise<string | null> {
-  const fromFrontmatter = sanitizeJournalCover(doc.coverImage)
-  if (fromFrontmatter) return fromFrontmatter
-  if (doc.related.length === 0) return null
+  if (doc.related.length === 0) {
+    return pickEditorialHeroCover(doc, [])
+  }
   try {
-    const enriched = await enrichListEntries(doc.related.slice(0, 3), `${doc.kind}:${doc.slug}`)
-    for (const row of enriched) {
-      if (!row?.exists) continue
-      const poster = sanitizeJournalCover(
-        upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
-      )
-      if (poster) return poster
-    }
-    return null
+    const enriched = await enrichListEntries(doc.related.slice(0, 5), `${doc.kind}:${doc.slug}`)
+    return pickEditorialHeroCover(doc, enriched)
   } catch {
-    return null
+    return pickEditorialHeroCover(doc, [])
   }
 }

@@ -2,7 +2,7 @@
 title: "The second-weekend rating trap"
 description: "Week-two discourse wants consensus. Your scorecard wants specificity. Pick one."
 publishedAt: 2026-08-06
-coverImage: "https://image.tmdb.org/t/p/w1280/8b8R8l88Qje9dn9OE8PY05/v.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/H6vzgCpdYaU8YdhNJETurrtdh0.jpg"
 related:
   - actorSlug: zendaya
     movieSlug: spider-man-brand-new-day-2026

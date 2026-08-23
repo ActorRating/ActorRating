@@ -38,6 +38,8 @@ Each run publishes **1 Story** (random logged-in-rated performance craft pulse) 
 
 Minimum length targets: **220+ words** for stories, **180+ words** for news. Daily news includes a poster from a rated performance when available.
 
+**Covers:** index pages assign one **unique, relevant** movie poster per card (related performance first, then topic frontmatter). Daily cron skips posters already used on that rail. Blocklisted NSFW TMDB paths are rejected.
+
 Disable with `SITE_JOURNAL_CRON_ENABLED=false`.
 
 Requires migration: `SiteEditorial` (`prisma migrate deploy`).

@@ -43,7 +43,7 @@
     "seed:invites:dev": "tsx scripts/seed-invite-codes.ts",
     "editorial:generate": "tsx scripts/generate-performance-editorial.ts",
     "journal:gap-fill": "tsx scripts/seed-journal-gap-fill.ts",
-    "journal:upgrade": "tsx scripts/upgrade-journal-gap-fill.ts",
+    "journal:audit-covers": "tsx scripts/audit-journal-covers.ts",
     "journal:cron": "node scripts/run-site-journal-cron.js"
   },
   "dependencies": {

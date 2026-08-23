@@ -2,7 +2,7 @@
 title: "Physicality is a criterion, not a stunt"
 description: "As God of War recasting talk centers the body, remember: Technical Skill includes fight grammar and stillness under weight."
 publishedAt: 2026-08-19
-coverImage: "https://image.tmdb.org/t/p/w1280/zh6IdheEYinU4TPtorWsjx6qPQE.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/8ODNt5olCeIqBYTP3GgXEQYTfeX.jpg"
 related:
   - actorSlug: demi-moore
     movieSlug: the-substance-2024
