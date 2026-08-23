@@ -26,11 +26,11 @@ const P = {
   dune: tmdbPoster("eZ239CUp1d6OryZEBPnO2n87gMG.jpg"),
   sceneStealers: tmdbPoster("c6OLXfKAk5BKeR6broC8pYiCquX.jpg"),
   beef: tmdbPoster("5QOeW2hZAdbiBNMYeXQHXmRIK7J.jpg"),
-  minari: tmdbPoster("59X25MoRSOLoiOKhO5L6T35Fve2.jpg"),
+  minari: tmdbPoster("9EnHOldj6G8vOOpf5CDBDiNXTJD.jpg"),
   nope: tmdbPoster("5QOeW2hZAdbiBNMYeXQHXmRIK7J.jpg"),
   substance: tmdbPoster("8ODNt5olCeIqBYTP3GgXEQYTfeX.jpg"),
   poorThings: tmdbPoster("zh6IdheEYinU4TPtorWsjx6qPQE.jpg"),
-  aftersun: tmdbPoster("59X25MoRSOLoiOKhO5L6T35Fve2.jpg"),
+  aftersun: tmdbPoster("evKz85EKouVbIr51zy5fOtpNRPg.jpg"),
   interstellar: tmdbPoster("5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg"),
   oppenheimer: tmdbPoster("cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg"),
   elvis: tmdbPoster("rLo9T9jEg67UZPq3midjLnTUYYi.jpg"),
@@ -344,7 +344,7 @@ ${CRITERIA_BLOCK}
 ${STORY_CTA}`,
   },
   "dog-stars-quiet-lead-reactions": {
-    coverImage: P.minari,
+    coverImage: P.pitt,
     expansion: `## Surprise means volume refused
 
 Genre "surprises" often mean the movie rejected trailer volume. That puts pressure on Elordi to hold silence that is not emptiness — **Emotional Range** without score swell.

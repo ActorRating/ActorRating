@@ -32,6 +32,10 @@ export async function withEditorialCovers(
       let actorImage: string | null | undefined
       let moviePoster: string | null | undefined
 
+      const frontmatterCover = doc.coverImage
+        ? (upgradePosterRes(doc.coverImage) ?? doc.coverImage)
+        : null
+
       if (doc.related.length > 0) {
         try {
           const enriched = await enrichListEntries(
@@ -39,7 +43,6 @@ export async function withEditorialCovers(
             `${doc.kind}:${doc.slug}`,
           )
           const candidates: string[] = []
-          if (cover) candidates.push(cover)
 
           for (const row of enriched) {
             if (!row?.exists) continue
@@ -51,14 +54,26 @@ export async function withEditorialCovers(
             if (!moviePoster && poster) moviePoster = poster
           }
 
-          cover =
-            candidates.find((url) => url && !usedCovers.has(url)) ??
-            candidates.find(Boolean) ??
-            cover ??
-            null
+          if (frontmatterCover) {
+            cover = frontmatterCover
+          } else if (cover) {
+            candidates.unshift(cover)
+            cover =
+              candidates.find((url) => url && !usedCovers.has(url)) ??
+              candidates.find(Boolean) ??
+              cover ??
+              null
+          } else {
+            cover =
+              candidates.find((url) => url && !usedCovers.has(url)) ??
+              candidates.find(Boolean) ??
+              null
+          }
         } catch {
-          /* keep frontmatter cover */
+          if (frontmatterCover) cover = frontmatterCover
         }
+      } else if (frontmatterCover) {
+        cover = frontmatterCover
       }
 
       if (cover) usedCovers.add(cover)
