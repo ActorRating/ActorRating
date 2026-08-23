@@ -18,7 +18,7 @@ export function HomeLayout({ children, transparentBackground = false }: HomeLayo
       </div>
 
       <main
-        className="flex-1 w-full relative"
+        className="flex-1 w-full relative pt-16 sm:pt-20"
         style={{ zIndex: 10, position: 'relative', maxWidth: '100vw', overflowX: 'clip' }}
       >
         {children}

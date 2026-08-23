@@ -43,9 +43,66 @@ function pushCandidate(out: string[], seen: Set<string>, raw: string | null | un
   out.push(url)
 }
 
+/** Italicized *Title* and "Title" mentions in editorial copy. */
+export function extractMentionedTitles(text: string): string[] {
+  const titles: string[] = []
+  const seen = new Set<string>()
+  const add = (t: string) => {
+    const clean = t.replace(/\*$/g, "").trim()
+    if (clean.length < 2 || seen.has(clean.toLowerCase())) return
+    seen.add(clean.toLowerCase())
+    titles.push(clean)
+  }
+
+  for (const m of text.matchAll(/\*([^*]{2,80})\*/g)) add(m[1] ?? "")
+  for (const m of text.matchAll(/"([^"]{2,80})"/g)) add(m[1] ?? "")
+  for (const m of text.matchAll(/(?:^|[.!?]\s+)([A-Z][^.\n!?]{2,60})\s+(?:\(\d{4}\))/gm)) add(m[1] ?? "")
+
+  return titles
+}
+
+function normalizeTitleKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/^the\s+/, "")
+    .replace(/[^a-z0-9]+/g, "")
+}
+
+function titleMatchesMovie(mention: string, movieTitle: string): boolean {
+  const a = normalizeTitleKey(mention)
+  const b = normalizeTitleKey(movieTitle)
+  if (!a || !b) return false
+  return a === b || a.includes(b) || b.includes(a)
+}
+
+/** Order related rows: mentioned in title/description/body first, then frontmatter order. */
+export function orderRelatedByRelevance(
+  doc: ParsedEditorialDocument,
+  enriched: EnrichedListEntry[],
+): EnrichedListEntry[] {
+  const exists = enriched.filter((r) => r.exists)
+  if (exists.length <= 1) return exists
+
+  const mentionText = [doc.title, doc.description, doc.bodyMarkdown.slice(0, 1200)].join("\n")
+  const mentions = extractMentionedTitles(mentionText)
+
+  const scored = exists.map((row, index) => {
+    let score = exists.length - index
+    for (let i = 0; i < mentions.length; i++) {
+      if (titleMatchesMovie(mentions[i]!, row.movieTitle)) {
+        score += (mentions.length - i) * 20
+      }
+    }
+    return { row, score, index }
+  })
+
+  scored.sort((a, b) => b.score - a.score || a.index - b.index)
+  return scored.map((s) => s.row)
+}
+
 /**
- * Cover candidates in priority order: related movie posters (relevant), actor editorial
- * stills, then topic-specific frontmatter art.
+ * Cover candidates: posters for movies referenced in the piece (related + mentions),
+ * then actor editorial stills. Ignores unrelated frontmatter TMDB URLs.
  */
 export function buildEditorialCoverCandidates(
   doc: ParsedEditorialDocument,
@@ -53,14 +110,13 @@ export function buildEditorialCoverCandidates(
 ): string[] {
   const out: string[] = []
   const seen = new Set<string>()
+  const ordered = orderRelatedByRelevance(doc, enriched)
 
-  for (const row of enriched) {
-    if (!row.exists) continue
+  for (const row of ordered) {
     pushCandidate(out, seen, row.moviePosterUrl)
   }
 
-  for (const row of enriched) {
-    if (!row.exists) continue
+  for (const row of ordered) {
     const asset = ACTOR_EDITORIAL_ASSETS[row.actorSlug]
     if (asset) pushCandidate(out, seen, asset)
   }
@@ -69,6 +125,7 @@ export function buildEditorialCoverCandidates(
     pushCandidate(out, seen, doc.coverImage)
   }
 
+  // Last resort for index de-dupe: topic-specific frontmatter art (still sanitized).
   if (doc.coverImage && !doc.coverImage.startsWith("/editorial/")) {
     pushCandidate(out, seen, doc.coverImage)
   }
@@ -87,10 +144,19 @@ export function pickUniqueCover(
   return null
 }
 
-/** Article hero: best relevant cover, no index de-dupe. */
+/** Article hero: poster for the movie this piece is about (never unrelated frontmatter). */
 export function pickEditorialHeroCover(
   doc: ParsedEditorialDocument,
   enriched: EnrichedListEntry[],
 ): string | null {
-  return buildEditorialCoverCandidates(doc, enriched)[0] ?? null
+  for (const row of orderRelatedByRelevance(doc, enriched)) {
+    const poster = sanitizeJournalCover(
+      upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
+    )
+    if (poster) return poster
+  }
+  if (doc.coverImage?.startsWith("/editorial/")) {
+    return sanitizeJournalCover(doc.coverImage)
+  }
+  return null
 }

@@ -238,9 +238,15 @@ function isInternalNavAnchor(anchor: HTMLAnchorElement): boolean {
   }
 }
 
+function isEditorialListPath(path: string): boolean {
+  return path === "/news" || path === "/stories"
+}
+
+function isEditorialDetailPath(path: string): boolean {
+  return /^\/(news|stories)\/[^/]+$/.test(path)
+}
+
 function pinScrollBeforeNav(path: string, anchor: HTMLAnchorElement) {
-  const y = Math.round(getY())
-  const rect = anchor.getBoundingClientRect()
   const href = anchor.getAttribute("href") || ""
   let pathname = href
   try {
@@ -248,6 +254,12 @@ function pinScrollBeforeNav(path: string, anchor: HTMLAnchorElement) {
   } catch {
     /* keep href */
   }
+
+  // Only pin when opening a journal article from a list (back-button restore).
+  if (!isEditorialListPath(path) || !isEditorialDetailPath(pathname)) return
+
+  const y = Math.round(getY())
+  const rect = anchor.getBoundingClientRect()
 
   save(path, y, { force: true })
   writePin(path, {

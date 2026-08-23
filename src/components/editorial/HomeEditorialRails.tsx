@@ -54,7 +54,6 @@ function StoriesRail({ items }: { items: EditorialCard[] }) {
         </div>
         <Link
           href="/stories"
-          scroll={false}
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All stories
@@ -92,7 +91,6 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
         </div>
         <Link
           href="/news"
-          scroll={false}
           className="shrink-0 text-sm text-zinc-500 hover:text-[#FFD700] transition-colors"
         >
           All news
@@ -106,7 +104,6 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
             <li key={item.href}>
               <Link
                 href={item.href}
-                scroll={false}
                 className="group flex gap-4 sm:gap-6 py-5 sm:py-6 items-start"
               >
                 <div className="min-w-0 flex-1">
@@ -132,7 +129,7 @@ function NewsRail({ items }: { items: EditorialCard[] }) {
                       src={image}
                       alt=""
                       fill
-                      className="object-cover object-center transition-transform duration-400 group-hover:scale-105"
+                      className="object-cover object-center transition-transform duration-400 group-hover:scale-105 pointer-events-none"
                       sizes="128px"
                     />
                   </div>
@@ -152,7 +149,6 @@ function FeaturedStoryCard({ item }: { item: EditorialCard }) {
   return (
     <Link
       href={item.href}
-      scroll={false}
       className="group relative block overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] min-h-[260px] sm:min-h-[340px]"
     >
       {image && (
@@ -160,7 +156,7 @@ function FeaturedStoryCard({ item }: { item: EditorialCard }) {
           src={image}
           alt=""
           fill
-          className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+          className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03] pointer-events-none"
           sizes="(max-width: 1024px) 100vw, 960px"
           priority
         />
@@ -198,7 +194,6 @@ function StoryPosterCard({ item }: { item: EditorialCard }) {
   return (
     <Link
       href={item.href}
-      scroll={false}
       className="group flex flex-col overflow-hidden rounded-md border border-white/[0.08] bg-[#141414] hover:border-[#FFD700]/25 transition-colors h-full"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
@@ -207,7 +202,7 @@ function StoryPosterCard({ item }: { item: EditorialCard }) {
             src={image}
             alt=""
             fill
-            className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04] pointer-events-none"
             sizes="(max-width: 640px) 100vw, 320px"
           />
         ) : (
