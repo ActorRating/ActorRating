@@ -9,7 +9,7 @@ import {
   sanitizeJournalCover,
 } from "@/lib/editorial/journal-standards"
 import { loadMarkdownCoverKeys } from "@/lib/editorial/load-journal-cover-keys"
-import { normalizeCoverKey } from "@/lib/editorial/resolve-editorial-cover"
+import { normalizeCoverKey, upgradeActorImageRes } from "@/lib/editorial/resolve-editorial-cover"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
 
@@ -257,10 +257,19 @@ async function pickRatedPerformance(
     LIMIT 40
   `
   for (const row of rows) {
+    const actorCover = sanitizeJournalCover(upgradeActorImageRes(row.actorImageUrl))
     const poster = sanitizeJournalCover(row.moviePoster)
-    if (!poster) continue
-    if (!usedCoverKeys.has(normalizeCoverKey(poster))) {
-      return row
+    const options: Array<{ url: string; key: string }> = []
+    if (actorCover && row.actorSlug) {
+      options.push({ url: actorCover, key: normalizeCoverKey(actorCover, row.actorSlug) })
+    }
+    if (poster) {
+      options.push({ url: poster, key: normalizeCoverKey(poster) })
+    }
+    for (const opt of options) {
+      if (!usedCoverKeys.has(opt.key)) {
+        return row
+      }
     }
   }
   return rows[0] ?? null
@@ -305,13 +314,16 @@ ${rateHref ? `Open the live scorecard: [${perf.actorName} in ${perf.movieTitle}]
 
 ${STORY_CTA}`
 
+  const actorCover = sanitizeJournalCover(upgradeActorImageRes(perf.actorImageUrl))
+  const poster = sanitizeJournalCover(perf.moviePoster)
+
   return {
     kind: "story",
     slug,
     title,
     description,
     bodyMarkdown: body,
-    coverImage: sanitizeJournalCover(perf.moviePoster) || null,
+    coverImage: actorCover || poster || null,
     related:
       perf.actorSlug && perf.movieSlug
         ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]

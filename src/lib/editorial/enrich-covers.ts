@@ -12,10 +12,10 @@ import { enrichListEntries } from "@/lib/lists/enrich-entries"
 import { upgradeActorImageRes } from "@/lib/tmdb"
 import {
   buildEditorialCoverCandidates,
-  normalizeCoverKey,
   pickEditorialHeroCover,
-  pickUniqueCover,
+  pickUniqueCoverWithKey,
 } from "@/lib/editorial/resolve-editorial-cover"
+import { sanitizeJournalCover } from "@/lib/editorial/journal-standards"
 
 export async function withEditorialCovers(
   docs: ParsedEditorialDocument[],
@@ -43,7 +43,7 @@ export async function withEditorialCovers(
   for (const { doc, enriched } of enrichedBatch) {
     const card = toEditorialCard(doc)
     const candidates = buildEditorialCoverCandidates(doc, enriched)
-    const cover = pickUniqueCover(candidates, usedCoverKeys)
+    const picked = pickUniqueCoverWithKey(candidates, usedCoverKeys)
 
     let actorImage: string | null | undefined
     let moviePoster: string | null | undefined
@@ -55,17 +55,26 @@ export async function withEditorialCovers(
       if (!moviePoster && poster) moviePoster = poster
     }
 
-    if (cover) {
-      usedCoverKeys.add(normalizeCoverKey(cover))
-      cards.push({
-        ...card,
-        coverImage: cover,
-        ...(actorImage ? { actorImage } : {}),
-        ...(moviePoster ? { moviePoster } : {}),
-      })
-    } else {
-      cards.push(card)
+    const cover =
+      picked?.url ??
+      candidates[0]?.url ??
+      sanitizeJournalCover(doc.coverImage) ??
+      actorImage ??
+      moviePoster ??
+      null
+
+    if (cover && picked) {
+      usedCoverKeys.add(picked.key)
+    } else if (cover && candidates[0]) {
+      usedCoverKeys.add(candidates[0].key)
     }
+
+    cards.push({
+      ...card,
+      ...(cover ? { coverImage: cover } : {}),
+      ...(actorImage ? { actorImage } : {}),
+      ...(moviePoster ? { moviePoster } : {}),
+    })
   }
 
   return cards

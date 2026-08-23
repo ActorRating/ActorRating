@@ -12,6 +12,8 @@ export const ACTOR_EDITORIAL_ASSETS: Record<string, string> = {
   zendaya: "/editorial/zendaya-athena-odyssey.jpg",
 }
 
+export type CoverCandidate = { url: string; key: string }
+
 export function upgradePosterRes(url: string | null | undefined): string | null {
   if (!url) return null
   return url
@@ -23,8 +25,17 @@ export function upgradePosterRes(url: string | null | undefined): string | null 
     .replace("/t/p/w1280/", "/t/p/w780/")
 }
 
-/** Stable key for de-dupe (TMDB file path, editorial asset path, or full URL). */
-export function normalizeCoverKey(url: string): string {
+export function upgradeActorImageRes(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url
+    .replace("/t/p/w45/", "/t/p/w500/")
+    .replace("/t/p/w185/", "/t/p/w500/")
+    .replace("/t/p/w342/", "/t/p/w500/")
+}
+
+/** Stable key for de-dupe (TMDB poster path, editorial asset, or actor slug). */
+export function normalizeCoverKey(url: string, actorSlug?: string): string {
+  if (actorSlug) return `actor:${actorSlug}`
   const tmdb = extractTmdbPosterFilePath(url)
   if (tmdb) return `tmdb:${tmdb.toLowerCase()}`
   const clean = url.split("?")[0] ?? url
@@ -32,18 +43,25 @@ export function normalizeCoverKey(url: string): string {
   return clean
 }
 
-function pushCandidate(out: string[], seen: Set<string>, raw: string | null | undefined): void {
-  const upgraded =
-    raw?.startsWith("/editorial/") ? raw : upgradePosterRes(raw) ?? raw
+function pushCandidate(
+  out: CoverCandidate[],
+  seen: Set<string>,
+  raw: string | null | undefined,
+  actorSlug?: string,
+): void {
+  const upgraded = raw?.startsWith("/editorial/")
+    ? raw
+    : actorSlug
+      ? upgradeActorImageRes(raw) ?? upgradePosterRes(raw) ?? raw
+      : upgradePosterRes(raw) ?? raw
   const url = sanitizeJournalCover(upgraded)
   if (!url || isBlockedJournalCover(url)) return
-  const key = normalizeCoverKey(url)
+  const key = normalizeCoverKey(url, actorSlug)
   if (seen.has(key)) return
   seen.add(key)
-  out.push(url)
+  out.push({ url, key })
 }
 
-/** Italicized *Title* and "Title" mentions in editorial copy. */
 export function extractMentionedTitles(text: string): string[] {
   const titles: string[] = []
   const seen = new Set<string>()
@@ -61,6 +79,17 @@ export function extractMentionedTitles(text: string): string[] {
   return titles
 }
 
+function normalizeNameKey(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, " ")
+}
+
+function nameMatchesMention(mention: string, actorName: string): boolean {
+  const a = normalizeNameKey(mention)
+  const b = normalizeNameKey(actorName)
+  if (!a || !b) return false
+  return a.includes(b) || b.includes(a)
+}
+
 function normalizeTitleKey(title: string): string {
   return title
     .toLowerCase()
@@ -75,7 +104,41 @@ function titleMatchesMovie(mention: string, movieTitle: string): boolean {
   return a === b || a.includes(b) || b.includes(a)
 }
 
-/** Order related rows: mentioned in title/description/body first, then frontmatter order. */
+/** Actor-led when the title/description foregrounds a performer over a film title. */
+export function isActorLedPiece(
+  doc: ParsedEditorialDocument,
+  primary: EnrichedListEntry | undefined,
+): boolean {
+  if (!primary?.actorName) return false
+  const actor = primary.actorName.toLowerCase()
+  const title = doc.title.toLowerCase()
+  const desc = doc.description.toLowerCase()
+
+  if (title.startsWith(actor) || title.includes(`${actor}'s`)) {
+    return true
+  }
+
+  const lastName = actor.split(/\s+/).pop()
+  if (lastName && lastName.length > 2 && title.includes(lastName)) {
+    const titleMovies = extractMentionedTitles(doc.title)
+    if (titleMovies.length === 0 || !titleMovies.some((m) => titleMatchesMovie(m, primary.movieTitle))) {
+      return true
+    }
+  }
+
+  const firstName = actor.split(/\s+/)[0]
+  if (firstName && firstName.length > 2 && title.startsWith(firstName)) return true
+
+  if (title.includes(actor) && title.includes(" in ")) return true
+
+  const titleMovies = extractMentionedTitles(doc.title)
+  if (desc.includes(actor) && !titleMovies.some((m) => titleMatchesMovie(m, primary.movieTitle))) {
+    return true
+  }
+
+  return false
+}
+
 export function orderRelatedByRelevance(
   doc: ParsedEditorialDocument,
   enriched: EnrichedListEntry[],
@@ -84,15 +147,17 @@ export function orderRelatedByRelevance(
   if (exists.length <= 1) return exists
 
   const mentionText = [doc.title, doc.description, doc.bodyMarkdown.slice(0, 1200)].join("\n")
-  const mentions = extractMentionedTitles(mentionText)
+  const movieMentions = extractMentionedTitles(mentionText)
 
   const scored = exists.map((row, index) => {
     let score = exists.length - index
-    for (let i = 0; i < mentions.length; i++) {
-      if (titleMatchesMovie(mentions[i]!, row.movieTitle)) {
-        score += (mentions.length - i) * 20
+    for (let i = 0; i < movieMentions.length; i++) {
+      if (titleMatchesMovie(movieMentions[i]!, row.movieTitle)) {
+        score += (movieMentions.length - i) * 20
       }
     }
+    if (nameMatchesMention(doc.title, row.actorName)) score += 50
+    if (nameMatchesMention(doc.description, row.actorName)) score += 25
     return { row, score, index }
   })
 
@@ -100,32 +165,42 @@ export function orderRelatedByRelevance(
   return scored.map((s) => s.row)
 }
 
-/**
- * Cover candidates: posters for movies referenced in the piece (related + mentions),
- * then actor editorial stills. Ignores unrelated frontmatter TMDB URLs.
- */
 export function buildEditorialCoverCandidates(
   doc: ParsedEditorialDocument,
   enriched: EnrichedListEntry[],
-): string[] {
-  const out: string[] = []
+): CoverCandidate[] {
+  const out: CoverCandidate[] = []
   const seen = new Set<string>()
   const ordered = orderRelatedByRelevance(doc, enriched)
+  const primary = ordered[0]
+  const actorLed = isActorLedPiece(doc, primary)
 
-  for (const row of ordered) {
-    pushCandidate(out, seen, row.moviePosterUrl)
+  const addActorVisuals = () => {
+    for (const row of ordered) {
+      const asset = ACTOR_EDITORIAL_ASSETS[row.actorSlug]
+      if (asset) pushCandidate(out, seen, asset)
+      pushCandidate(out, seen, row.actorImageUrl, row.actorSlug)
+    }
   }
 
-  for (const row of ordered) {
-    const asset = ACTOR_EDITORIAL_ASSETS[row.actorSlug]
-    if (asset) pushCandidate(out, seen, asset)
+  const addMoviePosters = () => {
+    for (const row of ordered) {
+      pushCandidate(out, seen, row.moviePosterUrl)
+    }
+  }
+
+  if (actorLed) {
+    addActorVisuals()
+    addMoviePosters()
+  } else {
+    addMoviePosters()
+    addActorVisuals()
   }
 
   if (doc.coverImage?.startsWith("/editorial/")) {
     pushCandidate(out, seen, doc.coverImage)
   }
 
-  // Last resort for index de-dupe: topic-specific frontmatter art (still sanitized).
   if (doc.coverImage && !doc.coverImage.startsWith("/editorial/")) {
     pushCandidate(out, seen, doc.coverImage)
   }
@@ -134,29 +209,28 @@ export function buildEditorialCoverCandidates(
 }
 
 export function pickUniqueCover(
-  candidates: string[],
+  candidates: CoverCandidate[],
   usedKeys: Set<string>,
 ): string | null {
-  for (const url of candidates) {
-    const key = normalizeCoverKey(url)
-    if (!usedKeys.has(key)) return url
+  for (const c of candidates) {
+    if (!usedKeys.has(c.key)) return c.url
   }
-  return null
+  return candidates[0]?.url ?? null
 }
 
-/** Article hero: poster for the movie this piece is about (never unrelated frontmatter). */
+export function pickUniqueCoverWithKey(
+  candidates: CoverCandidate[],
+  usedKeys: Set<string>,
+): CoverCandidate | null {
+  for (const c of candidates) {
+    if (!usedKeys.has(c.key)) return c
+  }
+  return candidates[0] ?? null
+}
+
 export function pickEditorialHeroCover(
   doc: ParsedEditorialDocument,
   enriched: EnrichedListEntry[],
 ): string | null {
-  for (const row of orderRelatedByRelevance(doc, enriched)) {
-    const poster = sanitizeJournalCover(
-      upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl,
-    )
-    if (poster) return poster
-  }
-  if (doc.coverImage?.startsWith("/editorial/")) {
-    return sanitizeJournalCover(doc.coverImage)
-  }
-  return null
+  return buildEditorialCoverCandidates(doc, enriched)[0]?.url ?? null
 }

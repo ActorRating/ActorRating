@@ -2,7 +2,7 @@
 title: "The Dog Stars reactions: rate the quiet, not the genre costume"
 description: "First reactions call Scott’s film a surprise — more contemplative than dystopian default. That’s an acting brief for Elordi."
 publishedAt: 2026-08-23
-coverImage: "https://image.tmdb.org/t/p/w1280/7RyHzEe6OE27E5gQh6hYYtWnzz5.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/tq8COKsI99Bivjd4CZIYVGoKcIx.jpg"
 related:
   - actorSlug: jacob-elordi
     movieSlug: saltburn-2023

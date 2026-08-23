@@ -34,7 +34,7 @@ const P = {
   interstellar: tmdbPoster("5XNQBqnBwPA9yT0jZ0p3s8bbLh0.jpg"),
   oppenheimer: tmdbPoster("cUIqZd6jJCbO94Txt1CkTs7MSeP.jpg"),
   elvis: tmdbPoster("rLo9T9jEg67UZPq3midjLnTUYYi.jpg"),
-  pitt: tmdbPoster("7RyHzEe6OE27E5gQh6hYYtWnzz5.jpg"),
+  pitt: tmdbPoster("1E5baAaEse26fej7uHcjOgEE2t2.jpg"),
   bladeRunner: tmdbPoster("gajva2L0rPYkEWjzgFlBXCAVBE5.jpg"),
   dune2: tmdbPoster("8b8R8l88Qje9dn9OE8PY05/v.jpg"),
   silenceLambs: tmdbPoster("aYcnDyLMnpKce1FOYUpZrXtgUye.jpg"),

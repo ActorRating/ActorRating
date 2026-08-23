@@ -2,7 +2,6 @@
 title: "Anne Hathaway’s Penelope is still a live scorecard"
 description: "The Odyssey is holding. Hathaway’s Penelope isn’t a cameo of fidelity — rate the waiting as active work."
 publishedAt: 2026-08-03
-coverImage: "https://image.tmdb.org/t/p/w1280/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg"
 related:
   - actorSlug: anne-hathaway
     movieSlug: the-odyssey-2026
