@@ -130,6 +130,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-forum-threads.js ./s
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-invite-codes.js ./scripts/seed-invite-codes.js
 # Coolify Scheduled Task: `node scripts/run-waitlist-invite-cron.js`
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-waitlist-invite-cron.js ./scripts/run-waitlist-invite-cron.js
+# Coolify Scheduled Task: `node scripts/run-site-journal-cron.js` (daily stories + news)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-site-journal-cron.js ./scripts/run-site-journal-cron.js
+# Coolify Scheduled Task: `node scripts/run-performance-editorial-cron.js`
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-performance-editorial-cron.js ./scripts/run-performance-editorial-cron.js
 
 # Merge Prisma CLI into standalone node_modules (does not replace traced @prisma/client).
 # Coolify pre-deploy hooks can then use: ./node_modules/.bin/prisma migrate deploy
