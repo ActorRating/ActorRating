@@ -23,27 +23,52 @@ function upgradePosterRes(url: string | null | undefined): string | null {
 export async function withEditorialCovers(
   docs: ParsedEditorialDocument[],
 ): Promise<EditorialCard[]> {
+  const usedCovers = new Set<string>()
+
   return Promise.all(
     docs.map(async (doc) => {
       const card = toEditorialCard(doc)
-      if (card.coverImage) return card
-      if (doc.related.length === 0) return card
+      let cover = card.coverImage
+      let actorImage: string | null | undefined
+      let moviePoster: string | null | undefined
 
-      try {
-        const enriched = await enrichListEntries(doc.related.slice(0, 1), `${doc.kind}:${doc.slug}`)
-        const first = enriched[0]
-        if (!first?.exists) return card
-        const poster = upgradePosterRes(first.moviePosterUrl) ?? first.moviePosterUrl ?? null
-        const headshot =
-          upgradeActorImageRes(first.actorImageUrl) ?? first.actorImageUrl ?? null
-        return {
-          ...card,
-          coverImage: poster ?? headshot,
-          actorImage: headshot,
-          moviePoster: poster,
+      if (doc.related.length > 0) {
+        try {
+          const enriched = await enrichListEntries(
+            doc.related.slice(0, 3),
+            `${doc.kind}:${doc.slug}`,
+          )
+          const candidates: string[] = []
+          if (cover) candidates.push(cover)
+
+          for (const row of enriched) {
+            if (!row?.exists) continue
+            const poster = upgradePosterRes(row.moviePosterUrl) ?? row.moviePosterUrl
+            const headshot = upgradeActorImageRes(row.actorImageUrl) ?? row.actorImageUrl
+            if (poster) candidates.push(poster)
+            if (headshot) candidates.push(headshot)
+            if (!actorImage && headshot) actorImage = headshot
+            if (!moviePoster && poster) moviePoster = poster
+          }
+
+          cover =
+            candidates.find((url) => url && !usedCovers.has(url)) ??
+            candidates.find(Boolean) ??
+            cover ??
+            null
+        } catch {
+          /* keep frontmatter cover */
         }
-      } catch {
-        return card
+      }
+
+      if (cover) usedCovers.add(cover)
+      if (!cover) return card
+
+      return {
+        ...card,
+        coverImage: cover,
+        ...(actorImage ? { actorImage } : {}),
+        ...(moviePoster ? { moviePoster } : {}),
       }
     }),
   )

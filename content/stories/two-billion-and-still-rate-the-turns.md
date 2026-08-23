@@ -19,3 +19,25 @@ Money measures want. ActorRating measures craft under the five criteria. A $2B m
 ## This weekend’s job
 
 Open Peter. Open MJ. If your numbers moved because of the headline, put them back.
+
+## Money is not craft
+
+Historic grosses pull ratings toward consensus: "It must be good acting — look at the money." ActorRating refuses that fusion. A $2B movie can contain a soft lead and a lethal supporting knife-fight.
+
+## This week's job
+
+Open Peter. Open MJ. If your numbers moved because of headlines, put them back. Leave a comment if money snuck into your reasoning — honesty helps the board.
+
+## Score it on the five criteria
+
+- **Emotional Range & Depth** — what feeling survives past the trailer?
+- **Character Believability** — did you forget the actor, or only the brand?
+- **Performance Quality** — voice, body, timing: name one precise choice.
+- **Screen Presence** — who held the room when the plot stopped helping?
+- **Chemistry & Interaction** — who changed someone else's temperature?
+
+If you cannot answer at least two bullets with a scene, your score is still a draft.
+
+## Open the scorecard
+
+Find the performance on ActorRating, log a quick score if you must, then break it down after one quiet scene. Edit later if craft evidence changes — not if the timeline does.

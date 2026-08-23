@@ -36,6 +36,8 @@ curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" \
 
 Each run publishes **1 Story** (random logged-in-rated performance craft pulse) + **1 News** (rotating journal topic) unless today’s slugs already exist.
 
+Minimum length targets: **220+ words** for stories, **180+ words** for news. Daily news includes a poster from a rated performance when available.
+
 Disable with `SITE_JOURNAL_CRON_ENABLED=false`.
 
 Requires migration: `SiteEditorial` (`prisma migrate deploy`).
