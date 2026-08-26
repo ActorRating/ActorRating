@@ -4,9 +4,11 @@
  */
 import {
   collectInternalCrawlIds,
+  collectInternalEntityCrawlIds,
   collectInternalFleetIds,
   isInternalOnlyNoUtm,
   isInternalSiteReferrer,
+  matchesInternalEntityCrawl,
   matchesInternalFleetCrawl,
   matchesInternalPathCrawl,
 } from "../src/lib/analytics/internal-crawl"
@@ -16,7 +18,7 @@ const base = new Date("2026-07-25T12:00:00.000Z")
 function row(
   i: number,
   path: string,
-  opts?: { referrer?: string | null; utm?: string | null; minutes?: number },
+  opts?: { referrer?: string | null; utm?: string | null; minutes?: number; userId?: string | null },
 ) {
   return {
     id: `id-${i}`,
@@ -26,6 +28,7 @@ function row(
     utmMedium: null as string | null,
     utmCampaign: null as string | null,
     createdAt: new Date(base.getTime() + (opts?.minutes ?? i) * 60_000),
+    userId: opts?.userId ?? null,
   }
 }
 
@@ -50,30 +53,50 @@ console.log(
   }),
 )
 
-const crawlRows = Array.from({ length: 16 }, (_, i) =>
+const crawlRows = Array.from({ length: 7 }, (_, i) =>
   row(i, `/rate/movie-${i}/actor-${i}`, { minutes: i * 0.5 }),
 )
 console.log(
-  "\n16 distinct internal paths in 8 min → crawl?",
+  "\n7 distinct internal paths in ~3 min → crawl?",
   matchesInternalPathCrawl(crawlRows),
 )
 
 const withDirect = [
   row(0, "/a", { referrer: null, minutes: 0 }),
-  ...Array.from({ length: 16 }, (_, i) => row(i + 1, `/p-${i}`, { minutes: i + 1 })),
+  ...Array.from({ length: 7 }, (_, i) => row(i + 1, `/p-${i}`, { minutes: i + 1 })),
 ]
 console.log(
   "includes null referrer in window → crawl?",
   matchesInternalPathCrawl(withDirect),
 )
 
-const fifteen = Array.from({ length: 15 }, (_, i) => row(i, `/only-${i}`, { minutes: i }))
+const six = Array.from({ length: 6 }, (_, i) => row(i, `/only-${i}`, { minutes: i }))
 console.log(
-  "exactly 15 distinct (not more than 15) → crawl?",
-  matchesInternalPathCrawl(fifteen),
+  "exactly 6 distinct (not more than 6) → crawl?",
+  matchesInternalPathCrawl(six),
 )
 
 console.log("collectInternalCrawlIds count", collectInternalCrawlIds(crawlRows).size)
+
+const entityRows = Array.from({ length: 4 }, (_, i) =>
+  row(i, `/actors/obscure-actor-${i}`, { minutes: i * 5 }),
+)
+console.log(
+  "\n4 distinct /actors internal guest hops → entity crawl?",
+  matchesInternalEntityCrawl(entityRows),
+)
+console.log(
+  "collectInternalEntityCrawlIds count",
+  collectInternalEntityCrawlIds(entityRows).size,
+)
+
+const signedInEntity = Array.from({ length: 5 }, (_, i) =>
+  row(i, `/actors/a-${i}`, { minutes: i, userId: "user-1" }),
+)
+console.log(
+  "signed-in entity hops → collect entity ids?",
+  collectInternalEntityCrawlIds(signedInEntity).size,
+)
 
 const fleetRows = Array.from({ length: 50 }, (_, i) => ({
   id: `f-${i}`,
@@ -92,7 +115,7 @@ console.log(
 )
 console.log("collectInternalFleetIds count", collectInternalFleetIds(fleetRows).size)
 
-const smallFleet = Array.from({ length: 20 }, (_, i) => ({
+const smallFleet = Array.from({ length: 15 }, (_, i) => ({
   id: `s-${i}`,
   path: `/p-${i}`,
   referrer: "https://actorrating.com/",
@@ -104,6 +127,6 @@ const smallFleet = Array.from({ length: 20 }, (_, i) => ({
   userId: null as string | null,
 }))
 console.log(
-  "20 IPs (below threshold) → fleet?",
+  "15 IPs (below threshold) → fleet?",
   matchesInternalFleetCrawl(smallFleet.map((r) => ({ path: r.path, ipHash: r.ipHash }))),
 )

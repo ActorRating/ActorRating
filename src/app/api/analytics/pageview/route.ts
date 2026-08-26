@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
 import { resolveBotCategory } from "@/lib/analytics/bot-category"
-import { detectInternalFleetCrawl, detectInternalPathCrawl } from "@/lib/analytics/internal-crawl"
+import {
+  detectInternalEntityCrawl,
+  detectInternalFleetCrawl,
+  detectInternalPathCrawl,
+} from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
   normalizePageViewPath,
@@ -153,6 +157,7 @@ export async function POST(request: NextRequest) {
         utmSource: storedUtmSource,
         utmMedium,
         utmCampaign,
+        userId,
       })
       if (crawl.isCrawl) {
         isLikelyBot = true
@@ -160,6 +165,23 @@ export async function POST(request: NextRequest) {
       }
     } catch {
       // Crawl detection must not block logging
+    }
+
+    try {
+      const entity = await detectInternalEntityCrawl(prisma, ipHash, {
+        path,
+        referrer,
+        utmSource: storedUtmSource,
+        utmMedium,
+        utmCampaign,
+        userId,
+      })
+      if (entity.isCrawl) {
+        isLikelyBot = true
+        siblingIds = [...new Set([...siblingIds, ...entity.siblingIds])]
+      }
+    } catch {
+      // Entity crawl detection must not block logging
     }
 
     try {

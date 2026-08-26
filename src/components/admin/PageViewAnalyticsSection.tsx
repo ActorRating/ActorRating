@@ -184,7 +184,8 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
       <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-foreground">Last human viewed pages</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Latest non-bot pageviews site-wide (not limited to the selected window).
+          Latest non-bot pageviews site-wide (excludes /admin and flagged crawlers; not limited to
+          the selected window).
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left">

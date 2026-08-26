@@ -256,7 +256,11 @@ export async function getPageViewAnalytics(
           AND "createdAt" >= NOW() - ${interval}
       `),
       prisma.pageView.findMany({
-        where: { isLikelyBot: false },
+        where: {
+          isLikelyBot: false,
+          // Admin browsing is not "site traffic" — keep the feed product-facing.
+          NOT: { path: { startsWith: "/admin" } },
+        },
         orderBy: { createdAt: "desc" },
         take: 30,
         select: {
