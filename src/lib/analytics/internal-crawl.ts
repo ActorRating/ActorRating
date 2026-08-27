@@ -9,21 +9,25 @@ export const INTERNAL_CRAWL_MIN_DISTINCT_PATHS = 6
 export const INTERNAL_CRAWL_WINDOW_MS = 10 * 60 * 1000
 
 /**
- * Guest-only: internal referrer + no UTM + many /actors|/directors entity pages.
+ * Guest-only: internal referrer + no UTM + many /actors|/directors|/rate pages.
  * Real users rarely bounce through 4+ obscure entity pages in 30 minutes
  * without an external landing or UTM.
  */
 export const INTERNAL_ENTITY_CRAWL_MIN_PATHS = 4
 export const INTERNAL_ENTITY_CRAWL_WINDOW_MS = 30 * 60 * 1000
 const ENTITY_PATH_RE = /^\/(actors|directors)\/[^/]+\/?$/i
+const RATE_PATH_RE = /^\/rate\/[^/]+\/[^/]+\/?$/i
+const MOVIE_PATH_RE = /^\/movies\/[^/]+\/?$/i
 
 /**
- * Fleet (rotating IPs): site-wide internal-only / no-UTM traffic in 10m with
- * many distinct IPs + paths. Per-IP rule misses this (diag: 845 IPs, ≤3 paths each).
+ * Fleet (rotating IPs): site-wide internal-only / no-UTM long-tail hops.
+ * Was 10m / 20 IPs / 30 views — a slow drip (~1 page / 3–5 min, new IP each
+ * time) stayed under it and polluted "human" admin stats.
  */
-export const FLEET_MIN_DISTINCT_IPS = 20
-export const FLEET_MIN_DISTINCT_PATHS = 20
-export const FLEET_MIN_VIEWS = 30
+export const FLEET_WINDOW_MS = 60 * 60 * 1000
+export const FLEET_MIN_DISTINCT_IPS = 8
+export const FLEET_MIN_DISTINCT_PATHS = 8
+export const FLEET_MIN_VIEWS = 8
 /** Soft cadence: most IPs should be light (≤ this many views in the window). */
 export const FLEET_LIGHT_IP_MAX_VIEWS = 5
 /** Share of IPs that must be "light" for the window to count as a rotating fleet. */
@@ -80,10 +84,17 @@ export function isInternalOnlyNoUtm(fields: {
 }
 
 export function isEntityPath(path: string): boolean {
-  return ENTITY_PATH_RE.test(path.trim())
+  const p = path.trim()
+  return ENTITY_PATH_RE.test(p) || RATE_PATH_RE.test(p)
 }
 
-/** Rows we count/flag for crawl/fleet (skip logged-in users + admin). */
+/** Long-tail content the rotating fleet actually crawls (not /, /search, /forum). */
+export function isFleetContentPath(path: string): boolean {
+  const p = path.trim()
+  return isEntityPath(p) || MOVIE_PATH_RE.test(p)
+}
+
+/** Rows we count/flag for per-IP crawl (skip logged-in users + admin). */
 export function isCrawlEligibleRow(fields: {
   path: string
   referrer?: string | null
@@ -97,8 +108,17 @@ export function isCrawlEligibleRow(fields: {
   return isInternalOnlyNoUtm(fields)
 }
 
-/** @deprecated use isCrawlEligibleRow */
-export const isFleetEligibleRow = isCrawlEligibleRow
+/** Fleet: crawl-eligible guests on actor/director/rate/movie pages only. */
+export function isFleetEligibleRow(fields: {
+  path: string
+  referrer?: string | null
+  utmSource?: string | null
+  utmMedium?: string | null
+  utmCampaign?: string | null
+  userId?: string | null
+}): boolean {
+  return isCrawlEligibleRow(fields) && isFleetContentPath(fields.path)
+}
 
 export type InternalCrawlSample = {
   id?: string
@@ -128,7 +148,7 @@ export function matchesInternalPathCrawl(
 }
 
 /**
- * Guest entity hop crawl: ≥N distinct /actors|/directors pages, all internal/no-UTM.
+ * Guest entity hop crawl: ≥N distinct /actors|/directors|/rate pages, all internal/no-UTM.
  */
 export function matchesInternalEntityCrawl(
   samples: InternalCrawlSample[],
@@ -175,9 +195,9 @@ export function matchesInternalFleetCrawl(
   const stats = fleetWindowStats(samples)
   if (
     !(
-      stats.views > minViews &&
-      stats.distinctIps > minIps &&
-      stats.distinctPaths > minPaths
+      stats.views >= minViews &&
+      stats.distinctIps >= minIps &&
+      stats.distinctPaths >= minPaths
     )
   ) {
     return false
@@ -259,7 +279,7 @@ export async function detectInternalPathCrawl(
 }
 
 /**
- * Guest entity long-tail crawl over 30m (/actors|/directors).
+ * Guest entity long-tail crawl over 30m (/actors|/directors|/rate).
  */
 export async function detectInternalEntityCrawl(
   prisma: PrismaClient,
@@ -319,7 +339,7 @@ export async function detectInternalEntityCrawl(
 }
 
 /**
- * Site-wide rotating-IP fleet: many IPs + many paths, all internal/no-UTM, in 10m.
+ * Site-wide rotating-IP fleet: many IPs + many long-tail paths, all internal/no-UTM, in 60m.
  */
 export async function detectInternalFleetCrawl(
   prisma: PrismaClient,
@@ -333,13 +353,13 @@ export async function detectInternalFleetCrawl(
     userId: string | null
   },
 ): Promise<{ isFleet: boolean; siblingIds: string[] }> {
-  if (!isCrawlEligibleRow(current)) {
+  if (!isFleetEligibleRow(current)) {
     return { isFleet: false, siblingIds: [] }
   }
 
-  const since = new Date(Date.now() - INTERNAL_CRAWL_WINDOW_MS)
+  const since = new Date(Date.now() - FLEET_WINDOW_MS)
   const recent = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
+    where: { createdAt: { gte: since }, userId: null },
     select: {
       id: true,
       path: true,
@@ -352,7 +372,7 @@ export async function detectInternalFleetCrawl(
     },
   })
 
-  const eligibleRecent = recent.filter((r) => isCrawlEligibleRow(r))
+  const eligibleRecent = recent.filter((r) => isFleetEligibleRow(r))
   const samples = [
     ...eligibleRecent.map((r) => ({ path: r.path, ipHash: r.ipHash })),
     { path: current.path, ipHash: current.ipHash },
@@ -409,7 +429,7 @@ export function collectInternalCrawlIds(
 }
 
 /**
- * Sliding-window entity crawl scan (30m, ≥4 distinct /actors|/directors).
+ * Sliding-window entity crawl scan (30m, ≥4 distinct /actors|/directors|/rate).
  */
 export function collectInternalEntityCrawlIds(
   rows: Array<{
@@ -469,9 +489,9 @@ export function collectInternalFleetIds(
     minViews?: number
   },
 ): Set<string> {
-  const windowMs = opts?.windowMs ?? INTERNAL_CRAWL_WINDOW_MS
+  const windowMs = opts?.windowMs ?? FLEET_WINDOW_MS
   const flagged = new Set<string>()
-  const eligible = rows.filter((r) => isCrawlEligibleRow(r))
+  const eligible = rows.filter((r) => isFleetEligibleRow(r))
   if (eligible.length === 0) return flagged
 
   const sorted = [...eligible].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())

@@ -115,9 +115,9 @@ console.log(
 )
 console.log("collectInternalFleetIds count", collectInternalFleetIds(fleetRows).size)
 
-const smallFleet = Array.from({ length: 15 }, (_, i) => ({
+const smallFleet = Array.from({ length: 7 }, (_, i) => ({
   id: `s-${i}`,
-  path: `/p-${i}`,
+  path: `/actors/obscure-${i}`,
   referrer: "https://actorrating.com/",
   utmSource: null as string | null,
   utmMedium: null as string | null,
@@ -127,6 +127,31 @@ const smallFleet = Array.from({ length: 15 }, (_, i) => ({
   userId: null as string | null,
 }))
 console.log(
-  "15 IPs (below threshold) → fleet?",
+  "7 IPs (below threshold) → fleet?",
   matchesInternalFleetCrawl(smallFleet.map((r) => ({ path: r.path, ipHash: r.ipHash }))),
+)
+
+const slowDrip = Array.from({ length: 8 }, (_, i) => ({
+  id: `d-${i}`,
+  path: i % 2 === 0 ? `/actors/drip-${i}` : `/rate/movie-${i}/actor-${i}`,
+  referrer: "https://actorrating.com/",
+  utmSource: null as string | null,
+  utmMedium: null as string | null,
+  utmCampaign: null as string | null,
+  createdAt: new Date(base.getTime() + i * 5 * 60_000),
+  ipHash: `dip-${i}`,
+  userId: null as string | null,
+}))
+console.log(
+  "8 IPs /rate+/actors every 5 min → fleet?",
+  matchesInternalFleetCrawl(slowDrip.map((r) => ({ path: r.path, ipHash: r.ipHash }))),
+)
+console.log("collectInternalFleetIds slow drip", collectInternalFleetIds(slowDrip).size)
+
+const rateEntity = Array.from({ length: 4 }, (_, i) =>
+  row(i, `/rate/movie-${i}/actor-${i}`, { minutes: i * 6 }),
+)
+console.log(
+  "4 distinct /rate internal guest hops → entity crawl?",
+  matchesInternalEntityCrawl(rateEntity),
 )

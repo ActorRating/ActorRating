@@ -1,8 +1,8 @@
 /**
  * Backfill: flag PageView rows matching internal-crawl patterns:
  *  1) Per-IP: >6 distinct paths / 10m, all internal referrer + no UTM (guest, not /admin)
- *  2) Entity: ≥4 distinct /actors|/directors / 30m, same guest internal/no-UTM shape
- *  3) Fleet: rotating-IP internal crawl window
+ *  2) Entity: ≥4 distinct /actors|/directors|/rate / 30m, same guest internal/no-UTM shape
+ *  3) Fleet: rotating-IP long-tail crawl (actors/rate/movies) in 60m
  *
  * Sets botCategory from userAgent (KNOWN_CRAWLER vs UNIDENTIFIED).
  *
