@@ -14,6 +14,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout"
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
 import { MagicLinkHoneypot } from "@/components/auth/MagicLinkHoneypot"
 import { requestMagicLink } from "@/lib/auth/requestMagicLink"
+import { trackSignupStarted } from "@/lib/analytics"
 
 const showGoogleDivider = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -49,6 +50,7 @@ export default function RegisterPage() {
         setInviteGateEnabled(Boolean(data.gateEnabled))
       })
       .catch(() => {})
+    trackSignupStarted({ trigger: "register_page", auth_status: "guest" })
   }, [])
 
   useEffect(() => {

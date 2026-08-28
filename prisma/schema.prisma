@@ -29,6 +29,7 @@ model User {
   performances  Performance[]
   ratings       Rating[]
   pageViews     PageView[]
+  productEvents ProductEvent[]
   ratingCommentReports RatingCommentReport[] @relation("CommentReporter")
   resolvedCommentReports RatingCommentReport[] @relation("CommentReportResolver")
   forumThreads ForumThread[]
@@ -68,6 +69,37 @@ model PageView {
   @@index([path, createdAt])
   @@index([utmSource, createdAt])
   @@index([ipHash, createdAt])
+}
+
+/// First-party product events for admin funnels (performance_viewed, rating_submitted, etc.).
+/// Prune rows older than 90 days alongside PageView.
+model ProductEvent {
+  id          String       @id @default(cuid())
+  name        String       @db.VarChar(80)
+  path        String?
+  actor       String?      @db.VarChar(200)
+  movie       String?      @db.VarChar(200)
+  source      String?      @db.VarChar(50)
+  utmSource   String?      @db.VarChar(100)
+  utmMedium   String?      @db.VarChar(100)
+  utmCampaign String?      @db.VarChar(200)
+  utmContent  String?      @db.VarChar(200)
+  properties  Json?
+  userId      String?
+  ipHash      String
+  userAgent   String       @db.Text
+  isLikelyBot Boolean      @default(false)
+  botCategory BotCategory?
+  createdAt   DateTime     @default(now())
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([source, createdAt])
+  @@index([utmSource, createdAt])
+  @@index([isLikelyBot, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([path, createdAt])
 }
 
 model Account {

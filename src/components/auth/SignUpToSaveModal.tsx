@@ -10,6 +10,7 @@ import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { MagicLinkHoneypot } from "@/components/auth/MagicLinkHoneypot"
 import { acquireAuthLock, authLockRemainingMs, releaseAuthLock } from "@/lib/auth/clientAuthLock"
 import { requestMagicLink } from "@/lib/auth/requestMagicLink"
+import { trackSignupStarted } from "@/lib/analytics"
 
 const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE === "1"
 
@@ -73,6 +74,14 @@ export function SignUpToSaveModal({
       })
       .catch(() => {})
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    trackSignupStarted({
+      trigger: variant === "momentum" ? "rating_momentum_modal" : "rating_save_modal",
+      auth_status: "guest",
+    })
+  }, [isOpen, variant])
 
   const persistPendingRating = () => {
     if (typeof window === "undefined") return

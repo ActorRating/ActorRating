@@ -10,6 +10,7 @@ import { PrefetchLink } from '@/components/ui/PrefetchLink'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { fadeInUp, staggerContainer, getIsMobile, getPrefersReducedMotion } from '@/lib/animations'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
+import { trackSearchUsed } from '@/lib/analytics'
 
 const DEBOUNCE_MS = 300
 const MAX_SUGGESTIONS = 8
@@ -67,6 +68,8 @@ interface SearchBarProps {
   showSuggestions?: boolean
   /** When true, do not scroll the page on input focus/click (e.g. on dedicated search page). */
   disableAutoScrollOnFocus?: boolean
+  /** Surface label for analytics (e.g. search_page, discover). */
+  analyticsSurface?: string
 }
 
 export function SearchBar({
@@ -78,6 +81,7 @@ export function SearchBar({
   autoFocus = false,
   showSuggestions = true,
   disableAutoScrollOnFocus = false,
+  analyticsSurface = "search_bar",
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialValue)
   const [isFocused, setIsFocused] = useState(false)
@@ -368,6 +372,10 @@ export function SearchBar({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    const searchQuery = query.trim()
+    if (searchQuery) {
+      trackSearchUsed({ query: searchQuery, surface: analyticsSurface })
+    }
     const displayed = suggestions
     const actors = displayed?.actors?.slice(0, 10) || []
     const movies = displayed?.movies?.slice(0, 10) || []

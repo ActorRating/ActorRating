@@ -125,6 +125,7 @@ export function parseUtmParams(
   utmSource: string | null
   utmMedium: string | null
   utmCampaign: string | null
+  utmContent: string | null
 } {
   const params =
     typeof search === "string"
@@ -142,6 +143,7 @@ export function parseUtmParams(
     utmSource: sourceRaw ? sourceRaw.toLowerCase() : null,
     utmMedium: clip(params.get("utm_medium"), 100),
     utmCampaign: clip(params.get("utm_campaign"), 200),
+    utmContent: clip(params.get("utm_content"), 200),
   }
 }
 

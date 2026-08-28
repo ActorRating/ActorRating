@@ -13,6 +13,7 @@ import { SignedInLayout, HomeLayout } from "@/components/layout"
 import { SearchBar } from "@/components/SearchBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { getActorUrl, getMovieUrl } from "@/lib/slugHelper"
+import { trackSearchUsed } from "@/lib/analytics"
 
 const DISPLAY: React.CSSProperties = {
   fontFamily:
@@ -105,6 +106,11 @@ function SearchPageContent() {
           type: "movie" as const,
         }))
         setSearchResults([...actors, ...movies])
+        trackSearchUsed({
+          query: searchQuery.trim(),
+          surface: "search_results",
+          result_count: actors.length + movies.length,
+        })
       }
     } catch (error) {
       console.error("Search failed:", error)
@@ -148,6 +154,7 @@ function SearchPageContent() {
                 autoFocus
                 disableAutoScrollOnFocus
                 initialValue={query}
+                analyticsSurface="search_page"
                 className="w-full [&_input]:bg-transparent [&_input]:border-0 [&_input]:text-white [&_input]:placeholder:text-[#71717a] [&_input]:focus:ring-0 [&_input]:focus:outline-none [&_input]:py-4 [&_input]:text-base sm:[&_input]:text-lg [&_input]:min-h-[52px]"
               />
             </div>

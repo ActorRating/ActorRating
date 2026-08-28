@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, Share2, Star, Lock, ArrowRight, ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import { useUser } from '@/components/providers/SessionProvider'
-import { trackRateSubmit, trackShareRating, trackFirstRatingComplete } from '@/lib/analytics'
+import { trackRateSubmit, trackShareRating, trackFirstRatingComplete, getRatingTiming, trackRatingSliderMoved } from '@/lib/analytics'
 import { haptic } from '@/lib/haptics'
 import { getLevelProgress, getUserBadges, type BadgeConfig } from '@/lib/badges'
 import { Badge } from '@/components/badges/Badge'
@@ -857,6 +857,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     screenPresence: initialRating?.screenPresence !== undefined,
     chemistryInteraction: initialRating?.chemistry !== undefined,
   })
+  const hasTrackedSliderMoved = useRef(false)
+
+  const trackSliderMovedOnce = useCallback((score?: number) => {
+    if (hasTrackedSliderMoved.current) return
+    hasTrackedSliderMoved.current = true
+    trackRatingSliderMoved({
+      actor: performance.actor.name,
+      movie: performance.movie.title,
+      year: performance.movie.year,
+      auth_status: user ? 'authenticated' : 'guest',
+      score,
+    })
+  }, [performance.actor.name, performance.movie.title, performance.movie.year, user])
 
   // When `initialRating` arrives after mount (e.g. edit flow on slug-based rate page where
   // /api/ratings/me is fetched async), sync all slider states and show in-depth sliders so the form is prefilled.
@@ -1015,6 +1028,9 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
     const wasTouched = touchedSliders[key]
     setTouchedSliders(prev => ({ ...prev, [key]: true }))
     lastInteractionTime.current = Date.now()
+    if (!wasTouched) {
+      trackSliderMovedOnce(value)
+    }
 
     // Only clear timeout if this slider wasn't touched before (first touch)
     // This prevents resetting the animation timer when adjusting already-touched sliders
@@ -1046,7 +1062,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         setChemistryInteraction(value)
         break
     }
-  }, [touchedSliders, spotlightPhase])
+  }, [touchedSliders, spotlightPhase, trackSliderMovedOnce])
 
   const handleSliderStart = useCallback(() => {
     isDraggingRef.current = true
@@ -1330,11 +1346,19 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
       setSubmitPhase('success')
       fetchUserProgress()
 
-      trackRateSubmit(
-        performance.actor.name,
-        performance.movie.title,
-        Number(score.toFixed(1))
-      )
+      const authStatus = user ? "authenticated" : "guest"
+      trackRateSubmit({
+        actor: performance.actor.name,
+        movie: performance.movie.title,
+        year: performance.movie.year,
+        overall_score: Number(score.toFixed(1)),
+        auth_status: authStatus,
+        rating_timing: getRatingTiming({
+          authStatus,
+          guestRatingsBeforeSubmit: readGuestRatingsCount(),
+          hasExistingRating: Boolean(initialRating),
+        }),
+      })
       trackFirstRatingComplete()
       if (onSuccess) onSuccess(ratingData)
     } catch (err: unknown) {
@@ -1353,7 +1377,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
         document.body.style.touchAction = ''
       }
     }
-  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title, reviewComment, reviewIsSpoiler])
+  }, [canSubmit, showInDepthSliders, overallScore, emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction, onSubmit, onSuccess, fetchUserProgress, user, performance.actor.name, performance.movie.title, performance.movie.year, reviewComment, reviewIsSpoiler, initialRating])
 
   const buildGuestMomentumPayload = useCallback(() => {
     const ratingData = showInDepthSliders
@@ -2160,6 +2184,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                             onValueChange={(v) => {
                               setOverallScore(v)
                               setSingleSliderTouched(true)
+                              trackSliderMovedOnce(v)
                               // Keep the 5 criteria in sync for radar/share + "Break it down"
                               const score = Math.round(v)
                               setEmotionalRangeDepth(score)

@@ -24,20 +24,33 @@ async function main() {
   const dry = process.argv.includes("--dry")
 
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-  const count = await prisma.pageView.count({
+  const pageViewCount = await prisma.pageView.count({
     where: { createdAt: { lt: cutoff } },
   })
+  const productEventCount = await prisma.productEvent.count({
+    where: { createdAt: { lt: cutoff } },
+  }).catch(() => 0)
 
-  console.log(`PageViews older than ${days}d (before ${cutoff.toISOString()}): ${count}`)
-  if (dry || count === 0) {
+  console.log(`PageViews older than ${days}d (before ${cutoff.toISOString()}): ${pageViewCount}`)
+  console.log(`ProductEvents older than ${days}d: ${productEventCount}`)
+  if (dry || (pageViewCount === 0 && productEventCount === 0)) {
     if (dry) console.log("DRY RUN — no deletes")
     return
   }
 
-  const result = await prisma.pageView.deleteMany({
-    where: { createdAt: { lt: cutoff } },
-  })
-  console.log(`Deleted: ${result.count}`)
+  if (!dry && pageViewCount > 0) {
+    const result = await prisma.pageView.deleteMany({
+      where: { createdAt: { lt: cutoff } },
+    })
+    console.log(`Deleted PageViews: ${result.count}`)
+  }
+
+  if (!dry && productEventCount > 0) {
+    const result = await prisma.productEvent.deleteMany({
+      where: { createdAt: { lt: cutoff } },
+    }).catch(() => ({ count: 0 }))
+    console.log(`Deleted ProductEvents: ${result.count}`)
+  }
 }
 
 main()

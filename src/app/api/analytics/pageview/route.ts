@@ -17,9 +17,9 @@ import {
   truncateReferrer,
 } from "@/lib/analytics/pageview"
 import { normalizeInviteCode } from "@/lib/invites"
+import { applyFirstTouchAttributionCookies } from "@/lib/tracking/attribution-cookies"
 import {
   AR_SRC_COOKIE,
-  arSrcCookieOptions,
   isValidSource,
   normalizeAcquisitionSource,
 } from "@/lib/tracking/source"
@@ -33,10 +33,16 @@ type Body = {
   referrer?: unknown
 }
 
-function emptyOk(cookieSource?: string | null) {
+function emptyOk(attribution?: {
+  source: string
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmContent: string | null
+  existingSource?: string | null
+} | null) {
   const res = new NextResponse(null, { status: 204 })
-  if (cookieSource && isValidSource(cookieSource)) {
-    res.cookies.set(AR_SRC_COOKIE, cookieSource, arSrcCookieOptions())
+  if (attribution?.source && isValidSource(attribution.source)) {
+    applyFirstTouchAttributionCookies(res, attribution)
   }
   return res
 }
@@ -74,7 +80,13 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
  * and ar_src is not already set, set the cookie (30 days).
  */
 export async function POST(request: NextRequest) {
-  let attributionToSet: string | null = null
+  let attributionToSet: {
+    source: string
+    utmMedium: string | null
+    utmCampaign: string | null
+    utmContent: string | null
+    existingSource?: string | null
+  } | null = null
 
   try {
     let body: Body = {}
@@ -108,14 +120,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { utmSource, utmMedium, utmCampaign } = parseUtmParams(params)
+    const { utmSource, utmMedium, utmCampaign, utmContent } = parseUtmParams(params)
 
     // Prefer utm_source; allow ?src=tiktok|instagram|youtube|x on any landing URL
     const srcParam = normalizeAcquisitionSource(params.get("src"))
     const candidate = normalizeAcquisitionSource(utmSource) ?? srcParam
     const existing = request.cookies.get(AR_SRC_COOKIE)?.value
     if (candidate && !isValidSource(existing)) {
-      attributionToSet = candidate
+      attributionToSet = {
+        source: candidate,
+        utmMedium,
+        utmCampaign,
+        utmContent,
+        existingSource: isValidSource(existing) ? existing : null,
+      }
     }
 
     // Persist acquisition channel on the pageview (dashboard UTM breakdown).

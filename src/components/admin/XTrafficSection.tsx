@@ -89,6 +89,52 @@ export default function XTrafficSection({ data, hrefForDays }: Props) {
         />
       </div>
 
+      <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-foreground">
+          X activation funnel ({windowLabel})
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          First-party events with <code className="text-xs">source=x</code> or{" "}
+          <code className="text-xs">utm_source=x</code>. Event steps require deploy +
+          migration; counts stay at 0 until traffic arrives.
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="border-b border-border px-3 py-3 font-medium">Step</th>
+                <th className="border-b border-border px-3 py-3 text-right font-medium">
+                  Count
+                </th>
+                <th className="border-b border-border px-3 py-3 text-right font-medium">
+                  From prev
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.activationFunnel.map((step) => (
+                <tr key={step.key} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3">
+                    <div className="font-medium text-foreground">{step.label}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {step.description}
+                    </div>
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 text-right tabular-nums font-semibold">
+                    {step.count}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 text-right tabular-nums text-muted-foreground">
+                    {step.conversionFromPrevious == null
+                      ? "—"
+                      : `${step.conversionFromPrevious.toFixed(1)}%`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <GrowthChart
         data={data.pageviewsByDay}
         title={

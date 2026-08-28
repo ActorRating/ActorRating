@@ -6,7 +6,7 @@
 "use client"
 
 import { useParams, useRouter } from 'next/navigation'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { Actor, Movie } from '@/types'
 import { PerformanceRatingClientWrapper } from '@/components/rating/PerformanceRatingClientWrapper'
 import { RatePageLayout } from '@/components/layout/RatePageLayout'
@@ -17,6 +17,7 @@ import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
+import { trackPerformanceViewed } from '@/lib/analytics'
 
 type RatePageClientProps = {
   initialMovie?: Movie | null
@@ -128,6 +129,18 @@ export default function RatePageClient({
   } | null>(null)
   const { executeRecaptcha } = useRecaptchaV3()
   const { count: guestCount, addRating: addGuestRating } = useGuestRatings()
+  const hasTrackedPerformanceViewed = useRef(false)
+
+  useEffect(() => {
+    if (authLoading || !actor || !movie || hasTrackedPerformanceViewed.current) return
+    hasTrackedPerformanceViewed.current = true
+    trackPerformanceViewed({
+      actor: actor.name,
+      movie: movie.title,
+      year: movie.year,
+      auth_status: sessionUserKey ? "authenticated" : "guest",
+    })
+  }, [authLoading, actor, movie, sessionUserKey])
 
   // Always load at top: on mount (client nav) and when content finishes loading (so top is visible before demo scroll)
   useEffect(() => {

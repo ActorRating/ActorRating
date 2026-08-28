@@ -20,6 +20,15 @@ export type RecentXPageView = {
   createdAt: Date
 }
 
+export type XActivationFunnelStep = {
+  key: string
+  label: string
+  description: string
+  count: number
+  /** % of previous step; null for the first step */
+  conversionFromPrevious: number | null
+}
+
 export type XTrafficAnalytics = {
   days: PageViewAnalyticsDays
   /** Human pageviews attributed to X (tagged and/or organic referrer) */
@@ -36,6 +45,7 @@ export type XTrafficAnalytics = {
   usersFromX: number
   waitlistFromX: number
   recent: RecentXPageView[]
+  activationFunnel: XActivationFunnelStep[]
 }
 
 type DayCountRow = { day: Date; count: bigint | number }
@@ -127,6 +137,71 @@ const X_ORGANIC_SQL = Prisma.raw(`(
   )) IN ('twitter.com', 'x.com', 't.co')
 )`)
 
+/** Product events with first-touch source = x or utm_source = x/twitter. */
+const X_EVENT_ATTRIBUTED_SQL = Prisma.raw(`(
+  LOWER(COALESCE("source", '')) = 'x'
+  OR LOWER(COALESCE("utmSource", '')) IN ('x', 'twitter')
+)`)
+
+function pct(current: number, previous: number): number | null {
+  if (previous <= 0) return current > 0 ? 100 : null
+  return (current / previous) * 100
+}
+
+function buildActivationFunnel(counts: {
+  ratePageviews: number
+  performanceViewed: number
+  sliderMoved: number
+  ratingSubmitted: number
+  signupStarted: number
+  repeatRating: number
+}): XActivationFunnelStep[] {
+  const steps: Array<Omit<XActivationFunnelStep, "conversionFromPrevious">> = [
+    {
+      key: "rate_pageviews",
+      label: "X → /rate/ pageviews",
+      description: "Human pageviews on performance pages from X",
+      count: counts.ratePageviews,
+    },
+    {
+      key: "performance_viewed",
+      label: "Performance viewed",
+      description: "Client event: canonical rate page loaded",
+      count: counts.performanceViewed,
+    },
+    {
+      key: "rating_slider_moved",
+      label: "Rating started",
+      description: "Client event: first slider interaction",
+      count: counts.sliderMoved,
+    },
+    {
+      key: "rating_submitted",
+      label: "Rating completed",
+      description: "Client event: rating saved",
+      count: counts.ratingSubmitted,
+    },
+    {
+      key: "signup_started",
+      label: "Signup started",
+      description: "Client event: register page or save modal",
+      count: counts.signupStarted,
+    },
+    {
+      key: "repeat_rating",
+      label: "Repeat rating",
+      description: "X-attributed rating_submitted with rating_timing = repeat",
+      count: counts.repeatRating,
+    },
+  ]
+
+  return steps.map((step, index) => ({
+    ...step,
+    conversionFromPrevious:
+      index === 0 ? null : pct(step.count, steps[index - 1]!.count),
+  }))
+}
+
 function referrerDomain(referrer: string | null | undefined): string {
   const raw = referrer?.trim()
   if (!raw) return "(direct)"
@@ -168,6 +243,14 @@ function emptyAnalytics(days: PageViewAnalyticsDays): XTrafficAnalytics {
     usersFromX: 0,
     waitlistFromX: 0,
     recent: [],
+    activationFunnel: buildActivationFunnel({
+      ratePageviews: 0,
+      performanceViewed: 0,
+      sliderMoved: 0,
+      ratingSubmitted: 0,
+      signupStarted: 0,
+      repeatRating: 0,
+    }),
   }
 }
 
@@ -198,6 +281,7 @@ export async function getXTrafficAnalytics(
       usersFromX,
       waitlistFromX,
       recentRows,
+      ratePageviewRows,
     ] = await Promise.all([
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -304,7 +388,81 @@ export async function getXTrafficAnalytics(
           createdAt: true,
         },
       }),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS count
+        FROM "PageView"
+        WHERE "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+          AND ${X_ATTRIBUTED_SQL}
+          AND "path" LIKE '/rate/%'
+      `),
     ])
+
+    let performanceViewed = 0
+    let sliderMoved = 0
+    let ratingSubmitted = 0
+    let signupStarted = 0
+    let repeatRating = 0
+
+    try {
+      const [
+        performanceViewedRows,
+        sliderMovedRows,
+        ratingSubmittedRows,
+        signupStartedRows,
+        repeatRatingRows,
+      ] = await Promise.all([
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM "ProductEvent"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+            AND ${X_EVENT_ATTRIBUTED_SQL}
+            AND "name" = 'performance_viewed'
+        `),
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM "ProductEvent"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+            AND ${X_EVENT_ATTRIBUTED_SQL}
+            AND "name" = 'rating_slider_moved'
+        `),
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM "ProductEvent"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+            AND ${X_EVENT_ATTRIBUTED_SQL}
+            AND "name" = 'rating_submitted'
+        `),
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM "ProductEvent"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+            AND ${X_EVENT_ATTRIBUTED_SQL}
+            AND "name" = 'signup_started'
+        `),
+        prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM "ProductEvent"
+          WHERE "isLikelyBot" = false
+            AND "createdAt" >= NOW() - ${interval}
+            AND ${X_EVENT_ATTRIBUTED_SQL}
+            AND "name" = 'rating_submitted'
+            AND COALESCE("properties"->>'rating_timing', '') = 'repeat'
+        `),
+      ])
+
+      performanceViewed = toNumber(performanceViewedRows[0]?.count ?? 0)
+      sliderMoved = toNumber(sliderMovedRows[0]?.count ?? 0)
+      ratingSubmitted = toNumber(ratingSubmittedRows[0]?.count ?? 0)
+      signupStarted = toNumber(signupStartedRows[0]?.count ?? 0)
+      repeatRating = toNumber(repeatRatingRows[0]?.count ?? 0)
+    } catch {
+      // ProductEvent table may not exist until migration is applied
+    }
 
     const humanTotal = toNumber(totalHumanRows[0]?.count ?? 0)
     const xPageviews = toNumber(xCountRows[0]?.count ?? 0)
@@ -354,6 +512,14 @@ export async function getXTrafficAnalytics(
       usersFromX,
       waitlistFromX,
       recent,
+      activationFunnel: buildActivationFunnel({
+        ratePageviews: toNumber(ratePageviewRows[0]?.count ?? 0),
+        performanceViewed,
+        sliderMoved,
+        ratingSubmitted,
+        signupStarted,
+        repeatRating,
+      }),
     }
 
     setCache(cacheKey, data, 30_000)

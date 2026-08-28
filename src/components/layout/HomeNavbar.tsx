@@ -8,6 +8,7 @@ import { FaSearch, FaTimes, FaBars } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User } from 'lucide-react'
+import { trackSearchUsed } from '@/lib/analytics'
 
 const NAV_LINKS = [
   { label: 'Discover', href: '/discover' },
@@ -78,6 +79,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
     e.preventDefault()
     const q = searchQuery.trim()
     if (!q) return
+    trackSearchUsed({ query: q, surface: 'navbar' })
     router.push(`/search?q=${encodeURIComponent(q)}`)
     setSearchQuery('')
     setMobileMenuOpen(false)
