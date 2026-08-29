@@ -583,8 +583,7 @@ type PairRow = { actorId: string; movieId: string; maxUpd: Date }
 
 /**
  * Indexable rate URLs only (aligned with isRatePageIndexable):
- * - non-MINOR pairs with ≥1 community Rating, OR
- * - cohort-1 non-MINOR performances with seededAggregateScore
+ * - non-MINOR pairs with ≥2 community Ratings
  * plus curated homepage/performances targets (still subject to movie filters).
  */
 async function generatePerformances(outDir: string): Promise<number> {
@@ -639,17 +638,7 @@ async function generatePerformances(outDir: string): Promise<number> {
             AND p.tier <> 'MINOR'
         )
         GROUP BY r."actorId", r."movieId"
-        UNION
-        SELECT p."actorId", p."movieId", MAX(p."updatedAt") AS "maxUpd"
-        FROM "Performance" p
-        INNER JOIN "Movie" m ON m.id = p."movieId"
-          AND NOT m."isFeaturette"
-          AND m."indexingCohort" = 1
-        WHERE p."seededAggregateScore" IS NOT NULL
-          AND p.tier <> 'MINOR'
-          AND (m."releaseDate" IS NULL OR m."releaseDate" <= CURRENT_DATE)
-          AND m.year <= EXTRACT(YEAR FROM CURRENT_DATE)::int
-        GROUP BY p."actorId", p."movieId"
+        HAVING COUNT(*) >= 2
       ) t
       WHERE (
         ${lastActorId} = '' AND ${lastMovieId} = ''
@@ -662,7 +651,7 @@ async function generatePerformances(outDir: string): Promise<number> {
     const actorIds = [...new Set(pairs.map((p) => p.actorId))]
     const movieIds = [...new Set(pairs.map((p) => p.movieId))]
 
-    const [actors, movies, pairPerformances] = await Promise.all([
+    const [actors, movies, pairPerformances, ratingGroups] = await Promise.all([
       prisma.actor.findMany({
         where: { id: { in: actorIds } },
         select: { id: true, slug: true },
@@ -678,24 +667,54 @@ async function generatePerformances(outDir: string): Promise<number> {
           isFeaturette: true,
           releaseDate: true,
           year: true,
+          indexingCohort: true,
         },
       }),
       prisma.performance.findMany({
         where: {
           OR: pairs.map((p) => ({ actorId: p.actorId, movieId: p.movieId })),
         },
-        select: { actorId: true, movieId: true, character: true },
+        select: {
+          actorId: true,
+          movieId: true,
+          character: true,
+          tier: true,
+          seededAggregateScore: true,
+        },
+      }),
+      prisma.rating.groupBy({
+        by: ["actorId", "movieId"],
+        where: { OR: pairs.map((p) => ({ actorId: p.actorId, movieId: p.movieId })) },
+        _count: { _all: true },
       }),
     ])
 
+    const ratingCountMap = new Map(
+      ratingGroups.map((r) => [`${r.actorId}:${r.movieId}`, r._count._all]),
+    )
+    const perfMetaByPair = new Map<
+      string,
+      { tier: string | null; seededAggregateScore: number | null; characters: Array<string | null> }
+    >()
+
     const actorMap = new Map(actors.map((a) => [a.id, a]))
     const movieMap = new Map(movies.map((m) => [m.id, m]))
-    const charactersByPair = new Map<string, Array<string | null>>()
     for (const perf of pairPerformances) {
       const key = `${perf.actorId}:${perf.movieId}`
-      const list = charactersByPair.get(key) ?? []
-      list.push(perf.character)
-      charactersByPair.set(key, list)
+      const existing = perfMetaByPair.get(key)
+      if (existing) {
+        existing.characters.push(perf.character)
+        if (!existing.tier && perf.tier) existing.tier = perf.tier
+        if (existing.seededAggregateScore == null && perf.seededAggregateScore != null) {
+          existing.seededAggregateScore = perf.seededAggregateScore
+        }
+      } else {
+        perfMetaByPair.set(key, {
+          tier: perf.tier,
+          seededAggregateScore: perf.seededAggregateScore,
+          characters: [perf.character],
+        })
+      }
     }
 
     for (const pair of pairs) {
@@ -706,7 +725,20 @@ async function generatePerformances(outDir: string): Promise<number> {
       const movie = movieMap.get(pair.movieId)
       if (!actor || !movie) continue
       if (!shouldIncludeRateMovie(movie)) continue
-      if (isSelfOnlyCreditPair(charactersByPair.get(key) ?? [])) continue
+      const perfMeta = perfMetaByPair.get(key)
+      if (isSelfOnlyCreditPair(perfMeta?.characters ?? [])) continue
+      if (
+        !isRatePageIndexable({
+          movieSlug: movie.slug,
+          movieTitle: movie.title,
+          indexingCohort: movie.indexingCohort,
+          seededAggregateScore: perfMeta?.seededAggregateScore ?? null,
+          communityRatingCount: ratingCountMap.get(key) ?? 0,
+          tier: perfMeta?.tier ?? null,
+        })
+      ) {
+        continue
+      }
 
       seen.add(key)
       writer.push({

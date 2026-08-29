@@ -15,7 +15,7 @@ ActorRating is a large catalog of acting performances. Users rate **an actor in 
 
 ## Indexability (high level)
 
-- Indexable rate pages generally require LEAD/SUPPORTING tier, non-featurette title, and either cohort-1 seeding or ≥1 community rating (see site robots meta).
+- Indexable rate pages generally require LEAD/SUPPORTING tier, non-featurette title, and ≥2 community ratings (see site robots meta).
 - MINOR roles and junk/adult-blocked titles are excluded from primary discovery.
 - Auth, admin, dashboard, search, forum threads, and public profiles are typically noindex.
 - Sitemap index: https://actorrating.com/sitemap.xml
