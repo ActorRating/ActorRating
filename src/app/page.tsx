@@ -9,6 +9,7 @@ import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { HomeEditorialRails } from "@/components/editorial/HomeEditorialRails";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { buildFixedLandingHero, fixedLandingHeroLookupTarget } from "@/lib/home-featured-performance";
+import { weeklyHeroLookupTarget } from "@/lib/weekly-hero-performance";
 import { loadLandingRails } from "@/lib/landing-daily-rails";
 import {
   loadAllNewsAsync,
@@ -62,15 +63,18 @@ export default async function Home() {
   let initialLegendary: Awaited<ReturnType<typeof loadLandingRails>>["legendary"] = [];
   let initialRecent: Awaited<ReturnType<typeof loadLandingRails>>["recent"] = [];
   let featuredHero = buildFixedLandingHero(null);
+  let weeklyFeatured: Awaited<ReturnType<typeof getPerformancesByLookup>>[number] | null = null;
   try {
-    const [heroRows, rails] = await Promise.all([
+    const [heroRows, weeklyRows, rails] = await Promise.all([
       getPerformancesByLookup([fixedLandingHeroLookupTarget()]),
+      getPerformancesByLookup([weeklyHeroLookupTarget()]),
       loadLandingRails(),
     ]);
     initialPopular = rails.popular;
     initialLegendary = rails.legendary;
     initialRecent = rails.recent;
     featuredHero = buildFixedLandingHero(heroRows[0] ?? null);
+    weeklyFeatured = weeklyRows[0] ?? null;
   } catch {
     /* DB/API unavailable during build or deploy — client still fetches */
   }
@@ -185,6 +189,7 @@ export default async function Home() {
           initialLegendary={initialLegendary}
           initialRecent={initialRecent}
           featuredHero={featuredHero}
+          weeklyFeatured={weeklyFeatured}
           primaryRateHref={primaryRateHref}
         />
         <HomeEditorialRails stories={recentStories} news={recentNews} />

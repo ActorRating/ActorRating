@@ -7,6 +7,8 @@ export type WeeklyHeroConfig = {
   actor: string
   movie: string
   year: string
+  /** Fallback character label when DB performance row is missing */
+  character?: string
   /** Primary H1 — a question that invites an opinion */
   headline: string
   /** Brief five-criteria explainer under the headline */
@@ -27,6 +29,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Heath Ledger',
     movie: 'The Dark Knight',
     year: '2008',
+    character: 'Joker',
     headline: "How do you rate Heath Ledger's Joker?",
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -35,6 +38,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Cillian Murphy',
     movie: 'Oppenheimer',
     year: '2023',
+    character: 'J. Robert Oppenheimer',
     headline: 'How do you rate Cillian Murphy in Oppenheimer?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -43,6 +47,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Joaquin Phoenix',
     movie: 'Joker',
     year: '2019',
+    character: 'Arthur Fleck',
     headline: "How do you rate Joaquin Phoenix's Joker?",
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -51,6 +56,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Margot Robbie',
     movie: 'Barbie',
     year: '2023',
+    character: 'Barbie',
     headline: 'How do you rate Margot Robbie in Barbie?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -59,6 +65,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Anthony Hopkins',
     movie: 'The Silence of the Lambs',
     year: '1991',
+    character: 'Hannibal Lecter',
     headline: 'How do you rate Anthony Hopkins as Hannibal Lecter?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -67,6 +74,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Leonardo DiCaprio',
     movie: 'The Wolf of Wall Street',
     year: '2013',
+    character: 'Jordan Belfort',
     headline: 'How do you rate Leonardo DiCaprio in The Wolf of Wall Street?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -75,6 +83,7 @@ export const WEEKLY_HERO_ROTATION: WeeklyHeroConfig[] = [
     actor: 'Robert De Niro',
     movie: 'Taxi Driver',
     year: '1976',
+    character: 'Travis Bickle',
     headline: 'How do you rate Robert De Niro in Taxi Driver?',
     subline:
       'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
@@ -96,7 +105,10 @@ export function getCurrentWeeklyHeroConfig(date: Date = new Date()): WeeklyHeroC
   return WEEKLY_HERO_ROTATION[idx]
 }
 
-export function weeklyHeroLookupTarget(date?: Date): { actor: string; movie: string } {
-  const { actor, movie } = getCurrentWeeklyHeroConfig(date)
-  return { actor, movie }
+export function weeklyHeroLookupTarget(date?: Date): { actor: string; movie: string; year: number } {
+  const { actor, movie, year } = getCurrentWeeklyHeroConfig(date)
+  return { actor, movie, year: Number(year) }
 }
+
+/** Section label for the landing-page featured performance block. */
+export const WEEKLY_FEATURED_SECTION_TITLE = "This Week's Featured Performance"

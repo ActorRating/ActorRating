@@ -19,17 +19,19 @@ const NAV_LINKS = [
 ] as const
 
 const DESKTOP_LINK_CLASS =
-  'navbar-link-desktop group relative inline-flex items-center px-2.5 py-2.5 text-[14px] xl:px-3 xl:text-[15px] font-bold uppercase tracking-[0.05em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-11'
+  'navbar-link-desktop group relative inline-flex items-center px-2.5 py-2.5 text-[14px] xl:px-3 xl:text-[15px] font-bold uppercase tracking-[0.05em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-11 whitespace-nowrap shrink-0'
 
 function DesktopNavLink({
   href,
   children,
+  className = '',
 }: {
   href: string
   children: ReactNode
+  className?: string
 }) {
   return (
-    <InstantNavLink href={href} className={DESKTOP_LINK_CLASS}>
+    <InstantNavLink href={href} className={`${DESKTOP_LINK_CLASS} ${className}`.trim()}>
       {children}
       <span
         className="absolute bottom-0 left-2.5 right-2.5 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
@@ -127,7 +129,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden lg:flex items-center gap-1.5 xl:gap-2 pointer-events-auto navbar-content">
+            <div className="hidden lg:flex items-center gap-1 xl:gap-2 pointer-events-auto navbar-content shrink min-w-0">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
@@ -144,8 +146,8 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
                 </DesktopNavLink>
               ) : (
                 <>
-                  <DesktopNavLink href="/auth/signin">Sign In</DesktopNavLink>
-                  <DesktopNavLink href="/auth/register">Join Free</DesktopNavLink>
+                  <DesktopNavLink href="/auth/signin" className="navbar-auth-link">Sign In</DesktopNavLink>
+                  <DesktopNavLink href="/auth/register" className="navbar-auth-link">Join Free</DesktopNavLink>
                 </>
               )}
             </div>

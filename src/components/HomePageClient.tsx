@@ -33,6 +33,11 @@ import {
   buildFixedLandingHero,
   fixedLandingHeroLookupTarget,
 } from "@/lib/home-featured-performance";
+import {
+  getCurrentWeeklyHeroConfig,
+  WEEKLY_FEATURED_SECTION_TITLE,
+  weeklyHeroLookupTarget,
+} from "@/lib/weekly-hero-performance";
 import { resolveCharacterDisplay } from "@/lib/character";
 import {
   PosterRail,
@@ -378,22 +383,21 @@ function FeaturedPerformanceSection({
 }: {
   performance: EnrichedPerformance | null;
 }) {
-  const actorName = performance?.actor?.name ?? "Heath Ledger";
-  const movieTitle = performance?.movie?.title ?? "The Dark Knight";
-  const movieYear = performance?.movie?.year ?? 2008;
+  const week = getCurrentWeeklyHeroConfig();
+  const actorName = performance?.actor?.name ?? week.actor;
+  const movieTitle = performance?.movie?.title ?? week.movie;
+  const movieYear = performance?.movie?.year ?? Number(week.year);
   const character = performance
     ? resolveCharacterDisplay(performance)
-    : "Joker";
+    : week.character ?? "Unknown";
   const poster =
     upgradePosterThumbRes(performance?.movie?.posterUrl)?.replace(
       "/t/p/w342/",
       "/t/p/w780/",
     ) ??
     performance?.movie?.posterUrl?.replace(/\/t\/p\/w\d+\//, "/t/p/w780/") ??
-    "https://image.tmdb.org/t/p/w780/qJ2tW6WMUDux911r6m7haRef0WH.jpg";
-  const actorImage =
-    upgradeActorImageRes(performance?.actor?.imageUrl) ??
-    "https://image.tmdb.org/t/p/h632/AdWKVqyWpkYSfKE5Gb2qn8JzHni.jpg";
+    null;
+  const actorImage = upgradeActorImageRes(performance?.actor?.imageUrl) ?? null;
   const rateHref = performance
     ? getRateUrl(
         {
@@ -410,15 +414,15 @@ function FeaturedPerformanceSection({
       )
     : getRateUrl(
         {
-          id: createActorSlug("Heath Ledger"),
-          name: "Heath Ledger",
-          slug: createActorSlug("Heath Ledger"),
+          id: createActorSlug(week.actor),
+          name: week.actor,
+          slug: createActorSlug(week.actor),
         },
         {
-          id: createMovieSlug("The Dark Knight", 2008),
-          title: "The Dark Knight",
-          year: 2008,
-          slug: createMovieSlug("The Dark Knight", 2008),
+          id: createMovieSlug(week.movie, movieYear),
+          title: week.movie,
+          year: movieYear,
+          slug: createMovieSlug(week.movie, movieYear),
         },
       );
 
@@ -429,7 +433,7 @@ function FeaturedPerformanceSection({
           className="text-center text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-[#FFD700]/70 mb-8 sm:mb-10"
           style={HERO_SANS}
         >
-          Featured Performance
+          {WEEKLY_FEATURED_SECTION_TITLE}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] lg:grid-cols-[minmax(0,240px)_1fr] gap-8 sm:gap-10 lg:gap-12 items-center">
@@ -448,15 +452,17 @@ function FeaturedPerformanceSection({
 
           <div className="text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-3.5">
-              <div className="relative w-12 sm:w-14 aspect-[2/3] overflow-hidden rounded-sm border border-white/[0.1] bg-zinc-950 shrink-0">
-                <Image
-                  src={actorImage}
-                  alt={actorName}
-                  fill
-                  className="object-cover"
-                  sizes="56px"
-                />
-              </div>
+              {actorImage ? (
+                <div className="relative w-12 sm:w-14 aspect-[2/3] overflow-hidden rounded-sm border border-white/[0.1] bg-zinc-950 shrink-0">
+                  <Image
+                    src={actorImage}
+                    alt={actorName}
+                    fill
+                    className="object-cover"
+                    sizes="56px"
+                  />
+                </div>
+              ) : null}
               <h2
                 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-[1.1] tracking-tight"
                 style={DISPLAY}
@@ -465,9 +471,11 @@ function FeaturedPerformanceSection({
               </h2>
             </div>
 
-            <p className="mt-3 text-base sm:text-lg text-zinc-300">
-              as <span className="text-[#FFD700] font-medium">{character}</span>
-            </p>
+            {character !== "Unknown" ? (
+              <p className="mt-3 text-base sm:text-lg text-zinc-300">
+                as <span className="text-[#FFD700] font-medium">{character}</span>
+              </p>
+            ) : null}
             <p className="mt-1 text-sm sm:text-base text-zinc-500">
               {movieTitle}
               {movieYear ? ` · ${movieYear}` : ""}
@@ -503,16 +511,21 @@ export default function HomePageClient({
   initialLegendary = [],
   initialRecent = [],
   featuredHero: featuredHeroProp,
+  weeklyFeatured: weeklyFeaturedProp = null,
   primaryRateHref: primaryRateHrefProp,
 }: {
   initialPopular?: EnrichedPerformance[];
   initialLegendary?: EnrichedPerformance[];
   initialRecent?: EnrichedPerformance[];
   featuredHero: FeaturedHeroPayload;
+  weeklyFeatured?: EnrichedPerformance | null;
   primaryRateHref?: string;
 }) {
   const [clientResolvedFeatured, setClientResolvedFeatured] =
     useState<FeaturedHeroPayload | null>(null);
+  const [weeklyFeatured, setWeeklyFeatured] = useState<EnrichedPerformance | null>(
+    weeklyFeaturedProp,
+  );
   const [popular, setPopular] = useState<EnrichedPerformance[]>(initialPopular);
   const [legendary, setLegendary] =
     useState<EnrichedPerformance[]>(initialLegendary);
@@ -539,6 +552,28 @@ export default function HomePageClient({
       cancelled = true;
     };
   }, [featuredHeroProp.rateHref]);
+
+  useEffect(() => {
+    if (weeklyFeaturedProp) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(buildByLookupUrl([weeklyHeroLookupTarget()]), {
+          cache: "force-cache",
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const rows = data.performances as EnrichedPerformance[] | undefined;
+        if (!rows?.[0] || cancelled) return;
+        setWeeklyFeatured(rows[0]);
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [weeklyFeaturedProp]);
 
   useEffect(() => {
     const railsReady =
@@ -590,13 +625,6 @@ export default function HomePageClient({
   const recentItems =
     recent.length >= LANDING_RAILS_MIN ? null : recentFallback;
 
-  const featuredJoker =
-    [...popular, ...legendary, ...recent].find(
-      (p) =>
-        p.actor?.name === "Heath Ledger" &&
-        p.movie?.title === "The Dark Knight",
-    ) ?? null;
-
   return (
     <>
       <HeroSection featured={activeFeatured} />
@@ -640,7 +668,7 @@ export default function HomePageClient({
         )}
       </div>
 
-      <FeaturedPerformanceSection performance={featuredJoker} />
+      <FeaturedPerformanceSection performance={weeklyFeatured} />
 
       <div className="bg-[#0a0a0a] border-y border-white/[0.05]">
         <LetsYouSection />

@@ -963,10 +963,20 @@ video {
 
   /* Tablet viewing distance — 12.5px desktop links are too small on iPad Pro */
   .navbar-cinematic .navbar-link-desktop {
-    font-size: 16px !important;
-    letter-spacing: 0.035em !important;
-    padding: 0.625rem 0.9rem !important;
+    font-size: 15px !important;
+    letter-spacing: 0.03em !important;
+    padding: 0.5rem 0.65rem !important;
     min-height: 44px;
+  }
+
+  .navbar-cinematic .navbar-auth-link {
+    font-size: 14px !important;
+    letter-spacing: 0.02em !important;
+    padding: 0.5rem 0.55rem !important;
+  }
+
+  .navbar-cinematic .navbar-search-input {
+    width: 7.5rem !important;
   }
 }
 
