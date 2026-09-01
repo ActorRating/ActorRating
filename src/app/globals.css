@@ -960,6 +960,14 @@ video {
   .hero-cta-band {
     display: none !important;
   }
+
+  /* Tablet viewing distance — 12.5px desktop links are too small on iPad Pro */
+  .navbar-cinematic .navbar-link-desktop {
+    font-size: 16px !important;
+    letter-spacing: 0.035em !important;
+    padding: 0.625rem 0.9rem !important;
+    min-height: 44px;
+  }
 }
 
 /* Navbar content - white text for visibility, transitions on scroll */

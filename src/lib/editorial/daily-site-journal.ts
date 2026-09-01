@@ -9,7 +9,13 @@ import {
   sanitizeJournalCover,
 } from "@/lib/editorial/journal-standards"
 import { loadMarkdownCoverKeys } from "@/lib/editorial/load-journal-cover-keys"
-import { normalizeCoverKey, upgradeActorImageRes } from "@/lib/editorial/resolve-editorial-cover"
+import {
+  buildVariedDailyNews,
+  buildVariedStoryFromFacts,
+  journalDayHash,
+  type NewsTopic,
+} from "@/lib/editorial/journal-daily-content"
+import { buildPerformanceFactsPack, type PerformanceFactsPack } from "@/lib/editorial/performance-facts"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
 
@@ -35,35 +41,8 @@ function dateKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
 }
 
-const STORY_CTA = `Quick-rate once if you must, then break it down after one quiet scene. Edit later only if a concrete beat changed your mind — not if the timeline did.`
 
-const NEWS_HYGIENE = `## Scoreboard hygiene (daily)
-
-Treat quick-rates as drafts until a quiet scene confirms them. Separate lead and supporting cards. Keep box office and awards chatter in comments, not in the sliders themselves.`
-
-const NEWS_CTA = `## Before you close the tab
-
-Name one criterion you weighted heavily today and the scene that earned it. If the scene is missing, the score is still a draft.
-
-## Journal rule
-
-If your number moved because of discourse instead of a scene, put it back. Stories carry heat; news keeps the rules legible.`
-
-const CRITERIA_BLOCK = `## Score it on the five criteria
-
-- **Emotional Range & Depth** — what feeling survives past the trailer?
-- **Character Believability** — did you forget the actor, or only the brand?
-- **Performance Quality** — voice, body, timing: name one precise choice.
-- **Screen Presence** — who held the room when the plot stopped helping?
-- **Chemistry & Interaction** — who changed someone else's temperature?`
-
-const NEWS_TOPICS: Array<{
-  key: string
-  title: string
-  description: string
-  intro: string
-  sections: Array<{ heading: string; body: string }>
-}> = [
+const NEWS_TOPICS: NewsTopic[] = [
   {
     key: "vibes-vs-craft",
     title: "Vibes are not a criterion",
@@ -275,93 +254,78 @@ async function pickRatedPerformance(
   return rows[0] ?? null
 }
 
-function buildStoryFromPerformance(
+function perfRowToFacts(
   perf: NonNullable<Awaited<ReturnType<typeof pickRatedPerformance>>>,
+): PerformanceFactsPack {
+  return {
+    actorName: perf.actorName,
+    actorSlug: perf.actorSlug,
+    movieTitle: perf.movieTitle,
+    movieYear: perf.movieYear,
+    movieSlug: perf.movieSlug,
+    director: null,
+    genres: [],
+    character: perf.character,
+    tier: null,
+    ratingCount: perf.ratingCount,
+    avg10: null,
+    dimensions: {},
+    strongestDimensions: [],
+    weakestDimensions: [],
+    relatedPerformanceLabels: [],
+  }
+}
+
+async function resolveStoryFacts(
+  prisma: PrismaClient,
+  perf: NonNullable<Awaited<ReturnType<typeof pickRatedPerformance>>>,
+): Promise<PerformanceFactsPack> {
+  const facts = await buildPerformanceFactsPack(prisma, perf.actorId, perf.movieId)
+  return facts ?? perfRowToFacts(perf)
+}
+
+function buildStoryPiece(
+  facts: PerformanceFactsPack,
   day: string,
+  perf: NonNullable<Awaited<ReturnType<typeof pickRatedPerformance>>>,
 ): GeneratedJournalPiece {
-  const role = perf.character?.trim() || "this role"
-  const slug = `daily-${day}-${slugify(perf.actorSlug || perf.actorName)}-${slugify(perf.movieSlug || perf.movieTitle)}`
-  const title = `${perf.actorName} in ${perf.movieTitle}: keep the scorecard honest`
-  const description = `Today's craft pulse: ${perf.actorName} as ${role} in ${perf.movieTitle} (${perf.movieYear}) — ${perf.ratingCount} logged-in rating${perf.ratingCount === 1 ? "" : "s"} on the board.`
-  const rateHref =
-    perf.actorSlug && perf.movieSlug ? `/rate/${perf.actorSlug}/${perf.movieSlug}` : null
-
-  const body = `*Daily journal — ${day}*
-
-## Why this turn today
-
-${perf.actorName}'s work as **${role}** in *${perf.movieTitle}* (${perf.movieYear}) already has community heat on ActorRating (${perf.ratingCount} logged-in rating${perf.ratingCount === 1 ? "" : "s"}). Daily journal rule: don't let that heat become vibes.
-
-## The acting question
-
-Not "is the movie good?" — **what did ${perf.actorName} do with ${role}?** Name one choice that would not survive a trailer cut. If you cannot, your score is still a draft.
-
-${CRITERIA_BLOCK}
-
-## Common mistakes on this card
-
-- Rating the franchise instead of the turn
-- Smuggling box office or discourse into the number
-- Averaging lead and supporting performances into one vibe
-
-## One scene drill
-
-Pick the quietest scene with ${perf.actorName} on screen. If your score only works on the loudest beat, revisit **Performance Quality** until you can cite the still moment.
-
-## Do this next
-
-${rateHref ? `Open the live scorecard: [${perf.actorName} in ${perf.movieTitle}](${rateHref}).` : `Find the performance on ActorRating and open the five criteria.`}
-
-${STORY_CTA}`
-
+  const varied = buildVariedStoryFromFacts(facts, day)
+  const slug = `daily-${day}-${slugify(facts.actorSlug || facts.actorName)}-${slugify(facts.movieSlug || facts.movieTitle)}`
   const actorCover = sanitizeJournalCover(upgradeActorImageRes(perf.actorImageUrl))
   const poster = sanitizeJournalCover(perf.moviePoster)
 
   return {
     kind: "story",
     slug,
-    title,
-    description,
-    bodyMarkdown: body,
+    title: varied.title,
+    description: varied.description,
+    bodyMarkdown: varied.bodyMarkdown,
     coverImage: actorCover || poster || null,
     related:
-      perf.actorSlug && perf.movieSlug
-        ? [{ actorSlug: perf.actorSlug, movieSlug: perf.movieSlug }]
+      facts.actorSlug && facts.movieSlug
+        ? [{ actorSlug: facts.actorSlug, movieSlug: facts.movieSlug }]
         : [],
   }
 }
 
-function buildDailyNews(day: string, perf: Awaited<ReturnType<typeof pickRatedPerformance>>): GeneratedJournalPiece {
-  const idx = Math.abs([...day].reduce((s, ch) => s + ch.charCodeAt(0), 0)) % NEWS_TOPICS.length
-  const topic = NEWS_TOPICS[idx]!
-  const sections = topic.sections
-    .map((s) => `## ${s.heading}\n\n${s.body}`)
-    .join("\n\n")
-
-  const exampleBlock = perf
-    ? `\n\n## Today's example card\n\nWhile you read this, keep *[${perf.actorName} in ${perf.movieTitle}](${perf.actorSlug && perf.movieSlug ? `/rate/${perf.actorSlug}/${perf.movieSlug}` : "#"})* open as a test case. ${perf.ratingCount} logged-in rating${perf.ratingCount === 1 ? "" : "s"} already live — use them as community context, not as your personal score unless you earned it scene by scene.`
-    : ""
-
-  const body = `*Daily journal — ${day}*
-
-${topic.intro}
-
-${sections}
-
-## Keep the rails clean
-
-Stories carry timely performance heat. News keeps the rules legible. Both belong on a scoreboard site — neither should go dark between event weekends.${exampleBlock}
-
-${NEWS_HYGIENE}
-
-${NEWS_CTA}`
+async function buildNewsPiece(
+  prisma: PrismaClient,
+  day: string,
+  perf: Awaited<ReturnType<typeof pickRatedPerformance>>,
+): Promise<GeneratedJournalPiece> {
+  const topic = NEWS_TOPICS[journalDayHash(day) % NEWS_TOPICS.length]!
+  const facts = perf
+    ? (await buildPerformanceFactsPack(prisma, perf.actorId, perf.movieId)) ??
+      perfRowToFacts(perf)
+    : null
+  const varied = buildVariedDailyNews(topic, day, facts)
 
   return {
     kind: "news",
     slug: `daily-${day}-${topic.key}`,
     title: topic.title,
     description: topic.description,
-    bodyMarkdown: body,
+    bodyMarkdown: varied.bodyMarkdown,
     coverImage: sanitizeJournalCover(perf?.moviePoster) || null,
     related:
       perf?.actorSlug && perf?.movieSlug
@@ -413,7 +377,8 @@ export async function runDailySiteJournal(
       if (!perf) {
         result.story = { ok: false, detail: "no_rated_performance" }
       } else {
-        const piece = buildStoryFromPerformance(perf, day)
+        const facts = await resolveStoryFacts(prisma, perf)
+        const piece = buildStoryPiece(facts, day, perf)
         piece.bodyMarkdown = ensureJournalMinimum("story", piece.bodyMarkdown)
         if (!meetsJournalMinimum("story", piece.bodyMarkdown)) {
           const w = countMarkdownWords(piece.bodyMarkdown)
@@ -451,7 +416,7 @@ export async function runDailySiteJournal(
   }
 
   if (!opts.skipNews) {
-    const piece = buildDailyNews(day, perfForNews)
+    const piece = await buildNewsPiece(prisma, day, perfForNews)
     piece.bodyMarkdown = ensureJournalMinimum("news", piece.bodyMarkdown)
     const existingNews = await prisma.siteEditorial.findUnique({
       where: { slug: piece.slug },

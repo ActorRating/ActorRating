@@ -17,10 +17,12 @@ import { WaitlistForm } from "@/components/auth/WaitlistForm";
 import {
   prefetchPerformancesPageData,
   buildByLookupUrl,
-  POPULAR_RIGHT_NOW_TARGETS,
   LEGENDARY_PERFORMANCE_TARGETS,
-  RECENT_FAVORITES_TARGETS,
-  allLandingRailLookupTargets,
+  POPULAR_RIGHT_NOW_POOL,
+  RECENT_FAVORITES_POOL,
+  popularRightNowTargets,
+  recentFavoritesTargets,
+  DAILY_RAIL_COUNT,
 } from "@/lib/performances-page-targets";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
@@ -35,7 +37,6 @@ import { resolveCharacterDisplay } from "@/lib/character";
 import {
   PosterRail,
   StaticPosterRail,
-  orderByTargets,
   upgradePosterThumbRes,
 } from "@/components/poster/PosterRails";
 
@@ -86,16 +87,8 @@ function usePrefersReducedMotion() {
   return reduce;
 }
 
-// ─── Static fallbacks when DB/posters unavailable (local / cold start) ────────
-
-const FALLBACK_POPULAR = POPULAR_RIGHT_NOW_TARGETS;
 const FALLBACK_LEGENDARY = LEGENDARY_PERFORMANCE_TARGETS;
-const FALLBACK_RECENT = RECENT_FAVORITES_TARGETS;
-
-function performanceKey(p: EnrichedPerformance): string | null {
-  if (!p.actor?.name || !p.movie?.title) return null;
-  return `${p.actor.name}:${p.movie.title}`;
-}
+const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 
 // ─── HERO ────────────────────────────────────────────────────────────────────
 // Desktop: full-bleed still, manifesto last line on fold bottom, CTA band below.
@@ -506,29 +499,24 @@ function FeaturedPerformanceSection({
 }
 
 export default function HomePageClient({
-  initialLeaderboardPerformances = [],
-  initialRailPerformances = [],
+  initialPopular = [],
+  initialLegendary = [],
+  initialRecent = [],
   featuredHero: featuredHeroProp,
   primaryRateHref: primaryRateHrefProp,
 }: {
-  initialLeaderboardPerformances?: EnrichedPerformance[];
-  initialRailPerformances?: EnrichedPerformance[];
+  initialPopular?: EnrichedPerformance[];
+  initialLegendary?: EnrichedPerformance[];
+  initialRecent?: EnrichedPerformance[];
   featuredHero: FeaturedHeroPayload;
   primaryRateHref?: string;
 }) {
   const [clientResolvedFeatured, setClientResolvedFeatured] =
     useState<FeaturedHeroPayload | null>(null);
-  const [railPool, setRailPool] = useState<EnrichedPerformance[]>(() => {
-    const seen = new Set<string>();
-    const out: EnrichedPerformance[] = [];
-    for (const p of [...initialLeaderboardPerformances, ...initialRailPerformances]) {
-      const k = performanceKey(p);
-      if (!k || seen.has(k)) continue;
-      seen.add(k);
-      out.push(p);
-    }
-    return out;
-  });
+  const [popular, setPopular] = useState<EnrichedPerformance[]>(initialPopular);
+  const [legendary, setLegendary] =
+    useState<EnrichedPerformance[]>(initialLegendary);
+  const [recent, setRecent] = useState<EnrichedPerformance[]>(initialRecent);
 
   useEffect(() => {
     if (featuredHeroProp.rateHref !== "/discover" && featuredHeroProp.rateHref !== "/performances") return;
@@ -553,47 +541,57 @@ export default function HomePageClient({
   }, [featuredHeroProp.rateHref]);
 
   useEffect(() => {
-    const needed = allLandingRailLookupTargets().length;
-    if (railPool.length >= needed) return;
+    const railsReady =
+      popular.length >= LANDING_RAILS_MIN &&
+      legendary.length >= LANDING_RAILS_MIN &&
+      recent.length >= LANDING_RAILS_MIN;
+    if (railsReady) return;
     let cancelled = false;
-    const targets = allLandingRailLookupTargets();
     (async () => {
       try {
-        const res = await fetch(buildByLookupUrl(targets), { cache: "force-cache" });
+        const res = await fetch("/api/performances/landing-rails", {
+          cache: "force-cache",
+        });
         if (!res.ok || cancelled) return;
         const data = await res.json();
-        const rows = (data.performances as EnrichedPerformance[]) ?? [];
-        if (!rows.length || cancelled) return;
-        setRailPool(rows);
+        if (cancelled) return;
+        if (Array.isArray(data.popular) && data.popular.length > 0) {
+          setPopular(data.popular);
+        }
+        if (Array.isArray(data.legendary) && data.legendary.length > 0) {
+          setLegendary(data.legendary);
+        }
+        if (Array.isArray(data.recent) && data.recent.length > 0) {
+          setRecent(data.recent);
+        }
       } catch {
-        /* silent */
+        /* silent — static rails fill gaps */
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [railPool.length]);
+  }, [popular.length, legendary.length, recent.length]);
 
   const activeFeatured = clientResolvedFeatured ?? featuredHeroProp;
   const primaryRateHref = primaryRateHrefProp ?? activeFeatured.rateHref;
 
-  const popular = orderByTargets(railPool, POPULAR_RIGHT_NOW_TARGETS);
-  const legendary = orderByTargets(railPool, LEGENDARY_PERFORMANCE_TARGETS);
-  const recent = orderByTargets(railPool, RECENT_FAVORITES_TARGETS);
+  const popularFallback = popularRightNowTargets();
+  const recentFallback = recentFavoritesTargets();
 
-  // Prefer DB rows when complete; otherwise use static targets so missing
-  // catalog entries never drop posters from a rail (common on production).
+  // Prefer DB rows when complete enough; otherwise today's editorial slice
+  // so missing catalog entries never drop posters from a rail.
   const popularItems =
-    popular.length === POPULAR_RIGHT_NOW_TARGETS.length ? null : FALLBACK_POPULAR;
+    popular.length >= LANDING_RAILS_MIN ? null : popularFallback;
   const legendaryItems =
     legendary.length === LEGENDARY_PERFORMANCE_TARGETS.length
       ? null
       : FALLBACK_LEGENDARY;
   const recentItems =
-    recent.length === RECENT_FAVORITES_TARGETS.length ? null : FALLBACK_RECENT;
+    recent.length >= LANDING_RAILS_MIN ? null : recentFallback;
 
   const featuredJoker =
-    railPool.find(
+    [...popular, ...legendary, ...recent].find(
       (p) =>
         p.actor?.name === "Heath Ledger" &&
         p.movie?.title === "The Dark Knight",
@@ -608,7 +606,7 @@ export default function HomePageClient({
           <PosterRail
             title="Popular Right Now"
             performances={popular}
-            characterTargets={POPULAR_RIGHT_NOW_TARGETS}
+            characterTargets={POPULAR_RIGHT_NOW_POOL}
           />
         ) : (
           <StaticPosterRail
@@ -632,7 +630,7 @@ export default function HomePageClient({
           <PosterRail
             title="Recent Favorites"
             performances={recent}
-            characterTargets={RECENT_FAVORITES_TARGETS}
+            characterTargets={RECENT_FAVORITES_POOL}
           />
         ) : (
           <StaticPosterRail

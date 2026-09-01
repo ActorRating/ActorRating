@@ -20,6 +20,8 @@ export function tmdbPoster(path: string): string {
 export const JOURNAL_BLOCKED_COVER_FILE_PATHS = new Set([
   // Gap-fill typo: pasted as "Minari/Aftersun" but is explicit adult content on TMDB CDN.
   "59X25MoRSOLoiOKhO5L6T35Fve2.jpg",
+  // Gap-fill typo: invalid TMDB path (404) used as Beef placeholder.
+  "5QOeW2hZAdbiBNMYeXQHXmRIK7J.jpg",
   // Gap-fill typo: invalid TMDB path (404) used as "The Pitt" placeholder.
   "7RyHzEe6OE27E5gQh6hYYtWnzz5.jpg",
 ])

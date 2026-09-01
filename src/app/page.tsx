@@ -9,10 +9,7 @@ import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { HomeEditorialRails } from "@/components/editorial/HomeEditorialRails";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { buildFixedLandingHero, fixedLandingHeroLookupTarget } from "@/lib/home-featured-performance";
-import {
-  homeLeaderboardLookupTargets,
-  allLandingRailLookupTargets,
-} from "@/lib/performances-page-targets";
+import { loadLandingRails } from "@/lib/landing-daily-rails";
 import {
   loadAllNewsAsync,
   loadAllStoriesAsync,
@@ -61,17 +58,18 @@ export default async function Home() {
     redirect("/dashboard")
   }
 
-  let initialLeaderboardPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
-  let initialRailPerformances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
+  let initialPopular: Awaited<ReturnType<typeof loadLandingRails>>["popular"] = [];
+  let initialLegendary: Awaited<ReturnType<typeof loadLandingRails>>["legendary"] = [];
+  let initialRecent: Awaited<ReturnType<typeof loadLandingRails>>["recent"] = [];
   let featuredHero = buildFixedLandingHero(null);
   try {
-    const [heroRows, leaderboardRows, railRows] = await Promise.all([
+    const [heroRows, rails] = await Promise.all([
       getPerformancesByLookup([fixedLandingHeroLookupTarget()]),
-      getPerformancesByLookup(homeLeaderboardLookupTargets()),
-      getPerformancesByLookup(allLandingRailLookupTargets()),
+      loadLandingRails(),
     ]);
-    initialLeaderboardPerformances = leaderboardRows;
-    initialRailPerformances = railRows;
+    initialPopular = rails.popular;
+    initialLegendary = rails.legendary;
+    initialRecent = rails.recent;
     featuredHero = buildFixedLandingHero(heroRows[0] ?? null);
   } catch {
     /* DB/API unavailable during build or deploy — client still fetches */
@@ -183,8 +181,9 @@ export default async function Home() {
       />
       <LandingLayout primaryRateHref={primaryRateHref}>
         <HomePageClient
-          initialLeaderboardPerformances={initialLeaderboardPerformances}
-          initialRailPerformances={initialRailPerformances}
+          initialPopular={initialPopular}
+          initialLegendary={initialLegendary}
+          initialRecent={initialRecent}
           featuredHero={featuredHero}
           primaryRateHref={primaryRateHref}
         />

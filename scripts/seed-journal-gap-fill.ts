@@ -21,8 +21,8 @@ type Piece = {
 const COVER = {
   bnd: "https://image.tmdb.org/t/p/w1280/vjMvFSmGUxEtqVdaZgvFee9XkZl.jpg",
   odyssey: "https://image.tmdb.org/t/p/w1280/2Es8HvjgIoNxYbsQnVa8OJVz2Wk.jpg",
-  beef: "https://image.tmdb.org/t/p/w1280/5QOeW2hZAdbiBNMYeXQHXmRIK7J.jpg",
-  pitt: "https://image.tmdb.org/t/p/w1280/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+  beef: "https://image.tmdb.org/t/p/w1280/Ac8ruycRXzgcsndTZFK6ouGA0FA.jpg",
+  pitt: "https://image.tmdb.org/t/p/w1280/kvFSpESyBZMjaeOJDx7RS3P1jey.jpg",
   challengers: "https://image.tmdb.org/t/p/w1280/H6vzgCpdYaU8YdhNJETurrtdh0.jpg",
   dune: "https://image.tmdb.org/t/p/w1280/8b8R8l88Qje9dn9OE8PY05/v.jpg",
   substance: "https://image.tmdb.org/t/p/w1280/lqoMzC3B5vuEetL75WxuoopM7RQ.jpg",

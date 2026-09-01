@@ -15,16 +15,17 @@ import {
   PosterRail,
   StaticPosterRail,
   ActorRail,
-  orderByTargets,
   type RailActor,
 } from "@/components/poster/PosterRails";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import {
-  POPULAR_RIGHT_NOW_TARGETS,
   LEGENDARY_PERFORMANCE_TARGETS,
-  RECENT_FAVORITES_TARGETS,
-  allLandingRailLookupTargets,
-  buildByLookupUrl,
+  POPULAR_RIGHT_NOW_POOL,
+  RECENT_FAVORITES_POOL,
+  popularRightNowTargets,
+  recentFavoritesTargets,
+  utcDateKey,
+  DAILY_RAIL_COUNT,
 } from "@/lib/performances-page-targets";
 import { familiarFacesFallbackActors } from "@/lib/familiar-faces-fallback";
 
@@ -42,6 +43,7 @@ const CACHE_KEY = "performances-page-data";
 const ACTORS_CACHE_KEY = "discover-familiar-faces";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FALLBACK_ACTORS = familiarFacesFallbackActors();
+const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 
 interface DiscoverPageClientProps {
   initialPopular?: EnrichedPerformance[];
@@ -78,6 +80,7 @@ export function DiscoverPageClient({
           CACHE_KEY,
           JSON.stringify({
             data: { popular, legendary, recent },
+            dateKey: utcDateKey(),
             timestamp: Date.now(),
           }),
         );
@@ -94,18 +97,17 @@ export function DiscoverPageClient({
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           try {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < CACHE_TTL_MS && !cancelled) {
-              // Support both new and legacy cache shapes
+            const parsed = JSON.parse(cached);
+            const { data, timestamp, dateKey } = parsed;
+            if (
+              dateKey === utcDateKey() &&
+              Date.now() - timestamp < CACHE_TTL_MS &&
+              !cancelled
+            ) {
               if (data.popular || data.legendary) {
                 setPopular(data.popular ?? []);
                 setLegendary(data.legendary ?? data.iconic ?? []);
                 setRecent(data.recent ?? []);
-                return;
-              }
-              if (data.recent || data.iconic) {
-                setRecent(data.recent ?? []);
-                setLegendary(data.iconic ?? []);
                 return;
               }
             }
@@ -114,23 +116,18 @@ export function DiscoverPageClient({
           }
         }
 
-        const targets = allLandingRailLookupTargets();
-        const res = await fetch(buildByLookupUrl(targets), {
+        const res = await fetch("/api/performances/landing-rails", {
           cache: "force-cache",
         });
         if (!res.ok || cancelled) return;
         const json = await res.json();
-        const rows = (json.performances as EnrichedPerformance[]) ?? [];
-        const nextPopular = orderByTargets(rows, POPULAR_RIGHT_NOW_TARGETS);
-        const nextLegendary = orderByTargets(
-          rows,
-          LEGENDARY_PERFORMANCE_TARGETS,
-        );
-        const nextRecent = orderByTargets(rows, RECENT_FAVORITES_TARGETS);
+        const nextPopular = (json.popular as EnrichedPerformance[]) ?? [];
+        const nextLegendary = (json.legendary as EnrichedPerformance[]) ?? [];
+        const nextRecent = (json.recent as EnrichedPerformance[]) ?? [];
         if (cancelled) return;
-        setPopular(nextPopular);
-        setLegendary(nextLegendary);
-        setRecent(nextRecent);
+        if (nextPopular.length) setPopular(nextPopular);
+        if (nextLegendary.length) setLegendary(nextLegendary);
+        if (nextRecent.length) setRecent(nextRecent);
         sessionStorage.setItem(
           CACHE_KEY,
           JSON.stringify({
@@ -139,6 +136,7 @@ export function DiscoverPageClient({
               legendary: nextLegendary,
               recent: nextRecent,
             },
+            dateKey: json.dateKey ?? utcDateKey(),
             timestamp: Date.now(),
           }),
         );
@@ -211,17 +209,13 @@ export function DiscoverPageClient({
   }, [initialActors]);
 
   const popularItems =
-    popular.length === POPULAR_RIGHT_NOW_TARGETS.length
-      ? null
-      : POPULAR_RIGHT_NOW_TARGETS;
+    popular.length >= LANDING_RAILS_MIN ? null : popularRightNowTargets();
   const legendaryItems =
     legendary.length === LEGENDARY_PERFORMANCE_TARGETS.length
       ? null
       : LEGENDARY_PERFORMANCE_TARGETS;
   const recentItems =
-    recent.length === RECENT_FAVORITES_TARGETS.length
-      ? null
-      : RECENT_FAVORITES_TARGETS;
+    recent.length >= LANDING_RAILS_MIN ? null : recentFavoritesTargets();
 
   const body = (
     <div className="min-h-screen bg-black w-full" style={SANS}>
@@ -265,7 +259,7 @@ export function DiscoverPageClient({
           <PosterRail
             title="Popular Right Now"
             performances={popular}
-            characterTargets={POPULAR_RIGHT_NOW_TARGETS}
+            characterTargets={POPULAR_RIGHT_NOW_POOL}
           />
         ) : (
           <StaticPosterRail
@@ -296,7 +290,7 @@ export function DiscoverPageClient({
           <PosterRail
             title="Recent Favorites"
             performances={recent}
-            characterTargets={RECENT_FAVORITES_TARGETS}
+            characterTargets={RECENT_FAVORITES_POOL}
           />
         ) : (
           <StaticPosterRail title="Recent Favorites" items={recentItems} />

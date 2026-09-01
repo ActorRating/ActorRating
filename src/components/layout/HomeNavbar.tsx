@@ -19,7 +19,7 @@ const NAV_LINKS = [
 ] as const
 
 const DESKTOP_LINK_CLASS =
-  'navbar-link-desktop group relative px-2.5 py-2 text-[12.5px] font-bold uppercase tracking-[0.055em] text-white hover:text-[#FFD700] transition-colors duration-200'
+  'navbar-link-desktop group relative inline-flex items-center px-2.5 py-2.5 text-[14px] xl:px-3 xl:text-[15px] font-bold uppercase tracking-[0.05em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-11'
 
 function DesktopNavLink({
   href,
@@ -127,7 +127,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden lg:flex items-center gap-1 pointer-events-auto navbar-content">
+            <div className="hidden lg:flex items-center gap-1.5 xl:gap-2 pointer-events-auto navbar-content">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
@@ -232,7 +232,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
                 <InstantNavLink
                   key={`mobile-${link.href}`}
                   href={link.href}
-                  className="px-4 py-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200 rounded-lg hover:bg-white/5"
+                  className="px-4 py-3.5 text-[15px] sm:text-base font-bold uppercase tracking-[0.06em] text-white hover:text-[#FFD700] transition-colors duration-200 rounded-lg hover:bg-white/5 min-h-11"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}

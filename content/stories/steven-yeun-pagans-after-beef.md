@@ -2,7 +2,7 @@
 title: "Steven Yeun’s Pagans casting after Beef"
 description: "Yeun leads Netflix’s Pagans. After Beef, the anticipation isn’t fame — it’s whether he keeps choosing roles that punish easy likability."
 publishedAt: 2026-08-20
-coverImage: "https://image.tmdb.org/t/p/w1280/5QOeW2hZAdbiBNMYeXQHXmRIK7J.jpg"
+coverImage: "https://image.tmdb.org/t/p/w1280/Ac8ruycRXzgcsndTZFK6ouGA0FA.jpg"
 related:
   - actorSlug: steven-yeun
     movieSlug: beef-2023

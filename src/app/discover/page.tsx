@@ -1,13 +1,7 @@
 export const revalidate = 60;
 
 import type { Metadata } from "next";
-import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
-import {
-  POPULAR_RIGHT_NOW_TARGETS,
-  LEGENDARY_PERFORMANCE_TARGETS,
-  RECENT_FAVORITES_TARGETS,
-  allLandingRailLookupTargets,
-} from "@/lib/performances-page-targets";
+import { loadLandingRails } from "@/lib/landing-daily-rails";
 import { getPopularActors } from "@/lib/popular-actors";
 import { DiscoverPageClient } from "./DiscoverPageClient";
 
@@ -22,10 +16,15 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
-  let performances: Awaited<ReturnType<typeof getPerformancesByLookup>> = [];
+  let initialPopular: Awaited<ReturnType<typeof loadLandingRails>>["popular"] = [];
+  let initialLegendary: Awaited<ReturnType<typeof loadLandingRails>>["legendary"] = [];
+  let initialRecent: Awaited<ReturnType<typeof loadLandingRails>>["recent"] = [];
   let initialActors: Awaited<ReturnType<typeof getPopularActors>> = [];
   try {
-    performances = await getPerformancesByLookup(allLandingRailLookupTargets());
+    const rails = await loadLandingRails();
+    initialPopular = rails.popular;
+    initialLegendary = rails.legendary;
+    initialRecent = rails.recent;
   } catch {
     /* DB unreachable — client falls back to static rails / API */
   }
@@ -35,21 +34,6 @@ export default async function DiscoverPage() {
   } catch {
     /* DB unreachable — client uses curated Familiar Faces fallback */
   }
-
-  const byKey = (actor: string, movie: string) =>
-    performances.find((p) => p.actor.name === actor && p.movie.title === movie);
-
-  const initialPopular = POPULAR_RIGHT_NOW_TARGETS.map((t) =>
-    byKey(t.actor, t.movie),
-  ).filter((p): p is NonNullable<typeof p> => p !== undefined);
-
-  const initialLegendary = LEGENDARY_PERFORMANCE_TARGETS.map((t) =>
-    byKey(t.actor, t.movie),
-  ).filter((p): p is NonNullable<typeof p> => p !== undefined);
-
-  const initialRecent = RECENT_FAVORITES_TARGETS.map((t) =>
-    byKey(t.actor, t.movie),
-  ).filter((p): p is NonNullable<typeof p> => p !== undefined);
 
   return (
     <DiscoverPageClient
