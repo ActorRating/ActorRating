@@ -20,6 +20,7 @@ import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatin
 import { fetchGuestSuccessRecommendations, type SuccessCarouselPerf } from '@/lib/guest-success-recommendations'
 import { SuccessRateAnotherCarousel } from '@/components/rating/SuccessRateAnotherCarousel'
 import { COMMENT_MAX_LENGTH } from '@/lib/validation/ratingComment'
+import { PerformanceReviewsSection } from '@/components/rating/PerformanceReviewsSection'
 import { TurnstileWidget } from '@/components/auth/TurnstileWidget'
 
 const GOLD = 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
