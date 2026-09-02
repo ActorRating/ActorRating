@@ -49,6 +49,13 @@ RUN ./node_modules/.bin/esbuild scripts/generate-sitemaps.ts \
     --target=node20 \
     --external:@prisma/client \
     --outfile=scripts/generate-sitemaps.js
+RUN ./node_modules/.bin/esbuild scripts/list-sitemap-indexable-performances.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --external:@prisma/client \
+    --external:dotenv \
+    --outfile=scripts/list-sitemap-indexable-performances.js
 RUN ./node_modules/.bin/esbuild scripts/ingest-all-movies-cast.ts \
     --bundle \
     --platform=node \
@@ -121,6 +128,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/docs/arie/BRAND_CONSTITUTION.md .
 # Cast ingest is optional (Coolify Terminal): `node scripts/ingest-all-movies-cast.js`
 # @prisma/client is resolved from the standalone node_modules already present at /app/node_modules.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/generate-sitemaps.js ./scripts/generate-sitemaps.js
+# Diagnostic: `node scripts/list-sitemap-indexable-performances.js [--missing-from=URL]`
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/list-sitemap-indexable-performances.js ./scripts/list-sitemap-indexable-performances.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/ingest-all-movies-cast.js ./scripts/ingest-all-movies-cast.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-internal-crawl-bots.js ./scripts/backfill-internal-crawl-bots.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-bot-category.js ./scripts/backfill-bot-category.js

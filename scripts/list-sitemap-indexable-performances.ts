@@ -2,18 +2,28 @@
  * List indexable /rate pairs that should appear in the performances sitemap,
  * using the same gates as scripts/generate-sitemaps.ts + admin cohort panel.
  *
- * Run: npx tsx scripts/list-sitemap-indexable-performances.ts
+ * Local:  npx tsx scripts/list-sitemap-indexable-performances.ts
+ * Docker: node /app/scripts/list-sitemap-indexable-performances.js
  * Optional: --missing-from=https://actorrating.com/sitemaps/performances-1.xml
  */
-import dotenv from "dotenv"
-dotenv.config()
+try {
+  // Optional locally; production image has DATABASE_URL injected and no dotenv.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("dotenv").config()
+} catch {
+  // ignore
+}
 
 import { PrismaClient } from "@prisma/client"
-import { SYSTEM_USER_ID } from "../src/lib/movie-ingestion"
 import { isRatePageIndexable, MIN_COMMUNITY_RATINGS_FOR_INDEX } from "../src/lib/rate-page-seo"
 import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
 
+/** Must match SYSTEM_USER_ID in movie-ingestion (avoid heavy import in Docker bundle). */
+const SYSTEM_USER_ID = "uuid-from-auth-users"
+
 const prisma = new PrismaClient()
+
+const BUILD_ID = "canonical-tier-v2-2026-09-02"
 
 type Row = {
   actorId: string
@@ -35,6 +45,8 @@ type Row = {
 async function main() {
   const missingFromArg = process.argv.find((a) => a.startsWith("--missing-from="))
   const missingFromUrl = missingFromArg?.split("=")[1]
+
+  console.log(`[list-indexable] buildId=${BUILD_ID}`)
 
   const rows = await prisma.$queryRaw<Row[]>`
     WITH rated AS (
@@ -146,10 +158,15 @@ async function main() {
     })
     const inSitemap = new Set(locs)
     const missing = eligible.filter((h) => !inSitemap.has(h))
+    const extra = locs.filter((h) => h.startsWith("/rate/") && !eligible.includes(h))
     console.log(`\nCompared to ${missingFromUrl} (${locs.length} locs)`)
     console.log(`Missing from live sitemap: ${missing.length}`)
     for (const h of missing.slice(0, 50)) console.log(`  ${h}`)
     if (missing.length > 50) console.log(`  … +${missing.length - 50} more`)
+    if (extra.length > 0) {
+      console.log(`In sitemap but not eligible by this query: ${extra.length}`)
+      for (const h of extra.slice(0, 20)) console.log(`  ${h}`)
+    }
   } else {
     for (const h of eligible.slice(0, 20)) console.log(`  ${h}`)
     if (eligible.length > 20) console.log(`  … +${eligible.length - 20} more`)

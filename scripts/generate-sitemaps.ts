@@ -19,9 +19,15 @@ import {
   HOME_LEADERBOARD_ROWS,
 } from "../src/lib/performances-page-targets"
 import { isSelfOrArchiveCredit } from "../src/lib/non-rateable"
-import { isRatePageIndexable } from "../src/lib/rate-page-seo"
+import { isRatePageIndexable, MIN_COMMUNITY_RATINGS_FOR_INDEX } from "../src/lib/rate-page-seo"
 import { pickCanonicalPerformanceSeoMeta } from "../src/lib/rate-page-canonical-perf"
 import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
+
+/**
+ * Bump when sitemap indexability logic changes — printed at gen start so
+ * production logs prove which build is running (independent of Coolify env).
+ */
+const SITEMAP_BUILD_ID = "canonical-tier-v2-2026-09-02"
 
 const REPO_ROOT = path.join(__dirname, "..")
 const LIVE_DIR = path.join(REPO_ROOT, "public", "sitemaps")
@@ -34,6 +40,45 @@ const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "https://actorrating.com")
 const CHUNK_SIZE = 5_000
 const READ_BATCH = 5_000
 
+/** Pairs called out in SEO ops; logged at end of performances gen for smoke-checks. */
+const WATCH_RATE_PATHS = [
+  "/rate/fight-club-1999/edward-norton",
+  "/rate/the-godfather-1972/marlon-brando",
+  "/rate/no-country-for-old-men-2007/javier-bardem",
+  "/rate/se7en-1995/brad-pitt",
+  "/rate/the-godfather-part-ii-1974/robert-de-niro",
+  "/rate/the-revenant-2015/leonardo-dicaprio",
+  "/rate/the-wolf-of-wall-street-2013/jonah-hill",
+  "/rate/the-wolf-of-wall-street-2013/matthew-mcconaughey",
+]
+
+function deployFingerprint(): string {
+  const commit =
+    process.env.SOURCE_COMMIT ||
+    process.env.COOLIFY_GIT_COMMIT ||
+    process.env.GIT_COMMIT ||
+    process.env.COMMIT_SHA ||
+    "unknown"
+  return `buildId=${SITEMAP_BUILD_ID} commit=${commit.slice(0, 12)}`
+}
+
+function indexabilitySkipReason(input: {
+  movieSlug: string | null | undefined
+  movieTitle: string | null | undefined
+  communityRatingCount: number
+  tier: string | null | undefined
+}): string {
+  if (!input.movieTitle?.trim()) return "malformed_empty_title"
+  const slug = (input.movieSlug ?? "").trim()
+  if (slug && /^-\d{4}(-[a-z0-9]+)?$/i.test(slug)) return "malformed_slug"
+  if (!input.tier) return "tier_null"
+  if (input.tier === "MINOR") return "tier_MINOR"
+  if (input.communityRatingCount < MIN_COMMUNITY_RATINGS_FOR_INDEX) {
+    return `rating_count=${input.communityRatingCount}<${MIN_COMMUNITY_RATINGS_FOR_INDEX}`
+  }
+  return "unknown"
+}
+
 type GenerationType = "all" | "actors" | "movies" | "performances"
 
 interface UrlEntry {
@@ -45,6 +90,7 @@ interface UrlEntry {
 
 interface Manifest {
   generatedAt: string
+  buildId: string
   actorSitemapCount: number
   movieSitemapCount: number
   performanceSitemapCount: number
@@ -560,48 +606,71 @@ type PairRow = { actorId: string; movieId: string; maxUpd: Date }
 async function generatePerformances(outDir: string): Promise<number> {
   const writer = new ChunkWriter(outDir, "performances")
   const seen = new Set<string>()
-  let skippedMovieFilter = 0
-  let skippedSelfCredit = 0
-  let skippedIndexability = 0
+  const writtenPaths = new Set<string>()
+  let curatedSkippedMovie = 0
+  let curatedSkippedSelf = 0
+  let curatedSkippedIndexability = 0
+  let bulkSkippedMovie = 0
+  let bulkSkippedSelf = 0
+  let bulkSkippedIndexability = 0
+  const indexabilitySkipSamples: string[] = []
+
+  const noteIndexabilitySkip = (
+    source: "curated" | "bulk",
+    label: string,
+    reason: string,
+  ) => {
+    if (source === "curated") curatedSkippedIndexability += 1
+    else bulkSkippedIndexability += 1
+    if (indexabilitySkipSamples.length < 40) {
+      indexabilitySkipSamples.push(`[${source}] ${label} (${reason})`)
+    }
+  }
 
   const curated = await resolveCuratedPerformancePairs()
   for (const c of curated) {
+    const label = `${c.movie.title} (${c.movie.year}) / actorId=${c.actorId.slice(0, 8)}…`
+    const pathHint = `/rate/${c.movie.slug ?? c.movie.id}/${c.actor.slug ?? c.actor.id}`
     if (!isSitemapEligibleRateMovie(c.movie)) {
-      skippedMovieFilter += 1
+      curatedSkippedMovie += 1
       continue
     }
     if (isSelfOnlyCreditPair(c.characters)) {
-      skippedSelfCredit += 1
+      curatedSkippedSelf += 1
       continue
     }
-    if (
-      !isRatePageIndexable({
-        movieSlug: c.movie.slug,
-        movieTitle: c.movie.title,
-        indexingCohort: c.movie.indexingCohort,
-        seededAggregateScore: c.seededAggregateScore,
-        communityRatingCount: c.communityRatingCount,
-        tier: c.tier,
-      })
-    ) {
-      skippedIndexability += 1
+    const idxInput = {
+      movieSlug: c.movie.slug,
+      movieTitle: c.movie.title,
+      indexingCohort: c.movie.indexingCohort,
+      seededAggregateScore: c.seededAggregateScore,
+      communityRatingCount: c.communityRatingCount,
+      tier: c.tier,
+    }
+    if (!isRatePageIndexable(idxInput)) {
+      noteIndexabilitySkip("curated", `${pathHint} | ${label}`, indexabilitySkipReason(idxInput))
       continue
     }
     const key = `${c.actorId}:${c.movieId}`
     if (seen.has(key)) continue
     seen.add(key)
+    writtenPaths.add(pathHint)
     writer.push({
-      url: `${BASE_URL}/rate/${c.movie.slug ?? c.movie.id}/${c.actor.slug ?? c.actor.id}`,
+      url: `${BASE_URL}${pathHint}`,
       lastModified: c.maxUpd,
       changeFrequency: "weekly",
       priority: 0.7,
     })
   }
-  console.log(`  performances: seeded ${seen.size} curated pair(s)`)
+  console.log(
+    `  performances: seeded ${seen.size} curated pair(s)` +
+      ` (skipped movie=${curatedSkippedMovie} self=${curatedSkippedSelf} indexability=${curatedSkippedIndexability} of ${curated.length} curated lookups)`,
+  )
 
   let lastActorId = ""
   let lastMovieId = ""
   let processed = 0
+  let bulkAlreadySeen = 0
 
   while (true) {
     const pairs = await prisma.$queryRaw<PairRow[]>`
@@ -635,7 +704,7 @@ async function generatePerformances(outDir: string): Promise<number> {
     const [actors, movies, pairPerformances, ratingGroups] = await Promise.all([
       prisma.actor.findMany({
         where: { id: { in: actorIds } },
-        select: { id: true, slug: true },
+        select: { id: true, slug: true, name: true },
       }),
       prisma.movie.findMany({
         where: { id: { in: movieIds } },
@@ -695,37 +764,48 @@ async function generatePerformances(outDir: string): Promise<number> {
 
     for (const pair of pairs) {
       const key = `${pair.actorId}:${pair.movieId}`
-      if (seen.has(key)) continue
+      if (seen.has(key)) {
+        bulkAlreadySeen += 1
+        continue
+      }
 
       const actor = actorMap.get(pair.actorId)
       const movie = movieMap.get(pair.movieId)
       if (!actor || !movie) continue
+      const pathHint = `/rate/${movie.slug ?? movie.id}/${actor.slug ?? actor.id}`
+      const label = `${actor.name} / ${movie.title} (${movie.year})`
       if (!isSitemapEligibleRateMovie(movie)) {
-        skippedMovieFilter += 1
+        bulkSkippedMovie += 1
         continue
       }
       const perfMeta = perfMetaByPair.get(key)
       if (isSelfOnlyCreditPair(perfMeta?.characters ?? [])) {
-        skippedSelfCredit += 1
+        bulkSkippedSelf += 1
+        console.log(`  performances: skip selfCredit ${pathHint} | ${label}`)
         continue
       }
-      if (
-        !isRatePageIndexable({
-          movieSlug: movie.slug,
-          movieTitle: movie.title,
-          indexingCohort: movie.indexingCohort,
-          seededAggregateScore: perfMeta?.seededAggregateScore ?? null,
-          communityRatingCount: ratingCountMap.get(key) ?? 0,
-          tier: perfMeta?.tier ?? null,
-        })
-      ) {
-        skippedIndexability += 1
+      const ratingCount = ratingCountMap.get(key) ?? 0
+      const idxInput = {
+        movieSlug: movie.slug,
+        movieTitle: movie.title,
+        indexingCohort: movie.indexingCohort,
+        seededAggregateScore: perfMeta?.seededAggregateScore ?? null,
+        communityRatingCount: ratingCount,
+        tier: perfMeta?.tier ?? null,
+      }
+      if (!isRatePageIndexable(idxInput)) {
+        noteIndexabilitySkip(
+          "bulk",
+          `${pathHint} | ${label} tier=${perfMeta?.tier ?? "null"} count=${ratingCount}`,
+          indexabilitySkipReason(idxInput),
+        )
         continue
       }
 
       seen.add(key)
+      writtenPaths.add(pathHint)
       writer.push({
-        url: `${BASE_URL}/rate/${movie.slug ?? movie.id}/${actor.slug ?? actor.id}`,
+        url: `${BASE_URL}${pathHint}`,
         lastModified: pair.maxUpd,
         changeFrequency: "weekly",
         priority: 0.7,
@@ -741,17 +821,33 @@ async function generatePerformances(outDir: string): Promise<number> {
     )
   }
 
+  if (indexabilitySkipSamples.length > 0) {
+    console.log(`  performances: indexability skips (up to 40):`)
+    for (const line of indexabilitySkipSamples) {
+      console.log(`    - ${line}`)
+    }
+  }
+
+  const watchHits = WATCH_RATE_PATHS.filter((p) => writtenPaths.has(p))
+  const watchMiss = WATCH_RATE_PATHS.filter((p) => !writtenPaths.has(p))
+  console.log(
+    `  performances: watchlist ${watchHits.length}/${WATCH_RATE_PATHS.length} present` +
+      (watchMiss.length ? `; missing: ${watchMiss.join(", ")}` : ""),
+  )
+
   const result = writer.finalize()
   console.log(
     `    → ${result.totalUrls} URLs across ${result.fileCount} file(s)` +
-      ` (skipped movieFilter=${skippedMovieFilter} selfCredit=${skippedSelfCredit} indexability=${skippedIndexability})`,
+      ` (curated skips movie=${curatedSkippedMovie} self=${curatedSkippedSelf} indexability=${curatedSkippedIndexability};` +
+      ` bulk skips movie=${bulkSkippedMovie} self=${bulkSkippedSelf} indexability=${bulkSkippedIndexability} alreadySeen=${bulkAlreadySeen})`,
   )
   return result.fileCount
 }
 
-async function writeManifest(outDir: string, counts: Omit<Manifest, "generatedAt">): Promise<void> {
+async function writeManifest(outDir: string, counts: Omit<Manifest, "generatedAt" | "buildId">): Promise<void> {
   const manifest: Manifest = {
     generatedAt: new Date().toISOString(),
+    buildId: SITEMAP_BUILD_ID,
     ...counts,
   }
   fs.writeFileSync(path.join(outDir, "_manifest.json"), JSON.stringify(manifest, null, 2), "utf-8")
@@ -975,7 +1071,7 @@ async function main(): Promise<void> {
   }
 
   const started = Date.now()
-  console.log(`[sitemap] === START full atomic generation at ${new Date().toISOString()} ===`)
+  console.log(`[sitemap] === START full atomic generation at ${new Date().toISOString()} (${deployFingerprint()}) ===`)
 
   await generateAllInto(TEMP_DIR)
   atomicSwapTempToLive()

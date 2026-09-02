@@ -24,6 +24,8 @@ export default function Cohort1RecentlyIndexablePanel({
           <strong>2nd rating</strong> landed in the last {lookbackDays} days (all ratings count —
           signed + anonymous). <strong>Indexable</strong> uses the same gates as the performances
           sitemap: ≥{threshold} ratings, LEAD/SUPPORTING canonical tier, and sitemap movie filters.
+          “Just crossed” does not mean “missing from sitemap” — many of these URLs were already
+          included on a prior regen.
         </p>
       </div>
 
