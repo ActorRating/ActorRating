@@ -18,7 +18,7 @@ import {
   ICONIC_PERFORMANCE_TARGETS,
   HOME_LEADERBOARD_ROWS,
 } from "../src/lib/performances-page-targets"
-import { isSelfOrArchiveCredit } from "../src/lib/non-rateable"
+import { isSelfOnlyCreditPair } from "../src/lib/non-rateable"
 import { isRatePageIndexable, MIN_COMMUNITY_RATINGS_FOR_INDEX } from "../src/lib/rate-page-seo"
 import { pickCanonicalPerformanceSeoMeta } from "../src/lib/rate-page-canonical-perf"
 import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
@@ -185,17 +185,6 @@ function shouldIncludeMovie(movie: {
   if (isJunkMovieSlug(slug) || isAdultContentSlug(slug)) return false
   if (isAdultContentMovie({ title: movie.title, genre: movie.genre, overview: movie.overview })) return false
   return true
-}
-
-/** Exclude pairs whose only character credits are Self / archive footage. */
-function isSelfOnlyCreditPair(characters: Array<string | null | undefined>): boolean {
-  const usable = characters
-    .map((c) => (typeof c === "string" ? c.trim() : ""))
-    .filter(Boolean)
-  if (usable.length === 0) return false
-  const hasRealRole = usable.some((c) => !isSelfOrArchiveCredit(c))
-  if (hasRealRole) return false
-  return usable.some((c) => isSelfOrArchiveCredit(c))
 }
 
 function rmrf(dir: string): void {

@@ -71,3 +71,20 @@ export function isNonRateablePerformance(input: {
   if (input.movie && isFeaturetteMovie(input.movie)) return true
   return false
 }
+
+/**
+ * Exclude (actor, movie) pairs whose only non-empty character credits are
+ * Self / archive footage (documentaries, cameos-as-themselves).
+ * Empty character lists are not treated as self-only (unknown credit).
+ */
+export function isSelfOnlyCreditPair(
+  characters: Array<string | null | undefined>,
+): boolean {
+  const usable = characters
+    .map((c) => (typeof c === "string" ? c.trim() : ""))
+    .filter(Boolean)
+  if (usable.length === 0) return false
+  const hasRealRole = usable.some((c) => !isSelfOrArchiveCredit(c))
+  if (hasRealRole) return false
+  return usable.some((c) => isSelfOrArchiveCredit(c))
+}

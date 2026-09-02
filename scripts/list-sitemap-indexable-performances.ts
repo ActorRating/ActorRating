@@ -15,6 +15,7 @@ try {
 }
 
 import { PrismaClient } from "@prisma/client"
+import { isSelfOnlyCreditPair } from "../src/lib/non-rateable"
 import { isRatePageIndexable, MIN_COMMUNITY_RATINGS_FOR_INDEX } from "../src/lib/rate-page-seo"
 import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
 
@@ -40,6 +41,7 @@ type Row = {
   tier: string
   ratingCount: bigint
   indexingCohort: number
+  characters: string[] | null
 }
 
 async function main() {
@@ -81,6 +83,14 @@ async function main() {
         CASE WHEN p."userId" = ${SYSTEM_USER_ID} THEN 0 ELSE 1 END,
         p."order" ASC NULLS LAST,
         p."createdAt" ASC
+    ),
+    chars AS (
+      SELECT
+        p."actorId",
+        p."movieId",
+        ARRAY_AGG(p.character) AS characters
+      FROM "Performance" p
+      GROUP BY p."actorId", p."movieId"
     )
     SELECT
       r."actorId",
@@ -96,19 +106,25 @@ async function main() {
       p."releaseDate",
       p.tier,
       r."ratingCount",
-      p."indexingCohort"
+      p."indexingCohort",
+      c.characters
     FROM rated r
     INNER JOIN perf p
       ON p."actorId" = r."actorId" AND p."movieId" = r."movieId"
+    LEFT JOIN chars c
+      ON c."actorId" = r."actorId" AND c."movieId" = r."movieId"
   `
 
   const eligible: string[] = []
   let skippedMovie = 0
   let skippedGate = 0
+  let skippedSelf = 0
+  const selfSamples: string[] = []
 
   for (const row of rows) {
     const movieSlug = row.movieSlug
     const actorSlug = row.actorSlug
+    const href = `/rate/${movieSlug || row.movieId}/${actorSlug || row.actorId}`
     if (
       !isSitemapEligibleRateMovie({
         slug: movieSlug,
@@ -124,6 +140,13 @@ async function main() {
       skippedMovie += 1
       continue
     }
+    if (isSelfOnlyCreditPair(row.characters ?? [])) {
+      skippedSelf += 1
+      if (selfSamples.length < 20) {
+        selfSamples.push(`${href} | ${row.actorName} / ${row.movieTitle} (${row.movieYear})`)
+      }
+      continue
+    }
     if (
       !isRatePageIndexable({
         movieSlug,
@@ -137,7 +160,6 @@ async function main() {
       skippedGate += 1
       continue
     }
-    const href = `/rate/${movieSlug || row.movieId}/${actorSlug || row.actorId}`
     eligible.push(href)
   }
 
@@ -145,7 +167,12 @@ async function main() {
   console.log(`Eligible sitemap performance URLs: ${eligible.length}`)
   console.log(`  (raw ≥${MIN_COMMUNITY_RATINGS_FOR_INDEX} LEAD/SUPPORTING pairs: ${rows.length})`)
   console.log(`  skipped movie filter: ${skippedMovie}`)
+  console.log(`  skipped self/archive credit: ${skippedSelf}`)
   console.log(`  skipped indexability: ${skippedGate}`)
+  if (selfSamples.length > 0) {
+    console.log(`  self/archive samples:`)
+    for (const s of selfSamples) console.log(`    - ${s}`)
+  }
 
   if (missingFromUrl) {
     const xml = await fetch(missingFromUrl).then((r) => r.text())

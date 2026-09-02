@@ -2,6 +2,7 @@ import "server-only"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
 import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
+import { isSelfOnlyCreditPair } from "@/lib/non-rateable"
 import {
   isMalformedMovieForSeo,
   isRatePageIndexable,
@@ -47,6 +48,7 @@ type RawRow = {
   ratingCount: bigint | number
   crossedAt: Date
   lastRatedAt: Date
+  characters: string[] | null
 }
 
 /**
@@ -68,7 +70,7 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
 }> {
   const lookbackDays = options?.lookbackDays ?? COHORT1_CROSS_LOOKBACK_DAYS
   const limit = options?.limit ?? 75
-  const cacheKey = `admin:cohort1-crossed:v2:${lookbackDays}:${limit}`
+  const cacheKey = `admin:cohort1-crossed:v3:${lookbackDays}:${limit}`
 
   const cached = getCache<{
     rows: Cohort1CrossedRow[]
@@ -133,6 +135,14 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
           CASE WHEN p."userId" = ${SYSTEM_USER_ID} THEN 0 ELSE 1 END,
           p."order" ASC NULLS LAST,
           p."createdAt" ASC
+      ),
+      chars AS (
+        SELECT
+          p."actorId",
+          p."movieId",
+          ARRAY_AGG(p.character) AS characters
+        FROM "Performance" p
+        GROUP BY p."actorId", p."movieId"
       )
       SELECT
         c."actorId",
@@ -149,10 +159,13 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
         p.tier,
         c."ratingCount",
         c."crossedAt",
-        c."lastRatedAt"
+        c."lastRatedAt",
+        ch.characters
       FROM crossed c
       INNER JOIN perf p
         ON p."actorId" = c."actorId" AND p."movieId" = c."movieId"
+      LEFT JOIN chars ch
+        ON ch."actorId" = c."actorId" AND ch."movieId" = c."movieId"
       ORDER BY c."crossedAt" DESC
       LIMIT ${limit}
     `
@@ -174,6 +187,7 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
       })
       const wouldIndex =
         sitemapMovieOk &&
+        !isSelfOnlyCreditPair(row.characters ?? []) &&
         !isMalformedMovieForSeo(movieSlug, row.movieTitle) &&
         isRatePageIndexable({
           movieSlug,
