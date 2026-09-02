@@ -134,6 +134,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-waitlist-invite-cron.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-site-journal-cron.js ./scripts/run-site-journal-cron.js
 # Coolify Scheduled Task: `node scripts/run-performance-editorial-cron.js`
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-performance-editorial-cron.js ./scripts/run-performance-editorial-cron.js
+# Coolify Scheduled Task (daily): `node scripts/run-generate-sitemaps-cron.js`
+# Also runs on every container start via docker-entrypoint.sh — cron covers mid-deploy rating growth.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-generate-sitemaps-cron.js ./scripts/run-generate-sitemaps-cron.js
 
 # Merge Prisma CLI into standalone node_modules (does not replace traced @prisma/client).
 # Coolify pre-deploy hooks can then use: ./node_modules/.bin/prisma migrate deploy
