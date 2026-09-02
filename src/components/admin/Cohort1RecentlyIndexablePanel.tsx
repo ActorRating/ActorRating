@@ -21,8 +21,9 @@ export default function Cohort1RecentlyIndexablePanel({
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           LEAD/SUPPORTING performances on indexing cohort 1 whose{" "}
-          <strong>2nd rating</strong> landed in the last {lookbackDays} days (all ratings count,
-          matching the rate-page SEO gate). Good candidates for sitemap regen / Search Console.
+          <strong>2nd rating</strong> landed in the last {lookbackDays} days (all ratings count —
+          signed + anonymous). <strong>Indexable</strong> uses the same gates as the performances
+          sitemap: ≥{threshold} ratings, LEAD/SUPPORTING canonical tier, and sitemap movie filters.
         </p>
       </div>
 

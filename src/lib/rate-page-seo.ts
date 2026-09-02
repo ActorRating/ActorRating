@@ -6,12 +6,15 @@
  *   && tier !== 'MINOR'
  *   && !malformed
  *
+ * `communityRatingCount` is all Rating rows for the pair (signed + anonymous).
  * Single-rating and seeded-only pages stay live/rateable but are noindex until
- * a second signed community rating lands.
- * MINOR-tier performances stay live/rateable but are noindex.
+ * a second community rating lands. MINOR-tier performances stay live/rateable but are noindex.
+ *
+ * Canonical tier for a pair must be resolved via `pickCanonicalPerformanceSeoMeta`
+ * (or the matching SQL ORDER BY) — never an arbitrary Performance row.
  */
 
-/** Minimum signed community ratings before a /rate page is indexable. */
+/** Minimum community ratings (signed + anonymous) before a /rate page is indexable. */
 export const MIN_COMMUNITY_RATINGS_FOR_INDEX = 2
 
 /** Slugs like "-2019" or "-2019-abc123" from empty titles. */

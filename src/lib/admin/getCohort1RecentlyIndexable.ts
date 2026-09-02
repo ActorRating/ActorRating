@@ -1,11 +1,13 @@
 import "server-only"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
+import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
 import {
   isMalformedMovieForSeo,
   isRatePageIndexable,
   MIN_COMMUNITY_RATINGS_FOR_INDEX,
 } from "@/lib/rate-page-seo"
+import { isSitemapEligibleRateMovie } from "@/lib/rate-page-sitemap-eligibility"
 
 export type Cohort1CrossedRow = {
   actorId: string
@@ -20,6 +22,7 @@ export type Cohort1CrossedRow = {
   /** When the 2nd rating landed (crossed ≥2). */
   crossedAt: Date
   lastRatedAt: Date
+  /** True when the pair would pass the performances sitemap gate. */
   wouldIndex: boolean
   rateHref: string
 }
@@ -36,6 +39,10 @@ type RawRow = {
   movieTitle: string
   movieSlug: string | null
   movieYear: number
+  movieGenre: string | null
+  movieOverview: string | null
+  isFeaturette: boolean
+  releaseDate: Date | null
   tier: string
   ratingCount: bigint | number
   crossedAt: Date
@@ -44,7 +51,12 @@ type RawRow = {
 
 /**
  * Cohort-1 LEAD/SUPPORTING performances whose 2nd community rating landed
- * within the lookback window (matches sitemap/layout: all Rating rows count).
+ * within the lookback window.
+ *
+ * Indexability matches the performances sitemap:
+ * - all Rating rows count (signed + anonymous)
+ * - canonical Performance tier via the same ORDER BY as pickCanonicalPerformanceSeoMeta
+ * - isRatePageIndexable + isSitemapEligibleRateMovie
  */
 export async function getCohort1RecentlyCrossedIndexable(options?: {
   lookbackDays?: number
@@ -56,7 +68,7 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
 }> {
   const lookbackDays = options?.lookbackDays ?? COHORT1_CROSS_LOOKBACK_DAYS
   const limit = options?.limit ?? 75
-  const cacheKey = `admin:cohort1-crossed:${lookbackDays}:${limit}`
+  const cacheKey = `admin:cohort1-crossed:v2:${lookbackDays}:${limit}`
 
   const cached = getCache<{
     rows: Cohort1CrossedRow[]
@@ -68,6 +80,8 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
   try {
     const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000)
 
+    // Canonical ORDER BY must stay in sync with pickCanonicalPerformanceSeoMeta /
+    // scripts/generate-sitemaps.ts (LEAD/SUPPORTING first, then system user, order, createdAt).
     const raw = await prisma.$queryRaw<RawRow[]>`
       WITH ranked_ratings AS (
         SELECT
@@ -102,7 +116,11 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
           a.slug AS "actorSlug",
           m.title AS "movieTitle",
           m.slug AS "movieSlug",
-          m.year AS "movieYear"
+          m.year AS "movieYear",
+          m.genre AS "movieGenre",
+          m.overview AS "movieOverview",
+          m."isFeaturette" AS "isFeaturette",
+          m."releaseDate" AS "releaseDate"
         FROM "Performance" p
         INNER JOIN "Movie" m ON m.id = p."movieId"
         INNER JOIN "Actor" a ON a.id = p."actorId"
@@ -112,7 +130,7 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
         ORDER BY
           p."actorId",
           p."movieId",
-          CASE WHEN p."userId" = 'uuid-from-auth-users' THEN 0 ELSE 1 END,
+          CASE WHEN p."userId" = ${SYSTEM_USER_ID} THEN 0 ELSE 1 END,
           p."order" ASC NULLS LAST,
           p."createdAt" ASC
       )
@@ -124,6 +142,10 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
         p."movieTitle",
         p."movieSlug",
         p."movieYear",
+        p."movieGenre",
+        p."movieOverview",
+        p."isFeaturette",
+        p."releaseDate",
         p.tier,
         c."ratingCount",
         c."crossedAt",
@@ -139,7 +161,19 @@ export async function getCohort1RecentlyCrossedIndexable(options?: {
       const ratingCount = Number(row.ratingCount)
       const movieSlug = row.movieSlug
       const actorSlug = row.actorSlug
+      const movieId = row.movieId
+      const sitemapMovieOk = isSitemapEligibleRateMovie({
+        slug: movieSlug,
+        id: movieId,
+        title: row.movieTitle,
+        genre: row.movieGenre,
+        overview: row.movieOverview,
+        isFeaturette: row.isFeaturette,
+        releaseDate: row.releaseDate,
+        year: row.movieYear,
+      })
       const wouldIndex =
+        sitemapMovieOk &&
         !isMalformedMovieForSeo(movieSlug, row.movieTitle) &&
         isRatePageIndexable({
           movieSlug,

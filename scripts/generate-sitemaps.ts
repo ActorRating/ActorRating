@@ -18,9 +18,10 @@ import {
   ICONIC_PERFORMANCE_TARGETS,
   HOME_LEADERBOARD_ROWS,
 } from "../src/lib/performances-page-targets"
-import { isFeaturetteMovie, isSelfOrArchiveCredit } from "../src/lib/non-rateable"
-import { isMovieComingSoon, parseTmdbReleaseDate } from "../src/lib/movie-release"
+import { isSelfOrArchiveCredit } from "../src/lib/non-rateable"
 import { isRatePageIndexable } from "../src/lib/rate-page-seo"
+import { pickCanonicalPerformanceSeoMeta } from "../src/lib/rate-page-canonical-perf"
+import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
 
 const REPO_ROOT = path.join(__dirname, "..")
 const LIVE_DIR = path.join(REPO_ROOT, "public", "sitemaps")
@@ -140,32 +141,6 @@ function shouldIncludeMovie(movie: {
   return true
 }
 
-/** Rate sitemap: junk/adult + never featurette / coming-soon titles. */
-function shouldIncludeRateMovie(movie: {
-  slug: string | null
-  id: string
-  title: string
-  genre: string | null
-  overview: string | null
-  isFeaturette?: boolean | null
-  releaseDate?: Date | string | null
-  year?: number | null
-}): boolean {
-  if (isFeaturetteMovie(movie)) return false
-  if (isMovieComingSoon(movie)) return false
-  // Same calendar year without a concrete releaseDate: keep out of the rate sitemap
-  // until TMDB date is stored (avoids shipping noindex / unreleased /rate URLs).
-  const year = typeof movie.year === "number" ? movie.year : null
-  if (
-    year != null &&
-    year === new Date().getUTCFullYear() &&
-    !parseTmdbReleaseDate(movie.releaseDate ?? null)
-  ) {
-    return false
-  }
-  return shouldIncludeMovie(movie)
-}
-
 /** Exclude pairs whose only character credits are Self / archive footage. */
 function isSelfOnlyCreditPair(characters: Array<string | null | undefined>): boolean {
   const usable = characters
@@ -275,6 +250,9 @@ async function resolveCuratedPerformancePairs(): Promise<
       updatedAt: true,
       tier: true,
       seededAggregateScore: true,
+      userId: true,
+      order: true,
+      createdAt: true,
       actor: { select: { id: true, slug: true } },
       movie: {
         select: {
@@ -305,63 +283,54 @@ async function resolveCuratedPerformancePairs(): Promise<
     ratingGroups.map((r) => [`${r.actorId}:${r.movieId}`, r._count._all]),
   )
 
-  const byPair = new Map<
-    string,
-    {
-      actorId: string
-      movieId: string
-      maxUpd: Date
-      tier: string | null
-      seededAggregateScore: number | null
-      communityRatingCount: number
-      movie: {
-        slug: string | null
-        id: string
-        title: string
-        genre: string | null
-        overview: string | null
-        isFeaturette: boolean
-        releaseDate: Date | null
-        year: number
-        indexingCohort: number
-      }
-      actor: { slug: string | null; id: string }
-      characters: Array<string | null>
-    }
-  >()
-
+  const rowsByPair = new Map<string, typeof performances>()
   for (const p of performances) {
     const key = `${p.actorId}:${p.movieId}`
-    const rUp = ratingMaxMap.get(key)
-    const maxUpd = new Date(
-      Math.max(p.updatedAt.getTime(), rUp?.getTime() ?? 0),
-    )
-    const existing = byPair.get(key)
-    if (!existing) {
-      byPair.set(key, {
-        actorId: p.actorId,
-        movieId: p.movieId,
-        maxUpd,
-        tier: p.tier,
-        seededAggregateScore: p.seededAggregateScore,
-        communityRatingCount: ratingCountMap.get(key) ?? 0,
-        movie: p.movie,
-        actor: p.actor,
-        characters: [p.character],
-      })
-    } else {
-      existing.characters.push(p.character)
-      if (maxUpd > existing.maxUpd) existing.maxUpd = maxUpd
-      // Prefer non-null seeded / better tier from system rows
-      if (existing.seededAggregateScore == null && p.seededAggregateScore != null) {
-        existing.seededAggregateScore = p.seededAggregateScore
-      }
-      if (existing.tier === "MINOR" && p.tier !== "MINOR") {
-        existing.tier = p.tier
-      }
-    }
+    const list = rowsByPair.get(key)
+    if (list) list.push(p)
+    else rowsByPair.set(key, [p])
   }
-  return Array.from(byPair.values())
+
+  const out: Array<{
+    actorId: string
+    movieId: string
+    maxUpd: Date
+    tier: string | null
+    seededAggregateScore: number | null
+    communityRatingCount: number
+    movie: {
+      slug: string | null
+      id: string
+      title: string
+      genre: string | null
+      overview: string | null
+      isFeaturette: boolean
+      releaseDate: Date | null
+      year: number
+      indexingCohort: number
+    }
+    actor: { slug: string | null; id: string }
+    characters: Array<string | null>
+  }> = []
+
+  for (const [key, rows] of rowsByPair) {
+    const first = rows[0]
+    const meta = pickCanonicalPerformanceSeoMeta(rows)
+    const rUp = ratingMaxMap.get(key)
+    const maxPerfUpd = Math.max(...rows.map((r) => r.updatedAt.getTime()))
+    out.push({
+      actorId: first.actorId,
+      movieId: first.movieId,
+      maxUpd: new Date(Math.max(maxPerfUpd, rUp?.getTime() ?? 0)),
+      tier: meta.tier,
+      seededAggregateScore: meta.seededAggregateScore,
+      communityRatingCount: ratingCountMap.get(key) ?? 0,
+      movie: first.movie,
+      actor: first.actor,
+      characters: meta.characters,
+    })
+  }
+  return out
 }
 
 function generateStatic(outDir: string): void {
@@ -582,18 +551,29 @@ async function generateMovies(outDir: string): Promise<number> {
 type PairRow = { actorId: string; movieId: string; maxUpd: Date }
 
 /**
- * Indexable rate URLs only (aligned with isRatePageIndexable):
- * - non-MINOR pairs with ≥2 community Ratings
- * plus curated homepage/performances targets (still subject to movie filters).
+ * Indexable rate URLs only (aligned with isRatePageIndexable + admin canonical tier):
+ * - pairs with ≥2 community Ratings and a LEAD/SUPPORTING Performance
+ * - plus curated homepage/performances targets (still subject to movie filters)
+ *
+ * Canonical tier uses pickCanonicalPerformanceSeoMeta (same order as admin DISTINCT ON).
  */
 async function generatePerformances(outDir: string): Promise<number> {
   const writer = new ChunkWriter(outDir, "performances")
   const seen = new Set<string>()
+  let skippedMovieFilter = 0
+  let skippedSelfCredit = 0
+  let skippedIndexability = 0
 
   const curated = await resolveCuratedPerformancePairs()
   for (const c of curated) {
-    if (!shouldIncludeRateMovie(c.movie)) continue
-    if (isSelfOnlyCreditPair(c.characters)) continue
+    if (!isSitemapEligibleRateMovie(c.movie)) {
+      skippedMovieFilter += 1
+      continue
+    }
+    if (isSelfOnlyCreditPair(c.characters)) {
+      skippedSelfCredit += 1
+      continue
+    }
     if (
       !isRatePageIndexable({
         movieSlug: c.movie.slug,
@@ -604,6 +584,7 @@ async function generatePerformances(outDir: string): Promise<number> {
         tier: c.tier,
       })
     ) {
+      skippedIndexability += 1
       continue
     }
     const key = `${c.actorId}:${c.movieId}`
@@ -635,7 +616,7 @@ async function generatePerformances(outDir: string): Promise<number> {
           SELECT 1 FROM "Performance" p
           WHERE p."actorId" = r."actorId"
             AND p."movieId" = r."movieId"
-            AND p.tier <> 'MINOR'
+            AND p.tier IN ('LEAD', 'SUPPORTING')
         )
         GROUP BY r."actorId", r."movieId"
         HAVING COUNT(*) >= 2
@@ -680,6 +661,9 @@ async function generatePerformances(outDir: string): Promise<number> {
           character: true,
           tier: true,
           seededAggregateScore: true,
+          userId: true,
+          order: true,
+          createdAt: true,
         },
       }),
       prisma.rating.groupBy({
@@ -692,30 +676,22 @@ async function generatePerformances(outDir: string): Promise<number> {
     const ratingCountMap = new Map(
       ratingGroups.map((r) => [`${r.actorId}:${r.movieId}`, r._count._all]),
     )
-    const perfMetaByPair = new Map<
-      string,
-      { tier: string | null; seededAggregateScore: number | null; characters: Array<string | null> }
-    >()
+    const perfRowsByPair = new Map<string, typeof pairPerformances>()
+    for (const perf of pairPerformances) {
+      const key = `${perf.actorId}:${perf.movieId}`
+      const list = perfRowsByPair.get(key)
+      if (list) list.push(perf)
+      else perfRowsByPair.set(key, [perf])
+    }
+    const perfMetaByPair = new Map(
+      [...perfRowsByPair.entries()].map(([key, rows]) => [
+        key,
+        pickCanonicalPerformanceSeoMeta(rows),
+      ]),
+    )
 
     const actorMap = new Map(actors.map((a) => [a.id, a]))
     const movieMap = new Map(movies.map((m) => [m.id, m]))
-    for (const perf of pairPerformances) {
-      const key = `${perf.actorId}:${perf.movieId}`
-      const existing = perfMetaByPair.get(key)
-      if (existing) {
-        existing.characters.push(perf.character)
-        if (!existing.tier && perf.tier) existing.tier = perf.tier
-        if (existing.seededAggregateScore == null && perf.seededAggregateScore != null) {
-          existing.seededAggregateScore = perf.seededAggregateScore
-        }
-      } else {
-        perfMetaByPair.set(key, {
-          tier: perf.tier,
-          seededAggregateScore: perf.seededAggregateScore,
-          characters: [perf.character],
-        })
-      }
-    }
 
     for (const pair of pairs) {
       const key = `${pair.actorId}:${pair.movieId}`
@@ -724,9 +700,15 @@ async function generatePerformances(outDir: string): Promise<number> {
       const actor = actorMap.get(pair.actorId)
       const movie = movieMap.get(pair.movieId)
       if (!actor || !movie) continue
-      if (!shouldIncludeRateMovie(movie)) continue
+      if (!isSitemapEligibleRateMovie(movie)) {
+        skippedMovieFilter += 1
+        continue
+      }
       const perfMeta = perfMetaByPair.get(key)
-      if (isSelfOnlyCreditPair(perfMeta?.characters ?? [])) continue
+      if (isSelfOnlyCreditPair(perfMeta?.characters ?? [])) {
+        skippedSelfCredit += 1
+        continue
+      }
       if (
         !isRatePageIndexable({
           movieSlug: movie.slug,
@@ -737,6 +719,7 @@ async function generatePerformances(outDir: string): Promise<number> {
           tier: perfMeta?.tier ?? null,
         })
       ) {
+        skippedIndexability += 1
         continue
       }
 
@@ -754,12 +737,15 @@ async function generatePerformances(outDir: string): Promise<number> {
     lastActorId = tail.actorId
     lastMovieId = tail.movieId
     console.log(
-      `  performances: processed ${processed.toLocaleString()} indexable rows, unique URLs ${seen.size.toLocaleString()}...`,
+      `  performances: processed ${processed.toLocaleString()} ≥2 LEAD/SUPPORTING pairs, unique URLs ${seen.size.toLocaleString()}...`,
     )
   }
 
   const result = writer.finalize()
-  console.log(`    → ${result.totalUrls} URLs across ${result.fileCount} file(s)`)
+  console.log(
+    `    → ${result.totalUrls} URLs across ${result.fileCount} file(s)` +
+      ` (skipped movieFilter=${skippedMovieFilter} selfCredit=${skippedSelfCredit} indexability=${skippedIndexability})`,
+  )
   return result.fileCount
 }
 

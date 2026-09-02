@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { isRatePageIndexable } from "@/lib/rate-page-seo"
+import { pickCanonicalPerformanceSeoMeta } from "@/lib/rate-page-canonical-perf"
 import { breadcrumbJsonLd } from "@/lib/seo/breadcrumb-jsonld"
 
 type Props = {
@@ -75,30 +76,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let indexingCohort = 0
   let tier: string | null = null
   try {
-    const SYSTEM_USER_ID = "uuid-from-auth-users"
-    const [count, systemPerf, anyPerf, movieSeo] = await Promise.all([
+    const [count, perfs, movieSeo] = await Promise.all([
       prisma.rating.count({
         where: { actorId: actor.id, movieId: movie.id },
       }),
-      prisma.performance.findFirst({
-        where: { actorId: actor.id, movieId: movie.id, userId: SYSTEM_USER_ID },
-        select: { seededAggregateScore: true, tier: true },
-      }),
-      prisma.performance.findFirst({
+      prisma.performance.findMany({
         where: { actorId: actor.id, movieId: movie.id },
-        select: { seededAggregateScore: true, tier: true },
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: {
+          seededAggregateScore: true,
+          tier: true,
+          userId: true,
+          order: true,
+          createdAt: true,
+          character: true,
+        },
       }),
       prisma.movie.findUnique({
         where: { id: movie.id },
         select: { indexingCohort: true, slug: true, title: true },
       }),
     ])
-    const perf = systemPerf ?? anyPerf
+    const meta = pickCanonicalPerformanceSeoMeta(perfs)
     ratingCount = count
-    seededAggregateScore =
-      typeof perf?.seededAggregateScore === "number" ? perf.seededAggregateScore : null
-    tier = perf?.tier ?? null
+    seededAggregateScore = meta.seededAggregateScore
+    tier = meta.tier
     indexingCohort = movieSeo?.indexingCohort ?? 0
   } catch (e) {
     console.error("Rate layout SEO metadata query failed:", e)
