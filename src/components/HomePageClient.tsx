@@ -13,7 +13,6 @@ import { FaArrowRight } from "react-icons/fa";
 import { BarChart3, Layers, List, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { WaitlistForm } from "@/components/auth/WaitlistForm";
 import {
   prefetchPerformancesPageData,
   buildByLookupUrl,
@@ -126,25 +125,25 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   );
 }
 
-function HeroCtaBlock() {
-  // Mounted in multiple layout branches; HeroSection assigns id="waitlist" to the visible one.
-  return <WaitlistForm anchor={false} />;
-}
-
-function useVisibleWaitlistAnchor() {
-  useEffect(() => {
-    const sync = () => {
-      const slots = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-waitlist-slot]"),
-      );
-      for (const el of slots) el.removeAttribute("id");
-      const visible = slots.find((el) => el.getClientRects().length > 0);
-      if (visible) visible.id = "waitlist";
-    };
-    sync();
-    window.addEventListener("resize", sync);
-    return () => window.removeEventListener("resize", sync);
-  }, []);
+function HeroSignupCta() {
+  return (
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full max-w-md mx-auto">
+      <Link
+        href="/auth/register"
+        className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
+        style={{ background: GOLD }}
+      >
+        Create free account
+        <FaArrowRight className="w-3.5 h-3.5" />
+      </Link>
+      <Link
+        href="/auth/signin"
+        className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
+      >
+        Sign in
+      </Link>
+    </div>
+  );
 }
 
 function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
@@ -153,7 +152,6 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
     upgradePosterBackdropRes(featured.moviePosterUrl) ??
     featured.moviePosterUrl ??
     HERO_BACKDROP_FALLBACK;
-  useVisibleWaitlistAnchor();
 
   return (
     <>
@@ -200,11 +198,8 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             <br />
             Tell the internet who deserved&nbsp;it.
           </motion.h1>
-          <div
-            data-waitlist-slot
-            className="mt-6 flex flex-col items-center scroll-mt-28"
-          >
-            <HeroCtaBlock />
+          <div className="mt-6 flex flex-col items-center scroll-mt-28">
+            <HeroSignupCta />
           </div>
         </div>
       </section>
@@ -238,10 +233,9 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
-            data-waitlist-slot
             className="mt-12 flex flex-col items-center scroll-mt-28"
           >
-            <HeroCtaBlock />
+            <HeroSignupCta />
           </motion.div>
         </div>
 
@@ -265,11 +259,8 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
       </section>
 
       {/* CTA band — only with bottom-pinned desktop hero */}
-      <section
-        data-waitlist-slot
-        className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center scroll-mt-28"
-      >
-        <HeroCtaBlock />
+      <section className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center scroll-mt-28">
+        <HeroSignupCta />
       </section>
     </>
   );

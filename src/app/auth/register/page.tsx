@@ -27,7 +27,6 @@ export default function RegisterPage() {
   const [companyUrl, setCompanyUrl] = useState("")
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [inviteCode, setInviteCode] = useState("")
-  const [inviteGateEnabled, setInviteGateEnabled] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
@@ -44,12 +43,6 @@ export default function RegisterPage() {
 
   useEffect(() => {
     setMounted(true)
-    void fetch("/api/invites/validate")
-      .then((r) => r.json())
-      .then((data: { gateEnabled?: boolean }) => {
-        setInviteGateEnabled(Boolean(data.gateEnabled))
-      })
-      .catch(() => {})
     trackSignupStarted({ trigger: "register_page", auth_status: "guest" })
   }, [])
 
@@ -154,10 +147,6 @@ export default function RegisterPage() {
       newErrors.terms = "You must agree to the Terms"
     }
 
-    if (inviteGateEnabled && !inviteCode.trim()) {
-      newErrors.inviteCode = "Invite code is required"
-    }
-
     if (requireEmail) {
       const emailValidation = validateEmail(email.trim())
       if (!emailValidation.isValid) {
@@ -232,7 +221,6 @@ export default function RegisterPage() {
     termsAccepted &&
     usernameStatus === "available" &&
     Boolean(normalizedUsername) &&
-    (!inviteGateEnabled || Boolean(inviteCode.trim())) &&
     !isLoading
 
   if (!mounted) {
@@ -272,52 +260,6 @@ export default function RegisterPage() {
       ) : null}
 
       <div className="relative rounded-md border border-white/[0.06] bg-[#0a0a0a] p-4 sm:p-5 space-y-3 sm:space-y-5">
-        {(inviteGateEnabled || inviteCode) && (
-          <div>
-            <div className="relative">
-              <input
-                type="text"
-                id="inviteCode"
-                value={inviteCode}
-                onChange={(e) => {
-                  setInviteCode(e.target.value.toUpperCase())
-                  setApiError("")
-                  setErrors((prev) => ({ ...prev, inviteCode: "" }))
-                }}
-                onFocus={() => setFocusedField("inviteCode")}
-                onBlur={() => setFocusedField(null)}
-                required={inviteGateEnabled}
-                disabled={isLoading}
-                autoCapitalize="characters"
-                spellCheck={false}
-                className={`floating-input w-full px-5 sm:px-6 pt-5 pb-2 bg-[#0a0a0a] border rounded-md text-base text-white outline-none focus:ring-0 focus:border-[#FFD700]/50 transition-colors duration-200 disabled:opacity-50 ${
-                  inviteCode ? "has-value" : ""
-                } ${
-                  errors.inviteCode ? "border-red-500" : "border-[#2a2a2a] hover:border-[#FFD700]/20"
-                }`}
-                placeholder=" "
-              />
-              <label
-                htmlFor="inviteCode"
-                className={`floating-label absolute left-5 sm:left-6 text-sm sm:text-base pointer-events-none transition-all duration-200 origin-left ${
-                  inviteCode || focusedField === "inviteCode" ? "floating-label-active" : "text-[#737373]"
-                }`}
-              >
-                Invite code
-              </label>
-            </div>
-            <p className="mt-1.5 text-xs text-zinc-500">
-              Need an invite?{" "}
-              <Link href="/#waitlist" className="text-[#FFD700] hover:underline">
-                Join the waitlist
-              </Link>
-            </p>
-            {errors.inviteCode ? (
-              <p className="mt-1 text-sm text-red-400">{errors.inviteCode}</p>
-            ) : null}
-          </div>
-        )}
-
         <div>
           <div className="relative">
             <input

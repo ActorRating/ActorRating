@@ -58,22 +58,11 @@ export function SignUpToSaveModal({
   const [emailError, setEmailError] = useState("")
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isGoogleBusy, setIsGoogleBusy] = useState(false)
-  const [inviteGateEnabled, setInviteGateEnabled] = useState(false)
 
   // The callback URL that processes guestRatings + pendingRating after auth.
   // /auth/signup-success is honored by the NextAuth redirect callback because
   // it starts with /auth/, so it survives both Google OAuth and email magic-link.
   const AUTH_CALLBACK = "/auth/signup-success"
-
-  useEffect(() => {
-    if (!isOpen) return
-    void fetch("/api/invites/validate")
-      .then((r) => r.json())
-      .then((data: { gateEnabled?: boolean }) => {
-        setInviteGateEnabled(Boolean(data.gateEnabled))
-      })
-      .catch(() => {})
-  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -137,21 +126,12 @@ export function SignUpToSaveModal({
 
   const handleContinueWithEmail = () => {
     persistPendingRating()
-    if (inviteGateEnabled) {
-      router.push("/auth/register")
-      return
-    }
-    router.push("/auth/signin")
+    router.push("/auth/register")
   }
 
   const handleSignIn = () => {
     persistPendingRating()
     router.push("/auth/signin")
-  }
-
-  const handleInviteRegister = () => {
-    persistPendingRating()
-    router.push("/auth/register")
   }
 
   // ─── Momentum variant handlers ───────────────────────────────────────────
@@ -326,41 +306,7 @@ export function SignUpToSaveModal({
               </div>
 
               {/* ── Variant content ───────────────────────────────────────────── */}
-              {inviteGateEnabled ? (
-                <div className="space-y-4">
-                  <p className="text-center text-sm text-zinc-400">
-                    Saving ratings requires an invite. Join with a code, or get on the waitlist.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleInviteRegister}
-                    className="w-full py-4 px-6 rounded-2xl text-black font-semibold transition-all duration-300"
-                    style={{ background: "linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%)" }}
-                  >
-                    I have an invite code
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      persistPendingRating()
-                      router.push("/#waitlist")
-                      onClose()
-                    }}
-                    className="w-full py-3 text-sm text-[#FFD700] hover:underline"
-                  >
-                    Join the waitlist
-                  </button>
-                  <div className="text-center pt-3 border-t border-white/10">
-                    <button
-                      type="button"
-                      onClick={handleSignIn}
-                      className="text-[#FFD700] font-semibold hover:underline text-sm"
-                    >
-                      Already a member? Sign in
-                    </button>
-                  </div>
-                </div>
-              ) : variant === "momentum" ? (
+              {variant === "momentum" ? (
                 <MomentumContent
                   guestRatingsCount={guestRatingsCount}
                   email={email}

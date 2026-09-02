@@ -26,7 +26,14 @@ export default function SignupSuccessPage() {
         return
       }
 
-      // ── Batch-sync guest ratings first ─────────────────────────────────
+      // ── Migrate server-side anonymous ratings (cookie) ─────────────────
+      try {
+        await fetch('/api/auth/migrate-anon-ratings', { method: 'POST', credentials: 'include' })
+      } catch {
+        /* non-fatal */
+      }
+
+      // ── Batch-sync legacy localStorage guest ratings ───────────────────
       const guestRatings: GuestRating[] = readGuestRatings()
       if (guestRatings.length > 0) {
         setIsSubmittingRating(true)

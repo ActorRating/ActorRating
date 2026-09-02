@@ -20,7 +20,7 @@ import { GUEST_RATING_LIMIT, readGuestRatingsCount } from '@/hooks/useGuestRatin
 import { fetchGuestSuccessRecommendations, type SuccessCarouselPerf } from '@/lib/guest-success-recommendations'
 import { SuccessRateAnotherCarousel } from '@/components/rating/SuccessRateAnotherCarousel'
 import { COMMENT_MAX_LENGTH } from '@/lib/validation/ratingComment'
-import { PerformanceReviewsSection } from '@/components/rating/PerformanceReviewsSection'
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget'
 
 const GOLD = 'linear-gradient(135deg, #FFE55C 0%, #FFD700 40%, #FFA500 85%, #FF8C00 100%)'
 const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
@@ -136,6 +136,8 @@ interface PerformanceRatingClientWrapperProps {
     chemistry: number
     comment?: string
     isSpoiler?: boolean
+    turnstileToken?: string | null
+    website?: string
   }) => Promise<void>
   submitting?: boolean
   initialRating?: {
@@ -627,6 +629,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const router = useRouter()
   const user = useUser()
   const [reviewComment, setReviewComment] = useState(initialRating?.comment ?? "")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [honeypotWebsite, setHoneypotWebsite] = useState("")
+  const turnstileRequired =
+    !user && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim())
   const [reviewIsSpoiler, setReviewIsSpoiler] = useState(Boolean(initialRating?.isSpoiler))
 
   // Detect iOS Safari to disable animations for critical UI
@@ -1023,6 +1029,8 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   }, [touchedSliders])
 
   const canSubmit = showInDepthSliders ? allSlidersTouched : singleSliderTouched
+  const canSubmitForm =
+    canSubmit && (Boolean(user) || !turnstileRequired || Boolean(turnstileToken))
 
   const handleSliderChange = useCallback((key: keyof typeof touchedSliders, value: number) => {
     const wasTouched = touchedSliders[key]
@@ -1294,7 +1302,7 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!canSubmit) return
+    if (!canSubmitForm) return
 
     const ratingData = showInDepthSliders
       ? {
@@ -1308,7 +1316,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 comment: reviewComment.trim() || undefined,
                 isSpoiler: Boolean(reviewComment.trim() && reviewIsSpoiler),
               }
-            : {}),
+            : {
+                turnstileToken,
+                website: honeypotWebsite,
+              }),
         }
       : {
           emotionalDepth: Math.round(overallScore),
@@ -1321,7 +1332,10 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                 comment: reviewComment.trim() || undefined,
                 isSpoiler: Boolean(reviewComment.trim() && reviewIsSpoiler),
               }
-            : {}),
+            : {
+                turnstileToken,
+                website: honeypotWebsite,
+              }),
         }
 
     const score = (ratingData.emotionalDepth + ratingData.believability + ratingData.technicalSkill + ratingData.screenPresence + ratingData.chemistry) / 5 / 10
@@ -2338,6 +2352,25 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                     </div>
                   ) : null}
 
+                  {!user ? (
+                    <>
+                      <input
+                        type="text"
+                        name="website"
+                        value={honeypotWebsite}
+                        onChange={(e) => setHoneypotWebsite(e.target.value)}
+                        className="absolute opacity-0 pointer-events-none h-0 w-0"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        aria-hidden
+                      />
+                      <TurnstileWidget
+                        onToken={setTurnstileToken}
+                        className="flex justify-center pt-2 max-w-[600px] mx-auto"
+                      />
+                    </>
+                  ) : null}
+
                   {/* Submit Button with white light sweep - Mobile optimized, never blurred or darkened */}
                   <div
                     className="pt-2 sm:pt-6 relative max-w-[600px] mx-auto flex justify-center"
@@ -2355,20 +2388,20 @@ export const PerformanceRatingClientWrapper = memo(function PerformanceRatingCli
                       ref={buttonRef}
                       type="submit"
                       data-submit-button
-      disabled={!canSubmit || submitPhase === 'loading'}
+      disabled={!canSubmitForm || submitPhase === 'loading'}
       className="group text-sm sm:text-lg md:text-xl font-bold tracking-wider relative overflow-hidden mx-auto"
       style={{
-        cursor: (!canSubmit || submitPhase === 'loading') ? 'not-allowed' : 'pointer',
+        cursor: (!canSubmitForm || submitPhase === 'loading') ? 'not-allowed' : 'pointer',
                         width: submitPhase === 'loading' ? '56px' : '100%',
                         height: submitPhase === 'loading' ? '56px' : 'auto',
                         padding: submitPhase === 'loading' ? '0' : '0.875rem 0',
                         borderRadius: submitPhase === 'loading' ? '50%' : '0.375rem',
-                        background: (canSubmit && !submitting) || submitPhase === 'loading'
+                        background: (canSubmitForm && !submitting) || submitPhase === 'loading'
                           ? GOLD
                           : '#1a1a1a',
-                        color: (canSubmit && !submitting) || submitPhase === 'loading' ? '#000000' : '#525252',
+                        color: (canSubmitForm && !submitting) || submitPhase === 'loading' ? '#000000' : '#525252',
                         boxShadow: 'none',
-                        border: (canSubmit && !submitting) || submitPhase === 'loading' ? 'none' : '1px solid #333',
+                        border: (canSubmitForm && !submitting) || submitPhase === 'loading' ? 'none' : '1px solid #333',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

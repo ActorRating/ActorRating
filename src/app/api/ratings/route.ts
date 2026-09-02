@@ -4,15 +4,13 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
-import { checkRateLimit } from "@/lib/rateLimit"
+import { checkRatingSubmissionLimits } from "@/lib/rateLimit"
 import { verifyRecaptchaV3 } from "@/lib/recaptcha"
-import { nanoid } from "nanoid"
-import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
-import { isMovieComingSoon } from "@/lib/movie-release"
 import {
-  parseIsSpoiler,
-  sanitizeRatingComment,
-} from "@/lib/validation/ratingComment"
+  isHoneypotTripped,
+  upsertUserRating,
+  validateRatingTarget,
+} from "@/lib/rating-submission"
 
 export async function GET() {
   try {
@@ -42,261 +40,89 @@ export async function PUT(request: NextRequest) {
   return handleRating(request, true)
 }
 
-// Unified handler for POST (create) and PUT (update)
+// Unified handler for POST (create) and PUT (update) — authenticated users only.
 async function handleRating(request: NextRequest, isUpdate: boolean) {
   try {
-    console.log("=== RATING API CALLED ===", { method: isUpdate ? 'PUT' : 'POST' })
-
     const userId = await getAuthenticatedUserId()
-
     if (!userId) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { 
-      ratingId, actorId, movieId,
-      emotionalRangeDepth, characterBelievability,
-      technicalSkill, screenPresence, chemistryInteraction,
-      comment, isSpoiler: rawIsSpoiler, recaptchaToken, breakdown, weightedScore: providedWeightedScore
+    const {
+      ratingId,
+      actorId,
+      movieId,
+      emotionalRangeDepth,
+      characterBelievability,
+      technicalSkill,
+      screenPresence,
+      chemistryInteraction,
+      comment,
+      isSpoiler: rawIsSpoiler,
+      recaptchaToken,
+      breakdown,
+      weightedScore: providedWeightedScore,
+      website: honeypotWebsite,
+      company: honeypotCompany,
     } = body
 
-    const commentResult = sanitizeRatingComment(comment)
-    if (!commentResult.ok) {
-      return NextResponse.json({ error: commentResult.error }, { status: 400 })
+    if (isHoneypotTripped(honeypotWebsite) || isHoneypotTripped(honeypotCompany)) {
+      return NextResponse.json({ error: "Invalid submission" }, { status: 400 })
     }
-    const sanitizedComment = commentResult.comment
-    const isSpoiler = sanitizedComment ? parseIsSpoiler(rawIsSpoiler) : false
 
-    // Validate required fields
     if (!actorId || !movieId) {
       return NextResponse.json({ error: "Actor ID and Movie ID are required" }, { status: 400 })
     }
-
-    // Validate actorId and movieId are TEXT strings (not UUIDs)
-    if (typeof actorId !== 'string' || typeof movieId !== 'string') {
+    if (typeof actorId !== "string" || typeof movieId !== "string") {
       return NextResponse.json({ error: "Actor ID and Movie ID must be strings" }, { status: 400 })
     }
 
-    // Ensure userId is stored as TEXT (Prisma User id / legacy ids)
-    if (typeof userId !== 'string') {
-      return NextResponse.json({ error: "User ID must be a string" }, { status: 400 })
-    }
-
-    // Validate rating values
-    const ratings = [emotionalRangeDepth, characterBelievability, technicalSkill, screenPresence, chemistryInteraction]
-    for (const r of ratings) {
-      if (typeof r !== 'number' || r < 0 || r > 100) {
-        return NextResponse.json({ error: "Ratings must be numbers between 0 and 100" }, { status: 400 })
-      }
-    }
-
-    // Verify reCAPTCHA (required for unauthenticated users)
-    // Skip reCAPTCHA for authenticated users (they've already passed auth)
-    // Also allow bypass tokens for post-signup/post-signin submissions
-    const bypassTokens = ['dev_mock_token_submit_rating_123', 'bypass']
+    const bypassTokens = ["dev_mock_token_submit_rating_123", "bypass"]
     const isBypassToken = recaptchaToken && bypassTokens.includes(recaptchaToken)
-    const shouldSkipRecaptcha = userId || isBypassToken
-    
-    if (!shouldSkipRecaptcha) {
-    if (!recaptchaToken) {
-      return NextResponse.json({ error: "reCAPTCHA token is required" }, { status: 400 })
-    }
-    
+    if (!isBypassToken && recaptchaToken) {
       const recaptchaResult = await verifyRecaptchaV3(recaptchaToken, "submit_rating", 0.5)
       if (!recaptchaResult.success) {
-        console.error("reCAPTCHA verification failed:", recaptchaResult.error)
-        return NextResponse.json({ 
-          error: "reCAPTCHA verification failed", 
-          debug: recaptchaResult.error 
-        }, { status: 403 })
+        return NextResponse.json({ error: "reCAPTCHA verification failed" }, { status: 403 })
       }
     }
 
-    // Rate limiting
-    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    let rateLimitResult
-    try {
-      rateLimitResult = await checkRateLimit(clientIp, 'rating')
-    } catch (rateLimitError) {
-      console.error("Rate limit check failed (allowing request):", rateLimitError)
-      // If rate limiting fails, allow the request but log the error
-      rateLimitResult = { allowed: true, remaining: 999, resetTime: new Date() }
-    }
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown"
+    const rateLimitResult = await checkRatingSubmissionLimits({ ip: clientIp, userId })
     if (!rateLimitResult.allowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
-    // Validate actor and movie exist
-    console.log("Validating actor and movie:", { actorId, movieId })
-    let actor, movie
-    try {
-      [actor, movie] = await Promise.all([
-        prisma.actor.findUnique({ where: { id: actorId } }),
-        prisma.movie.findUnique({ where: { id: movieId } })
-      ])
-    } catch (dbError) {
-      console.error("Database error during actor/movie lookup:", dbError)
-      throw dbError
-    }
-    
-    if (!actor) {
-      console.error("Actor not found:", actorId)
-      return NextResponse.json({ error: "Actor not found" }, { status: 400 })
-    }
-    
-    if (!movie) {
-      console.error("Movie not found:", movieId)
-      return NextResponse.json({ error: "Movie not found" }, { status: 400 })
+    const target = await validateRatingTarget(actorId, movieId)
+    if (!target.ok) {
+      return NextResponse.json({ error: target.error }, { status: target.status })
     }
 
-    if (isFeaturetteMovie(movie)) {
-      if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
-        void prisma.movie
-          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
-          .catch(() => {})
-      }
-      return NextResponse.json(
-        { error: "This title is not available for rating" },
-        { status: 400 }
-      )
+    const scores = {
+      emotionalRangeDepth,
+      characterBelievability,
+      technicalSkill,
+      screenPresence,
+      chemistryInteraction,
     }
 
-    if (isMovieComingSoon(movie)) {
-      return NextResponse.json(
-        { error: "This movie is not out yet — rating opens on release day" },
-        { status: 400 }
-      )
-    }
-
-    const existingPerf = await prisma.performance.findFirst({
-      where: { actorId, movieId },
-      select: { character: true },
-      orderBy: { createdAt: "asc" },
+    const rating = await upsertUserRating({
+      userId,
+      actorId,
+      movieId,
+      scores,
+      comment,
+      isSpoiler: rawIsSpoiler,
+      breakdown,
+      ratingId,
+      providedWeightedScore,
+      isUpdate,
     })
-    if (isSelfOrArchiveCredit(existingPerf?.character)) {
-      return NextResponse.json(
-        { error: "This credit is not available for rating" },
-        { status: 400 }
-      )
-    }
-    
-    console.log("Actor and movie validated:", { actorName: actor.name, movieTitle: movie.title })
 
-    // Calculate weighted score (server-side calculation, or use provided if valid)
-    const calculatedWeightedScore = emotionalRangeDepth * 0.25 +
-                                    characterBelievability * 0.25 +
-                                    technicalSkill * 0.2 +
-                                    screenPresence * 0.15 +
-                                    chemistryInteraction * 0.15
-    const weightedScore = (typeof providedWeightedScore === 'number' && providedWeightedScore >= 0 && providedWeightedScore <= 100) 
-      ? providedWeightedScore 
-      : calculatedWeightedScore
-    const shareScore = Math.round(weightedScore)
-
-    let rating
-    if (isUpdate) {
-      if (!ratingId) {
-        return NextResponse.json({ error: "Rating ID required for update" }, { status: 400 })
-      }
-
-      rating = await prisma.rating.update({
-        where: { id: ratingId },
-        data: {
-          emotionalRangeDepth,
-          characterBelievability,
-          technicalSkill,
-          screenPresence,
-          chemistryInteraction,
-          weightedScore,
-          shareScore,
-          comment: sanitizedComment,
-          isSpoiler,
-          // Re-showing an edited comment after hide requires admin; don't auto-unhide.
-          breakdown: breakdown !== undefined ? breakdown : undefined, // Update breakdown if provided
-        },
-        include: {
-          actor: { select: { name: true, imageUrl: true } },
-          movie: { select: { title: true, year: true, director: true } },
-        },
-      })
-      console.log("Updated rating:", rating.id)
-    } else {
-      // Check if rating already exists
-      const existing = await prisma.rating.findUnique({
-        where: { userId_actorId_movieId: { userId, actorId, movieId } }
-      })
-
-      if (existing) {
-        // If exists, update instead
-        rating = await prisma.rating.update({
-          where: { id: existing.id },
-          data: { 
-            emotionalRangeDepth, 
-            characterBelievability, 
-            technicalSkill, 
-            screenPresence, 
-            chemistryInteraction, 
-            weightedScore, 
-            shareScore, 
-            comment: sanitizedComment,
-            isSpoiler,
-            breakdown: breakdown !== undefined ? breakdown : existing.breakdown // Update breakdown if provided
-          },
-          include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
-        })
-        console.log("Updated existing rating:", rating.id)
-      } else {
-        // Generate TEXT ID: "rating_" + nanoid()
-        const ratingId = `rating_${nanoid()}`
-        
-        console.log("Creating new rating:", { 
-          ratingId, 
-          userId, 
-          actorId, 
-          movieId,
-          weightedScore,
-          shareScore
-        })
-        
-        try {
-          rating = await prisma.rating.create({
-            data: { 
-              id: ratingId,
-              userId: String(userId),
-              actorId: String(actorId), // Ensure TEXT format
-              movieId: String(movieId), // Ensure TEXT format
-              emotionalRangeDepth, 
-              characterBelievability, 
-              technicalSkill, 
-              screenPresence, 
-              chemistryInteraction, 
-              weightedScore, 
-              shareScore, 
-              comment: sanitizedComment,
-              isSpoiler,
-              breakdown: breakdown || null // Optional breakdown field
-            },
-            include: { actor: { select: { name: true, imageUrl: true } }, movie: { select: { title: true, year: true, director: true } } },
-          })
-          console.log("Created new rating:", rating.id)
-        } catch (createError) {
-          console.error("Error creating rating:", createError)
-          if (createError instanceof Error) {
-            console.error("Create error details:", {
-              name: createError.name,
-              message: createError.message,
-              stack: createError.stack
-            })
-          }
-          throw createError
-        }
-      }
-    }
-
-    // No per-rating revalidatePath — reduces ISR writes; dashboard uses revalidate: 600 and client refetch after submit
     return NextResponse.json(rating, { status: isUpdate ? 200 : 201 })
-
   } catch (error) {
     console.error("=== RATING API ERROR ===", error)
     if (error instanceof Error) {

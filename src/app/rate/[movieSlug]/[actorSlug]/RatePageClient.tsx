@@ -16,7 +16,7 @@ import { useRecaptchaV3 } from '@/components/auth/ReCaptcha'
 import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { PerformanceSEOContent } from '@/components/seo/PerformanceSEOContent'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
-import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
+import { useGuestRatings } from '@/hooks/useGuestRatings'
 import { trackPerformanceViewed } from '@/lib/analytics'
 
 type RatePageClientProps = {
@@ -363,32 +363,18 @@ export default function RatePageClient({
     chemistry: number
     comment?: string
     isSpoiler?: boolean
+    turnstileToken?: string | null
+    website?: string
   }): Promise<void> => {
     if (!actor || !movie) return Promise.resolve()
 
     if (!user) {
-      // ── Guest path ────────────────────────────────────────────────────────
-      // If they've hit the free-rating limit, block and ask them to sign up.
-      if (guestCount >= GUEST_RATING_LIMIT) {
-        setPendingRatingData({
-          ...ratingData,
-          actorId: actor.id,
-          movieId: movie.id,
-          actorName: actor.name,
-          movieTitle: movie.title,
-          movieYear: movie.year,
-          comment: '',
-        })
-        setShowSignUpModal(true)
-        return Promise.reject()
-      }
-
-      // Under the limit: submit as guest, store locally, show success UI.
       setSubmitting(true)
       try {
         const res = await fetch('/api/ratings/guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             actorId: actor.id,
             movieId: movie.id,
@@ -397,6 +383,8 @@ export default function RatePageClient({
             technicalSkill: ratingData.technicalSkill,
             screenPresence: ratingData.screenPresence,
             chemistryInteraction: ratingData.chemistry,
+            turnstileToken: ratingData.turnstileToken,
+            website: ratingData.website ?? '',
           }),
         })
         if (!res.ok) {
@@ -416,7 +404,6 @@ export default function RatePageClient({
           chemistryInteraction: ratingData.chemistry,
           timestamp: new Date().toISOString(),
         })
-        // Resolves normally → wrapper enters submitPhase = 'success'
       } catch (err: unknown) {
         console.error('Failed to submit guest rating:', err)
         throw err

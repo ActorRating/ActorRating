@@ -22,7 +22,7 @@ import { SignUpToSaveModal } from '@/components/auth/SignUpToSaveModal'
 import { BouncingBallsLoader } from '@/components/ui/BouncingBallsLoader'
 import { trackRateStart } from '@/lib/analytics'
 import { getActorUrl, getMovieUrl } from '@/lib/slugHelper'
-import { useGuestRatings, GUEST_RATING_LIMIT } from '@/hooks/useGuestRatings'
+import { useGuestRatings } from '@/hooks/useGuestRatings'
 
 function RatePageContent() {
   const searchParams = useSearchParams()
@@ -311,6 +311,8 @@ function RatePageContent() {
     chemistry: number
     comment?: string
     isSpoiler?: boolean
+    turnstileToken?: string | null
+    website?: string
   }): Promise<void> => {
     if (!actor || !movie) {
       return Promise.resolve()
@@ -329,29 +331,13 @@ function RatePageContent() {
 
     // ── Guest path ────────────────────────────────────────────────────────
     if (!user) {
-      // At or over the free-rating limit: block and prompt sign-up.
-      if (guestCount >= GUEST_RATING_LIMIT) {
-        const ratingDataToStore = {
-          ...ratingData,
-          actorId: actor.id,
-          movieId: movie.id,
-          actorName: actor.name,
-          movieTitle: movie.title,
-          movieYear: movie.year,
-          comment: characterName,
-        }
-        setPendingRatingData(ratingDataToStore)
-        setShowSignUpModal(true)
-        return Promise.reject(new Error('USER_NOT_SIGNED_IN'))
-      }
-
-      // Under the limit: submit as guest, store locally, show success UI.
       setSubmitting(true)
       setError(null)
       try {
         const res = await fetch('/api/ratings/guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             actorId: actor.id,
             movieId: movie.id,
@@ -360,6 +346,8 @@ function RatePageContent() {
             technicalSkill: apiRatingData.technicalSkill,
             screenPresence: apiRatingData.screenPresence,
             chemistryInteraction: apiRatingData.chemistryInteraction,
+            turnstileToken: ratingData.turnstileToken,
+            website: ratingData.website ?? '',
           }),
         })
         if (!res.ok) {

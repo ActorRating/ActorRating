@@ -6,7 +6,9 @@ export interface RateLimitConfig {
 }
 
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  rating: { windowMs: 60 * 1000, maxRequests: 10 }, // 10 ratings per minute (increased for testing)
+  rating: { windowMs: 60 * 1000, maxRequests: 10 },
+  /** Hourly cap for rating writes per IP / anon / user identity */
+  ratingHourly: { windowMs: 60 * 60 * 1000, maxRequests: 20 },
   byLookup: { windowMs: 60 * 1000, maxRequests: 120 },
   og: { windowMs: 60 * 1000, maxRequests: 60 },
   profileUpdate: { windowMs: 60 * 1000, maxRequests: 10 },
@@ -96,16 +98,42 @@ export async function checkRateLimitScopes(params: {
   ip: string
   action: keyof typeof RATE_LIMITS
   userId?: string | null
+  anonId?: string | null
 }): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
   const ipResult = await checkRateLimitKey(`ip:${params.ip}`, params.action)
   if (!ipResult.allowed) return ipResult
 
-  if (!params.userId) return ipResult
+  if (params.userId) {
+    const userResult = await checkRateLimitKey(`user:${params.userId}`, params.action)
+    if (!userResult.allowed) return userResult
+    return userResult.remaining < ipResult.remaining ? userResult : ipResult
+  }
 
-  const userResult = await checkRateLimitKey(`user:${params.userId}`, params.action)
-  if (!userResult.allowed) return userResult
+  if (params.anonId) {
+    const anonResult = await checkRateLimitKey(`anon:${params.anonId}`, params.action)
+    if (!anonResult.allowed) return anonResult
+    return anonResult.remaining < ipResult.remaining ? anonResult : ipResult
+  }
 
-  return userResult.remaining < ipResult.remaining ? userResult : ipResult
+  return ipResult
+}
+
+/** Per-minute + hourly caps for rating submission endpoints. */
+export async function checkRatingSubmissionLimits(params: {
+  ip: string
+  userId?: string | null
+  anonId?: string | null
+}): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
+  const minute = await checkRateLimit(params.ip, "rating")
+  if (!minute.allowed) return minute
+
+  const hourly = await checkRateLimitScopes({
+    ip: params.ip,
+    action: "ratingHourly",
+    userId: params.userId,
+    anonId: params.anonId,
+  })
+  return hourly
 }
 
 export async function cleanupOldRateLimits() {

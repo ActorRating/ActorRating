@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/lib/dashboardData'
 import { auth } from '@/auth'
 import { resolveUser } from '@/lib/auth/resolveUser'
+import { migrateAnonRatingsFromRequestCookie } from '@/lib/run-anon-rating-migration'
 import DashboardClient from './DashboardClient'
 import { Button } from '@/components/ui/Button'
 
@@ -58,6 +59,12 @@ export default async function DashboardPage() {
   // Only authenticated users who haven't finished account setup go to finish-account.
   if (result.needsOnboarding) {
     redirect('/auth/finish-account')
+  }
+
+  try {
+    await migrateAnonRatingsFromRequestCookie(result.user.id)
+  } catch (err) {
+    console.error('Anonymous rating migration failed:', err)
   }
 
   let ratings: Awaited<ReturnType<typeof getDashboardData>>['ratings']

@@ -1,30 +1,44 @@
 export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
-import { nanoid } from "nanoid"
-import { prisma } from "@/lib/prisma"
-import { checkRateLimit } from "@/lib/rateLimit"
-import { isFeaturetteMovie, isSelfOrArchiveCredit, matchesFeaturetteTitle } from "@/lib/non-rateable"
-import { isMovieComingSoon } from "@/lib/movie-release"
+import { cookies } from "next/headers"
+import { checkRatingSubmissionLimits } from "@/lib/rateLimit"
+import { verifyTurnstileToken } from "@/lib/turnstile"
+import {
+  ANON_COOKIE_NAME,
+  applyAnonCookie,
+  resolveAnonSession,
+} from "@/lib/anonymous-session"
+import {
+  isHoneypotTripped,
+  upsertAnonRating,
+  validateRatingTarget,
+} from "@/lib/rating-submission"
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  )
+}
 
 /**
- * Persist a guest (unsigned) rating to the DB with userId = null.
- * Still mirrored in localStorage on the client for limit/UX; admin Guest tab reads DB.
- * Guest rows are excluded from public community-stats averages.
+ * Anonymous rating write — identified by signed ar_anon_id cookie.
+ * Requires Turnstile + honeypile; upserts one rating per performance per anonId.
  */
 export async function POST(request: NextRequest) {
   try {
-    const clientIp =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown"
+    const ip = clientIp(request)
+    const cookieStore = await cookies()
+    const session = resolveAnonSession(cookieStore.get(ANON_COOKIE_NAME)?.value)
 
-    const rateLimitResult = await checkRateLimit(clientIp, "rating")
-    if (!rateLimitResult.allowed) {
+    const limit = await checkRatingSubmissionLimits({ ip, anonId: session.anonId })
+    if (!limit.allowed) {
       return NextResponse.json(
         {
           error: "Too many rating submissions. Please try again later.",
-          resetTime: rateLimitResult.resetTime,
+          resetTime: limit.resetTime,
         },
         { status: 429 },
       )
@@ -39,9 +53,19 @@ export async function POST(request: NextRequest) {
       technicalSkill,
       screenPresence,
       chemistryInteraction,
-      comment: _comment,
+      turnstileToken,
+      website: honeypotWebsite,
+      company: honeypotCompany,
     } = body
-    void _comment // Guests cannot attach micro-reviews (signed-in only).
+
+    if (isHoneypotTripped(honeypotWebsite) || isHoneypotTripped(honeypotCompany)) {
+      return NextResponse.json({ error: "Invalid submission" }, { status: 400 })
+    }
+
+    const turnstile = await verifyTurnstileToken(turnstileToken, ip)
+    if (!turnstile.success) {
+      return NextResponse.json({ error: "Verification failed" }, { status: 403 })
+    }
 
     if (!actorId || !movieId) {
       return NextResponse.json(
@@ -57,106 +81,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const ratings = [
+    const target = await validateRatingTarget(actorId, movieId)
+    if (!target.ok) {
+      return NextResponse.json({ error: target.error }, { status: target.status })
+    }
+
+    const scores = {
       emotionalRangeDepth,
       characterBelievability,
       technicalSkill,
       screenPresence,
       chemistryInteraction,
-    ]
-    for (const rating of ratings) {
-      if (typeof rating !== "number" || rating < 0 || rating > 100) {
-        return NextResponse.json(
-          { error: "All ratings must be numbers between 0 and 100" },
-          { status: 400 },
-        )
-      }
     }
 
-    const [actor, movie] = await Promise.all([
-      prisma.actor.findUnique({ where: { id: actorId } }),
-      prisma.movie.findUnique({ where: { id: movieId } }),
-    ])
-
-    if (!actor) {
-      return NextResponse.json({ error: "Actor not found" }, { status: 400 })
-    }
-    if (!movie) {
-      return NextResponse.json({ error: "Movie not found" }, { status: 400 })
-    }
-
-    if (isFeaturetteMovie(movie)) {
-      if (!movie.isFeaturette && matchesFeaturetteTitle(movie.title)) {
-        void prisma.movie
-          .update({ where: { id: movie.id }, data: { isFeaturette: true } })
-          .catch(() => {})
-      }
-      return NextResponse.json(
-        { error: "This title is not available for rating" },
-        { status: 400 },
-      )
-    }
-
-    if (isMovieComingSoon(movie)) {
-      return NextResponse.json(
-        { error: "This movie is not out yet — rating opens on release day" },
-        { status: 400 },
-      )
-    }
-
-    const existingPerf = await prisma.performance.findFirst({
-      where: { actorId, movieId },
-      select: { character: true },
-      orderBy: { createdAt: "asc" },
-    })
-    if (isSelfOrArchiveCredit(existingPerf?.character)) {
-      return NextResponse.json(
-        { error: "This credit is not available for rating" },
-        { status: 400 },
-      )
-    }
-
-    const weightedScore =
-      emotionalRangeDepth * 0.25 +
-      characterBelievability * 0.25 +
-      technicalSkill * 0.2 +
-      screenPresence * 0.15 +
-      chemistryInteraction * 0.15
-    const shareScore = Math.round(weightedScore)
-
-    const rating = await prisma.rating.create({
-      data: {
-        id: `rating_${nanoid()}`,
-        userId: null,
-        actorId,
-        movieId,
-        emotionalRangeDepth,
-        characterBelievability,
-        technicalSkill,
-        screenPresence,
-        chemistryInteraction,
-        weightedScore,
-        shareScore,
-        comment: null,
-        isSpoiler: false,
-      },
-      select: {
-        id: true,
-        weightedScore: true,
-        createdAt: true,
-      },
+    const rating = await upsertAnonRating({
+      anonId: session.anonId,
+      actorId,
+      movieId,
+      scores,
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       rating,
-      message: "Guest rating saved",
+      message: "Rating saved",
     })
+    if (session.isNew) {
+      applyAnonCookie(response, session.cookieValue)
+    }
+    return response
   } catch (error) {
-    console.error("Guest rating submission error:", error)
-    return NextResponse.json(
-      { error: "Failed to process rating submission" },
-      { status: 500 },
-    )
+    console.error("Anonymous rating submission error:", error)
+    const msg = error instanceof Error ? error.message : "Failed to process rating submission"
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

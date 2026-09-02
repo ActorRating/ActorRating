@@ -4,10 +4,9 @@ import { prisma } from "@/lib/prisma"
 
 export const INVITES_PER_NEW_USER = 3
 
-/** When unset/false, signup works without invites (bootstrap). When "1"/true, hard gate. */
+/** Open registration — invite gate permanently disabled (table retained for analytics). */
 export function isInviteGateEnabled(): boolean {
-  const raw = process.env.INVITE_GATE_ENABLED?.trim().toLowerCase()
-  return raw === "1" || raw === "true" || raw === "yes"
+  return false
 }
 
 /** Normalize user-entered codes: uppercase, strip spaces, allow hyphen. */
