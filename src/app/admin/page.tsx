@@ -9,10 +9,14 @@ import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSectio
 import XTrafficSection from "@/components/admin/XTrafficSection"
 import InviteAnalyticsSection from "@/components/admin/InviteAnalyticsSection"
 import ModerationQueue from "@/components/admin/ModerationQueue"
+import CommentedRatingsPanel from "@/components/admin/CommentedRatingsPanel"
+import Cohort1RecentlyIndexablePanel from "@/components/admin/Cohort1RecentlyIndexablePanel"
 import WaitlistPanel from "@/components/admin/WaitlistPanel"
 import AdminTabs from "@/components/admin/AdminTabs"
 import { parseAdminTab, type AdminTabId } from "@/lib/admin/tabs"
 import { getAdminData } from "@/lib/admin/getAdminData"
+import { getCommentedRatings } from "@/lib/admin/getCommentedRatings"
+import { getCohort1RecentlyCrossedIndexable } from "@/lib/admin/getCohort1RecentlyIndexable"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
 import {
   getPageViewAnalytics,
@@ -520,9 +524,11 @@ async function RatingsTab({
   searchParams: AdminSearchParams
   pvDays: number
 }) {
-  const [data, globalRatings] = await Promise.all([
+  const [data, globalRatings, commented, cohort1Crossed] = await Promise.all([
     getAdminData(),
     getGlobalRatings(searchParams),
+    getCommentedRatings({ limit: 100 }),
+    getCohort1RecentlyCrossedIndexable({ lookbackDays: 14, limit: 75 }),
   ])
 
   return (
@@ -540,6 +546,14 @@ async function RatingsTab({
           subtitle={`${data.guestRatingsToday} today`}
         />
       </div>
+
+      <Cohort1RecentlyIndexablePanel
+        rows={cohort1Crossed.rows}
+        lookbackDays={cohort1Crossed.lookbackDays}
+        threshold={cohort1Crossed.threshold}
+      />
+
+      <CommentedRatingsPanel rows={commented.rows} totalCount={commented.totalCount} />
 
       <RecentRatings ratings={data.recentRatings} title="Recent Ratings" />
       <RecentRatings
