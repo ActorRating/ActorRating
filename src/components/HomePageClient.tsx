@@ -2,7 +2,7 @@
 "use client";
 
 /**
- * Cormorant manifesto + one CTA over a film still,
+ * Cormorant manifesto + guest-first rate CTA over a film still,
  * with a dense poster strip bleeding into the first viewport. No marketing essays.
  */
 
@@ -14,7 +14,6 @@ import { BarChart3, Layers, List, SlidersHorizontal, type LucideIcon } from "luc
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  prefetchPerformancesPageData,
   buildByLookupUrl,
   LEGENDARY_PERFORMANCE_TARGETS,
   POPULAR_RIGHT_NOW_POOL,
@@ -31,6 +30,7 @@ import {
   type FeaturedHeroPayload,
   buildFixedLandingHero,
   fixedLandingHeroLookupTarget,
+  HOME_PRIMARY_RATE_HREF,
 } from "@/lib/home-featured-performance";
 import {
   getCurrentWeeklyHeroConfig,
@@ -125,22 +125,34 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   );
 }
 
-function HeroSignupCta() {
+/** Guest-first: rate before account. Auth stays secondary. */
+function HeroPrimaryCta() {
+  const router = useRouter();
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full">
+        <Link
+          href={HOME_PRIMARY_RATE_HREF}
+          prefetch={false}
+          onMouseEnter={() => router.prefetch(HOME_PRIMARY_RATE_HREF)}
+          className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
+          style={{ background: GOLD }}
+        >
+          Rate a Performance
+          <FaArrowRight className="w-3.5 h-3.5" />
+        </Link>
+        <Link
+          href="/auth/signin"
+          className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
+        >
+          Sign in
+        </Link>
+      </div>
       <Link
         href="/auth/register"
-        className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
-        style={{ background: GOLD }}
+        className="text-sm text-zinc-400 hover:text-[#FFD700] transition-colors underline-offset-4 hover:underline"
       >
         Create free account
-        <FaArrowRight className="w-3.5 h-3.5" />
-      </Link>
-      <Link
-        href="/auth/signin"
-        className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
-      >
-        Sign in
       </Link>
     </div>
   );
@@ -199,7 +211,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             Tell the internet who deserved&nbsp;it.
           </motion.h1>
           <div className="mt-6 flex flex-col items-center scroll-mt-28">
-            <HeroSignupCta />
+            <HeroPrimaryCta />
           </div>
         </div>
       </section>
@@ -235,7 +247,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
             className="mt-12 flex flex-col items-center scroll-mt-28"
           >
-            <HeroSignupCta />
+            <HeroPrimaryCta />
           </motion.div>
         </div>
 
@@ -260,7 +272,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
 
       {/* CTA band — only with bottom-pinned desktop hero */}
       <section className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center scroll-mt-28">
-        <HeroSignupCta />
+        <HeroPrimaryCta />
       </section>
     </>
   );
@@ -331,7 +343,7 @@ function LetsYouSection() {
   );
 }
 
-function ClosingStrip({ primaryRateHref }: { primaryRateHref: string }) {
+function ClosingStrip() {
   const router = useRouter();
   return (
     <section className="border-t border-white/[0.06] py-14 sm:py-20 text-center px-5">
@@ -342,27 +354,30 @@ function ClosingStrip({ primaryRateHref }: { primaryRateHref: string }) {
         Rate acting. Share your take. Build the performance canon.
       </p>
       <Link
-        href={primaryRateHref}
+        href={HOME_PRIMARY_RATE_HREF}
         prefetch={false}
-        onMouseEnter={() => {
-          if (primaryRateHref.startsWith("/rate/")) router.prefetch(primaryRateHref);
-          else prefetchPerformancesPageData();
-        }}
+        onMouseEnter={() => router.prefetch(HOME_PRIMARY_RATE_HREF)}
       >
         <span
           className="inline-flex items-center gap-2 px-8 py-3.5 rounded-md text-black font-bold tracking-wide transition-transform hover:scale-[1.02]"
           style={{ background: GOLD }}
         >
-          Start rating — it&apos;s free!
+          Rate a Performance
           <FaArrowRight className="w-3.5 h-3.5" />
         </span>
       </Link>
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
         <Link
           href="/lists"
           className="text-base sm:text-lg text-zinc-400 hover:text-[#FFD700] transition-colors"
         >
           Or browse curated lists →
+        </Link>
+        <Link
+          href="/auth/register"
+          className="text-sm text-zinc-500 hover:text-[#FFD700] transition-colors underline-offset-4 hover:underline"
+        >
+          Create free account
         </Link>
       </div>
     </section>
@@ -503,14 +518,12 @@ export default function HomePageClient({
   initialRecent = [],
   featuredHero: featuredHeroProp,
   weeklyFeatured: weeklyFeaturedProp = null,
-  primaryRateHref: primaryRateHrefProp,
 }: {
   initialPopular?: EnrichedPerformance[];
   initialLegendary?: EnrichedPerformance[];
   initialRecent?: EnrichedPerformance[];
   featuredHero: FeaturedHeroPayload;
   weeklyFeatured?: EnrichedPerformance | null;
-  primaryRateHref?: string;
 }) {
   const [clientResolvedFeatured, setClientResolvedFeatured] =
     useState<FeaturedHeroPayload | null>(null);
@@ -600,7 +613,6 @@ export default function HomePageClient({
   }, [popular.length, legendary.length, recent.length]);
 
   const activeFeatured = clientResolvedFeatured ?? featuredHeroProp;
-  const primaryRateHref = primaryRateHrefProp ?? activeFeatured.rateHref;
 
   const popularFallback = popularRightNowTargets();
   const recentFallback = recentFavoritesTargets();
@@ -665,7 +677,7 @@ export default function HomePageClient({
         <LetsYouSection />
       </div>
 
-      <ClosingStrip primaryRateHref={primaryRateHref} />
+      <ClosingStrip />
     </>
   );
 }

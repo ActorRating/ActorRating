@@ -15,6 +15,9 @@ export type FeaturedHeroPayload = {
   subline: string
 }
 
+/** Guest-first homepage primary CTA — indexable page with live community ratings. */
+export const HOME_PRIMARY_RATE_HREF = "/rate/fight-club-1999/edward-norton"
+
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
   actor: 'Matt Damon',

@@ -8,7 +8,7 @@ import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
 import { HomeEditorialRails } from "@/components/editorial/HomeEditorialRails";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
-import { buildFixedLandingHero, fixedLandingHeroLookupTarget } from "@/lib/home-featured-performance";
+import { buildFixedLandingHero, fixedLandingHeroLookupTarget, HOME_PRIMARY_RATE_HREF } from "@/lib/home-featured-performance";
 import { weeklyHeroLookupTarget } from "@/lib/weekly-hero-performance";
 import { loadLandingRails } from "@/lib/landing-daily-rails";
 import {
@@ -78,7 +78,7 @@ export default async function Home() {
   } catch {
     /* DB/API unavailable during build or deploy — client still fetches */
   }
-  const primaryRateHref = featuredHero.rateHref;
+  const primaryRateHref = HOME_PRIMARY_RATE_HREF;
   const [allStories, allNews] = await Promise.all([
     loadAllStoriesAsync(),
     loadAllNewsAsync(),
@@ -190,7 +190,6 @@ export default async function Home() {
           initialRecent={initialRecent}
           featuredHero={featuredHero}
           weeklyFeatured={weeklyFeatured}
-          primaryRateHref={primaryRateHref}
         />
         <HomeEditorialRails stories={recentStories} news={recentNews} />
         <HomeSeoLinkSections />
