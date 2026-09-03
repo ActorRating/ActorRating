@@ -16,7 +16,7 @@ export type FeaturedHeroPayload = {
 }
 
 /** Guest-first homepage primary CTA — indexable page with live community ratings. */
-export const HOME_PRIMARY_RATE_HREF = "/rate/fight-club-1999/edward-norton"
+export const HOME_PRIMARY_RATE_HREF = "/rate/the-godfather-1972/marlon-brando"
 
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
