@@ -86,11 +86,9 @@ export function ActorHeadshot({
           src={imageUrl}
           alt={name}
           loading={loading}
-          decoding="async"
-          className={cn(
-            'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
-            loaded ? 'opacity-100' : 'opacity-0',
-          )}
+          decoding={loading === 'eager' ? 'sync' : 'async'}
+          fetchPriority={loading === 'eager' ? 'high' : undefined}
+          className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: 'top center' }}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}

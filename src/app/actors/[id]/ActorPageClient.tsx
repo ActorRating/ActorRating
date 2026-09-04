@@ -81,14 +81,9 @@ type ActorPageClientProps = {
 }
 
 function HeroActorPhoto({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
-  const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
   return (
     <>
-      {!loaded && !errored && (
-        <div className="absolute inset-0 animate-pulse"
-          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)' }} />
-      )}
       {(!imageUrl || errored) ? (
         <div className="absolute inset-0 flex items-center justify-center"
           style={{ background: 'rgba(255,215,0,0.04)' }}>
@@ -97,13 +92,16 @@ function HeroActorPhoto({ imageUrl, name }: { imageUrl?: string | null; name: st
           </span>
         </div>
       ) : (
+        // Visible immediately — do not gate on onLoad. X/Instagram in-app WebViews
+        // often decode the image (long-press preview works) without firing onLoad,
+        // which left this hero stuck at opacity-0 over a pulse placeholder.
         <img
           src={imageUrl}
           alt={name}
           loading="eager"
-          decoding="async"
-          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setLoaded(true)}
+          decoding="sync"
+          fetchPriority="high"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           onError={() => setErrored(true)}
         />
       )}
@@ -754,11 +752,11 @@ export default function ActorPageClient({
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16"
           style={{ paddingTop: 'max(5.5rem, calc(5rem + env(safe-area-inset-top, 0px)))' }}
         >
-          {/* Back Button */}
+          {/* Back Button — no opacity gate: in-app WebViews may not run Framer enter animations */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            initial={{ x: -12 }}
+            animate={{ x: 0 }}
+            transition={{ duration: 0.4 }}
             className="mb-6 sm:mb-8"
           >
             <Link
@@ -769,19 +767,19 @@ export default function ActorPageClient({
             </Link>
           </motion.div>
 
-          {/* Actor Info */}
+          {/* Actor Info — visible immediately; transform-only motion (no opacity:0 enter) */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ y: 16 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="text-center mb-12"
           >
             {/* Actor headshot */}
             {actor.imageUrl && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ scale: 0.96 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="flex justify-center mb-6"
               >
                 {/* Portrait crop at 2:3 — matches TMDB photo shape, no aggressive squaring */}

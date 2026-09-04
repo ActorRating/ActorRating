@@ -68,11 +68,10 @@ export function ActorAvatar({
           src={imageUrl!}
           alt={name}
           loading={loading}
-          // object-[center_20%] keeps the face visible while avoiding extreme cropping
-          className={cn(
-            'w-full h-full object-cover transition-opacity duration-300',
-            loaded ? 'opacity-100' : 'opacity-0',
-          )}
+          decoding={loading === 'eager' ? 'sync' : 'async'}
+          fetchPriority={loading === 'eager' ? 'high' : undefined}
+          // Visible immediately: in-app WebViews may skip onLoad after a successful decode.
+          className="w-full h-full object-cover"
           style={{ objectPosition: 'top center' }}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
