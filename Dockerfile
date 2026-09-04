@@ -15,11 +15,26 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install OS deps only if you add native modules later; keep image minimal
+# Quiet installs look "stuck" on Coolify; keep progress visible.
+ENV NPM_CONFIG_LOGLEVEL=info \
+    NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    PRISMA_TELEMETRY_INFORMATION="" \
+    PRISMA_HIDE_UPDATE_MESSAGE=1
 
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci
+
+# Split install from prisma generate so a hang is attributable:
+# 1) package extract, 2) engine download. --ignore-scripts avoids postinstall
+# racing generate twice (package.json also has "postinstall": "prisma generate").
+# Cache mount keeps npm tarballs across builds when BuildKit is available.
+RUN --mount=type=cache,target=/root/.npm \
+    echo "[deps] npm ci starting $(date -u +%H:%M:%S)" \
+    && npm ci --ignore-scripts \
+    && echo "[deps] npm ci done $(date -u +%H:%M:%S); prisma generate…" \
+    && ./node_modules/.bin/prisma generate \
+    && echo "[deps] prisma generate done $(date -u +%H:%M:%S)"
 
 # ------------ Build application + standalone bundle ------------
 FROM node:20-alpine AS builder
@@ -32,7 +47,8 @@ ENV SKIP_BUILD_TIME_DB=1
 # Cap Node heap so Coolify builds don't OOM the host (running app + build share RAM).
 # Keep heap below host free RAM while the live app is still running; page-data
 # workers are also capped via experimental.cpus=1 in next.config.js.
-ENV NODE_OPTIONS=--max-old-space-size=3072
+# 2048 keeps more headroom for the live container than 3072 on small VPS builds.
+ENV NODE_OPTIONS=--max-old-space-size=2048
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
