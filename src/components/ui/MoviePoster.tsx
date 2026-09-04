@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useLayoutEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -39,24 +39,7 @@ export function MoviePoster({
   loading = 'lazy',
   rounded,
 }: MoviePosterProps) {
-  const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
-
-  useLayoutEffect(() => {
-    setErrored(false)
-    const img = imgRef.current
-    if (!posterUrl || !img) {
-      setLoaded(false)
-      return
-    }
-    if (img.complete && img.naturalWidth > 0) {
-      setLoaded(true)
-    } else {
-      setLoaded(false)
-    }
-  }, [posterUrl])
-
   const showPhoto = !!posterUrl && !errored
 
   return (
@@ -72,26 +55,16 @@ export function MoviePoster({
         border: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      {showPhoto && !loaded && (
-        <div
-          className="absolute inset-0 animate-pulse"
-          style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)' }}
-        />
-      )}
-
       {showPhoto ? (
+        // Visible immediately — do not gate on onLoad (X/Instagram in-app WebViews).
         <img
           key={posterUrl}
-          ref={imgRef}
-          src={posterUrl}
+          src={posterUrl!}
           alt={title}
           loading={loading}
-          decoding="async"
-          className={cn(
-            'absolute inset-0 w-full h-full object-cover transition-opacity duration-300',
-            loaded ? 'opacity-100' : 'opacity-0',
-          )}
-          onLoad={() => setLoaded(true)}
+          decoding={loading === 'eager' ? 'sync' : 'async'}
+          fetchPriority={loading === 'eager' ? 'high' : undefined}
+          className="absolute inset-0 w-full h-full object-cover"
           onError={() => setErrored(true)}
         />
       ) : (

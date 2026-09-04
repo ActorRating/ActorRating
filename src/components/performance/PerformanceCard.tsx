@@ -10,32 +10,25 @@ import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { MoviePoster } from '@/components/ui/MoviePoster'
 import { upgradeActorImageRes } from '@/lib/tmdb'
 
-/** Full-bleed image with fade-in + fallback — used inside the card hero area */
+/** Full-bleed image + fallback — used inside the card hero area.
+ *  Visible immediately: in-app WebViews may skip onLoad after a successful decode. */
 function ActorAvatarFullBleed({
   src, alt, fallback, objectPosition = 'center center',
 }: { src?: string | null; alt: string; fallback: React.ReactNode; objectPosition?: string }) {
-  const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
   if (!src || errored) {
     return <div className="absolute inset-0 flex items-center justify-center">{fallback}</div>
   }
   return (
-    <>
-      {!loaded && (
-        <div className="absolute inset-0 animate-pulse"
-          style={{ background: 'linear-gradient(160deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 100%)' }} />
-      )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{ objectPosition }}
-        onLoad={() => setLoaded(true)}
-        onError={() => setErrored(true)}
-      />
-    </>
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className="absolute inset-0 w-full h-full object-cover"
+      style={{ objectPosition }}
+      onError={() => setErrored(true)}
+    />
   )
 }
 import { Performance } from '@/types'
