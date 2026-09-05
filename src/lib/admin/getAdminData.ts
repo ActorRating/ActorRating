@@ -77,7 +77,7 @@ function toNumber(value: bigint | number) {
 }
 
 export async function getAdminData(): Promise<AdminDashboardData> {
-  const cacheKey = "admin:dashboard:summary:v2"
+  const cacheKey = "admin:dashboard:summary:v3"
   const cached = getCache<AdminDashboardData>(cacheKey)
   if (cached) return cached
 

@@ -20,6 +20,7 @@ import { normalizeInviteCode } from "@/lib/invites"
 import { applyFirstTouchAttributionCookies } from "@/lib/tracking/attribution-cookies"
 import {
   AR_SRC_COOKIE,
+  inferAcquisitionSourceFromReferrer,
   isValidSource,
   normalizeAcquisitionSource,
 } from "@/lib/tracking/source"
@@ -76,8 +77,8 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
  * First-party pageview beacon. Failures never surface to the client —
  * always 204 so logging cannot break navigation.
  *
- * First-touch acquisition: if utm_source (or src) is tiktok/instagram/youtube/x
- * and ar_src is not already set, set the cookie (30 days).
+ * First-touch acquisition: prefer tagged utm_source / ?src=, else infer from
+ * organic referrer (google / bing / x / …). Sets ar_src for 30 days when unset.
  */
 export async function POST(request: NextRequest) {
   let attributionToSet: {
@@ -122,9 +123,18 @@ export async function POST(request: NextRequest) {
 
     const { utmSource, utmMedium, utmCampaign, utmContent } = parseUtmParams(params)
 
-    // Prefer utm_source; allow ?src=tiktok|instagram|youtube|x on any landing URL
+    const referrer = truncateReferrer(
+      typeof body.referrer === "string"
+        ? body.referrer
+        : request.headers.get("referer"),
+    )
+
+    // Prefer tagged utm_source / ?src=; fall back to organic referrer (Google, Bing, X, …)
     const srcParam = normalizeAcquisitionSource(params.get("src"))
-    const candidate = normalizeAcquisitionSource(utmSource) ?? srcParam
+    const candidate =
+      normalizeAcquisitionSource(utmSource) ??
+      srcParam ??
+      inferAcquisitionSourceFromReferrer(referrer)
     const existing = request.cookies.get(AR_SRC_COOKIE)?.value
     if (candidate && !isValidSource(existing)) {
       attributionToSet = {
@@ -141,11 +151,6 @@ export async function POST(request: NextRequest) {
     const storedUtmSource =
       normalizeAcquisitionSource(utmSource) ?? srcParam ?? utmSource
 
-    const referrer = truncateReferrer(
-      typeof body.referrer === "string"
-        ? body.referrer
-        : request.headers.get("referer"),
-    )
     const userAgent = (request.headers.get("user-agent") || "").slice(0, 1000)
     const acceptLanguage = request.headers.get("accept-language")
     const ipHash = hashIp(getClientIp(request))

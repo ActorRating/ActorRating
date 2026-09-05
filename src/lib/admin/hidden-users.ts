@@ -17,6 +17,7 @@ export const ADMIN_HIDDEN_USER_EMAILS = [
   "lalaland@gmail.com",
   "demir.horzum2028@pierreloti.k12.tr",
   "sdgdg@gmail.com",
+  "merumi@gmail.com",
 ] as const
 
 const HIDDEN_EMAIL_SET = new Set(

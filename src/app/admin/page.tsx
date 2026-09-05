@@ -369,7 +369,8 @@ async function UsersTab({
       <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-foreground">Acquisition</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          First-touch channel on signup (ar_src / utm).
+          First-touch traffic channel at signup (tagged utm/src, or organic Google / Bing / X
+          referrer). Not the same as OAuth provider.
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left">
@@ -432,8 +433,8 @@ async function UsersTab({
                 <th className="border-b border-border px-3 py-3 font-medium">Username</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Name</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Email</th>
-                <th className="border-b border-border px-3 py-3 font-medium">Signup</th>
-                <th className="border-b border-border px-3 py-3 font-medium">Source</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Auth</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Traffic</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Avg Rating</th>
                 <th className="border-b border-border px-3 py-3 font-medium">First Active</th>

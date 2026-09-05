@@ -56,7 +56,7 @@ export async function getUsersWithStats(
     Number.isFinite(params.take) && (params.take ?? 50) > 0 ? Math.min(params.take ?? 50, 50) : 50
   const skip = page * take
   const searchTerm = search && search.length > 0 ? `%${search}%` : null
-  const cacheKey = `admin:users:v2:${search ?? "all"}:${page}:${take}`
+  const cacheKey = `admin:users:v3:${search ?? "all"}:${page}:${take}`
   const cached = getCache<{
     users: AdminUserWithStats[]
     page: number
