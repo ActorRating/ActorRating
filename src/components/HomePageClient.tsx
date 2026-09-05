@@ -38,6 +38,7 @@ import {
   weeklyHeroLookupTarget,
 } from "@/lib/weekly-hero-performance";
 import { resolveCharacterDisplay } from "@/lib/character";
+import { LastRatedStrip } from "@/components/LastRatedStrip";
 import {
   PosterRail,
   StaticPosterRail,
@@ -670,6 +671,8 @@ export default function HomePageClient({
           />
         )}
       </div>
+
+      <LastRatedStrip />
 
       <FeaturedPerformanceSection performance={weeklyFeatured} />
 

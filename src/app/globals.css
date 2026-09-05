@@ -1196,6 +1196,27 @@ nav {
   }
 }
 
+/* Live “Just rated” ticker on home / discover */
+@keyframes last-rated-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.last-rated-marquee-track {
+  animation: last-rated-marquee 60s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .last-rated-marquee-track {
+    animation: none;
+  }
+}
+
 /* Fade in animation for hero text - GPU-safe, disabled on mobile */
 @keyframes fade-in-hero {
   from {

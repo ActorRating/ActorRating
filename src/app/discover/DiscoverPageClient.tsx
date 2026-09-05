@@ -11,6 +11,7 @@ import { HomeLayout } from "@/components/layout";
 import { SignedInLayout } from "@/components/layout/SignedInLayout";
 import { useUser } from "@/components/providers/SessionProvider";
 import { SearchBar } from "@/components/SearchBar";
+import { LastRatedStrip } from "@/components/LastRatedStrip";
 import {
   PosterRail,
   StaticPosterRail,
@@ -273,6 +274,8 @@ export function DiscoverPageClient({
           subtitle="Tap a face to open their page"
           actors={actors}
         />
+
+        <LastRatedStrip />
 
         {!legendaryItems ? (
           <PosterRail
