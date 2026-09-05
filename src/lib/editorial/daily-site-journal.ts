@@ -16,6 +16,10 @@ import {
   type NewsTopic,
 } from "@/lib/editorial/journal-daily-content"
 import { buildPerformanceFactsPack, type PerformanceFactsPack } from "@/lib/editorial/performance-facts"
+import {
+  normalizeCoverKey,
+  upgradeActorImageRes,
+} from "@/lib/editorial/resolve-editorial-cover"
 
 export type JournalRelated = { actorSlug: string; movieSlug: string }
 

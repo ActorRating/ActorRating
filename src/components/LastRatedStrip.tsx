@@ -86,7 +86,8 @@ function Chip({ item }: { item: RecentRatingFeedItem }) {
         </span>
       </span>
       <span className="shrink-0 tabular-nums text-sm font-semibold text-[#FFD700]">
-        {item.weightedScore.toFixed(1)}
+        {(item.weightedScore / 10).toFixed(1)}
+        <span className="text-[10px] font-medium text-[#FFD700]/70">/10</span>
       </span>
     </Link>
   )
