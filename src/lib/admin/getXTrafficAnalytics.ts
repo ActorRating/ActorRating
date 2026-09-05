@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
+import { adminVisibleUserWhere } from "@/lib/admin/hidden-users"
 import type { AdminGrowthPoint } from "@/lib/admin/getAdminData"
 import {
   analyticsWindowLabel,
@@ -356,8 +357,11 @@ export async function getXTrafficAnalytics(
       `),
       prisma.user.count({
         where: {
-          source: "x",
-          createdAt: { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+          AND: [
+            adminVisibleUserWhere(),
+            { source: "x" },
+            { createdAt: { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) } },
+          ],
         },
       }),
       prisma.waitlistEntry.count({

@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 import { getCache, setCache } from "@/lib/admin/cache"
+import {
+  adminVisibleUserEmailSql,
+  adminVisibleUserWhere,
+} from "@/lib/admin/hidden-users"
 import { isValidSource } from "@/lib/tracking/source"
 
 export type AdminUserWithStats = {
@@ -52,7 +56,7 @@ export async function getUsersWithStats(
     Number.isFinite(params.take) && (params.take ?? 50) > 0 ? Math.min(params.take ?? 50, 50) : 50
   const skip = page * take
   const searchTerm = search && search.length > 0 ? `%${search}%` : null
-  const cacheKey = `admin:users:${search ?? "all"}:${page}:${take}`
+  const cacheKey = `admin:users:v2:${search ?? "all"}:${page}:${take}`
   const cached = getCache<{
     users: AdminUserWithStats[]
     page: number
@@ -61,6 +65,8 @@ export async function getUsersWithStats(
     hasNext: boolean
   }>(cacheKey)
   if (cached) return cached
+
+  const visible = adminVisibleUserWhere()
 
   try {
     const [rows, totalCount] = await Promise.all([
@@ -84,27 +90,33 @@ export async function getUsersWithStats(
         FROM "User" u
         LEFT JOIN "Rating" r ON r."userId" = u."id"
         LEFT JOIN "Account" a ON a."userId" = u."id"
-        WHERE (
-          ${searchTerm}::text IS NULL
-          OR u."username" ILIKE ${searchTerm}
-          OR u."email" ILIKE ${searchTerm}
-          OR u."name" ILIKE ${searchTerm}
-        )
+        WHERE (${adminVisibleUserEmailSql()})
+          AND (
+            ${searchTerm}::text IS NULL
+            OR u."username" ILIKE ${searchTerm}
+            OR u."email" ILIKE ${searchTerm}
+            OR u."name" ILIKE ${searchTerm}
+          )
         GROUP BY u."id", u."name", u."username", u."email", u."createdAt"
         ORDER BY COALESCE(MAX(r."createdAt"), u."createdAt") DESC
         LIMIT ${take}
         OFFSET ${skip}
       `),
       prisma.user.count({
-        where: search
-          ? {
-              OR: [
-                { username: { contains: search, mode: "insensitive" } },
-                { email: { contains: search, mode: "insensitive" } },
-                { name: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : undefined,
+        where: {
+          AND: [
+            visible,
+            search
+              ? {
+                  OR: [
+                    { username: { contains: search, mode: "insensitive" } },
+                    { email: { contains: search, mode: "insensitive" } },
+                    { name: { contains: search, mode: "insensitive" } },
+                  ],
+                }
+              : {},
+          ],
+        },
       }),
     ])
 

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
+import { adminVisibleUserWhere, adminVisibleUserEmailSql } from "@/lib/admin/hidden-users"
 import {
   VALID_SOURCES,
   isValidSource,
@@ -76,11 +77,12 @@ function toNumber(value: bigint | number) {
 }
 
 export async function getAdminData(): Promise<AdminDashboardData> {
-  const cacheKey = "admin:dashboard:summary"
+  const cacheKey = "admin:dashboard:summary:v2"
   const cached = getCache<AdminDashboardData>(cacheKey)
   if (cached) return cached
 
   const todayStart = startOfToday()
+  const visibleUser = adminVisibleUserWhere()
   try {
     const [
       totalUsers,
@@ -101,20 +103,18 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       totalUsersBySource,
       usersWithRatingsBySource,
     ] = await Promise.all([
-      prisma.user.count(),
+      prisma.user.count({ where: visibleUser }),
       prisma.rating.count(),
       prisma.rating.count({ where: { userId: { not: null } } }),
       prisma.rating.count({ where: { userId: null } }),
       prisma.performance.count(),
       prisma.user.count({
         where: {
-          ratings: {
-            some: {},
-          },
+          AND: [visibleUser, { ratings: { some: {} } }],
         },
       }),
       prisma.user.count({
-        where: { createdAt: { gte: todayStart } },
+        where: { AND: [visibleUser, { createdAt: { gte: todayStart } }] },
       }),
       prisma.rating.count({
         where: { createdAt: { gte: todayStart } },
@@ -176,12 +176,14 @@ export async function getAdminData(): Promise<AdminDashboardData> {
       prisma.$queryRaw<Array<{ source: string | null; users: bigint | number }>>(Prisma.sql`
         SELECT "source" AS source, COUNT(*)::bigint AS users
         FROM "User"
+        WHERE (${adminVisibleUserEmailSql("email")})
         GROUP BY "source"
       `),
       prisma.$queryRaw<Array<{ source: string | null; usersWithRatings: bigint | number }>>(Prisma.sql`
         SELECT u."source" AS source, COUNT(DISTINCT u."id")::bigint AS "usersWithRatings"
         FROM "User" u
         INNER JOIN "Rating" r ON r."userId" = u."id"
+        WHERE (${adminVisibleUserEmailSql("u.email")})
         GROUP BY u."source"
       `),
     ])
