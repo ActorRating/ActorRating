@@ -2,13 +2,14 @@
 
 /**
  * Live “Just rated” ticker — polls recent community ratings and scrolls them.
+ * Each chip navigates to that performance’s rate page.
  */
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import type { RecentRatingFeedItem } from "@/lib/recent-ratings-feed"
 import { upgradePosterThumbRes } from "@/components/poster/PosterRails"
+import { InstantNavLink } from "@/components/ui/InstantNavLink"
 
 const POLL_MS = 15_000
 const SANS: React.CSSProperties = {
@@ -57,14 +58,16 @@ function Chip({ item }: { item: RecentRatingFeedItem }) {
     item.posterUrl ??
     item.actorImageUrl
   const year = item.movieYear > 0 ? ` (${item.movieYear})` : ""
+  const label = `${item.actorName} in ${item.movieTitle}${year} — rate this performance`
 
   return (
-    <Link
+    <InstantNavLink
       href={item.rateHref}
       prefetch={false}
-      className="group inline-flex shrink-0 items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1.5 pr-3.5 py-1.5 transition-colors hover:border-[#FFD700]/35 hover:bg-white/[0.06]"
+      aria-label={label}
+      className="group inline-flex shrink-0 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1.5 pr-3.5 py-1.5 transition-colors hover:border-[#FFD700]/35 hover:bg-white/[0.06] touch-manipulation"
     >
-      <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/[0.1] bg-zinc-900">
+      <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/[0.1] bg-zinc-900 pointer-events-none">
         {thumb ? (
           <Image
             src={thumb}
@@ -75,7 +78,7 @@ function Chip({ item }: { item: RecentRatingFeedItem }) {
           />
         ) : null}
       </span>
-      <span className="min-w-0 text-left">
+      <span className="min-w-0 text-left pointer-events-none">
         <span className="block truncate text-[13px] font-medium text-white/90 group-hover:text-white max-w-[14rem] sm:max-w-[18rem]">
           {item.actorName}
           <span className="text-zinc-500"> · </span>
@@ -85,17 +88,18 @@ function Chip({ item }: { item: RecentRatingFeedItem }) {
           </span>
         </span>
       </span>
-      <span className="shrink-0 tabular-nums text-sm font-semibold text-[#FFD700]">
+      <span className="shrink-0 tabular-nums text-sm font-semibold text-[#FFD700] pointer-events-none">
         {(item.weightedScore / 10).toFixed(1)}
         <span className="text-[10px] font-medium text-[#FFD700]/70">/10</span>
       </span>
-    </Link>
+    </InstantNavLink>
   )
 }
 
 export function LastRatedStrip() {
   const [items, setItems] = useState<RecentRatingFeedItem[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [marqueePaused, setMarqueePaused] = useState(false)
   const reduceMotion = usePrefersReducedMotion()
 
   useEffect(() => {
@@ -155,8 +159,18 @@ export function LastRatedStrip() {
           ))}
         </div>
       ) : (
-        <div className="group/marquee relative overflow-hidden">
-          <div className="last-rated-marquee-track flex w-max gap-2.5 pl-5 sm:pl-8 group-hover/marquee:[animation-play-state:paused]">
+        <div
+          className="relative overflow-hidden"
+          onPointerEnter={() => setMarqueePaused(true)}
+          onPointerLeave={() => setMarqueePaused(false)}
+          onPointerDown={() => setMarqueePaused(true)}
+          onPointerUp={() => setMarqueePaused(false)}
+          onPointerCancel={() => setMarqueePaused(false)}
+        >
+          <div
+            className="last-rated-marquee-track flex w-max gap-2.5 pl-5 sm:pl-8"
+            style={{ animationPlayState: marqueePaused ? "paused" : "running" }}
+          >
             {loop.map((item, i) => (
               <Chip key={`${item.id}-${i}`} item={item} />
             ))}

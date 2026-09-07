@@ -31,10 +31,15 @@ function DesktopNavLink({
   className?: string
 }) {
   return (
-    <InstantNavLink href={href} className={`${DESKTOP_LINK_CLASS} ${className}`.trim()}>
+    <InstantNavLink
+      href={href}
+      prefetch
+      className={`${DESKTOP_LINK_CLASS} ${className}`.trim()}
+    >
       {children}
       <span
-        className="absolute bottom-0 left-2.5 right-2.5 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-2.5 right-2.5 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-center"
         style={{ background: 'linear-gradient(90deg, #FFD700, #FFA500)' }}
       />
     </InstantNavLink>
@@ -61,6 +66,16 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
   useEffect(() => {
     setMounted(true)
   }, [navKey])
+
+  // Warm desktop destinations so the first press feels instant.
+  useEffect(() => {
+    for (const link of NAV_LINKS) {
+      router.prefetch(link.href)
+    }
+    router.prefetch('/auth/signin')
+    router.prefetch('/auth/register')
+    router.prefetch('/profile')
+  }, [router])
 
   useEffect(() => {
     if (mobileSearchOpen) mobileSearchRef.current?.focus()
@@ -129,7 +144,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden lg:flex items-center gap-1 xl:gap-2 pointer-events-auto navbar-content shrink min-w-0">
+            <div className="hidden lg:flex items-center gap-1 xl:gap-2 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
