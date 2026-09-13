@@ -309,6 +309,24 @@ export async function runDailyCatalogSync(
   for (const hit of theatricalRanked) {
     if (processed >= maxMovies) break
     if (seenTmdbIds.has(hit.tmdbId)) continue
+
+    const existing = await prisma.movie.findUnique({
+      where: { tmdbId: hit.tmdbId },
+      select: { castIngestedAt: true },
+    })
+    if (existing?.castIngestedAt) {
+      seenTmdbIds.add(hit.tmdbId)
+      skipped += 1
+      movies.push({
+        tmdbId: hit.tmdbId,
+        title: hit.title,
+        status: "skipped",
+        reason: "already_ingested",
+        track: "theatrical",
+      })
+      continue
+    }
+
     seenTmdbIds.add(hit.tmdbId)
     processed += 1
     const outcome = await ingestHit(prisma, hit, {
@@ -324,9 +342,12 @@ export async function runDailyCatalogSync(
     filmographyMovieShellsCreated += outcome.filmographyMovieShellsCreated
   }
 
-  let upcomingProcessed = 0
+  let upcomingSucceeded = 0
+  let upcomingAttempts = 0
+  const upcomingAttemptCap = Math.max(maxUpcoming * 8, 24)
   for (const hit of upcomingRanked) {
-    if (upcomingProcessed >= maxUpcoming) break
+    if (upcomingSucceeded >= maxUpcoming) break
+    if (upcomingAttempts >= upcomingAttemptCap) break
     if (seenTmdbIds.has(hit.tmdbId)) continue
 
     const existing = await prisma.movie.findUnique({
@@ -347,7 +368,7 @@ export async function runDailyCatalogSync(
     }
 
     seenTmdbIds.add(hit.tmdbId)
-    upcomingProcessed += 1
+    upcomingAttempts += 1
     processed += 1
     const outcome = await ingestHit(prisma, hit, {
       ...ingestOpts,
@@ -360,6 +381,10 @@ export async function runDailyCatalogSync(
     failed += outcome.failed
     filmographyActorsExpanded += outcome.filmographyActorsExpanded
     filmographyMovieShellsCreated += outcome.filmographyMovieShellsCreated
+    // Only successful adds/syncs consume the upcoming quota (shorts/failures don't).
+    if (outcome.added > 0 || outcome.synced > 0) {
+      upcomingSucceeded += 1
+    }
   }
 
   let incompleteBackfill: Awaited<ReturnType<typeof completeIncompleteMovies>> | null =
