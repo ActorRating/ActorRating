@@ -87,6 +87,9 @@ export type TmdbMovieForIngestion = TmdbMovieDetails & {
   overview: string | null
   adult: boolean
   video: boolean
+  /** TMDB genre ids (e.g. 16 Animation, 10770 TV Movie). */
+  genreIds: number[]
+  runtimeMinutes: number | null
 }
 
 /**
@@ -125,8 +128,15 @@ export async function getMovieForIngestion(
       release_date,
       adult,
       video,
+      genres,
+      runtime,
     } = response.data;
     if (typeof id !== "number" || !title?.trim()) return null
+    const genreIds = Array.isArray(genres)
+      ? genres
+          .map((g: { id?: number }) => g?.id)
+          .filter((gid: unknown): gid is number => typeof gid === "number")
+      : []
     return {
       id,
       title: String(title).trim(),
@@ -146,6 +156,11 @@ export async function getMovieForIngestion(
           : null,
       adult: adult === true,
       video: video === true,
+      genreIds,
+      runtimeMinutes:
+        typeof runtime === "number" && Number.isFinite(runtime) && runtime > 0
+          ? Math.trunc(runtime)
+          : null,
     };
   } catch {
     return null;
@@ -346,6 +361,9 @@ export type TmdbDiscoverMovie = {
   overview: string | null
   posterPath: string | null
   popularity: number
+  voteAverage: number
+  voteCount: number
+  genreIds: number[]
   adult: boolean
   video: boolean
 }
@@ -357,6 +375,9 @@ function mapDiscoverResult(raw: {
   overview?: string
   poster_path?: string
   popularity?: number
+  vote_average?: number
+  vote_count?: number
+  genre_ids?: number[]
   adult?: boolean
   video?: boolean
 }): TmdbDiscoverMovie | null {
@@ -371,6 +392,11 @@ function mapDiscoverResult(raw: {
     overview: typeof raw.overview === 'string' ? raw.overview : null,
     posterPath: typeof raw.poster_path === 'string' ? raw.poster_path : null,
     popularity: typeof raw.popularity === 'number' ? raw.popularity : 0,
+    voteAverage: typeof raw.vote_average === 'number' ? raw.vote_average : 0,
+    voteCount: typeof raw.vote_count === 'number' ? Math.trunc(raw.vote_count) : 0,
+    genreIds: Array.isArray(raw.genre_ids)
+      ? raw.genre_ids.filter((id): id is number => typeof id === 'number')
+      : [],
     adult: raw.adult === true,
     video: raw.video === true,
   }
@@ -433,7 +459,33 @@ export async function fetchTmdbRecentReleases(options?: {
   const path =
     `/discover/movie?region=${encodeURIComponent(region)}` +
     `&primary_release_date.gte=${gte}&primary_release_date.lte=${lte}` +
-    `&sort_by=popularity.desc&with_release_type=2|3`
+    `&sort_by=popularity.desc&with_release_type=2|3` +
+    // Skip Animation / Family / TV Movie at the source for recent releases.
+    `&without_genres=16|10751|10770`
+  return fetchTmdbMovieListPage(path, options?.page ?? 1)
+}
+
+/**
+ * Future theatrical / festival window (discover): today → +daysAhead.
+ * Lower-signal titles (e.g. festival) may appear here before they hit now-playing.
+ */
+export async function fetchTmdbFutureReleases(options?: {
+  daysAhead?: number
+  page?: number
+  region?: string
+}): Promise<TmdbDiscoverMovie[]> {
+  const daysAhead = Math.min(Math.max(options?.daysAhead ?? 180, 30), 365)
+  const region = options?.region ?? 'US'
+  const start = new Date()
+  const end = new Date()
+  end.setUTCDate(end.getUTCDate() + daysAhead)
+  const gte = start.toISOString().slice(0, 10)
+  const lte = end.toISOString().slice(0, 10)
+  const path =
+    `/discover/movie?region=${encodeURIComponent(region)}` +
+    `&primary_release_date.gte=${gte}&primary_release_date.lte=${lte}` +
+    `&sort_by=popularity.desc&with_release_type=2|3` +
+    `&without_genres=16|10751|10770`
   return fetchTmdbMovieListPage(path, options?.page ?? 1)
 }
  

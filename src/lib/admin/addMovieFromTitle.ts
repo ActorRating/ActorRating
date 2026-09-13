@@ -15,6 +15,22 @@ import { parseTmdbReleaseDate } from "@/lib/movie-release"
 import { createMovieSlug } from "@/lib/createSlug"
 import { expandFilmographiesForNewActors } from "@/lib/actorFilmography"
 
+/** TMDB genres we never auto-ingest via catalog cron. */
+export const CATALOG_BLOCKED_GENRE_IDS = new Set([
+  16, // Animation
+  10751, // Family
+  10770, // TV Movie
+])
+
+function hasBlockedCatalogGenre(genreIds: number[]): string | null {
+  for (const id of genreIds) {
+    if (id === 16) return "animation"
+    if (id === 10751) return "family"
+    if (id === 10770) return "tv_movie"
+  }
+  return null
+}
+
 export type AddMovieFromTitleResult =
   | {
       ok: true
@@ -46,6 +62,15 @@ export type AddMovieFromTmdbOptions = {
   maxBillingOrderForFilmography?: number
   /** Skip filmography expansion entirely. */
   skipFilmography?: boolean
+  /**
+   * Catalog-cron quality gates: block Animation / Family / TV Movie,
+   * require votes for already-released titles, prefer feature-length.
+   */
+  catalogQuality?: boolean
+  /** Min TMDB vote_count for released titles when catalogQuality is on. Default 50. */
+  minVoteCount?: number
+  /** Min credited cast size when catalogQuality is on. Default 5. */
+  minCastSize?: number
 }
 
 async function ensureUniqueMovieSlug(
@@ -162,6 +187,44 @@ export async function addMovieFromTmdbId(
     }
   }
 
+  if (options?.catalogQuality) {
+    const blocked = hasBlockedCatalogGenre(movieData.genreIds)
+    if (blocked) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Catalog quality: blocked genre (${blocked}).`,
+        title: movieData.title,
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10)
+    const isReleased = movieData.releaseDate <= today
+    const minVotes = options.minVoteCount ?? 50
+    if (isReleased && (movieData.voteCount ?? 0) < minVotes) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Catalog quality: vote_count ${movieData.voteCount ?? 0} < ${minVotes}.`,
+        title: movieData.title,
+      }
+    }
+
+    // Prefer feature-length; allow unknown runtime for upcoming.
+    if (
+      movieData.runtimeMinutes != null &&
+      movieData.runtimeMinutes > 0 &&
+      movieData.runtimeMinutes < 60
+    ) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Catalog quality: runtime ${movieData.runtimeMinutes}m too short.`,
+        title: movieData.title,
+      }
+    }
+  }
+
   const credits = await getMovieCreditsForIngestion(movieData.id)
   if (credits.cast.length === 0) {
     return {
@@ -169,6 +232,18 @@ export async function addMovieFromTmdbId(
       status: 400,
       error: "TMDB returned no credited cast for this movie; skipping ingestion.",
       title: movieData.title,
+    }
+  }
+
+  if (options?.catalogQuality) {
+    const minCast = options.minCastSize ?? 5
+    if (credits.cast.length < minCast) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Catalog quality: cast size ${credits.cast.length} < ${minCast}.`,
+        title: movieData.title,
+      }
     }
   }
 
