@@ -3,10 +3,13 @@ import {
   searchMovie,
   getMovieCreditsForIngestion,
   getMovieDetails,
+  getMovieForIngestion,
   buildPosterUrl,
 } from "@/lib/tmdb"
 import { isJokePerformance } from "@/lib/joke-performance-filter"
 import { validateContent } from "@/lib/content-validator"
+import { isAdultContentMovie } from "@/lib/adult-content-filter"
+import { matchesFeaturetteTitle } from "@/lib/non-rateable"
 import { SYSTEM_USER_ID, syncMovieCast } from "@/lib/movie-ingestion"
 import { parseTmdbReleaseDate } from "@/lib/movie-release"
 import { createMovieSlug } from "@/lib/createSlug"
@@ -33,6 +36,17 @@ export type AddMovieFromTitleResult =
       message: string
     }
   | { ok: false; status: number; error: string; title?: string; year?: number }
+
+export type AddMovieFromTmdbOptions = {
+  /** Allow release year through currentYear + 1 (upcoming). Default false. */
+  allowUpcomingYear?: boolean
+  /** Max newly created actors to expand filmography for (billing order). Default: all. */
+  maxFilmographyActors?: number
+  /** Only expand new actors with billing order <= this. Default: no order cap. */
+  maxBillingOrderForFilmography?: number
+  /** Skip filmography expansion entirely. */
+  skipFilmography?: boolean
+}
 
 async function ensureUniqueMovieSlug(
   prisma: PrismaClient,
@@ -102,21 +116,50 @@ export async function enrichMovieMetadataFromTmdb(
 }
 
 /**
- * Admin / seed path: search TMDB by title → movie + full cast/performances + poster/slug.
- * Idempotent: existing movies resync cast and refresh metadata.
+ * Ingest a movie by TMDB id: full cast + metadata + optional filmography expand for new actors.
  */
-export async function addMovieFromTitle(
+export async function addMovieFromTmdbId(
   prisma: PrismaClient,
-  titleRaw: string,
+  tmdbId: number,
+  options?: AddMovieFromTmdbOptions,
 ): Promise<AddMovieFromTitleResult> {
-  const title = titleRaw.trim()
-  if (!title) {
-    return { ok: false, status: 400, error: "Title is required" }
+  if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+    return { ok: false, status: 400, error: "Invalid TMDB movie id" }
   }
 
-  const movieData = await searchMovie(title)
+  const movieData = await getMovieForIngestion(tmdbId)
   if (!movieData) {
-    return { ok: false, status: 404, error: `Movie not found: ${title}` }
+    return { ok: false, status: 404, error: `Movie not found on TMDB: ${tmdbId}` }
+  }
+
+  if (
+    movieData.adult ||
+    isAdultContentMovie({ title: movieData.title, overview: movieData.overview })
+  ) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Adult / explicit title skipped.",
+      title: movieData.title,
+    }
+  }
+
+  if (movieData.video || matchesFeaturetteTitle(movieData.title)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Featurette / video content skipped.",
+      title: movieData.title,
+    }
+  }
+
+  if (!movieData.releaseDate) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Movie has no release date; skipping.",
+      title: movieData.title,
+    }
   }
 
   const credits = await getMovieCreditsForIngestion(movieData.id)
@@ -129,14 +172,15 @@ export async function addMovieFromTitle(
     }
   }
 
-  const year = new Date(movieData.release_date).getFullYear()
-  const releaseDate = parseTmdbReleaseDate(movieData.release_date)
+  const year = new Date(movieData.releaseDate).getFullYear()
+  const releaseDate = parseTmdbReleaseDate(movieData.releaseDate)
   const currentYear = new Date().getFullYear()
-  if (isNaN(year) || year < 1900 || year > currentYear) {
+  const maxYear = options?.allowUpcomingYear ? currentYear + 1 : currentYear
+  if (isNaN(year) || year < 1900 || year > maxYear) {
     return {
       ok: false,
       status: 400,
-      error: `Invalid movie year: ${year}. Movies must have a valid release year between 1900 and ${currentYear}.`,
+      error: `Invalid movie year: ${year}. Movies must have a valid release year between 1900 and ${maxYear}.`,
       title: movieData.title,
       year,
     }
@@ -154,9 +198,11 @@ export async function addMovieFromTitle(
 
   const contentWarnings = validateContent(movieData.title, movieData.overview)
 
-  let movie = await prisma.movie.findFirst({
-    where: { title: movieData.title, year },
-  })
+  let movie =
+    (await prisma.movie.findUnique({ where: { tmdbId: movieData.id } })) ??
+    (await prisma.movie.findFirst({
+      where: { title: movieData.title, year },
+    }))
   const movieExisted = !!movie
 
   if (!movie) {
@@ -205,8 +251,24 @@ export async function addMovieFromTitle(
     releaseDate: movie.releaseDate,
   })
 
-  // Expand filmography for newly created top-billed actors (movie shells + their credits).
-  const filmography = await expandFilmographiesForNewActors(prisma, createdActors)
+  let filmography = {
+    actorsExpanded: 0,
+    performancesAdded: 0,
+    movieShellsCreated: 0,
+  }
+
+  if (!options?.skipFilmography) {
+    let eligible = [...createdActors].sort((a, b) => a.order - b.order)
+    if (typeof options?.maxBillingOrderForFilmography === "number") {
+      eligible = eligible.filter(
+        (a) => a.order <= options.maxBillingOrderForFilmography!,
+      )
+    }
+    if (typeof options?.maxFilmographyActors === "number") {
+      eligible = eligible.slice(0, Math.max(0, options.maxFilmographyActors))
+    }
+    filmography = await expandFilmographiesForNewActors(prisma, eligible)
+  }
 
   return {
     ok: true,
@@ -217,7 +279,10 @@ export async function addMovieFromTitle(
     filmographyPerformancesAdded: filmography.performancesAdded,
     filmographyMovieShellsCreated: filmography.movieShellsCreated,
     exists: movieExisted,
-    warnings: contentWarnings.length > 0 ? contentWarnings.map((w) => w.message) : undefined,
+    warnings:
+      contentWarnings.length > 0
+        ? contentWarnings.map((w) => w.message)
+        : undefined,
     message: movieExisted
       ? `Movie fully synced: ${enriched.title} (${enriched.year}) — ${performancesUpserted} performances` +
         (filmography.actorsExpanded
@@ -228,6 +293,27 @@ export async function addMovieFromTitle(
           ? `, expanded ${filmography.actorsExpanded} new actor filmographies (+${filmography.movieShellsCreated} movie shells)`
           : ""),
   }
+}
+
+/**
+ * Admin / seed path: search TMDB by title → movie + full cast/performances + poster/slug.
+ * Idempotent: existing movies resync cast and refresh metadata.
+ */
+export async function addMovieFromTitle(
+  prisma: PrismaClient,
+  titleRaw: string,
+): Promise<AddMovieFromTitleResult> {
+  const title = titleRaw.trim()
+  if (!title) {
+    return { ok: false, status: 400, error: "Title is required" }
+  }
+
+  const movieData = await searchMovie(title)
+  if (!movieData) {
+    return { ok: false, status: 404, error: `Movie not found: ${title}` }
+  }
+
+  return addMovieFromTmdbId(prisma, movieData.id)
 }
 
 /**

@@ -157,6 +157,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-invite-codes.js ./sc
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-waitlist-invite-cron.js ./scripts/run-waitlist-invite-cron.js
 # Coolify Scheduled Task: `node scripts/run-site-journal-cron.js` (daily stories + news)
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-site-journal-cron.js ./scripts/run-site-journal-cron.js
+# Coolify Scheduled Task: `node scripts/run-catalog-sync-cron.js` (daily TMDB movies + cast + filmography)
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-catalog-sync-cron.js ./scripts/run-catalog-sync-cron.js
 # Coolify Scheduled Task: `node scripts/run-performance-editorial-cron.js`
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-performance-editorial-cron.js ./scripts/run-performance-editorial-cron.js
 # Coolify Scheduled Task (daily): `node scripts/run-generate-sitemaps-cron.js`

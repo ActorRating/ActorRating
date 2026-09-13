@@ -81,25 +81,71 @@ export type TmdbMovieDetails = {
   releaseDate: string | null
 }
 
+export type TmdbMovieForIngestion = TmdbMovieDetails & {
+  id: number
+  title: string
+  overview: string | null
+  adult: boolean
+  video: boolean
+}
+
 /**
  * Fetch movie details from TMDB by numeric movie ID (poster + vote fields).
  * Returns null if the request fails or the movie is not found.
  */
 export async function getMovieDetails(tmdbMovieId: number): Promise<TmdbMovieDetails | null> {
+  const full = await getMovieForIngestion(tmdbMovieId)
+  if (!full) return null
+  return {
+    posterPath: full.posterPath,
+    voteAverage: full.voteAverage,
+    voteCount: full.voteCount,
+    releaseDate: full.releaseDate,
+  }
+}
+
+/**
+ * Full movie payload for catalog ingest (title, release, adult flags, poster, votes).
+ */
+export async function getMovieForIngestion(
+  tmdbMovieId: number,
+): Promise<TmdbMovieForIngestion | null> {
   await rateLimitTmdb();
   if (!API_KEY) return null;
   try {
     const url = `${TMDB_BASE_URL}/movie/${tmdbMovieId}?api_key=${API_KEY}&language=en-US`;
     const response = await axios.get(url, { timeout: 15000 });
-    const { poster_path, vote_average, vote_count, release_date } = response.data;
+    const {
+      id,
+      title,
+      overview,
+      poster_path,
+      vote_average,
+      vote_count,
+      release_date,
+      adult,
+      video,
+    } = response.data;
+    if (typeof id !== "number" || !title?.trim()) return null
     return {
-      posterPath: typeof poster_path === 'string' ? poster_path : null,
-      voteAverage: typeof vote_average === 'number' && Number.isFinite(vote_average) ? vote_average : null,
-      voteCount: typeof vote_count === 'number' && Number.isFinite(vote_count) ? Math.trunc(vote_count) : null,
+      id,
+      title: String(title).trim(),
+      overview: typeof overview === "string" ? overview : null,
+      posterPath: typeof poster_path === "string" ? poster_path : null,
+      voteAverage:
+        typeof vote_average === "number" && Number.isFinite(vote_average)
+          ? vote_average
+          : null,
+      voteCount:
+        typeof vote_count === "number" && Number.isFinite(vote_count)
+          ? Math.trunc(vote_count)
+          : null,
       releaseDate:
-        typeof release_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(release_date)
+        typeof release_date === "string" && /^\d{4}-\d{2}-\d{2}/.test(release_date)
           ? release_date.slice(0, 10)
           : null,
+      adult: adult === true,
+      video: video === true,
     };
   } catch {
     return null;
@@ -291,5 +337,103 @@ export async function getPersonMovieCredits(personTmdbId: number): Promise<Perso
       order: typeof c.order === 'number' ? c.order : null,
       posterPath: typeof c.poster_path === 'string' ? c.poster_path : null,
     }))
+}
+
+export type TmdbDiscoverMovie = {
+  tmdbId: number
+  title: string
+  releaseDate: string | null
+  overview: string | null
+  posterPath: string | null
+  popularity: number
+  adult: boolean
+  video: boolean
+}
+
+function mapDiscoverResult(raw: {
+  id?: number
+  title?: string
+  release_date?: string
+  overview?: string
+  poster_path?: string
+  popularity?: number
+  adult?: boolean
+  video?: boolean
+}): TmdbDiscoverMovie | null {
+  if (typeof raw.id !== 'number' || !raw.title?.trim()) return null
+  return {
+    tmdbId: raw.id,
+    title: raw.title.trim(),
+    releaseDate:
+      typeof raw.release_date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw.release_date)
+        ? raw.release_date.slice(0, 10)
+        : null,
+    overview: typeof raw.overview === 'string' ? raw.overview : null,
+    posterPath: typeof raw.poster_path === 'string' ? raw.poster_path : null,
+    popularity: typeof raw.popularity === 'number' ? raw.popularity : 0,
+    adult: raw.adult === true,
+    video: raw.video === true,
+  }
+}
+
+async function fetchTmdbMovieListPage(
+  path: string,
+  page = 1,
+): Promise<TmdbDiscoverMovie[]> {
+  await rateLimitTmdb()
+  if (!API_KEY) {
+    throw new Error('TMDB_API_KEY is not set')
+  }
+  const url = `${TMDB_BASE_URL}${path}${path.includes('?') ? '&' : '?'}api_key=${API_KEY}&language=en-US&page=${page}&include_adult=false`
+  const response = await axios.get(url, { timeout: 30000 })
+  const results = (response.data?.results ?? []) as Array<Parameters<typeof mapDiscoverResult>[0]>
+  return results.map(mapDiscoverResult).filter((m): m is TmdbDiscoverMovie => m != null)
+}
+
+/** Theatrical now playing (region-aware). */
+export async function fetchTmdbNowPlaying(options?: {
+  region?: string
+  page?: number
+}): Promise<TmdbDiscoverMovie[]> {
+  const region = options?.region ?? 'US'
+  return fetchTmdbMovieListPage(
+    `/movie/now_playing?region=${encodeURIComponent(region)}`,
+    options?.page ?? 1,
+  )
+}
+
+/** Upcoming theatrical releases. */
+export async function fetchTmdbUpcoming(options?: {
+  region?: string
+  page?: number
+}): Promise<TmdbDiscoverMovie[]> {
+  const region = options?.region ?? 'US'
+  return fetchTmdbMovieListPage(
+    `/movie/upcoming?region=${encodeURIComponent(region)}`,
+    options?.page ?? 1,
+  )
+}
+
+/**
+ * Recently released theatrical titles (discover), sorted by popularity.
+ * `daysBack` looks at primary_release_date from (today - daysBack) through today.
+ */
+export async function fetchTmdbRecentReleases(options?: {
+  daysBack?: number
+  page?: number
+  region?: string
+}): Promise<TmdbDiscoverMovie[]> {
+  const daysBack = Math.min(Math.max(options?.daysBack ?? 14, 1), 60)
+  const region = options?.region ?? 'US'
+  const end = new Date()
+  const start = new Date()
+  start.setUTCDate(start.getUTCDate() - daysBack)
+  const gte = start.toISOString().slice(0, 10)
+  const lte = end.toISOString().slice(0, 10)
+  const path =
+    `/discover/movie?region=${encodeURIComponent(region)}` +
+    `&primary_release_date.gte=${gte}&primary_release_date.lte=${lte}` +
+    `&sort_by=popularity.desc&with_release_type=2|3`
+  return fetchTmdbMovieListPage(path, options?.page ?? 1)
 }
  

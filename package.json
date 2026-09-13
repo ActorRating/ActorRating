@@ -45,6 +45,7 @@
     "journal:gap-fill": "tsx scripts/seed-journal-gap-fill.ts",
     "journal:audit-covers": "tsx scripts/audit-journal-covers.ts",
     "journal:cron": "node scripts/run-site-journal-cron.js",
+    "catalog:cron": "node scripts/run-catalog-sync-cron.js",
     "sitemaps:cron": "node scripts/run-generate-sitemaps-cron.js"
   },
   "dependencies": {
