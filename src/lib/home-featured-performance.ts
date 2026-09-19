@@ -15,19 +15,19 @@ export type FeaturedHeroPayload = {
   subline: string
 }
 
-/** Guest-first homepage primary CTA — indexable page with live community ratings. */
-export const HOME_PRIMARY_RATE_HREF = "/rate/the-godfather-1972/marlon-brando"
+/** Guest-first homepage primary CTA — featured hero performance. */
+export const HOME_PRIMARY_RATE_HREF = "/rate/primetime-2026/robert-pattinson"
 
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
-  actor: 'Matt Damon',
-  movie: 'The Odyssey',
+  actor: 'Robert Pattinson',
+  movie: 'Primetime',
   year: 2026,
-  headline: 'How do you rate Matt Damon in The Odyssey?',
+  headline: 'How do you rate Robert Pattinson in Primetime?',
   subline:
     'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
-  /** Wide cinematic still (not the vertical poster) */
-  backdropUrl: 'https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg',
+  /** Wide cinematic still (Pattinson on the stairs — not the vertical poster) */
+  backdropUrl: 'https://image.tmdb.org/t/p/w1920/mbnopFljGL3UIkSC22uQap4y5ah.jpg',
 } as const
 
 export function fixedLandingHeroLookupTarget(): {
@@ -70,7 +70,7 @@ export function enrichedToFeaturedPayload(
   }
 }
 
-/** Fixed Odyssey landing hero (not weekly rotation). */
+/** Fixed Primetime landing hero (not weekly rotation). */
 export function buildFixedLandingHero(
   perf: EnrichedPerformance | null | undefined,
 ): FeaturedHeroPayload {

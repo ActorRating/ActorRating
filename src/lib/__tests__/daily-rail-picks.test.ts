@@ -1,6 +1,7 @@
 import {
   DAILY_RAIL_COUNT,
   POPULAR_RIGHT_NOW_POOL,
+  POPULAR_RIGHT_NOW_PINNED,
   RECENT_FAVORITES_POOL,
   pickDailySlice,
   popularRightNowTargets,
@@ -14,6 +15,12 @@ describe("daily rail picks", () => {
     expect(utcDateKey(new Date("2026-09-01T23:59:59.000Z"))).toBe("2026-09-01")
   })
 
+  it("pins Primetime first in Popular Right Now", () => {
+    const popular = popularRightNowTargets(new Date("2026-09-01T12:00:00.000Z"))
+    expect(popular[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
+    expect(popular).toHaveLength(DAILY_RAIL_COUNT)
+  })
+
   it("returns the same popular slice for the same UTC day", () => {
     const a = popularRightNowTargets(new Date("2026-09-01T01:00:00.000Z"))
     const b = popularRightNowTargets(new Date("2026-09-01T22:00:00.000Z"))
@@ -24,8 +31,11 @@ describe("daily rail picks", () => {
   it("can change popular titles between days", () => {
     const a = popularRightNowTargets(new Date("2026-09-01T12:00:00.000Z"))
     const b = popularRightNowTargets(new Date("2026-09-08T12:00:00.000Z"))
-    const keys = (list: typeof a) => list.map((t) => `${t.actor}:${t.movie}`).sort()
-    expect(keys(a)).not.toEqual(keys(b))
+    const rest = (list: typeof a) =>
+      list.slice(1).map((t) => `${t.actor}:${t.movie}`).sort()
+    expect(a[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
+    expect(b[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
+    expect(rest(a)).not.toEqual(rest(b))
   })
 
   it("keeps unique actors and movies within a slice", () => {

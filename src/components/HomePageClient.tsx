@@ -16,7 +16,7 @@ import Link from "next/link";
 import {
   buildByLookupUrl,
   LEGENDARY_PERFORMANCE_TARGETS,
-  POPULAR_RIGHT_NOW_POOL,
+  POPULAR_RIGHT_NOW_CHARACTER_TARGETS,
   RECENT_FAVORITES_POOL,
   popularRightNowTargets,
   recentFavoritesTargets,
@@ -100,7 +100,7 @@ const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 // Mobile: image fitted at top, centered sans manifesto, CTA directly under it.
 
 const HERO_BACKDROP_FALLBACK =
-  "https://image.tmdb.org/t/p/w1920/twiVn9oFXOVR0uoYgawyEBlnFu8.jpg";
+  "https://image.tmdb.org/t/p/w1920/mbnopFljGL3UIkSC22uQap4y5ah.jpg";
 
 function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   return (
@@ -272,7 +272,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
       </section>
 
       {/* CTA band — only with bottom-pinned desktop hero */}
-      <section className="hero-cta-band relative bg-black border-t border-white/[0.04] px-8 pt-9 pb-11 text-center scroll-mt-28">
+      <section className="hero-cta-band relative bg-black px-8 pt-9 pb-11 text-center scroll-mt-28">
         <HeroPrimaryCta />
       </section>
     </>
@@ -638,7 +638,7 @@ export default function HomePageClient({
           <PosterRail
             title="Popular Right Now"
             performances={popular}
-            characterTargets={POPULAR_RIGHT_NOW_POOL}
+            characterTargets={POPULAR_RIGHT_NOW_CHARACTER_TARGETS}
           />
         ) : (
           <StaticPosterRail

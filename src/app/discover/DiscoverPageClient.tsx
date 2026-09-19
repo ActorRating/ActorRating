@@ -21,7 +21,7 @@ import {
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import {
   LEGENDARY_PERFORMANCE_TARGETS,
-  POPULAR_RIGHT_NOW_POOL,
+  POPULAR_RIGHT_NOW_CHARACTER_TARGETS,
   RECENT_FAVORITES_POOL,
   popularRightNowTargets,
   recentFavoritesTargets,
@@ -260,7 +260,7 @@ export function DiscoverPageClient({
           <PosterRail
             title="Popular Right Now"
             performances={popular}
-            characterTargets={POPULAR_RIGHT_NOW_POOL}
+            characterTargets={POPULAR_RIGHT_NOW_CHARACTER_TARGETS}
           />
         ) : (
           <StaticPosterRail

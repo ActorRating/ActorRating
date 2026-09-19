@@ -3,6 +3,8 @@
 import {
   DAILY_RAIL_COUNT,
   POPULAR_RIGHT_NOW_POOL,
+  POPULAR_RIGHT_NOW_PINNED,
+  POPULAR_RIGHT_NOW_CHARACTER_TARGETS,
   RECENT_FAVORITES_POOL,
   popularRightNowTargets,
   recentFavoritesTargets,
@@ -15,6 +17,8 @@ export type { PerformanceTarget }
 export {
   DAILY_RAIL_COUNT,
   POPULAR_RIGHT_NOW_POOL,
+  POPULAR_RIGHT_NOW_PINNED,
+  POPULAR_RIGHT_NOW_CHARACTER_TARGETS,
   RECENT_FAVORITES_POOL,
   popularRightNowTargets,
   recentFavoritesTargets,

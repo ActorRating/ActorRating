@@ -20,6 +20,7 @@ import {
   recentFavoritesTargets,
   secondsUntilNextUtcMidnight,
   utcDateKey,
+  POPULAR_RIGHT_NOW_PINNED,
 } from "@/lib/daily-rail-picks"
 
 export type LandingRailsPayload = {
@@ -115,6 +116,38 @@ async function padWithLookup(
     /* keep what we have */
   }
   return rows.slice(0, needed)
+}
+
+/** Always lead Popular Right Now with Primetime / Pattinson when present in DB. */
+async function withPinnedPopularLead(
+  list: EnrichedPerformance[],
+): Promise<EnrichedPerformance[]> {
+  const pinnedTarget = {
+    actor: POPULAR_RIGHT_NOW_PINNED.actor,
+    movie: POPULAR_RIGHT_NOW_PINNED.movie,
+    year: POPULAR_RIGHT_NOW_PINNED.year,
+  }
+  let lead: EnrichedPerformance | undefined
+  try {
+    const rows = await getPerformancesByLookup([pinnedTarget])
+    lead = rows[0]
+  } catch {
+    lead = undefined
+  }
+
+  const isPinned = (p: EnrichedPerformance) => {
+    if (lead && p.actorId === lead.actorId && p.movieId === lead.movieId) {
+      return true
+    }
+    return (
+      p.actor?.name?.toLowerCase() === POPULAR_RIGHT_NOW_PINNED.actor.toLowerCase() &&
+      p.movie?.title?.toLowerCase() === POPULAR_RIGHT_NOW_PINNED.movie.toLowerCase()
+    )
+  }
+
+  const rest = list.filter((p) => !isPinned(p))
+  if (!lead) return list.slice(0, DAILY_RAIL_COUNT)
+  return [lead, ...rest].slice(0, DAILY_RAIL_COUNT)
 }
 
 async function loadCatalogLeads(kind: "popular" | "recent"): Promise<CatalogLeadRow[]> {
@@ -261,11 +294,12 @@ async function computeLandingRails(now: Date): Promise<LandingRailsPayload> {
     getPerformancesByLookup(lookupTargetsFrom(LEGENDARY_PERFORMANCE_TARGETS)),
   ])
 
-  const popular = await padWithLookup(
+  const popularRaw = await padWithLookup(
     catalogPopular,
     lookupTargetsFrom(editorialPopular),
     DAILY_RAIL_COUNT,
   )
+  const popular = await withPinnedPopularLead(popularRaw)
 
   const excludeActors = new Set(
     popular.map((p) => p.actor?.name ?? "").filter(Boolean),
@@ -299,7 +333,7 @@ export async function loadLandingRails(
   if (isStaticProductionBuild()) return empty
 
   const dateKey = utcDateKey(now)
-  const cacheKey = makeCacheKey("landing:daily-rails", [dateKey])
+  const cacheKey = makeCacheKey("landing:daily-rails", [dateKey, "pin-primetime-v1"])
   const cached = await cacheGet<LandingRailsPayload>(cacheKey)
   if (cached?.dateKey === dateKey) return cached
 

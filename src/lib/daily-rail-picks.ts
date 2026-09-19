@@ -87,6 +87,15 @@ export function pickDailySlice<T>(
   return out
 }
 
+/** Fixed lead for Popular Right Now (always first). */
+export const POPULAR_RIGHT_NOW_PINNED: PerformanceTarget = {
+  actor: "Robert Pattinson",
+  movie: "Primetime",
+  character: "Chris Hansen",
+  year: 2026,
+  posterPath: "/lmrulvLbmaejTix1YaMxo1oGhH1.jpg",
+}
+
 /** Currently-in-conversation / theatrical-era performances (2024–2026). */
 export const POPULAR_RIGHT_NOW_POOL: PerformanceTarget[] = [
   { actor: "Matt Damon", movie: "The Odyssey", character: "Odysseus", year: 2026, posterPath: "/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg" },
@@ -144,13 +153,23 @@ const targetActor = (t: PerformanceTarget) => t.actor
 const targetMovie = (t: PerformanceTarget) => t.movie
 
 export function popularRightNowTargets(now = new Date()): PerformanceTarget[] {
-  return pickDailySlice(POPULAR_RIGHT_NOW_POOL, {
+  const restCount = Math.max(0, DAILY_RAIL_COUNT - 1)
+  const rest = pickDailySlice(POPULAR_RIGHT_NOW_POOL, {
     seed: `popular:${utcDateKey(now)}`,
-    count: DAILY_RAIL_COUNT,
+    count: restCount,
     actorKey: targetActor,
     movieKey: targetMovie,
+    excludeActors: new Set([POPULAR_RIGHT_NOW_PINNED.actor]),
+    excludeMovies: new Set([POPULAR_RIGHT_NOW_PINNED.movie]),
   })
+  return [POPULAR_RIGHT_NOW_PINNED, ...rest]
 }
+
+/** Character-target list for Popular rails (pinned lead + rotating pool). */
+export const POPULAR_RIGHT_NOW_CHARACTER_TARGETS: PerformanceTarget[] = [
+  POPULAR_RIGHT_NOW_PINNED,
+  ...POPULAR_RIGHT_NOW_POOL,
+]
 
 export function recentFavoritesTargets(now = new Date()): PerformanceTarget[] {
   const popular = popularRightNowTargets(now)
