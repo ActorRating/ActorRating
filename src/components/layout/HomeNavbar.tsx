@@ -19,7 +19,7 @@ const NAV_LINKS = [
 ] as const
 
 const DESKTOP_LINK_CLASS =
-  'navbar-link-desktop group relative inline-flex items-center px-2.5 py-2.5 text-[14px] xl:px-3 xl:text-[15px] font-bold uppercase tracking-[0.05em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-11 whitespace-nowrap shrink-0'
+  'navbar-link-desktop group relative inline-flex items-center px-2 py-2 text-[13px] xl:px-2.5 xl:py-2.5 xl:text-[14px] font-bold uppercase tracking-[0.04em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-10 xl:min-h-11 whitespace-nowrap shrink-0'
 
 function DesktopNavLink({
   href,
@@ -119,7 +119,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder=""
-          className="navbar-search-input w-44 h-8 pl-3 pr-8 rounded-full text-sm text-white outline-none transition-colors duration-200"
+          className="navbar-search-input w-40 xl:w-44 h-8 pl-3 pr-8 rounded-full text-sm text-white outline-none transition-colors duration-200"
           autoComplete="off"
         />
         <button
@@ -144,7 +144,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden lg:flex items-center gap-1 xl:gap-2 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
+            <div className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
