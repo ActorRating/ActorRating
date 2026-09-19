@@ -19,7 +19,6 @@ import {
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
-import { InvitesPanel } from "@/components/profile/InvitesPanel"
 
 type ProfileClientProps = {
   initialProfile?: { email?: string; username?: string | null } | null
@@ -198,10 +197,6 @@ export default function ProfileClient({ initialProfile = null }: ProfileClientPr
 
             <div className="mb-8">
               <UserProgressBar />
-            </div>
-
-            <div className="mt-6">
-              <InvitesPanel />
             </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
