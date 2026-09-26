@@ -1,25 +1,23 @@
 /**
- * Google Ads conversion pings on top of the existing gtag.js (GA4) snippet.
+ * Google Ads tag for this account. Loaded once from the root layout, on the
+ * same gtag.js snippet as GA4 (Google says not to add a second Google tag).
  *
- * PLACEHOLDER — create two conversion actions in Google Ads, then set:
- *   NEXT_PUBLIC_GOOGLE_ADS_ID=AW-XXXXXXXXX
- *   NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL=AbCdEfGhIj
- *   NEXT_PUBLIC_GOOGLE_ADS_FIRST_RATING_LABEL=KlMnOpQrSt
- *
- * Until those env vars are set, these calls no-op. GA4 sign_up and
- * first_rating_complete events still fire independently.
+ * Conversion labels still come from env, after each action is created in Ads:
+ *   NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL
+ *   NEXT_PUBLIC_GOOGLE_ADS_FIRST_RATING_LABEL
  */
+export const GOOGLE_ADS_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() || "AW-18476384455"
 
 type AdsConversion = "signup" | "first_rating"
 
 function conversionSendTo(kind: AdsConversion): string | null {
-  const id = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim()
   const label =
     kind === "signup"
       ? process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL?.trim()
       : process.env.NEXT_PUBLIC_GOOGLE_ADS_FIRST_RATING_LABEL?.trim()
-  if (!id || !label || id.includes("XXXXXXXX")) return null
-  return `${id}/${label}`
+  if (!GOOGLE_ADS_ID || !label) return null
+  return `${GOOGLE_ADS_ID}/${label}`
 }
 
 export function trackGoogleAdsConversion(kind: AdsConversion) {
