@@ -15,8 +15,8 @@ export type FeaturedHeroPayload = {
   subline: string
 }
 
-/** Guest-first homepage primary CTA — featured hero performance. */
-export const HOME_PRIMARY_RATE_HREF = "/rate/primetime-2026/robert-pattinson"
+/** Guest-first homepage primary CTA — indexable page with live community ratings. */
+export const HOME_PRIMARY_RATE_HREF = "/rate/the-godfather-1972/marlon-brando"
 
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
