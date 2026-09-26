@@ -36,8 +36,10 @@ type Body = {
 
 function emptyOk(attribution?: {
   source: string
+  utmSource?: string | null
   utmMedium: string | null
   utmCampaign: string | null
+  utmTerm?: string | null
   utmContent: string | null
   existingSource?: string | null
 } | null) {
@@ -83,8 +85,10 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
 export async function POST(request: NextRequest) {
   let attributionToSet: {
     source: string
+    utmSource?: string | null
     utmMedium: string | null
     utmCampaign: string | null
+    utmTerm?: string | null
     utmContent: string | null
     existingSource?: string | null
   } | null = null
@@ -121,7 +125,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { utmSource, utmMedium, utmCampaign, utmContent } = parseUtmParams(params)
+    const { utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = parseUtmParams(params)
 
     const referrer = truncateReferrer(
       typeof body.referrer === "string"
@@ -139,8 +143,10 @@ export async function POST(request: NextRequest) {
     if (candidate && !isValidSource(existing)) {
       attributionToSet = {
         source: candidate,
+        utmSource: utmSource ?? candidate,
         utmMedium,
         utmCampaign,
+        utmTerm,
         utmContent,
         existingSource: isValidSource(existing) ? existing : null,
       }
@@ -234,6 +240,8 @@ export async function POST(request: NextRequest) {
         utmSource: storedUtmSource,
         utmMedium,
         utmCampaign,
+        utmTerm,
+        utmContent,
         userId,
         ipHash,
         userAgent,

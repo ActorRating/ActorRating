@@ -36,6 +36,7 @@ export type ProductEventBody = {
   utm_source?: unknown
   utm_medium?: unknown
   utm_campaign?: unknown
+  utm_term?: unknown
   utm_content?: unknown
   properties?: unknown
 }
@@ -79,6 +80,7 @@ export async function persistProductEvent(
     normalizeAcquisitionSource(clipString(body.utm_source, 100)) ?? source
   const utmMedium = clipString(body.utm_medium, 100)
   const utmCampaign = clipString(body.utm_campaign, 200)
+  const utmTerm = clipString(body.utm_term, 200)
   const utmContent = clipString(body.utm_content, 200)
   const actor = clipString(body.actor, 200)
   const movie = clipString(body.movie, 200)
@@ -118,6 +120,7 @@ export async function persistProductEvent(
       utmSource,
       utmMedium,
       utmCampaign,
+      utmTerm,
       utmContent,
       properties: properties ?? undefined,
       userId,

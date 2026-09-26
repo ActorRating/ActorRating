@@ -6,8 +6,10 @@ import {
   normalizeAcquisitionSource,
 } from "@/lib/tracking/source"
 
+export const AR_UTM_SOURCE_COOKIE = "ar_utm_source"
 export const AR_UTM_MEDIUM_COOKIE = "ar_utm_medium"
 export const AR_UTM_CAMPAIGN_COOKIE = "ar_utm_campaign"
+export const AR_UTM_TERM_COOKIE = "ar_utm_term"
 export const AR_UTM_CONTENT_COOKIE = "ar_utm_content"
 
 const UTM_COOKIE_OPTIONS = {
@@ -29,7 +31,24 @@ export type StoredAttribution = {
   utm_source: string | null
   utm_medium: string | null
   utm_campaign: string | null
+  utm_term: string | null
   utm_content: string | null
+}
+
+export type SignupUtmFields = {
+  signupUtmSource: string | null
+  signupUtmMedium: string | null
+  signupUtmCampaign: string | null
+  signupUtmTerm: string | null
+  signupUtmContent: string | null
+}
+
+export type RatingUtmFields = {
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmTerm: string | null
+  utmContent: string | null
 }
 
 export function readAttributionFromRequest(
@@ -38,12 +57,37 @@ export function readAttributionFromRequest(
   const source = normalizeAcquisitionSource(
     request.cookies.get(AR_SRC_COOKIE)?.value,
   )
+  const rawSource = clip(request.cookies.get(AR_UTM_SOURCE_COOKIE)?.value, 100)
   return {
     source,
-    utm_source: source,
+    utm_source: rawSource ?? source,
     utm_medium: clip(request.cookies.get(AR_UTM_MEDIUM_COOKIE)?.value, 100),
     utm_campaign: clip(request.cookies.get(AR_UTM_CAMPAIGN_COOKIE)?.value, 200),
+    utm_term: clip(request.cookies.get(AR_UTM_TERM_COOKIE)?.value, 200),
     utm_content: clip(request.cookies.get(AR_UTM_CONTENT_COOKIE)?.value, 200),
+  }
+}
+
+/** Cookie jar shape shared by NextRequest cookies and `cookies()` from next/headers. */
+export function readSignupUtmFromCookieStore(store: {
+  get(name: string): { value: string } | undefined
+}): SignupUtmFields {
+  return {
+    signupUtmSource: clip(store.get(AR_UTM_SOURCE_COOKIE)?.value, 100),
+    signupUtmMedium: clip(store.get(AR_UTM_MEDIUM_COOKIE)?.value, 100),
+    signupUtmCampaign: clip(store.get(AR_UTM_CAMPAIGN_COOKIE)?.value, 200),
+    signupUtmTerm: clip(store.get(AR_UTM_TERM_COOKIE)?.value, 200),
+    signupUtmContent: clip(store.get(AR_UTM_CONTENT_COOKIE)?.value, 200),
+  }
+}
+
+export function ratingUtmFromSignup(fields: SignupUtmFields): RatingUtmFields {
+  return {
+    utmSource: fields.signupUtmSource,
+    utmMedium: fields.signupUtmMedium,
+    utmCampaign: fields.signupUtmCampaign,
+    utmTerm: fields.signupUtmTerm,
+    utmContent: fields.signupUtmContent,
   }
 }
 
@@ -52,8 +96,10 @@ export function applyFirstTouchAttributionCookies(
   response: NextResponse,
   input: {
     source: string
+    utmSource?: string | null
     utmMedium: string | null
     utmCampaign: string | null
+    utmTerm?: string | null
     utmContent: string | null
     existingSource?: string | null
   },
@@ -61,6 +107,9 @@ export function applyFirstTouchAttributionCookies(
   if (input.existingSource) return
 
   response.cookies.set(AR_SRC_COOKIE, input.source, arSrcCookieOptions())
+
+  const rawSource = input.utmSource?.trim() || input.source
+  response.cookies.set(AR_UTM_SOURCE_COOKIE, rawSource.slice(0, 100), UTM_COOKIE_OPTIONS)
 
   if (input.utmMedium) {
     response.cookies.set(AR_UTM_MEDIUM_COOKIE, input.utmMedium, UTM_COOKIE_OPTIONS)
@@ -71,6 +120,9 @@ export function applyFirstTouchAttributionCookies(
       input.utmCampaign,
       UTM_COOKIE_OPTIONS,
     )
+  }
+  if (input.utmTerm) {
+    response.cookies.set(AR_UTM_TERM_COOKIE, input.utmTerm, UTM_COOKIE_OPTIONS)
   }
   if (input.utmContent) {
     response.cookies.set(

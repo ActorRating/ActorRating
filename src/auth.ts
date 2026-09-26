@@ -10,6 +10,7 @@ import type { SMTPTransport } from "nodemailer/lib/smtp-transport"
 import { authConfig } from "./auth.config"
 import { cookies } from "next/headers"
 import { AR_SRC_COOKIE, isValidSource } from "@/lib/tracking/source"
+import { readSignupUtmFromCookieStore } from "@/lib/tracking/attribution-cookies"
 import {
   clearPendingSignupCookie,
   readPendingSignupCookie,
@@ -57,6 +58,21 @@ async function getAcquisitionSourceFromCookie(): Promise<string | null> {
     return isValidSource(raw) ? raw : null
   } catch {
     return null
+  }
+}
+
+async function getSignupUtmFromCookies() {
+  try {
+    const store = await cookies()
+    return readSignupUtmFromCookieStore(store)
+  } catch {
+    return {
+      signupUtmSource: null,
+      signupUtmMedium: null,
+      signupUtmCampaign: null,
+      signupUtmTerm: null,
+      signupUtmContent: null,
+    }
   }
 }
 
@@ -118,6 +134,7 @@ function createAdapter() {
     async createUser(data: any) {
       const cookieSource = await getAcquisitionSourceFromCookie()
       const finalSource = isValidSource(cookieSource) ? cookieSource : null
+      const signupUtm = await getSignupUtmFromCookies()
       const pendingFields = await resolvePendingSignupFields(data?.email)
 
       if (isInviteGateEnabled()) {
@@ -139,6 +156,7 @@ function createAdapter() {
             onboardingCompleted: pendingFields.onboardingCompleted,
             name: data?.name || pendingFields.username || null,
             source: finalSource,
+            ...signupUtm,
             firstSeenAt: new Date(),
           },
         })
@@ -169,6 +187,7 @@ function createAdapter() {
           data: {
             ...data,
             source: finalSource,
+            ...signupUtm,
             firstSeenAt: new Date(),
           },
         })

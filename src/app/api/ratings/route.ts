@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 // src/app/api/ratings/route.ts
 import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { getAuthenticatedUserId } from "@/lib/authUser"
 import { checkRatingSubmissionLimits } from "@/lib/rateLimit"
@@ -11,6 +12,10 @@ import {
   upsertUserRating,
   validateRatingTarget,
 } from "@/lib/rating-submission"
+import {
+  ratingUtmFromSignup,
+  readSignupUtmFromCookieStore,
+} from "@/lib/tracking/attribution-cookies"
 
 export async function GET() {
   try {
@@ -109,6 +114,11 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       chemistryInteraction,
     }
 
+    const priorRatings = isUpdate
+      ? 1
+      : await prisma.rating.count({ where: { userId } })
+
+    const cookieStore = await cookies()
     const rating = await upsertUserRating({
       userId,
       actorId,
@@ -120,9 +130,13 @@ async function handleRating(request: NextRequest, isUpdate: boolean) {
       ratingId,
       providedWeightedScore,
       isUpdate,
+      attribution: ratingUtmFromSignup(readSignupUtmFromCookieStore(cookieStore)),
     })
 
-    return NextResponse.json(rating, { status: isUpdate ? 200 : 201 })
+    return NextResponse.json(
+      { ...rating, firstRating: !isUpdate && priorRatings === 0 },
+      { status: isUpdate ? 200 : 201 },
+    )
   } catch (error) {
     console.error("=== RATING API ERROR ===", error)
     if (error instanceof Error) {

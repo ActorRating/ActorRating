@@ -74,6 +74,25 @@ export async function validateRatingTarget(actorId: string, movieId: string) {
   return { ok: true as const, actor, movie }
 }
 
+export type RatingAttributionInput = {
+  utmSource?: string | null
+  utmMedium?: string | null
+  utmCampaign?: string | null
+  utmTerm?: string | null
+  utmContent?: string | null
+}
+
+function attributionWrite(attr?: RatingAttributionInput | null) {
+  if (!attr) return {}
+  return {
+    ...(attr.utmSource ? { utmSource: attr.utmSource } : {}),
+    ...(attr.utmMedium ? { utmMedium: attr.utmMedium } : {}),
+    ...(attr.utmCampaign ? { utmCampaign: attr.utmCampaign } : {}),
+    ...(attr.utmTerm ? { utmTerm: attr.utmTerm } : {}),
+    ...(attr.utmContent ? { utmContent: attr.utmContent } : {}),
+  }
+}
+
 const ratingInclude = {
   actor: { select: { name: true, imageUrl: true } },
   movie: { select: { title: true, year: true, director: true } },
@@ -90,6 +109,7 @@ export async function upsertUserRating(params: {
   ratingId?: string
   providedWeightedScore?: number
   isUpdate?: boolean
+  attribution?: RatingAttributionInput | null
 }) {
   const scoreError = validateRatingScores(params.scores)
   if (scoreError) throw new Error(scoreError)
@@ -170,6 +190,7 @@ export async function upsertUserRating(params: {
       comment: sanitizedComment,
       isSpoiler,
       breakdown: params.breakdown ?? null,
+      ...attributionWrite(params.attribution),
     },
     include: ratingInclude,
   })
@@ -181,6 +202,7 @@ export async function upsertAnonRating(params: {
   actorId: string
   movieId: string
   scores: RatingScoresInput
+  attribution?: RatingAttributionInput | null
 }) {
   const scoreError = validateRatingScores(params.scores)
   if (scoreError) throw new Error(scoreError)
@@ -229,6 +251,7 @@ export async function upsertAnonRating(params: {
       shareScore,
       comment: null,
       isSpoiler: false,
+      ...attributionWrite(params.attribution),
     },
     select: { id: true, weightedScore: true, createdAt: true },
   })

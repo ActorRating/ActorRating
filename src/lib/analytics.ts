@@ -28,6 +28,7 @@ export type AnalyticsAttribution = {
   utm_source?: string | null
   utm_medium?: string | null
   utm_campaign?: string | null
+  utm_term?: string | null
   utm_content?: string | null
 }
 
@@ -95,6 +96,7 @@ function withAttribution<T extends AnalyticsAttribution>(
     utm_source: payload.utm_source ?? attribution.utm_source ?? null,
     utm_medium: payload.utm_medium ?? attribution.utm_medium ?? null,
     utm_campaign: payload.utm_campaign ?? attribution.utm_campaign ?? null,
+    utm_term: payload.utm_term ?? attribution.utm_term ?? null,
     utm_content: payload.utm_content ?? attribution.utm_content ?? null,
   }
 }
@@ -147,6 +149,7 @@ function beaconFirstPartyEvent(
     utm_source,
     utm_medium,
     utm_campaign,
+    utm_term,
     utm_content,
     ...properties
   } = payload
@@ -163,6 +166,7 @@ function beaconFirstPartyEvent(
       utm_source,
       utm_medium,
       utm_campaign,
+      utm_term,
       utm_content,
       properties,
     }),
@@ -194,6 +198,9 @@ export function trackSignUp(method: "google" | "email") {
   trackEventWithAttribution("sign_up", "User Signed Up", "user_signed_up", {
     method,
     signup_method: method,
+  })
+  void import("@/lib/analytics/google-ads").then(({ trackGoogleAdsConversion }) => {
+    trackGoogleAdsConversion("signup")
   })
 }
 
@@ -354,6 +361,9 @@ export function trackFirstRatingComplete() {
     "first_rating_complete",
     {},
   )
+  void import("@/lib/analytics/google-ads").then(({ trackGoogleAdsConversion }) => {
+    trackGoogleAdsConversion("first_rating")
+  })
 
   // Mark as done
   localStorage.setItem("first_rating_done", "true")

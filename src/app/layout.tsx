@@ -150,6 +150,7 @@ export default async function RootLayout({
               page_path: window.location.pathname,
               send_page_view: true,
             });
+            ${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID?.trim() && !process.env.NEXT_PUBLIC_GOOGLE_ADS_ID.includes("XXXXXXXX") ? `gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID.trim()}');` : `/* Google Ads: set NEXT_PUBLIC_GOOGLE_ADS_ID=AW-XXXXXXXXX to enable conversion config */`}
           `}
         </Script>
         <Script

@@ -21,6 +21,12 @@ model User {
   emailVerified DateTime?
   image         String?
   source        String?   @db.VarChar(50)
+  /// First-touch paid/organic UTM copied from cookies at signup.
+  signupUtmSource   String? @db.VarChar(100)
+  signupUtmMedium   String? @db.VarChar(100)
+  signupUtmCampaign String? @db.VarChar(200)
+  signupUtmTerm     String? @db.VarChar(200)
+  signupUtmContent  String? @db.VarChar(200)
   firstSeenAt   DateTime? @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -43,6 +49,7 @@ model User {
   @@index([createdAt])
   @@index([email])
   @@index([username])
+  @@index([signupUtmCampaign])
 }
 
 /// First-party pageview log for admin analytics (human + bot-flagged).
@@ -54,6 +61,8 @@ model PageView {
   utmSource   String?      @db.VarChar(100)
   utmMedium   String?      @db.VarChar(100)
   utmCampaign String?      @db.VarChar(200)
+  utmTerm     String?      @db.VarChar(200)
+  utmContent  String?      @db.VarChar(200)
   userId      String?
   ipHash      String
   userAgent   String       @db.Text
@@ -68,6 +77,8 @@ model PageView {
   @@index([botCategory, createdAt])
   @@index([path, createdAt])
   @@index([utmSource, createdAt])
+  @@index([utmCampaign, createdAt])
+  @@index([utmTerm, createdAt])
   @@index([ipHash, createdAt])
 }
 
@@ -83,6 +94,7 @@ model ProductEvent {
   utmSource   String?      @db.VarChar(100)
   utmMedium   String?      @db.VarChar(100)
   utmCampaign String?      @db.VarChar(200)
+  utmTerm     String?      @db.VarChar(200)
   utmContent  String?      @db.VarChar(200)
   properties  Json?
   userId      String?
@@ -296,6 +308,12 @@ model Rating {
   shareScore             Int?        @db.SmallInt
   roleName               String?
   breakdown              Json?
+  /// First-touch UTM copied from the visitor cookies when the rating is created.
+  utmSource              String?     @db.VarChar(100)
+  utmMedium              String?     @db.VarChar(100)
+  utmCampaign            String?     @db.VarChar(200)
+  utmTerm                String?     @db.VarChar(200)
+  utmContent             String?     @db.VarChar(200)
   actor                  Actor       @relation(fields: [actorId], references: [id], onDelete: Cascade)
   movie                  Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user                   User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -306,6 +324,7 @@ model Rating {
   @@unique([userId, actorId, movieId])
   @@unique([anonId, actorId, movieId])
   @@index([createdAt])
+  @@index([utmCampaign, createdAt])
   @@index([userId])
   @@index([anonId])
   @@index([actorId])

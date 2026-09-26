@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { prisma } from "@/lib/prisma"
 import { checkRatingSubmissionLimits } from "@/lib/rateLimit"
 import { verifyTurnstileToken } from "@/lib/turnstile"
 import {
@@ -14,6 +15,10 @@ import {
   upsertAnonRating,
   validateRatingTarget,
 } from "@/lib/rating-submission"
+import {
+  ratingUtmFromSignup,
+  readSignupUtmFromCookieStore,
+} from "@/lib/tracking/attribution-cookies"
 
 function clientIp(request: NextRequest): string {
   return (
@@ -94,16 +99,22 @@ export async function POST(request: NextRequest) {
       chemistryInteraction,
     }
 
+    const priorGuestRatings = await prisma.rating.count({
+      where: { anonId: session.anonId, userId: null },
+    })
+
     const rating = await upsertAnonRating({
       anonId: session.anonId,
       actorId,
       movieId,
       scores,
+      attribution: ratingUtmFromSignup(readSignupUtmFromCookieStore(cookieStore)),
     })
 
     const response = NextResponse.json({
       success: true,
       rating,
+      firstRating: priorGuestRatings === 0,
       message: "Rating saved",
     })
     if (session.isNew) {

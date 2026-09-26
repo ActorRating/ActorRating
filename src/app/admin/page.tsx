@@ -6,6 +6,8 @@ import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
+import { PaidAttributionFunnel } from "@/components/admin/PaidAttributionFunnel"
+import { getPaidAttributionFunnel } from "@/lib/admin/getPaidAttributionFunnel"
 import XTrafficSection from "@/components/admin/XTrafficSection"
 import InviteAnalyticsSection from "@/components/admin/InviteAnalyticsSection"
 import ModerationQueue from "@/components/admin/ModerationQueue"
@@ -298,16 +300,25 @@ async function TrafficTab({
   pvDays: ReturnType<typeof parseAnalyticsDays>
 }) {
   const pageViewAnalytics = await getPageViewAnalytics(pvDays)
+  const paidDays = pvDays === 1 ? 1 : pvDays
+  const paidFunnel = await getPaidAttributionFunnel(paidDays)
   return (
-    <PageViewAnalyticsSection
-      data={pageViewAnalytics}
-      hrefForDays={(days) =>
-        createQueryString(searchParams, {
-          tab: "traffic",
-          pv: String(days === 1 ? 24 : days),
-        })
-      }
-    />
+    <div className="space-y-8">
+      <PageViewAnalyticsSection
+        data={pageViewAnalytics}
+        hrefForDays={(days) =>
+          createQueryString(searchParams, {
+            tab: "traffic",
+            pv: String(days === 1 ? 24 : days),
+          })
+        }
+      />
+      <PaidAttributionFunnel
+        days={paidFunnel.days}
+        byCampaign={paidFunnel.byCampaign}
+        byTerm={paidFunnel.byTerm}
+      />
+    </div>
   )
 }
 

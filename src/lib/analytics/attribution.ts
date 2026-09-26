@@ -7,6 +7,7 @@ const EMPTY_ATTRIBUTION: EventAttribution = {
   utm_source: null,
   utm_medium: null,
   utm_campaign: null,
+  utm_term: null,
   utm_content: null,
 }
 
@@ -20,10 +21,11 @@ function readUtmFromUrl(): Partial<EventAttribution> {
   const utmSource = params.get("utm_source")?.trim().toLowerCase() || null
   const utmMedium = params.get("utm_medium")?.trim() || null
   const utmCampaign = params.get("utm_campaign")?.trim() || null
+  const utmTerm = params.get("utm_term")?.trim() || null
   const utmContent = params.get("utm_content")?.trim() || null
   const src = params.get("src")?.trim().toLowerCase() || null
 
-  if (!utmSource && !utmMedium && !utmCampaign && !utmContent && !src) {
+  if (!utmSource && !utmMedium && !utmCampaign && !utmTerm && !utmContent && !src) {
     return {}
   }
 
@@ -32,6 +34,7 @@ function readUtmFromUrl(): Partial<EventAttribution> {
     utm_source: utmSource || src,
     utm_medium: utmMedium,
     utm_campaign: utmCampaign,
+    utm_term: utmTerm,
     utm_content: utmContent,
   }
 }
@@ -45,6 +48,7 @@ function mergeAttribution(
     utm_source: overlay.utm_source ?? base.utm_source,
     utm_medium: overlay.utm_medium ?? base.utm_medium,
     utm_campaign: overlay.utm_campaign ?? base.utm_campaign,
+    utm_term: overlay.utm_term ?? base.utm_term,
     utm_content: overlay.utm_content ?? base.utm_content,
   }
 }
