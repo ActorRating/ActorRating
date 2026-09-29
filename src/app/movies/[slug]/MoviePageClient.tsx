@@ -18,6 +18,8 @@ import { ActorHeadshot } from '@/components/ui/ActorHeadshot'
 import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardScoreSplit'
 import { PerformanceCardReviewSnippet } from '@/components/performance/PerformanceCardReviewSnippet'
 import { RateOrComingSoonButton } from '@/components/rating/RateOrComingSoonButton'
+import { BuyOnAmazon } from '@/components/movies/BuyOnAmazon'
+import { getAmazonAffiliateUrl } from '@/lib/amazon-affiliate'
 import { isMovieComingSoon } from '@/lib/movie-release'
 import { resolveCharacterDisplay } from '@/lib/character'
 import { upgradeActorImageRes } from '@/lib/tmdb'
@@ -512,6 +514,8 @@ export default function MoviePageClient({
     [movie]
   )
 
+  const amazonUrl = movie ? getAmazonAffiliateUrl(movie.slug || movieSlug) : null
+
   const targetPerformance = useMemo(() => {
     return communityStats.highestRated || performances[0] || null
   }, [communityStats.highestRated, performances])
@@ -737,7 +741,7 @@ export default function MoviePageClient({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
-                className="mb-8 sm:mb-10"
+                className={amazonUrl ? "mb-3" : "mb-8 sm:mb-10"}
               >
                 {movieComingSoon ? (
                   <button
@@ -765,6 +769,8 @@ export default function MoviePageClient({
                 )}
               </motion.div>
             )}
+
+            <BuyOnAmazon url={amazonUrl} />
 
             {/* Divider - Minimal */}
             <motion.div
