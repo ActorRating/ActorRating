@@ -190,18 +190,26 @@ function shouldTrackSearch(query: string) {
   return true
 }
 
+const SIGNUP_ANALYTICS_KEY = "signup_analytics_tracked"
+
 /**
  * 1. Signup Success Event
- * Fires when user successfully completes signup (Google or email)
+ * Fires when user successfully completes signup (Google or email).
+ * Resolves true only after the Google Ads conversion hit is confirmed sent.
  */
-export function trackSignUp(method: "google" | "email") {
-  trackEventWithAttribution("sign_up", "User Signed Up", "user_signed_up", {
-    method,
-    signup_method: method,
-  })
-  void import("@/lib/analytics/google-ads").then(({ trackGoogleAdsConversion }) => {
-    trackGoogleAdsConversion("signup")
-  })
+export function trackSignUp(method: "google" | "email"): Promise<boolean> {
+  if (typeof window === "undefined" || !localStorage.getItem(SIGNUP_ANALYTICS_KEY)) {
+    trackEventWithAttribution("sign_up", "User Signed Up", "user_signed_up", {
+      method,
+      signup_method: method,
+    })
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SIGNUP_ANALYTICS_KEY, method)
+    }
+  }
+  return import("@/lib/analytics/google-ads").then(({ trackGoogleAdsConversion }) =>
+    trackGoogleAdsConversion("signup"),
+  )
 }
 
 /**
@@ -341,32 +349,35 @@ export function trackShareRating(platform: "native" | "twitter" | "facebook" | "
   })
 }
 
+const FIRST_RATING_ANALYTICS_KEY = "first_rating_analytics_tracked"
+
 /**
  * 5. First-Time Activation Event
- * Fires ONLY ONCE per user when they submit their first-ever rating
- * Uses localStorage to prevent repeat firing
+ * Fires ONLY ONCE per user when they submit their first-ever rating.
+ * The Ads hit is marked done only after Google confirms it was sent.
  */
 export function trackFirstRatingComplete() {
   if (typeof window === "undefined") return
+  if (localStorage.getItem("first_rating_done")) return
 
-  // Check if already tracked
-  if (localStorage.getItem("first_rating_done")) {
-    return
+  if (!localStorage.getItem(FIRST_RATING_ANALYTICS_KEY)) {
+    trackEventWithAttribution(
+      "first_rating_complete",
+      "First Rating Complete",
+      "first_rating_complete",
+      {},
+    )
+    localStorage.setItem(FIRST_RATING_ANALYTICS_KEY, "1")
   }
 
-  // Track the event
-  trackEventWithAttribution(
-    "first_rating_complete",
-    "First Rating Complete",
-    "first_rating_complete",
-    {},
-  )
-  void import("@/lib/analytics/google-ads").then(({ trackGoogleAdsConversion }) => {
-    trackGoogleAdsConversion("first_rating")
-  })
-
-  // Mark as done
-  localStorage.setItem("first_rating_done", "true")
+  void import("@/lib/analytics/google-ads")
+    .then(({ trackGoogleAdsConversion }) => trackGoogleAdsConversion("first_rating"))
+    .then((sent) => {
+      if (!sent) return
+      localStorage.setItem("first_rating_done", "true")
+      localStorage.removeItem(FIRST_RATING_ANALYTICS_KEY)
+    })
+    .catch(() => {})
 }
 
 export function getRatingTiming(options: {
@@ -375,7 +386,10 @@ export function getRatingTiming(options: {
   hasExistingRating?: boolean
 }): RatingTiming {
   if (options.hasExistingRating) return "repeat"
-  if (typeof window !== "undefined" && localStorage.getItem("first_rating_done")) {
+  if (
+    typeof window !== "undefined" &&
+    (localStorage.getItem("first_rating_done") || localStorage.getItem(FIRST_RATING_ANALYTICS_KEY))
+  ) {
     return "repeat"
   }
   if (options.authStatus === "guest" && (options.guestRatingsBeforeSubmit ?? 0) > 0) {

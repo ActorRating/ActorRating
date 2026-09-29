@@ -43,10 +43,17 @@ export function MixpanelUserTracker({
     });
 
     // Track signup at first authenticated session handoff, independent of redirect path.
+    // Keep the flag until Ads confirms the conversion hit, so a refresh can retry
+    // if gtag.js had not finished loading.
     const pendingSignupMethod = localStorage.getItem("pending_signup_method");
     if (pendingSignupMethod === "google" || pendingSignupMethod === "email") {
-      trackSignUp(pendingSignupMethod);
-      localStorage.removeItem("pending_signup_method");
+      void trackSignUp(pendingSignupMethod)
+        .then((sent) => {
+          if (!sent) return;
+          localStorage.removeItem("pending_signup_method");
+          localStorage.removeItem("signup_analytics_tracked");
+        })
+        .catch(() => {});
     }
 
     console.log(`Mixpanel identified user: ${distinctId}`);
