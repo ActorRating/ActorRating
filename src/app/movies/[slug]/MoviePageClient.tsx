@@ -19,6 +19,7 @@ import { PerformanceCardScoreSplit } from '@/components/rating/PerformanceCardSc
 import { PerformanceCardReviewSnippet } from '@/components/performance/PerformanceCardReviewSnippet'
 import { RateOrComingSoonButton } from '@/components/rating/RateOrComingSoonButton'
 import { BuyOnAmazon } from '@/components/movies/BuyOnAmazon'
+import { JustWatchWidget } from '@/components/movies/JustWatchWidget'
 import { getAmazonAffiliateUrl } from '@/lib/amazon-affiliate'
 import { isMovieComingSoon } from '@/lib/movie-release'
 import { resolveCharacterDisplay } from '@/lib/character'
@@ -741,7 +742,7 @@ export default function MoviePageClient({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
-                className={amazonUrl ? "mb-3" : "mb-8 sm:mb-10"}
+                className="mb-3"
               >
                 {movieComingSoon ? (
                   <button
@@ -770,6 +771,7 @@ export default function MoviePageClient({
               </motion.div>
             )}
 
+            <JustWatchWidget title={movie.title} year={movie.year} />
             <BuyOnAmazon url={amazonUrl} />
 
             {/* Divider - Minimal */}

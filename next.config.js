@@ -89,7 +89,7 @@ const nextConfig = {
       // Scripts: Google Analytics / gtag, reCAPTCHA, Turnstile, Vercel Analytics/Speed Insights
       // 'unsafe-eval' helps some Next/runtime tooling and packages; keep with 'unsafe-inline' for Next bootstrap
       // GA4 needs *.googletagmanager.com (not only www) — see https://developers.google.com/tag-platform/security/guides/csp
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://va.vercel-scripts.com https://cloud.umami.is",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://va.vercel-scripts.com https://cloud.umami.is https://widget.justwatch.com",
 
       // Styles: inline for Next + Google Fonts CSS
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -98,7 +98,7 @@ const nextConfig = {
       "font-src 'self' data: https://fonts.gstatic.com",
 
       // Images: blob for generated previews; TMDB + S3/CDN + GA beacons/pixels
-      "img-src 'self' data: blob: https://image.tmdb.org https://actorrating.com https://*.amazonaws.com https://*.google-analytics.com https://www.google-analytics.com https://*.googletagmanager.com https://www.googletagmanager.com https://*.g.doubleclick.net https://www.google.com https://challenges.cloudflare.com",
+      "img-src 'self' data: blob: https://image.tmdb.org https://actorrating.com https://*.amazonaws.com https://*.google-analytics.com https://www.google-analytics.com https://*.googletagmanager.com https://www.googletagmanager.com https://*.g.doubleclick.net https://www.google.com https://challenges.cloudflare.com https://images.justwatch.com https://widget.justwatch.com",
 
       // Video/audio previews if ever used
       "media-src 'self' blob: data:",
@@ -107,7 +107,7 @@ const nextConfig = {
       "connect-src 'self' https://www.google.com https://accounts.google.com https://oauth2.googleapis.com https://*.google-analytics.com https://www.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://*.googletagmanager.com https://www.googletagmanager.com https://*.g.doubleclick.net https://challenges.cloudflare.com https://formspree.io https://va.vercel-scripts.com https://vitals.vercel-insights.com https://insights.vercel.com https://api-js.mixpanel.com https://api.mixpanel.com https://cloud.umami.is https://api-gateway.umami.dev https://*.amazonaws.com",
 
       // reCAPTCHA + Turnstile + GA/GTM preview iframes
-      "frame-src 'self' https://www.google.com https://www.googletagmanager.com https://challenges.cloudflare.com",
+      "frame-src 'self' https://www.google.com https://www.googletagmanager.com https://challenges.cloudflare.com https://widget.justwatch.com",
 
       "worker-src 'self'",
     ].join('; ')
