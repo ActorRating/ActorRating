@@ -1223,13 +1223,29 @@ nav {
   }
 }
 
-/* JustWatch forces iframe width: 100%; shrink + center so icons aren't left-aligned. */
+/*
+ * JustWatch iframe + credit must stack (flex column). Inline-block on both put
+ * the credit beside the icons and threw off centering; on narrow viewports that
+ * row overflow also clipped the iframe to empty space. Do not use fit-content
+ * on the iframe — cross-origin frames collapse on mobile Safari with that.
+ */
+.jw-widget-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 .jw-widget-host iframe.jw-widget-iframe {
   display: block !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  margin: 0 !important;
   max-width: 100% !important;
-  width: fit-content !important;
+  border: 0;
+}
+
+.jw-widget-host .jw-widget-credit {
+  display: inline-flex !important;
+  flex-shrink: 0;
 }
 
 /* Live “Just rated” ticker on home / discover */
