@@ -1223,6 +1223,15 @@ nav {
   }
 }
 
+/* JustWatch forces iframe width: 100%; shrink + center so icons aren't left-aligned. */
+.jw-widget-host iframe.jw-widget-iframe {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-width: 100% !important;
+  width: fit-content !important;
+}
+
 /* Live “Just rated” ticker on home / discover */
 @keyframes last-rated-marquee {
   from {
