@@ -11,13 +11,15 @@ const JUSTWATCH_API_KEY =
   process.env.NEXT_PUBLIC_JUSTWATCH_API_KEY?.trim() || "8pCc7emwtOajDUs6bvhgtYWjb8LIa7Ct"
 
 /**
- * JustWatch's resize script posts width = max(body.scrollWidth, 300), so a full-bleed
- * iframe always reports full-bleed. Their floor is 300 even when the icon row is ~230px,
- * which leaves empty space on the right and makes a "centered" frame look left-heavy.
+ * JustWatch posts width = max(body.scrollWidth, 300). Typical dark-theme icon
+ * rows are narrower (~230–250px), so a 300px frame looks left-heavy when centered.
+ * We snap to a tight default once, and only widen if that wraps the row.
  */
 const JW_WIDTH_FLOOR_PX = 300
-const FIT_MIN_PX = 170
-const FIT_PROBE_MS = 220
+const ICON_ROW_FIT_PX = 246
+/** JustWatch polls size every 150ms; wait slightly longer for a postMessage. */
+const FIT_PROBE_MS = 180
+const REVEAL_FALLBACK_MS = 3500
 
 declare global {
   interface Window {
@@ -78,11 +80,20 @@ export function JustWatchWidget({
     if (!host) return
 
     let lastHeight = 0
-    let fitting = false
-    let fitTimer: number | undefined
+    let settling = false
+    let settleTimer: number | undefined
     let cancelled = false
+    let revealed = false
 
     const getIframe = () => host.querySelector<HTMLIFrameElement>("iframe.jw-widget-iframe")
+
+    const reveal = () => {
+      if (revealed || cancelled) return
+      revealed = true
+      host.style.height = ""
+      host.style.overflow = ""
+      host.classList.add("jw-widget-host--ready")
+    }
 
     const lockFittedWidth = (iframe: HTMLIFrameElement) => {
       const fitted = fittedWidthRef.current
@@ -93,60 +104,52 @@ export function JustWatchWidget({
     }
 
     /**
-     * Shrink from JustWatch's 300px floor until height grows (icons wrapped).
-     * That finds the true icon-row width so margin:auto / flex centering lines
-     * up with the Rate button.
+     * One or two width snaps while the host is still opacity:0, then fade in.
+     * Avoids the old multi-step binary search that was visible as a load glitch.
      */
-    const fitIframeToIconRow = async (iframe: HTMLIFrameElement) => {
-      if (cancelled || fitting || fittedWidthRef.current != null) return
+    const settleIframeWidth = async (iframe: HTMLIFrameElement) => {
+      if (cancelled || settling || fittedWidthRef.current != null) return
       if (lastHeight < 20) return
 
-      fitting = true
+      settling = true
       const targetHeight = lastHeight
+      host.style.height = `${Math.ceil(targetHeight + 28)}px`
+      host.style.overflow = "hidden"
 
-      applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
+      applyIframeWidth(iframe, ICON_ROW_FIT_PX)
       await sleep(FIT_PROBE_MS)
       if (cancelled) {
-        fitting = false
+        settling = false
         return
       }
 
-      let lo = FIT_MIN_PX
-      let hi = JW_WIDTH_FLOOR_PX
-      let best = JW_WIDTH_FLOOR_PX
-
-      for (let i = 0; i < 8; i += 1) {
-        const mid = Math.round((lo + hi) / 2)
-        applyIframeWidth(iframe, mid)
+      let best = ICON_ROW_FIT_PX
+      if (lastHeight > targetHeight + 6) {
+        // Tight width wrapped the icons — use JustWatch's floor instead.
+        best = JW_WIDTH_FLOOR_PX
+        applyIframeWidth(iframe, best)
+        applyIframeHeight(iframe, targetHeight)
         await sleep(FIT_PROBE_MS)
         if (cancelled) {
-          fitting = false
+          settling = false
           return
         }
-
-        // Height updates arrive via postMessage into lastHeight.
-        if (lastHeight > targetHeight + 6) {
-          // Wrapped onto another row — too narrow.
-          lo = mid + 1
-          lastHeight = targetHeight
-          applyIframeHeight(iframe, targetHeight)
-        } else {
-          best = mid
-          hi = mid - 1
-        }
+        applyIframeHeight(iframe, lastHeight > 20 ? lastHeight : targetHeight)
+      } else {
+        applyIframeHeight(iframe, targetHeight)
       }
 
-      applyIframeWidth(iframe, best)
       fittedWidthRef.current = best
-      fitting = false
+      settling = false
+      reveal()
     }
 
-    const scheduleFit = () => {
-      window.clearTimeout(fitTimer)
-      fitTimer = window.setTimeout(() => {
+    const scheduleSettle = () => {
+      window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(() => {
         const iframe = getIframe()
-        if (iframe) void fitIframeToIconRow(iframe)
-      }, 350)
+        if (iframe) void settleIframeWidth(iframe)
+      }, 120)
     }
 
     const prepareIframe = (iframe: HTMLIFrameElement) => {
@@ -155,7 +158,6 @@ export function JustWatchWidget({
         return
       }
       iframe.dataset.jwPrepared = "1"
-      // Narrower than the page so their scrollWidth isn't full-bleed.
       applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
     }
 
@@ -174,21 +176,21 @@ export function JustWatchWidget({
         if (Number.isFinite(h) && h > 0) {
           lastHeight = h
           applyIframeHeight(iframe, h)
-          if (fittedWidthRef.current == null) scheduleFit()
+          if (fittedWidthRef.current == null) scheduleSettle()
         }
       }
 
       if (event.data.type === "resize-width" && typeof event.data.cssWidth === "string") {
-        // Their script also applies this; re-assert our fitted width when we have one.
         if (fittedWidthRef.current != null) {
           lockFittedWidth(iframe)
           return
         }
-        if (fitting) return
+        if (settling) return
         const w = Number.parseFloat(event.data.cssWidth)
         if (Number.isFinite(w) && w > JW_WIDTH_FLOOR_PX) {
-          // Genuine wide content (many offers) — trust it.
           applyIframeWidth(iframe, w)
+          fittedWidthRef.current = Math.round(w)
+          reveal()
         } else if (Number.isFinite(w) && w > 0) {
           applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
         }
@@ -207,9 +209,19 @@ export function JustWatchWidget({
       if (iframe) lockFittedWidth(iframe)
     }, 500)
 
+    const fallbackTimer = window.setTimeout(() => {
+      if (fittedWidthRef.current == null) {
+        const iframe = getIframe()
+        if (iframe) applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
+        fittedWidthRef.current = JW_WIDTH_FLOOR_PX
+      }
+      reveal()
+    }, REVEAL_FALLBACK_MS)
+
     return () => {
       cancelled = true
-      window.clearTimeout(fitTimer)
+      window.clearTimeout(settleTimer)
+      window.clearTimeout(fallbackTimer)
       window.clearInterval(lockInterval)
       obs.disconnect()
       window.removeEventListener("message", onMessage)

@@ -1228,12 +1228,21 @@ nav {
  * the credit beside the icons and threw off centering; on narrow viewports that
  * row overflow also clipped the iframe to empty space. Do not use fit-content
  * on the iframe — cross-origin frames collapse on mobile Safari with that.
+ *
+ * Host stays invisible until JS finishes width-fitting so the probe steps
+ * don't flash as a layout glitch on load.
  */
 .jw-widget-host {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.jw-widget-host.jw-widget-host--ready {
+  opacity: 1;
 }
 
 .jw-widget-host iframe.jw-widget-iframe {
