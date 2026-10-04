@@ -1,7 +1,8 @@
 "use client"
 
+import { motion } from "framer-motion"
 import Script from "next/script"
-import { useEffect, useId, useRef } from "react"
+import { useId, useLayoutEffect, useRef, useState } from "react"
 
 const SCRIPT_SRC = "https://widget.justwatch.com/justwatch_widget.js"
 const SCRIPT_ID = "justwatch-widget"
@@ -13,18 +14,28 @@ const JUSTWATCH_API_KEY =
 /**
  * JustWatch posts width = max(body.scrollWidth, 300). Typical dark-theme icon
  * rows are narrower (~230–250px), so a 300px frame looks left-heavy when centered.
- * We snap to a tight default once, and only widen if that wraps the row.
  */
 const JW_WIDTH_FLOOR_PX = 300
 const ICON_ROW_FIT_PX = 246
-/** JustWatch polls size every 150ms; wait slightly longer for a postMessage. */
-const FIT_PROBE_MS = 180
+/** Match the Rate CTA entrance on movie pages so this appears with the hero, not after. */
+const ENTRANCE_DELAY_MS = 600
 const REVEAL_FALLBACK_MS = 3500
 
 declare global {
   interface Window {
     JustWatch?: { reloadWidgets: () => void }
   }
+}
+
+function preloadJustWatchScript() {
+  if (typeof document === "undefined") return
+  if (document.querySelector(`link[data-jw-preload="1"]`)) return
+  const link = document.createElement("link")
+  link.rel = "preload"
+  link.as = "script"
+  link.href = SCRIPT_SRC
+  link.dataset.jwPreload = "1"
+  document.head.appendChild(link)
 }
 
 function reloadJustWatchWidgets() {
@@ -49,12 +60,6 @@ function applyIframeHeight(iframe: HTMLIFrameElement, heightPx: number) {
   iframe.setAttribute("height", String(h))
 }
 
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(resolve, ms)
-  })
-}
-
 /**
  * JustWatch "where to watch" for one movie. The partner script is loaded once
  * (Next dedupes Script by id). US offers only, per the current partner setup.
@@ -72,27 +77,33 @@ export function JustWatchWidget({
   const yearValue = year != null && year > 0 ? String(year) : ""
   const hostId = `jw-host-${reactId}`
   const fittedWidthRef = useRef<number | null>(null)
+  const mountMsRef = useRef(0)
+  const [visible, setVisible] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!titleValue || !yearValue) return
+
+    preloadJustWatchScript()
+    mountMsRef.current = performance.now()
 
     const host = document.getElementById(hostId)
     if (!host) return
 
-    let lastHeight = 0
-    let settling = false
-    let settleTimer: number | undefined
     let cancelled = false
     let revealed = false
+    let revealTimer: number | undefined
 
     const getIframe = () => host.querySelector<HTMLIFrameElement>("iframe.jw-widget-iframe")
 
-    const reveal = () => {
+    /** Size off-screen, then fade in with the Rate button entrance timing. */
+    const scheduleReveal = () => {
       if (revealed || cancelled) return
       revealed = true
-      host.style.height = ""
-      host.style.overflow = ""
-      host.classList.add("jw-widget-host--ready")
+      const elapsed = performance.now() - mountMsRef.current
+      const wait = Math.max(0, ENTRANCE_DELAY_MS - elapsed)
+      revealTimer = window.setTimeout(() => {
+        if (!cancelled) setVisible(true)
+      }, wait)
     }
 
     const lockFittedWidth = (iframe: HTMLIFrameElement) => {
@@ -103,62 +114,15 @@ export function JustWatchWidget({
       }
     }
 
-    /**
-     * One or two width snaps while the host is still opacity:0, then fade in.
-     * Avoids the old multi-step binary search that was visible as a load glitch.
-     */
-    const settleIframeWidth = async (iframe: HTMLIFrameElement) => {
-      if (cancelled || settling || fittedWidthRef.current != null) return
-      if (lastHeight < 20) return
-
-      settling = true
-      const targetHeight = lastHeight
-      host.style.height = `${Math.ceil(targetHeight + 28)}px`
-      host.style.overflow = "hidden"
-
-      applyIframeWidth(iframe, ICON_ROW_FIT_PX)
-      await sleep(FIT_PROBE_MS)
-      if (cancelled) {
-        settling = false
-        return
-      }
-
-      let best = ICON_ROW_FIT_PX
-      if (lastHeight > targetHeight + 6) {
-        // Tight width wrapped the icons — use JustWatch's floor instead.
-        best = JW_WIDTH_FLOOR_PX
-        applyIframeWidth(iframe, best)
-        applyIframeHeight(iframe, targetHeight)
-        await sleep(FIT_PROBE_MS)
-        if (cancelled) {
-          settling = false
-          return
-        }
-        applyIframeHeight(iframe, lastHeight > 20 ? lastHeight : targetHeight)
-      } else {
-        applyIframeHeight(iframe, targetHeight)
-      }
-
-      fittedWidthRef.current = best
-      settling = false
-      reveal()
-    }
-
-    const scheduleSettle = () => {
-      window.clearTimeout(settleTimer)
-      settleTimer = window.setTimeout(() => {
-        const iframe = getIframe()
-        if (iframe) void settleIframeWidth(iframe)
-      }, 120)
-    }
-
     const prepareIframe = (iframe: HTMLIFrameElement) => {
       if (iframe.dataset.jwPrepared === "1") {
         lockFittedWidth(iframe)
         return
       }
       iframe.dataset.jwPrepared = "1"
-      applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
+      // Final width up front so the first painted frame is already centered.
+      applyIframeWidth(iframe, ICON_ROW_FIT_PX)
+      fittedWidthRef.current = ICON_ROW_FIT_PX
     }
 
     const scan = () => {
@@ -174,26 +138,29 @@ export function JustWatchWidget({
       if (event.data.type === "resize-height" && typeof event.data.cssHeight === "string") {
         const h = Number.parseFloat(event.data.cssHeight)
         if (Number.isFinite(h) && h > 0) {
-          lastHeight = h
           applyIframeHeight(iframe, h)
-          if (fittedWidthRef.current == null) scheduleSettle()
+          // Content is in — keep width tight unless a wide resize arrives.
+          if (fittedWidthRef.current == null) {
+            applyIframeWidth(iframe, ICON_ROW_FIT_PX)
+            fittedWidthRef.current = ICON_ROW_FIT_PX
+          }
+          if (h > 20) scheduleReveal()
         }
       }
 
       if (event.data.type === "resize-width" && typeof event.data.cssWidth === "string") {
-        if (fittedWidthRef.current != null) {
-          lockFittedWidth(iframe)
-          return
-        }
-        if (settling) return
         const w = Number.parseFloat(event.data.cssWidth)
-        if (Number.isFinite(w) && w > JW_WIDTH_FLOOR_PX) {
+        if (!Number.isFinite(w) || w <= 0) return
+
+        if (w > JW_WIDTH_FLOOR_PX) {
           applyIframeWidth(iframe, w)
           fittedWidthRef.current = Math.round(w)
-          reveal()
-        } else if (Number.isFinite(w) && w > 0) {
-          applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
+          scheduleReveal()
+          return
         }
+
+        // Ignore their ≥300 floor — keep the tight centered width.
+        lockFittedWidth(iframe)
       }
     }
 
@@ -212,15 +179,17 @@ export function JustWatchWidget({
     const fallbackTimer = window.setTimeout(() => {
       if (fittedWidthRef.current == null) {
         const iframe = getIframe()
-        if (iframe) applyIframeWidth(iframe, JW_WIDTH_FLOOR_PX)
-        fittedWidthRef.current = JW_WIDTH_FLOOR_PX
+        if (iframe) {
+          applyIframeWidth(iframe, ICON_ROW_FIT_PX)
+          fittedWidthRef.current = ICON_ROW_FIT_PX
+        }
       }
-      reveal()
+      scheduleReveal()
     }, REVEAL_FALLBACK_MS)
 
     return () => {
       cancelled = true
-      window.clearTimeout(settleTimer)
+      window.clearTimeout(revealTimer)
       window.clearTimeout(fallbackTimer)
       window.clearInterval(lockInterval)
       obs.disconnect()
@@ -232,9 +201,12 @@ export function JustWatchWidget({
   if (!titleValue || !yearValue) return null
 
   return (
-    <div
+    <motion.div
       id={hostId}
       className="jw-widget-host mx-auto mb-6 mt-1 flex w-full max-w-2xl flex-col items-center sm:mb-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
       <div
         key={`${titleValue}-${yearValue}`}
@@ -271,6 +243,6 @@ export function JustWatchWidget({
           reloadJustWatchWidgets()
         }}
       />
-    </div>
+    </motion.div>
   )
 }
