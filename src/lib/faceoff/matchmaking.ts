@@ -10,6 +10,8 @@ import {
   type ScoreCandidate,
 } from "@/lib/faceoff/matchmaking-score"
 import { canonicalPairKey, parseMode, resolveComparisonType, type FaceOffPreferences } from "@/lib/faceoff/pair"
+import { blockedPairKeys, classifySessionPair, type SessionPairState } from "@/lib/faceoff/pairs"
+import { hydrateFaceOffImages } from "@/lib/faceoff/portraits"
 import { readEntityMetadata, type FaceOffSessionRecord } from "@/lib/faceoff/session"
 import type { FaceOffPublicMatchup } from "@/lib/faceoff/types"
 
@@ -55,18 +57,27 @@ function toScore(row: PoolRow): ScoreCandidate {
   }
 }
 
-async function seenPairKeys(sessionId: string): Promise<Set<string>> {
-  const [votes, open] = await Promise.all([
+async function loadSessionPairs(sessionId: string): Promise<SessionPairState> {
+  const [votes, matchups] = await Promise.all([
     prisma.faceOffVote.findMany({
       where: { sessionId },
       select: { pairKey: true },
     }),
     prisma.faceOffMatchup.findMany({
-      where: { sessionId, consumedAt: null, expiresAt: { gt: new Date() } },
-      select: { pairKey: true },
+      where: { sessionId },
+      select: { pairKey: true, consumedAt: true, expiresAt: true },
     }),
   ])
-  return new Set([...votes, ...open].map((row) => row.pairKey))
+  const voted = new Set(votes.map((row) => row.pairKey))
+  const now = Date.now()
+  const open = new Set<string>()
+  const skipped = new Set<string>()
+  for (const row of matchups) {
+    const kind = classifySessionPair({ ...row, voted, now })
+    if (kind === "open") open.add(row.pairKey)
+    if (kind === "skipped") skipped.add(row.pairKey)
+  }
+  return { voted, open, skipped }
 }
 
 async function pickAnchor(type: FaceOffEntityType, avoidId: string | null): Promise<PoolRow | null> {
@@ -119,18 +130,21 @@ async function loadOpponents(type: FaceOffEntityType, anchor: PoolRow, discovery
   `
 }
 
-function presentMatchup(matchup: {
+async function presentMatchup(matchup: {
   id: string
   mode: FaceOffEntityType
   expiresAt: Date
   left: PoolRow | FaceOffEntityLike
   right: PoolRow | FaceOffEntityLike
-}): FaceOffPublicMatchup {
+}): Promise<FaceOffPublicMatchup> {
+  const left = readEntityMetadata(matchup.left)
+  const right = readEntityMetadata(matchup.right)
+  await hydrateFaceOffImages([left, right])
   return {
     id: matchup.id,
     mode: matchup.mode === "ACTOR" ? "actor" : "performance",
-    left: readEntityMetadata(matchup.left),
-    right: readEntityMetadata(matchup.right),
+    left,
+    right,
     expiresAt: matchup.expiresAt.toISOString(),
   }
 }
@@ -221,8 +235,13 @@ export async function nextMatchup(input: {
         : null,
   )
   const type: FaceOffEntityType = comparison === "actor" ? "ACTOR" : "PERFORMANCE"
-  const seen = await seenPairKeys(input.session.id)
-  if (input.session.lastPairKey) seen.add(input.session.lastPairKey)
+  const pairs = await loadSessionPairs(input.session.id)
+  if (input.session.lastPairKey) pairs.voted.add(input.session.lastPairKey)
+
+  const filterAvailable = (anchor: PoolRow, opponents: PoolRow[], relaxSkips: boolean) => {
+    const blocked = blockedPairKeys(pairs, relaxSkips)
+    return opponents.filter((row) => row.id !== anchor.id && !blocked.has(canonicalPairKey(anchor.id, row.id)))
+  }
 
   let anchor = await pickAnchor(type, null)
   if (!anchor) {
@@ -231,20 +250,32 @@ export async function nextMatchup(input: {
       mode: modeName,
       reason: comparison === "actor"
         ? "Not enough actors with portraits are ready for Face-Off yet."
-        : "Not enough performances with stills are ready for Face-Off yet.",
+        : "Not enough performances with portraits are ready for Face-Off yet.",
     }
   }
 
   const discovery = shouldForceDiscovery()
   let opponents = await loadOpponents(type, anchor, discovery)
-  let available = opponents.filter((row) => !seen.has(canonicalPairKey(anchor!.id, row.id)) && row.id !== anchor!.id)
+  let available = filterAvailable(anchor, opponents, false)
   if (available.length === 0) {
-    anchor = await pickAnchor(type, anchor.id)
-    if (!anchor) {
-      return { matchup: null, mode: modeName, reason: "You have compared the available pool. Try another mode." }
+    const nextAnchor = await pickAnchor(type, anchor.id)
+    if (nextAnchor) {
+      anchor = nextAnchor
+      opponents = await loadOpponents(type, anchor, true)
+      available = filterAvailable(anchor, opponents, false)
     }
+  }
+  if (available.length === 0) {
     opponents = await loadOpponents(type, anchor, true)
-    available = opponents.filter((row) => !seen.has(canonicalPairKey(anchor!.id, row.id)) && row.id !== anchor!.id)
+    available = filterAvailable(anchor, opponents, true)
+  }
+  if (available.length === 0) {
+    const fresh = await pickAnchor(type, anchor.id)
+    if (fresh) {
+      anchor = fresh
+      opponents = await loadOpponents(type, anchor, true)
+      available = filterAvailable(anchor, opponents, true)
+    }
   }
   if (available.length === 0) {
     return { matchup: null, mode: modeName, reason: "You have compared the available pool. Try another mode." }
@@ -266,6 +297,21 @@ export async function nextMatchup(input: {
     mode: type,
   })
   return { matchup, mode: modeName }
+}
+
+export async function takeOpenMatchup(sessionId: string, exceptId: string): Promise<FaceOffPublicMatchup | null> {
+  const queued = await prisma.faceOffMatchup.findFirst({
+    where: {
+      sessionId,
+      id: { not: exceptId },
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+    include: { left: true, right: true },
+  })
+  if (!queued) return null
+  return presentMatchup(queued)
 }
 
 export type { FaceOffComparisonType }

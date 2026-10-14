@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getActorUrl, getRateUrl } from "@/lib/slugHelper"
 import { CURATED_ACTOR_NAMES, CURATED_PERFORMANCES } from "@/lib/faceoff/curated-pool"
 import { SYSTEM_USER_ID } from "@/lib/movie-ingestion"
+import { upgradeFaceOffImage } from "@/lib/faceoff/images"
 
 type PerformanceRow = {
   id: string
@@ -20,20 +21,7 @@ type PerformanceRow = {
   popularity: number
 }
 
-function upgradeImage(url: string | null | undefined, kind: "actor" | "poster"): string | null {
-  if (!url) return null
-  if (kind === "actor") {
-    return url
-      .replace("/t/p/w185/", "/t/p/h632/")
-      .replace("/t/p/w92/", "/t/p/h632/")
-      .replace("/t/p/w45/", "/t/p/h632/")
-  }
-  return url
-    .replace(/\/t\/p\/w\d+\//, "/t/p/w780/")
-    .replace("/t/p/original/", "/t/p/w780/")
-}
-
-function performanceMetadata(row: PerformanceRow) {
+function performanceMetadata(row: PerformanceRow, portraitUrl: string | null, posterUrl: string | null) {
   return {
     actorId: row.actorId,
     movieId: row.movieId,
@@ -45,14 +33,18 @@ function performanceMetadata(row: PerformanceRow) {
       { id: row.actorId, name: row.actorName, slug: row.actorSlug },
       { id: row.movieId, title: row.movieTitle, year: row.movieYear, slug: row.movieSlug },
     ),
+    portraitUrl,
+    posterUrl,
   }
 }
 
 async function upsertPerformance(row: PerformanceRow): Promise<void> {
-  const imageUrl = upgradeImage(row.posterUrl, "poster") ?? upgradeImage(row.actorImage, "actor")
+  const portraitUrl = upgradeFaceOffImage(row.actorImage, "actor")
+  const posterUrl = upgradeFaceOffImage(row.posterUrl, "poster")
+  const imageUrl = portraitUrl ?? posterUrl
   if (!imageUrl) return
   const subtitle = row.character ? `${row.character} · ${row.movieYear}` : String(row.movieYear)
-  const metadata = performanceMetadata(row)
+  const metadata = performanceMetadata(row, portraitUrl, posterUrl)
   await prisma.faceOffEntity.upsert({
     where: { performanceId: row.id },
     create: {
@@ -192,7 +184,7 @@ async function upsertActorsFromPerformances(rows: PerformanceRow[]): Promise<voi
   }
 
   for (const row of byActor.values()) {
-    const imageUrl = upgradeImage(row.actorImage, "actor")
+    const imageUrl = upgradeFaceOffImage(row.actorImage, "actor")
     if (!imageUrl) continue
     const subtitle = row.movieTitle ? `Known for ${row.movieTitle}` : "Actor"
     await prisma.faceOffEntity.upsert({

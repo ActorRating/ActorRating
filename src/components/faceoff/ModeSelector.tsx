@@ -2,10 +2,10 @@
 
 import type { FaceOffModeName } from "@/lib/faceoff/constants"
 
-const OPTIONS: Array<{ id: FaceOffModeName; label: string }> = [
-  { id: "performance", label: "Performances" },
-  { id: "actor", label: "Actors" },
-  { id: "mixed", label: "Mixed" },
+const OPTIONS: Array<{ id: FaceOffModeName; label: string; short: string }> = [
+  { id: "performance", label: "Performances", short: "Perf." },
+  { id: "actor", label: "Actors", short: "Actors" },
+  { id: "mixed", label: "Mixed", short: "Mixed" },
 ]
 
 export function ModeSelector({
@@ -28,11 +28,12 @@ export function ModeSelector({
             disabled={disabled}
             aria-pressed={active}
             onClick={() => onChange(option.id)}
-            className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold rounded-[5px] min-h-8 ${
+            className={`px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold rounded-[5px] min-h-8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] ${
               active ? "bg-white text-black" : "text-zinc-400 hover:text-white"
             } disabled:opacity-50`}
           >
-            {option.label}
+            <span className="sm:hidden">{option.short}</span>
+            <span className="hidden sm:inline">{option.label}</span>
           </button>
         )
       })}

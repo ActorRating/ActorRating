@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { FaceOffHeader } from "@/components/faceoff/FaceOffHeader"
 import { MatchupCard } from "@/components/faceoff/MatchupCard"
 import { ResultsReveal } from "@/components/faceoff/ResultsReveal"
@@ -10,6 +11,8 @@ import { SwipeControls } from "@/components/faceoff/SwipeControls"
 import { EmptyState, ErrorState, LoadingState } from "@/components/faceoff/states"
 import { trackFaceOff } from "@/lib/analytics"
 import type { FaceOffModeName } from "@/lib/faceoff/constants"
+import { shouldCommitSwipe } from "@/lib/faceoff/gesture"
+import { confirmedChoiceCount, motionMs, winnerForSide } from "@/lib/faceoff/pairs"
 import type { FaceOffChoiceSummary, FaceOffPublicMatchup, FaceOffRankSnippet } from "@/lib/faceoff/types"
 
 type Status = "loading" | "ready" | "submitting" | "reveal" | "error" | "empty"
@@ -22,7 +25,7 @@ type ResultsPayload = {
   developing: boolean
 }
 
-const SWIPE_THRESHOLD = 88
+const HINT_KEY = "ar-faceoff-swipe-hint"
 
 function usePrefersReducedMotion() {
   const [reduce, setReduce] = useState(false)
@@ -36,6 +39,15 @@ function usePrefersReducedMotion() {
   return reduce
 }
 
+function warmImages(matchup: FaceOffPublicMatchup | null) {
+  if (!matchup || typeof window === "undefined") return
+  for (const url of [matchup.left.imageUrl, matchup.right.imageUrl]) {
+    if (!url) continue
+    const image = new window.Image()
+    image.src = url
+  }
+}
+
 export function FaceOffExperience({
   shareId = null,
 }: {
@@ -46,16 +58,24 @@ export function FaceOffExperience({
   const [choiceCount, setChoiceCount] = useState(0)
   const [matchup, setMatchup] = useState<FaceOffPublicMatchup | null>(null)
   const [message, setMessage] = useState("Could not load Face-Off.")
+  const [banner, setBanner] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [results, setResults] = useState<ResultsPayload | null>(null)
   const [drag, setDrag] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [picked, setPicked] = useState<"left" | "right" | null>(null)
+  const [showHint, setShowHint] = useState(false)
   const reduceMotion = usePrefersReducedMotion()
   const requestId = useRef(0)
   const prefetch = useRef<FaceOffPublicMatchup | null>(null)
-  const touch = useRef<{ x: number; y: number; horizontal: boolean } | null>(null)
+  const touch = useRef<{ x: number; y: number; at: number; horizontal: boolean } | null>(null)
   const voting = useRef(false)
+  const suppressClick = useRef(false)
 
   const applyMatchup = useCallback((next: FaceOffPublicMatchup | null, empty?: string | null) => {
+    setPicked(null)
+    setDrag(0)
+    setDragging(false)
     if (!next) {
       setMatchup(null)
       setMessage(empty || "No matchup is available.")
@@ -64,16 +84,20 @@ export function FaceOffExperience({
     }
     setMatchup(next)
     setStatus("ready")
-    trackFaceOff(
-      "faceoff_matchup_viewed",
-      { mode: next.mode, auth: "guest" },
-      `view:${next.id}`,
-    )
+    setBanner(null)
+    trackFaceOff("faceoff_matchup_viewed", { mode: next.mode, auth: "guest" }, `view:${next.id}`)
   }, [])
 
-  const loadNext = useCallback(async (nextMode: FaceOffModeName, share?: string | null) => {
+  const loadNext = useCallback(async (
+    nextMode: FaceOffModeName,
+    share?: string | null,
+    options?: { silent?: boolean },
+  ) => {
     const id = ++requestId.current
-    setStatus("loading")
+    if (!options?.silent) {
+      setMatchup(null)
+      setStatus("loading")
+    }
     prefetch.current = null
     const params = new URLSearchParams({ mode: nextMode })
     if (share) params.set("share", share)
@@ -95,6 +119,7 @@ export function FaceOffExperience({
         await loadNext(nextMode)
         return
       }
+      warmImages(data.matchup ?? null)
       applyMatchup(data.matchup ?? null, data.empty)
     } catch {
       if (id !== requestId.current) return
@@ -102,6 +127,14 @@ export function FaceOffExperience({
       setStatus("error")
     }
   }, [applyMatchup])
+
+  useEffect(() => {
+    try {
+      setShowHint(window.sessionStorage.getItem(HINT_KEY) !== "1")
+    } catch {
+      setShowHint(true)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -149,18 +182,34 @@ export function FaceOffExperience({
       .then(async (res) => {
         if (!res.ok) return
         const data = await res.json()
-        if (data.matchup && data.matchup.id !== currentId) prefetch.current = data.matchup
+        if (data.matchup && data.matchup.id !== currentId) {
+          prefetch.current = data.matchup
+          warmImages(data.matchup)
+        }
       })
       .catch(() => {})
     return () => controller.abort()
   }, [status, matchup, mode])
 
+  const dismissHint = useCallback(() => {
+    setShowHint(false)
+    try {
+      window.sessionStorage.setItem(HINT_KEY, "1")
+    } catch {
+      /* private mode */
+    }
+  }, [])
+
   const choose = useCallback(async (side: "left" | "right") => {
     if (!matchup || status !== "ready" || voting.current) return
     voting.current = true
-    setStatus("submitting")
+    setPicked(side)
     setDrag(0)
-    const winnerId = side === "left" ? matchup.left.id : matchup.right.id
+    setDragging(false)
+    setStatus("submitting")
+    setBanner(null)
+    dismissHint()
+    const winnerId = winnerForSide(side, matchup.left.id, matchup.right.id)
     trackFaceOff("faceoff_vote_submitted", { mode: matchup.mode, choice_number: choiceCount + 1 }, `submit:${matchup.id}`)
     try {
       const res = await fetch("/api/faceoff/vote", {
@@ -170,26 +219,28 @@ export function FaceOffExperience({
         body: JSON.stringify({ matchupId: matchup.id, winnerId }),
       })
       const data = await res.json().catch(() => ({}))
+      const nextCount = confirmedChoiceCount(choiceCount, res.ok, data.choiceCount)
       if (!res.ok) {
-        setMessage(data.error || "That vote was not accepted.")
+        setChoiceCount(nextCount)
+        setPicked(null)
+        setBanner(data.error || "That vote was not accepted.")
+        voting.current = false
         if (res.status === 409) {
           prefetch.current = null
-          voting.current = false
-          await loadNext(mode)
+          await loadNext(mode, null, { silent: true })
           return
         }
         setStatus("ready")
-        voting.current = false
         return
       }
-      setChoiceCount(data.choiceCount ?? choiceCount)
+      setChoiceCount(nextCount)
       if (data.reveal) {
         const resultsRes = await fetch("/api/faceoff/results", { credentials: "same-origin" })
         const payload = resultsRes.ok ? await resultsRes.json() : null
         if (payload?.choices) {
           setResults(payload)
           setStatus("reveal")
-          trackFaceOff("faceoff_results_viewed", { choice_number: data.choiceCount }, `results:${data.choiceCount}`)
+          trackFaceOff("faceoff_results_viewed", { choice_number: nextCount }, `results:${nextCount}`)
           voting.current = false
           return
         }
@@ -201,13 +252,47 @@ export function FaceOffExperience({
         applyMatchup(queued)
         return
       }
-      await loadNext(mode)
+      await loadNext(mode, null, { silent: true })
     } catch {
-      setMessage("The vote did not go through. You can try this matchup again.")
+      setPicked(null)
+      setBanner("The vote did not go through. You can try this matchup again.")
       setStatus("ready")
       voting.current = false
     }
-  }, [applyMatchup, choiceCount, loadNext, matchup, mode, status])
+  }, [applyMatchup, choiceCount, dismissHint, loadNext, matchup, mode, status])
+
+  const skip = useCallback(async () => {
+    if (!matchup || status !== "ready" || voting.current) return
+    voting.current = true
+    setStatus("submitting")
+    setBanner(null)
+    setDrag(0)
+    dismissHint()
+    try {
+      const res = await fetch("/api/faceoff/skip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ matchupId: matchup.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setBanner(data.error || "Could not skip that matchup.")
+        setStatus("ready")
+        voting.current = false
+        return
+      }
+      prefetch.current = null
+      voting.current = false
+      if (data.mode === "actor" || data.mode === "performance" || data.mode === "mixed") setMode(data.mode)
+      warmImages(data.matchup ?? null)
+      applyMatchup(data.matchup ?? null, data.empty)
+    } catch {
+      setBanner("Skip did not go through. This matchup is unchanged.")
+      setStatus("ready")
+      voting.current = false
+    }
+  }, [applyMatchup, dismissHint, matchup, status])
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -230,38 +315,51 @@ export function FaceOffExperience({
   function onTouchStart(event: React.TouchEvent) {
     if (status !== "ready") return
     const point = event.changedTouches[0]
-    touch.current = { x: point.clientX, y: point.clientY, horizontal: false }
+    touch.current = { x: point.clientX, y: point.clientY, at: performance.now(), horizontal: false }
   }
   function onTouchMove(event: React.TouchEvent) {
-    if (!touch.current || status !== "ready") return
+    const origin = touch.current
+    if (!origin || status !== "ready") return
     const point = event.changedTouches[0]
-    const dx = point.clientX - touch.current.x
-    const dy = point.clientY - touch.current.y
-    if (!touch.current.horizontal) {
+    const dx = point.clientX - origin.x
+    const dy = point.clientY - origin.y
+    if (!origin.horizontal) {
       if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
         touch.current = null
         setDrag(0)
+        setDragging(false)
         return
       }
       if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-        touch.current.horizontal = true
+        origin.horizontal = true
+        setDragging(true)
       }
     }
-    if (touch.current?.horizontal && !reduceMotion) setDrag(dx)
+    if (origin.horizontal) setDrag(Math.max(-110, Math.min(110, dx)))
   }
   function onTouchEnd(event: React.TouchEvent) {
     const origin = touch.current
+    touch.current = null
+    setDragging(false)
     if (!origin?.horizontal) {
-      touch.current = null
       setDrag(0)
       return
     }
     const point = event.changedTouches[0]
     const dx = point ? point.clientX - origin.x : 0
-    touch.current = null
+    if (Math.abs(dx) > 10) suppressClick.current = true
+    const side = shouldCommitSwipe(dx, performance.now() - origin.at)
     setDrag(0)
-    if (Math.abs(dx) < SWIPE_THRESHOLD) return
-    void choose(dx < 0 ? "left" : "right")
+    if (!side) return
+    void choose(side)
+  }
+
+  function onCardChoose(side: "left" | "right") {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      return
+    }
+    void choose(side)
   }
 
   async function onMode(next: FaceOffModeName) {
@@ -277,77 +375,111 @@ export function FaceOffExperience({
     await loadNext(next)
   }
 
+  const stageVisible = Boolean(matchup) && status !== "reveal" && status !== "error" && status !== "empty"
+  const snapMs = motionMs(reduceMotion, dragging ? 0 : 180)
+
   return (
-    <div className="min-h-[100dvh] bg-black text-white pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black text-white">
       <FaceOffHeader mode={mode} choiceCount={choiceCount} disabled={status === "submitting"} onMode={(next) => void onMode(next)} />
-      <main className="mx-auto flex w-full max-w-5xl flex-col px-4 pt-4 sm:px-6 sm:pt-8">
-        {notice ? <p className="mb-4 text-center text-sm text-zinc-400">{notice}</p> : null}
-        {status === "loading" || status === "submitting" && !matchup ? <LoadingState /> : null}
-        {status === "error" ? <ErrorState message={message} onRetry={() => void loadNext(mode)} /> : null}
-        {status === "empty" ? <EmptyState message={message} onSwitch={() => void onMode("mixed")} /> : null}
-        {status === "reveal" && results ? (
-          <ResultsReveal
-            {...results}
-            onContinue={() => {
-              trackFaceOff("faceoff_continued", { choice_number: choiceCount }, `continue:${choiceCount}`)
-              setResults(null)
-              const queued = prefetch.current
-              prefetch.current = null
-              if (queued) applyMatchup(queued)
-              else void loadNext(mode)
-            }}
-          />
+      <div className="flex min-h-0 flex-1 flex-col">
+        {notice ? <p className="px-4 pt-2 text-center text-xs text-zinc-400">{notice}</p> : null}
+        {banner && stageVisible ? (
+          <p className="px-4 pt-2 text-center text-xs text-zinc-300" role="alert">{banner}</p>
         ) : null}
-        {matchup && (status === "ready" || status === "submitting") ? (
-          <div className="flex flex-col gap-4">
-            <div
-              className="relative grid grid-cols-2 items-start gap-3 sm:gap-10"
-              style={{ touchAction: "pan-y" }}
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-              onTouchCancel={() => {
-                touch.current = null
-                setDrag(0)
+        {status === "reveal" && results ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ResultsReveal
+              {...results}
+              onContinue={() => {
+                trackFaceOff("faceoff_continued", { choice_number: choiceCount }, `continue:${choiceCount}`)
+                setResults(null)
+                const queued = prefetch.current
+                prefetch.current = null
+                if (queued) applyMatchup(queued)
+                else void loadNext(mode, null, { silent: true })
               }}
-            >
-              <MatchupCard
-                entity={matchup.left}
-                disabled={status !== "ready"}
-                offsetX={drag < 0 ? drag * 0.35 : 0}
-                onChoose={() => void choose("left")}
-              />
-              <div className="pointer-events-none absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 text-xs sm:text-sm tracking-[0.2em] text-[#FFD700]">
-                VS
-              </div>
-              <MatchupCard
-                entity={matchup.right}
-                disabled={status !== "ready"}
-                offsetX={drag > 0 ? drag * 0.35 : 0}
-                onChoose={() => void choose("right")}
-              />
-            </div>
-            <p className="text-center text-[11px] text-zinc-500">
-              {status === "submitting"
-                ? "Recording your choice"
-                : "Swipe left for the left choice, swipe right for the right choice. A short swipe snaps back."}
-            </p>
-            <SwipeControls
-              leftName={matchup.left.name}
-              rightName={matchup.right.name}
-              disabled={status !== "ready"}
-              onLeft={() => void choose("left")}
-              onRight={() => void choose("right")}
             />
-            <div className="flex items-center justify-center gap-4 pb-6">
-              <ShareButton leftId={matchup.left.id} rightId={matchup.right.id} disabled={status !== "ready"} />
-              <Link href="/faceoff/leaderboard" className="text-sm text-zinc-500 hover:text-[#FFD700] md:hidden">
-                Rankings
-              </Link>
+          </div>
+        ) : null}
+        {status === "loading" && !matchup ? (
+          <div className="flex flex-1 items-center px-3">
+            <LoadingState />
+          </div>
+        ) : null}
+        {status === "error" ? (
+          <ErrorState message={message} onRetry={() => void loadNext(mode)} />
+        ) : null}
+        {status === "empty" ? (
+          <EmptyState message={message} onSwitch={() => void onMode("mixed")} />
+        ) : null}
+        {stageVisible && matchup ? (
+          <div className="flex min-h-0 flex-1 flex-col justify-center px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-center">
+                <motion.div
+                  key={matchup.id}
+                  className="w-full"
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: motionMs(reduceMotion, 140) / 1000, ease: "easeOut" }}
+                >
+                  <div
+                    className="mx-auto grid w-full max-w-[460px] grid-cols-[minmax(0,1fr)_1.75rem_minmax(0,1fr)] items-start sm:max-w-[520px]"
+                    style={{
+                      transform: drag ? `translate3d(${drag}px,0,0)` : undefined,
+                      transition: `transform ${snapMs}ms cubic-bezier(.2,.8,.2,1)`,
+                      touchAction: "pan-y",
+                    }}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onTouchCancel={() => {
+                      touch.current = null
+                      setDrag(0)
+                      setDragging(false)
+                    }}
+                  >
+                    <MatchupCard
+                      entity={matchup.left}
+                      disabled={status !== "ready"}
+                      priority
+                      emphasis={picked === "left" ? "chosen" : picked === "right" ? "dim" : "idle"}
+                      onChoose={() => onCardChoose("left")}
+                    />
+                    <div className="pointer-events-none pt-[18%] text-center text-[10px] tracking-[0.22em] text-[#FFD700]/70" aria-hidden>
+                      VS
+                    </div>
+                    <MatchupCard
+                      entity={matchup.right}
+                      disabled={status !== "ready"}
+                      priority
+                      emphasis={picked === "right" ? "chosen" : picked === "left" ? "dim" : "idle"}
+                      onChoose={() => onCardChoose("right")}
+                    />
+                  </div>
+                </motion.div>
+            </div>
+            <div className="pt-3">
+              {showHint ? (
+                <p className="mb-1 text-center text-[11px] tracking-wide text-zinc-500">Swipe to choose</p>
+              ) : null}
+              <SwipeControls
+                leftName={matchup.left.name}
+                rightName={matchup.right.name}
+                disabled={status !== "ready"}
+                onLeft={() => onCardChoose("left")}
+                onRight={() => onCardChoose("right")}
+                onSkip={() => void skip()}
+              />
+              <div className="mt-0.5 flex items-center justify-center gap-4 pb-1">
+                <ShareButton leftId={matchup.left.id} rightId={matchup.right.id} disabled={status !== "ready"} />
+                <Link href="/faceoff/leaderboard" className="text-xs text-zinc-500 hover:text-[#FFD700] md:hidden">
+                  Rankings
+                </Link>
+              </div>
             </div>
           </div>
         ) : null}
-      </main>
+      </div>
     </div>
   )
 }

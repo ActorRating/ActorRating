@@ -147,17 +147,12 @@ function HeroPrimaryCta({ faceoffEnabled = false }: { faceoffEnabled?: boolean }
           <Link
             href="/faceoff"
             onClick={() => trackFaceOff("faceoff_homepage_click", { source: "homepage" }, "homepage-cta")}
-            className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-sm sm:text-base font-bold tracking-wide text-[#FFE27A] border border-[#FFD700]/80 bg-[#FFD700]/12 shadow-[0_0_28px_rgba(255,184,0,0.16)] hover:bg-[#FFD700]/22 hover:text-[#FFF6D0] transition-colors min-h-[44px]"
           >
             Play Face-Off
+            <FaArrowRight className="w-3.5 h-3.5" />
           </Link>
         ) : null}
-        <Link
-          href="/auth/signin"
-          className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
-        >
-          Sign in
-        </Link>
       </div>
       {faceoffEnabled ? (
         <p className="text-sm text-zinc-500">Two performances. One winner.</p>

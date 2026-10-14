@@ -1,6 +1,7 @@
 import "server-only"
 import { prisma } from "@/lib/prisma"
 import { FACEOFF_MIN_COMPARISONS, FACEOFF_REVEAL_EVERY } from "@/lib/faceoff/constants"
+import { hydrateFaceOffImages } from "@/lib/faceoff/portraits"
 import { readEntityMetadata } from "@/lib/faceoff/session"
 import type { FaceOffChoiceSummary, FaceOffRankSnippet } from "@/lib/faceoff/types"
 
@@ -20,6 +21,7 @@ export async function sessionResults(sessionId: string) {
       createdAt: vote.createdAt.toISOString(),
     }
   })
+  await hydrateFaceOffImages(choices.flatMap((choice) => [choice.winner, choice.loser]))
 
   const rankedIds = [...new Set(choices.map((choice) => choice.winner.id))]
   const snippets: FaceOffRankSnippet[] = []

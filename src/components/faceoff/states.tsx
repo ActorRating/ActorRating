@@ -6,22 +6,21 @@ const DISPLAY = {
 
 export function LoadingState() {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-8 w-full max-w-5xl mx-auto" aria-busy="true" aria-live="polite">
+    <div className="mx-auto grid w-full max-w-[460px] grid-cols-2 gap-3 sm:max-w-[520px]" aria-busy="true" aria-live="polite">
       {[0, 1].map((key) => (
-        <div key={key} className="animate-pulse">
-          <div className="aspect-[2/3] rounded-md bg-white/[0.06] border border-white/10" />
-          <div className="mt-3 h-4 w-2/3 mx-auto rounded bg-white/[0.06]" />
-          <div className="mt-2 h-3 w-1/2 mx-auto rounded bg-white/[0.04]" />
+        <div key={key} className="animate-pulse motion-reduce:animate-none">
+          <div className="mx-auto aspect-[3/4] w-[min(100%,calc(min(28dvh,196px)*0.75))] rounded-md border border-white/10 bg-white/[0.06] sm:w-[min(100%,calc(min(32dvh,240px)*0.75))] lg:w-[188px]" />
+          <div className="mx-auto mt-2 h-3.5 w-2/3 rounded bg-white/[0.06]" />
+          <div className="mx-auto mt-1.5 h-2.5 w-1/2 rounded bg-white/[0.04]" />
         </div>
       ))}
-      <p className="col-span-2 text-center text-sm text-zinc-500">Loading a matchup</p>
     </div>
   )
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="max-w-md mx-auto text-center px-6 py-16">
+    <div className="max-w-md mx-auto text-center px-6 py-8">
       <h2 className="text-3xl text-white" style={DISPLAY}>Something interrupted the matchup.</h2>
       <p className="mt-3 text-zinc-400 text-sm leading-relaxed">{message}</p>
       <button
@@ -37,7 +36,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
 
 export function EmptyState({ message, onSwitch }: { message: string; onSwitch: () => void }) {
   return (
-    <div className="max-w-md mx-auto text-center px-6 py-16">
+    <div className="max-w-md mx-auto text-center px-6 py-8">
       <h2 className="text-3xl text-white" style={DISPLAY}>This mode needs a deeper bench.</h2>
       <p className="mt-3 text-zinc-400 text-sm leading-relaxed">{message}</p>
       <button

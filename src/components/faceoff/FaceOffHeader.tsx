@@ -18,7 +18,7 @@ export function FaceOffHeader({
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/90 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-3 py-2 sm:px-4">
         <div className="flex items-center gap-2 shrink-0">
           <Link href="/" className="text-sm font-semibold tracking-tight text-white">
             ActorRating

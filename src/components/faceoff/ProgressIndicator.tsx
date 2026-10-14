@@ -10,7 +10,7 @@ export function ProgressIndicator({ choiceCount }: { choiceCount: number }) {
         {Array.from({ length: 5 }, (_, index) => (
           <span
             key={index}
-            className={`h-1 w-3 rounded-full ${index < step ? "bg-[#FFD700]" : "bg-white/15"}`}
+            className={`h-1 w-3 rounded-full transition-colors duration-200 motion-reduce:transition-none ${index < step ? "bg-[#FFD700]" : "bg-white/15"}`}
           />
         ))}
       </span>
