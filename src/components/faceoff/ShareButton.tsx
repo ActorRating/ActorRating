@@ -12,7 +12,7 @@ export function ShareButton({
   rightId: string
   disabled?: boolean
 }) {
-  const [label, setLabel] = useState("Share matchup")
+  const [label, setLabel] = useState("Share")
   async function share() {
     try {
       const res = await fetch("/api/faceoff/share", {
@@ -45,7 +45,8 @@ export function ShareButton({
       type="button"
       disabled={disabled}
       onClick={() => void share()}
-      className="text-sm text-zinc-400 underline-offset-4 hover:text-[#FFD700] hover:underline disabled:opacity-50"
+      aria-label="Share this matchup"
+      className="flex min-h-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-2 text-xs font-semibold text-zinc-300 hover:border-[#FFD700]/40 hover:text-[#FFD700] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] disabled:opacity-40"
     >
       {label}
     </button>

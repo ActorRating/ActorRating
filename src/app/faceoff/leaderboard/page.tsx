@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Leaderboard } from "@/components/faceoff/Leaderboard"
+import { LandingLayout } from "@/components/layout"
 import { isFaceOffEnabled } from "@/lib/faceoff/constants"
 import { faceOffLeaderboard } from "@/lib/faceoff/leaderboard"
 
@@ -33,13 +34,15 @@ export default async function FaceOffLeaderboardPage() {
     /* Rankings stay empty until the database migration is applied. */
   }
   return (
-    <main className="min-h-screen bg-black text-white">
-      <Leaderboard
-        initialType="actor"
-        initialRows={board.rows}
-        initialTotal={board.total}
-        minimumComparisons={board.minimumComparisons}
-      />
-    </main>
+    <LandingLayout>
+      <div className="min-h-[70vh] bg-black text-white">
+        <Leaderboard
+          initialType="actor"
+          initialRows={board.rows}
+          initialTotal={board.total}
+          minimumComparisons={board.minimumComparisons}
+        />
+      </div>
+    </LandingLayout>
   )
 }

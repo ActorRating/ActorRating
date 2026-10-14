@@ -6,14 +6,12 @@ export function SwipeControls({
   disabled,
   onLeft,
   onRight,
-  onSkip,
 }: {
   leftName: string
   rightName: string
   disabled?: boolean
   onLeft: () => void
   onRight: () => void
-  onSkip: () => void
 }) {
   const button =
     "flex min-h-11 min-w-0 items-center justify-center overflow-hidden rounded-md border border-[#FFD700]/40 bg-[#FFD700]/10 px-2 text-sm font-semibold text-[#FFE9A0] hover:bg-[#FFD700]/18 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] active:scale-[0.98] disabled:opacity-40 motion-reduce:active:scale-100"
@@ -31,16 +29,6 @@ export function SwipeControls({
             <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-[#FFD700]/70">Choose</span>
             <span className="block truncate">{rightName}</span>
           </span>
-        </button>
-      </div>
-      <div className="mt-1.5 flex justify-center">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onSkip}
-          className="min-h-11 px-4 text-sm text-zinc-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] disabled:opacity-40"
-        >
-          Skip
         </button>
       </div>
     </div>

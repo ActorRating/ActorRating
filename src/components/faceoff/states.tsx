@@ -9,7 +9,7 @@ export function LoadingState() {
     <div className="mx-auto grid w-full max-w-[460px] grid-cols-2 gap-3 sm:max-w-[520px]" aria-busy="true" aria-live="polite">
       {[0, 1].map((key) => (
         <div key={key} className="animate-pulse motion-reduce:animate-none">
-          <div className="mx-auto aspect-[3/4] w-[min(100%,calc(min(28dvh,196px)*0.75))] rounded-md border border-white/10 bg-white/[0.06] sm:w-[min(100%,calc(min(32dvh,240px)*0.75))] lg:w-[188px]" />
+          <div className="mx-auto aspect-[3/4] w-[min(100%,calc(min(22dvh,168px)*0.75))] rounded-md border border-white/10 bg-white/[0.06] sm:w-[min(100%,calc(min(26dvh,210px)*0.75))] lg:w-[188px]" />
           <div className="mx-auto mt-2 h-3.5 w-2/3 rounded bg-white/[0.06]" />
           <div className="mx-auto mt-1.5 h-2.5 w-1/2 rounded bg-white/[0.04]" />
         </div>

@@ -49,8 +49,10 @@ export function MatchupCard({
         className="group block w-full text-left rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] disabled:cursor-wait"
       >
         <div
-          className={`relative mx-auto aspect-[3/4] w-[min(100%,calc(min(28dvh,196px)*0.75))] overflow-hidden rounded-md border bg-zinc-950 sm:w-[min(100%,calc(min(32dvh,240px)*0.75))] lg:w-[188px] ${
-            emphasis === "chosen" ? "border-[#FFD700]" : "border-white/10"
+          className={`relative mx-auto aspect-[3/4] w-[min(100%,calc(min(22dvh,168px)*0.75))] overflow-hidden rounded-md border bg-zinc-950 shadow-[0_16px_40px_rgba(0,0,0,0.45)] sm:w-[min(100%,calc(min(26dvh,210px)*0.75))] lg:w-[188px] ${
+            emphasis === "chosen"
+              ? "border-[#FFD700] shadow-[0_0_0_1px_rgba(255,215,0,0.35),0_18px_40px_rgba(0,0,0,0.5)]"
+              : "border-white/10"
           }`}
         >
           {showImage ? (

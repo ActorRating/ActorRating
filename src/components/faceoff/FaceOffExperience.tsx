@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { HomeNavbar } from "@/components/layout/HomeNavbar"
 import { FaceOffHeader } from "@/components/faceoff/FaceOffHeader"
 import { MatchupCard } from "@/components/faceoff/MatchupCard"
 import { ResultsReveal } from "@/components/faceoff/ResultsReveal"
@@ -379,9 +380,12 @@ export function FaceOffExperience({
   const snapMs = motionMs(reduceMotion, dragging ? 0 : 180)
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black text-white">
+    <div className="flex h-[100dvh] flex-col overflow-x-clip bg-black text-white">
+      <div className="relative z-50 shrink-0">
+        <HomeNavbar />
+      </div>
       <FaceOffHeader mode={mode} choiceCount={choiceCount} disabled={status === "submitting"} onMode={(next) => void onMode(next)} />
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {notice ? <p className="px-4 pt-2 text-center text-xs text-zinc-400">{notice}</p> : null}
         {banner && stageVisible ? (
           <p className="px-4 pt-2 text-center text-xs text-zinc-300" role="alert">{banner}</p>
@@ -417,13 +421,14 @@ export function FaceOffExperience({
             <div className="flex items-center justify-center">
                 <motion.div
                   key={matchup.id}
-                  className="w-full"
+                  className="relative w-full"
                   initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: motionMs(reduceMotion, 140) / 1000, ease: "easeOut" }}
                 >
+                  <div className="pointer-events-none absolute left-1/2 top-8 h-40 w-56 -translate-x-1/2 bg-[radial-gradient(circle,rgba(255,196,60,0.16),transparent_70%)]" aria-hidden />
                   <div
-                    className="mx-auto grid w-full max-w-[460px] grid-cols-[minmax(0,1fr)_1.75rem_minmax(0,1fr)] items-start sm:max-w-[520px]"
+                    className="relative mx-auto grid w-full max-w-[460px] grid-cols-[minmax(0,1fr)_2.25rem_minmax(0,1fr)] items-start sm:max-w-[520px]"
                     style={{
                       transform: drag ? `translate3d(${drag}px,0,0)` : undefined,
                       transition: `transform ${snapMs}ms cubic-bezier(.2,.8,.2,1)`,
@@ -445,8 +450,10 @@ export function FaceOffExperience({
                       emphasis={picked === "left" ? "chosen" : picked === "right" ? "dim" : "idle"}
                       onChoose={() => onCardChoose("left")}
                     />
-                    <div className="pointer-events-none pt-[18%] text-center text-[10px] tracking-[0.22em] text-[#FFD700]/70" aria-hidden>
-                      VS
+                    <div className="pointer-events-none flex justify-center pt-[min(11dvh,78px)]" aria-hidden>
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#FFD700]/45 bg-black text-[9px] tracking-[0.16em] text-[#FFD700] shadow-[0_0_18px_rgba(255,184,0,0.28)]">
+                        VS
+                      </span>
                     </div>
                     <MatchupCard
                       entity={matchup.right}
@@ -468,11 +475,21 @@ export function FaceOffExperience({
                 disabled={status !== "ready"}
                 onLeft={() => onCardChoose("left")}
                 onRight={() => onCardChoose("right")}
-                onSkip={() => void skip()}
               />
-              <div className="mt-0.5 flex items-center justify-center gap-4 pb-1">
+              <div className="mx-auto mt-2 grid w-full max-w-[460px] grid-cols-3 gap-2 sm:max-w-[520px]">
+                <button
+                  type="button"
+                  disabled={status !== "ready"}
+                  onClick={() => void skip()}
+                  className="flex min-h-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-xs font-semibold text-zinc-300 hover:border-white/25 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700] disabled:opacity-40"
+                >
+                  Skip
+                </button>
                 <ShareButton leftId={matchup.left.id} rightId={matchup.right.id} disabled={status !== "ready"} />
-                <Link href="/faceoff/leaderboard" className="text-xs text-zinc-500 hover:text-[#FFD700] md:hidden">
+                <Link
+                  href="/faceoff/leaderboard"
+                  className="flex min-h-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-xs font-semibold text-zinc-300 hover:border-[#FFD700]/40 hover:text-[#FFD700] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FFD700]"
+                >
                   Rankings
                 </Link>
               </div>
