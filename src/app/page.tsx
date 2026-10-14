@@ -17,6 +17,7 @@ import {
 } from "@/lib/editorial/load-editorial";
 import { withEditorialCovers } from "@/lib/editorial/enrich-covers";
 import { auth } from "@/auth";
+import { isFaceOffEnabled } from "@/lib/faceoff/constants";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -190,6 +191,7 @@ export default async function Home() {
           initialRecent={initialRecent}
           featuredHero={featuredHero}
           weeklyFeatured={weeklyFeatured}
+          faceoffEnabled={isFaceOffEnabled()}
         />
         <HomeEditorialRails stories={recentStories} news={recentNews} />
         <HomeSeoLinkSections />

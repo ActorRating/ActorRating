@@ -46,6 +46,7 @@
     "journal:audit-covers": "tsx scripts/audit-journal-covers.ts",
     "journal:cron": "node scripts/run-site-journal-cron.js",
     "catalog:cron": "node scripts/run-catalog-sync-cron.js",
+    "faceoff:sync": "tsx scripts/sync-faceoff-pool.ts",
     "sitemaps:cron": "node scripts/run-generate-sitemaps-cron.js"
   },
   "dependencies": {

@@ -134,6 +134,16 @@ const FIRST_PARTY_EVENT_NAMES = new Set([
   "rating_submitted",
   "signup_started",
   "search_used",
+  "faceoff_started",
+  "faceoff_matchup_viewed",
+  "faceoff_vote_submitted",
+  "faceoff_results_viewed",
+  "faceoff_continued",
+  "faceoff_shared",
+  "faceoff_signup_started",
+  "faceoff_signup_completed",
+  "faceoff_returned",
+  "faceoff_homepage_click",
 ])
 
 function beaconFirstPartyEvent(
@@ -378,6 +388,37 @@ export function trackFirstRatingComplete() {
       localStorage.removeItem(FIRST_RATING_ANALYTICS_KEY)
     })
     .catch(() => {})
+}
+
+const faceOffDedupe = new Set<string>()
+
+export function trackFaceOff(
+  name:
+    | "faceoff_started"
+    | "faceoff_matchup_viewed"
+    | "faceoff_vote_submitted"
+    | "faceoff_results_viewed"
+    | "faceoff_continued"
+    | "faceoff_shared"
+    | "faceoff_signup_started"
+    | "faceoff_signup_completed"
+    | "faceoff_returned"
+    | "faceoff_homepage_click",
+  properties: Record<string, string | number | boolean | null | undefined> = {},
+  dedupeKey?: string,
+) {
+  if (dedupeKey) {
+    if (faceOffDedupe.has(dedupeKey)) return
+    faceOffDedupe.add(dedupeKey)
+  }
+  const safe: Record<string, string | number | boolean | null> = {}
+  for (const [key, value] of Object.entries(properties)) {
+    if (value == null) continue
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      safe[key] = value
+    }
+  }
+  trackEventWithAttribution(name, name, name, safe)
 }
 
 export function getRatingTiming(options: {

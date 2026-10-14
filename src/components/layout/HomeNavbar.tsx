@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User } from 'lucide-react'
 import { trackSearchUsed } from '@/lib/analytics'
+import { isFaceOffUiEnabled } from '@/lib/faceoff/constants'
 
 const NAV_LINKS = [
   { label: 'Discover', href: '/discover' },
@@ -16,6 +17,7 @@ const NAV_LINKS = [
   { label: 'Forum', href: '/forum' },
   { label: 'Stories', href: '/stories' },
   { label: 'News', href: '/news' },
+  ...(isFaceOffUiEnabled() ? [{ label: 'Face-Off', href: '/faceoff' }] : []),
 ] as const
 
 const DESKTOP_LINK_CLASS =

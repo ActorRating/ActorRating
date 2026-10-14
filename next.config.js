@@ -3,6 +3,12 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_GOOGLE_OAUTH_AVAILABLE:
       process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? "1" : "",
+    NEXT_PUBLIC_FACEOFF_ENABLED:
+      process.env.FACEOFF_ENABLED === "false" ||
+      process.env.FACEOFF_ENABLED === "0" ||
+      process.env.FACEOFF_ENABLED === "off"
+        ? "0"
+        : "1",
   },
   eslint: {
     ignoreDuringBuilds: true,

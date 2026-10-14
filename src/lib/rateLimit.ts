@@ -16,6 +16,11 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   usernameCheck: { windowMs: 60 * 1000, maxRequests: 45 },
   profileUpdateCooldown: { windowMs: 15 * 1000, maxRequests: 1 },
   usernameCheckCooldown: { windowMs: 2 * 1000, maxRequests: 1 },
+  faceoffSession: { windowMs: 60 * 1000, maxRequests: 30 },
+  faceoffNext: { windowMs: 60 * 1000, maxRequests: 60 },
+  faceoffVote: { windowMs: 60 * 1000, maxRequests: 40 },
+  faceoffVoteHourly: { windowMs: 60 * 60 * 1000, maxRequests: 180 },
+  faceoffPrefs: { windowMs: 60 * 1000, maxRequests: 20 },
 }
 
 function getWindowBucket(windowMs: number): Date {

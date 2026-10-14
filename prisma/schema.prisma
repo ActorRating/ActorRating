@@ -45,6 +45,7 @@ model User {
   ownedInvites InviteCode[] @relation("OwnedInvites")
   usedInvite   InviteCode?  @relation("UsedInvite")
   inviteRedemptions InviteRedemption[]
+  faceOffSessions FaceOffSession[]
 
   @@index([createdAt])
   @@index([email])
@@ -178,6 +179,7 @@ model Actor {
   ratings      Rating[]
   forumThreads ForumThread[]
   editorials   PerformanceEditorial[]
+  faceOffEntity FaceOffEntity?
 
   @@index([name])
   @@index([slug])
@@ -274,6 +276,7 @@ model Performance {
   actor                  Actor           @relation(fields: [actorId], references: [id], onDelete: Cascade)
   movie                  Movie           @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user                   User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faceOffEntity          FaceOffEntity?
 
   @@unique([userId, actorId, movieId])
   @@index([actorId])
@@ -1221,4 +1224,123 @@ model ArieDiscoveryCandidate {
   @@index([ingestStatus])
   @@index([scoutStatus])
   @@index([discoveryPriority])
+}
+
+/// Independent Face-Off pool. Display fields are a cache; Elo is never reset by sync.
+enum FaceOffEntityType {
+  ACTOR
+  PERFORMANCE
+}
+
+enum FaceOffMode {
+  ACTOR
+  PERFORMANCE
+  MIXED
+}
+
+model FaceOffEntity {
+  id               String            @id @default(cuid())
+  entityType       FaceOffEntityType
+  actorId          String?           @unique
+  performanceId    String?           @unique
+  displayName      String
+  imageUrl         String?
+  subtitle         String?
+  metadata         Json?
+  elo              Float             @default(1500)
+  comparisonCount  Int               @default(0)
+  /// Relative popularity signal for matchmaking only. Not an ActorRating score.
+  popularity       Float             @default(0)
+  eligible         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  actor            Actor?            @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  performance      Performance?      @relation(fields: [performanceId], references: [id], onDelete: Cascade)
+  votesAsLeft      FaceOffVote[]     @relation("FaceOffVoteLeft")
+  votesAsRight     FaceOffVote[]     @relation("FaceOffVoteRight")
+  votesWon         FaceOffVote[]     @relation("FaceOffVoteWinner")
+  matchupsAsLeft   FaceOffMatchup[]  @relation("FaceOffMatchupLeft")
+  matchupsAsRight  FaceOffMatchup[]  @relation("FaceOffMatchupRight")
+  sharesAsLeft     FaceOffShare[]    @relation("FaceOffShareLeft")
+  sharesAsRight    FaceOffShare[]    @relation("FaceOffShareRight")
+
+  @@index([entityType, eligible, elo])
+  @@index([entityType, eligible, comparisonCount])
+  @@index([entityType, eligible, popularity])
+}
+
+model FaceOffSession {
+  id                   String             @id @default(cuid())
+  userId               String?
+  /// SHA-256 hex of the raw guest cookie. Never store the raw token.
+  guestTokenHash       String?            @unique
+  mode                 FaceOffMode        @default(MIXED)
+  choiceCount          Int                @default(0)
+  lastComparisonType   FaceOffEntityType?
+  lastPairKey          String?
+  preferences          Json?
+  startedAt            DateTime           @default(now())
+  lastActiveAt         DateTime           @default(now())
+  expiresAt            DateTime
+  linkedAt             DateTime?
+  user                 User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  votes                FaceOffVote[]
+  matchups             FaceOffMatchup[]
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+model FaceOffMatchup {
+  id        String            @id @default(cuid())
+  sessionId String
+  leftId    String
+  rightId   String
+  pairKey   String
+  mode      FaceOffEntityType
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime          @default(now())
+  session   FaceOffSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  left      FaceOffEntity     @relation("FaceOffMatchupLeft", fields: [leftId], references: [id], onDelete: Cascade)
+  right     FaceOffEntity     @relation("FaceOffMatchupRight", fields: [rightId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([sessionId, pairKey])
+  @@index([expiresAt])
+}
+
+model FaceOffVote {
+  id        String         @id @default(cuid())
+  sessionId String
+  leftId    String
+  rightId   String
+  winnerId  String
+  pairKey   String
+  createdAt DateTime       @default(now())
+  session   FaceOffSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  left      FaceOffEntity  @relation("FaceOffVoteLeft", fields: [leftId], references: [id], onDelete: Cascade)
+  right     FaceOffEntity  @relation("FaceOffVoteRight", fields: [rightId], references: [id], onDelete: Cascade)
+  winner    FaceOffEntity  @relation("FaceOffVoteWinner", fields: [winnerId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, pairKey])
+  @@index([sessionId, createdAt])
+  @@index([pairKey])
+}
+
+/// Public, stable matchup link. Does not expose a session.
+model FaceOffShare {
+  id        String            @id @default(cuid())
+  publicId  String            @unique
+  leftId    String
+  rightId   String
+  pairKey   String
+  mode      FaceOffEntityType
+  createdAt DateTime          @default(now())
+  left      FaceOffEntity     @relation("FaceOffShareLeft", fields: [leftId], references: [id], onDelete: Cascade)
+  right     FaceOffEntity     @relation("FaceOffShareRight", fields: [rightId], references: [id], onDelete: Cascade)
+
+  @@unique([pairKey, mode])
+  @@index([leftId])
+  @@index([rightId])
 }

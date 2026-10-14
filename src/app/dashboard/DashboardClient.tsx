@@ -19,6 +19,7 @@ import { UserBadges } from "@/components/dashboard/UserBadges"
 import { UserProgressBar } from "@/components/dashboard/UserProgressBar"
 import { BouncingBallsLoader } from "@/components/ui/BouncingBallsLoader"
 import type { DashboardRating, DashboardActor } from "@/lib/dashboardData"
+import { isFaceOffUiEnabled } from "@/lib/faceoff/constants"
 
 interface Actor {
   id: string
@@ -288,6 +289,13 @@ export default function DashboardClient({
               <p className="text-[15px] sm:text-base text-zinc-500 leading-relaxed max-w-xl mx-auto">
                 Rate performances, discover actors, share your taste.
               </p>
+              {isFaceOffUiEnabled() ? (
+                <p className="mt-4">
+                  <Link href="/faceoff" className="text-sm text-zinc-400 hover:text-[#FFD700] transition-colors">
+                    Play Face-Off — two performances, one winner.
+                  </Link>
+                </p>
+              ) : null}
             </div>
 
             <nav aria-label="Search navigation" className="max-w-xl mx-auto text-left relative z-30">

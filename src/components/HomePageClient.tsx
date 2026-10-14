@@ -32,6 +32,7 @@ import {
   fixedLandingHeroLookupTarget,
   HOME_PRIMARY_RATE_HREF,
 } from "@/lib/home-featured-performance";
+import { trackFaceOff } from "@/lib/analytics";
 import {
   getCurrentWeeklyHeroConfig,
   WEEKLY_FEATURED_SECTION_TITLE,
@@ -127,10 +128,10 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
 }
 
 /** Guest-first: rate before account. Auth stays secondary. */
-function HeroPrimaryCta() {
+function HeroPrimaryCta({ faceoffEnabled = false }: { faceoffEnabled?: boolean }) {
   const router = useRouter();
   return (
-    <div className="flex flex-col items-center gap-3 w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center gap-3 w-full max-w-xl mx-auto">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full">
         <Link
           href={HOME_PRIMARY_RATE_HREF}
@@ -142,6 +143,15 @@ function HeroPrimaryCta() {
           Rate a Performance
           <FaArrowRight className="w-3.5 h-3.5" />
         </Link>
+        {faceoffEnabled ? (
+          <Link
+            href="/faceoff"
+            onClick={() => trackFaceOff("faceoff_homepage_click", { source: "homepage" }, "homepage-cta")}
+            className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
+          >
+            Play Face-Off
+          </Link>
+        ) : null}
         <Link
           href="/auth/signin"
           className="inline-flex items-center justify-center px-7 py-3.5 rounded-md text-sm sm:text-base font-semibold text-white border border-white/20 bg-white/5 hover:border-[#FFD700]/40 hover:text-[#FFD700] transition-colors min-h-[44px]"
@@ -149,6 +159,9 @@ function HeroPrimaryCta() {
           Sign in
         </Link>
       </div>
+      {faceoffEnabled ? (
+        <p className="text-sm text-zinc-500">Two performances. One winner.</p>
+      ) : null}
       <Link
         href="/auth/register"
         className="text-sm text-zinc-400 hover:text-[#FFD700] transition-colors underline-offset-4 hover:underline"
@@ -159,7 +172,13 @@ function HeroPrimaryCta() {
   );
 }
 
-function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
+function HeroSection({
+  featured,
+  faceoffEnabled = false,
+}: {
+  featured: FeaturedHeroPayload
+  faceoffEnabled?: boolean
+}) {
   const reduceMotion = usePrefersReducedMotion();
   const posterSrc =
     upgradePosterBackdropRes(featured.moviePosterUrl) ??
@@ -212,7 +231,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             Tell the internet who deserved&nbsp;it.
           </motion.h1>
           <div className="mt-6 flex flex-col items-center scroll-mt-28">
-            <HeroPrimaryCta />
+            <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
           </div>
         </div>
       </section>
@@ -248,7 +267,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
             transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
             className="mt-12 flex flex-col items-center scroll-mt-28"
           >
-            <HeroPrimaryCta />
+            <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
           </motion.div>
         </div>
 
@@ -273,7 +292,7 @@ function HeroSection({ featured }: { featured: FeaturedHeroPayload }) {
 
       {/* CTA band — only with bottom-pinned desktop hero */}
       <section className="hero-cta-band relative bg-black px-8 pt-9 pb-11 text-center scroll-mt-28">
-        <HeroPrimaryCta />
+        <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
       </section>
     </>
   );
@@ -519,12 +538,14 @@ export default function HomePageClient({
   initialRecent = [],
   featuredHero: featuredHeroProp,
   weeklyFeatured: weeklyFeaturedProp = null,
+  faceoffEnabled = false,
 }: {
   initialPopular?: EnrichedPerformance[];
   initialLegendary?: EnrichedPerformance[];
   initialRecent?: EnrichedPerformance[];
   featuredHero: FeaturedHeroPayload;
   weeklyFeatured?: EnrichedPerformance | null;
+  faceoffEnabled?: boolean;
 }) {
   const [clientResolvedFeatured, setClientResolvedFeatured] =
     useState<FeaturedHeroPayload | null>(null);
@@ -631,7 +652,7 @@ export default function HomePageClient({
 
   return (
     <>
-      <HeroSection featured={activeFeatured} />
+      <HeroSection featured={activeFeatured} faceoffEnabled={faceoffEnabled} />
 
       <div className="bg-black pt-4 sm:pt-6 pb-4">
         {!popularItems ? (

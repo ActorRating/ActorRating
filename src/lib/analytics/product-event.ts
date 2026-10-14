@@ -17,6 +17,16 @@ export const TRACKED_PRODUCT_EVENTS = [
   "rating_submitted",
   "signup_started",
   "search_used",
+  "faceoff_started",
+  "faceoff_matchup_viewed",
+  "faceoff_vote_submitted",
+  "faceoff_results_viewed",
+  "faceoff_continued",
+  "faceoff_shared",
+  "faceoff_signup_started",
+  "faceoff_signup_completed",
+  "faceoff_returned",
+  "faceoff_homepage_click",
 ] as const
 
 export type TrackedProductEventName = (typeof TRACKED_PRODUCT_EVENTS)[number]
