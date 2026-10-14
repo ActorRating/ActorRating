@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { HomeNavbar } from "@/components/layout/HomeNavbar"
 import { FaceOffHeader } from "@/components/faceoff/FaceOffHeader"
 import { MatchupCard } from "@/components/faceoff/MatchupCard"
+import { PortraitWarm } from "@/components/faceoff/PortraitWarm"
 import { ResultsReveal } from "@/components/faceoff/ResultsReveal"
 import { ShareButton } from "@/components/faceoff/ShareButton"
 import { SwipeControls } from "@/components/faceoff/SwipeControls"
@@ -13,7 +14,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/faceoff/state
 import { trackFaceOff } from "@/lib/analytics"
 import type { FaceOffModeName } from "@/lib/faceoff/constants"
 import { shouldCommitSwipe } from "@/lib/faceoff/gesture"
-import { confirmedChoiceCount, motionMs, winnerForSide } from "@/lib/faceoff/pairs"
+import { canStreamToQueuedMatchup, confirmedChoiceCount, motionMs, revealAfterAcceptedVotes, winnerForSide } from "@/lib/faceoff/pairs"
 import type { FaceOffChoiceSummary, FaceOffPublicMatchup, FaceOffRankSnippet } from "@/lib/faceoff/types"
 
 type Status = "loading" | "ready" | "submitting" | "reveal" | "error" | "empty"
@@ -40,13 +41,15 @@ function usePrefersReducedMotion() {
   return reduce
 }
 
-function warmImages(matchup: FaceOffPublicMatchup | null) {
-  if (!matchup || typeof window === "undefined") return
-  for (const url of [matchup.left.imageUrl, matchup.right.imageUrl]) {
-    if (!url) continue
-    const image = new window.Image()
-    image.src = url
-  }
+function portraitUrls(matchup: FaceOffPublicMatchup): string[] {
+  return [matchup.left.imageUrl, matchup.right.imageUrl].filter((url): url is string => Boolean(url))
+}
+
+function delay(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
 }
 
 export function FaceOffExperience({
@@ -58,6 +61,7 @@ export function FaceOffExperience({
   const [mode, setMode] = useState<FaceOffModeName>("mixed")
   const [choiceCount, setChoiceCount] = useState(0)
   const [matchup, setMatchup] = useState<FaceOffPublicMatchup | null>(null)
+  const [upcoming, setUpcoming] = useState<FaceOffPublicMatchup | null>(null)
   const [message, setMessage] = useState("Could not load Face-Off.")
   const [banner, setBanner] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -69,6 +73,10 @@ export function FaceOffExperience({
   const reduceMotion = usePrefersReducedMotion()
   const requestId = useRef(0)
   const prefetch = useRef<FaceOffPublicMatchup | null>(null)
+  const decoded = useRef(new Set<string>())
+  const shownId = useRef<string | null>(null)
+  const claimed = useRef(new Set<string>())
+  const cutIn = useRef(false)
   const touch = useRef<{ x: number; y: number; at: number; horizontal: boolean } | null>(null)
   const voting = useRef(false)
   const suppressClick = useRef(false)
@@ -100,6 +108,7 @@ export function FaceOffExperience({
       setStatus("loading")
     }
     prefetch.current = null
+    setUpcoming(null)
     const params = new URLSearchParams({ mode: nextMode })
     if (share) params.set("share", share)
     try {
@@ -120,7 +129,6 @@ export function FaceOffExperience({
         await loadNext(nextMode)
         return
       }
-      warmImages(data.matchup ?? null)
       applyMatchup(data.matchup ?? null, data.empty)
     } catch {
       if (id !== requestId.current) return
@@ -174,23 +182,51 @@ export function FaceOffExperience({
     }
   }, [loadNext, shareId])
 
+  shownId.current = matchup?.id ?? null
+
+  const onPortraitsReady = useCallback((id: string) => {
+    decoded.current.add(id)
+  }, [])
+
+  const waitForDecodedQueue = useCallback((currentId: string, timeoutMs: number) => {
+    const started = performance.now()
+    return new Promise<FaceOffPublicMatchup | null>((resolve) => {
+      const check = () => {
+        const queued = prefetch.current
+        const ready = Boolean(queued && decoded.current.has(queued.id))
+        if (queued && queued.id !== currentId && ready) {
+          resolve(queued)
+          return
+        }
+        if (performance.now() - started >= timeoutMs) {
+          resolve(queued && queued.id !== currentId && decoded.current.has(queued.id) ? queued : null)
+          return
+        }
+        window.setTimeout(check, 20)
+      }
+      check()
+    })
+  }, [])
+
   useEffect(() => {
-    if (status !== "ready" || !matchup || prefetch.current) return
-    const currentId = matchup.id
+    if (!matchup) return
+    if (prefetch.current && prefetch.current.id !== matchup.id) return
+    const requestedFor = matchup.id
     const controller = new AbortController()
     const params = new URLSearchParams({ mode })
     void fetch(`/api/faceoff/next?${params.toString()}`, { credentials: "same-origin", signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.matchup && data.matchup.id !== currentId) {
-          prefetch.current = data.matchup
-          warmImages(data.matchup)
-        }
+      .then(async (res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const next = data?.matchup as FaceOffPublicMatchup | undefined
+        if (!next || next.id === requestedFor || next.id === shownId.current || claimed.current.has(next.id)) return
+        if (shownId.current !== requestedFor && prefetch.current) return
+        prefetch.current = next
+        setUpcoming(next)
+        if (portraitUrls(next).length === 0) decoded.current.add(next.id)
       })
       .catch(() => {})
     return () => controller.abort()
-  }, [status, matchup, mode])
+  }, [matchup, mode])
 
   const dismissHint = useCallback(() => {
     setShowHint(false)
@@ -204,30 +240,71 @@ export function FaceOffExperience({
   const choose = useCallback(async (side: "left" | "right") => {
     if (!matchup || status !== "ready" || voting.current) return
     voting.current = true
+    const previous = matchup
+    const countAtChoice = choiceCount
+    const willReveal = revealAfterAcceptedVotes(countAtChoice + 1)
     setPicked(side)
     setDrag(0)
     setDragging(false)
     setStatus("submitting")
     setBanner(null)
     dismissHint()
-    const winnerId = winnerForSide(side, matchup.left.id, matchup.right.id)
-    trackFaceOff("faceoff_vote_submitted", { mode: matchup.mode, choice_number: choiceCount + 1 }, `submit:${matchup.id}`)
+    const winnerId = winnerForSide(side, previous.left.id, previous.right.id)
+    trackFaceOff("faceoff_vote_submitted", { mode: previous.mode, choice_number: countAtChoice + 1 }, `submit:${previous.id}`)
+
+    let settled = false
+    let swappedTo: FaceOffPublicMatchup | null = null
+    const restore = () => {
+      if (!swappedTo) return
+      prefetch.current = swappedTo
+      setUpcoming(swappedTo)
+      setMatchup(previous)
+      swappedTo = null
+    }
+
+    const queuedPromise = willReveal
+      ? Promise.resolve(null)
+      : (async () => {
+          await delay(motionMs(reduceMotion, 100))
+          return waitForDecodedQueue(previous.id, 700)
+        })()
+
+    void queuedPromise.then((queued) => {
+      if (settled || !queued || !voting.current) return
+      if (!canStreamToQueuedMatchup({
+        currentId: previous.id,
+        queuedId: queued.id,
+        imagesReady: decoded.current.has(queued.id),
+        holdForReveal: willReveal,
+      })) return
+      swappedTo = queued
+      claimed.current.add(queued.id)
+      prefetch.current = null
+      setUpcoming(null)
+      setPicked(null)
+      setDrag(0)
+      setMatchup(queued)
+    })
+
     try {
       const res = await fetch("/api/faceoff/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ matchupId: matchup.id, winnerId }),
+        body: JSON.stringify({ matchupId: previous.id, winnerId }),
       })
       const data = await res.json().catch(() => ({}))
-      const nextCount = confirmedChoiceCount(choiceCount, res.ok, data.choiceCount)
+      settled = true
+      const nextCount = confirmedChoiceCount(countAtChoice, res.ok, data.choiceCount)
       if (!res.ok) {
+        restore()
         setChoiceCount(nextCount)
         setPicked(null)
         setBanner(data.error || "That vote was not accepted.")
         voting.current = false
         if (res.status === 409) {
           prefetch.current = null
+          setUpcoming(null)
           await loadNext(mode, null, { silent: true })
           return
         }
@@ -246,49 +323,94 @@ export function FaceOffExperience({
           return
         }
       }
-      const queued = prefetch.current
-      prefetch.current = null
-      voting.current = false
-      if (queued && queued.id !== matchup.id) {
-        applyMatchup(queued)
+      if (!swappedTo) {
+        const queued = await queuedPromise
+        if (queued && canStreamToQueuedMatchup({
+          currentId: previous.id,
+          queuedId: queued.id,
+          imagesReady: decoded.current.has(queued.id),
+          holdForReveal: false,
+        })) {
+          claimed.current.add(queued.id)
+          prefetch.current = null
+          setUpcoming(null)
+          setPicked(null)
+          applyMatchup(queued)
+          voting.current = false
+          return
+        }
+        voting.current = false
+        await loadNext(mode, null, { silent: true })
         return
       }
-      await loadNext(mode, null, { silent: true })
+      setStatus("ready")
+      voting.current = false
     } catch {
+      settled = true
+      restore()
       setPicked(null)
       setBanner("The vote did not go through. You can try this matchup again.")
       setStatus("ready")
       voting.current = false
     }
-  }, [applyMatchup, choiceCount, dismissHint, loadNext, matchup, mode, status])
+  }, [applyMatchup, choiceCount, dismissHint, loadNext, matchup, mode, reduceMotion, status, waitForDecodedQueue])
 
   const skip = useCallback(async () => {
     if (!matchup || status !== "ready" || voting.current) return
     voting.current = true
+    const previous = matchup
     setStatus("submitting")
     setBanner(null)
     setDrag(0)
     dismissHint()
+    let swappedTo: FaceOffPublicMatchup | null = null
+    const queuedNow = prefetch.current
+    if (queuedNow && canStreamToQueuedMatchup({
+      currentId: previous.id,
+      queuedId: queuedNow.id,
+      imagesReady: decoded.current.has(queuedNow.id),
+      holdForReveal: false,
+    })) {
+      swappedTo = queuedNow
+      claimed.current.add(queuedNow.id)
+      prefetch.current = null
+      setUpcoming(null)
+      setMatchup(queuedNow)
+    }
+    const restore = () => {
+      if (!swappedTo) return
+      prefetch.current = swappedTo
+      setUpcoming(swappedTo)
+      setMatchup(previous)
+    }
     try {
       const res = await fetch("/api/faceoff/skip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ matchupId: matchup.id }),
+        body: JSON.stringify({ matchupId: previous.id }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        restore()
         setBanner(data.error || "Could not skip that matchup.")
         setStatus("ready")
         voting.current = false
         return
       }
-      prefetch.current = null
-      voting.current = false
       if (data.mode === "actor" || data.mode === "performance" || data.mode === "mixed") setMode(data.mode)
-      warmImages(data.matchup ?? null)
-      applyMatchup(data.matchup ?? null, data.empty)
+      const serverNext = (data.matchup ?? null) as FaceOffPublicMatchup | null
+      if (swappedTo && serverNext && serverNext.id === swappedTo.id) {
+        setStatus("ready")
+        voting.current = false
+        return
+      }
+      prefetch.current = null
+      setUpcoming(null)
+      voting.current = false
+      applyMatchup(serverNext, data.empty)
     } catch {
+      restore()
       setBanner("Skip did not go through. This matchup is unchanged.")
       setStatus("ready")
       voting.current = false
@@ -379,8 +501,21 @@ export function FaceOffExperience({
   const stageVisible = Boolean(matchup) && status !== "reveal" && status !== "error" && status !== "empty"
   const snapMs = motionMs(reduceMotion, dragging ? 0 : 180)
 
+  const instantCut = cutIn.current
+  useEffect(() => {
+    if (matchup) cutIn.current = true
+  }, [matchup])
+
   return (
     <div className="flex h-[100dvh] flex-col overflow-x-clip bg-black text-white">
+      {upcoming ? (
+        <PortraitWarm
+          key={upcoming.id}
+          matchupId={upcoming.id}
+          urls={portraitUrls(upcoming)}
+          onReady={onPortraitsReady}
+        />
+      ) : null}
       <div className="relative z-50 shrink-0">
         <HomeNavbar />
       </div>
@@ -399,7 +534,11 @@ export function FaceOffExperience({
                 setResults(null)
                 const queued = prefetch.current
                 prefetch.current = null
-                if (queued) applyMatchup(queued)
+                setUpcoming(null)
+                if (queued) {
+                  claimed.current.add(queued.id)
+                  applyMatchup(queued)
+                }
                 else void loadNext(mode, null, { silent: true })
               }}
             />
@@ -422,9 +561,9 @@ export function FaceOffExperience({
                 <motion.div
                   key={matchup.id}
                   className="relative w-full"
-                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  initial={instantCut || reduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: motionMs(reduceMotion, 140) / 1000, ease: "easeOut" }}
+                  transition={{ duration: instantCut ? 0 : motionMs(reduceMotion, 140) / 1000, ease: "easeOut" }}
                 >
                   <div className="pointer-events-none absolute left-1/2 top-8 h-40 w-56 -translate-x-1/2 bg-[radial-gradient(circle,rgba(255,196,60,0.16),transparent_70%)]" aria-hidden />
                   <div

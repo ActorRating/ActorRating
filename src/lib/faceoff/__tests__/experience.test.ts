@@ -3,6 +3,7 @@ import { shouldCommitSwipe } from "@/lib/faceoff/gesture"
 import {
   blockedPairKeys,
   classifySessionPair,
+  canStreamToQueuedMatchup,
   confirmedChoiceCount,
   motionMs,
   revealAfterAcceptedVotes,
@@ -89,6 +90,33 @@ describe("face-off gestures and votes", () => {
   it("drops motion duration when reduced motion is requested", () => {
     expect(motionMs(true, 180)).toBe(0)
     expect(motionMs(false, 180)).toBe(180)
+  })
+
+  it("streams to a decoded next pair and holds the fifth vote for the reveal", () => {
+    expect(canStreamToQueuedMatchup({
+      currentId: "a",
+      queuedId: "b",
+      imagesReady: true,
+      holdForReveal: false,
+    })).toBe(true)
+    expect(canStreamToQueuedMatchup({
+      currentId: "a",
+      queuedId: "b",
+      imagesReady: false,
+      holdForReveal: false,
+    })).toBe(false)
+    expect(canStreamToQueuedMatchup({
+      currentId: "a",
+      queuedId: "a",
+      imagesReady: true,
+      holdForReveal: false,
+    })).toBe(false)
+    expect(canStreamToQueuedMatchup({
+      currentId: "a",
+      queuedId: "b",
+      imagesReady: true,
+      holdForReveal: true,
+    })).toBe(false)
   })
 })
 

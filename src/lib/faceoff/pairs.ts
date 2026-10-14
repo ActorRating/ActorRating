@@ -49,3 +49,14 @@ export function confirmedChoiceCount(
 export function motionMs(reduced: boolean, ms: number): number {
   return reduced ? 0 : ms
 }
+
+/** Swap onto a decoded upcoming pair immediately, except on the five-vote break. */
+export function canStreamToQueuedMatchup(input: {
+  currentId: string
+  queuedId: string | null
+  imagesReady: boolean
+  holdForReveal: boolean
+}): boolean {
+  if (!input.imagesReady || !input.queuedId || input.queuedId === input.currentId) return false
+  return !input.holdForReveal
+}

@@ -5,6 +5,8 @@ import Image from "next/image"
 import type { FaceOffPublicEntity } from "@/lib/faceoff/types"
 import { DISPLAY } from "@/components/faceoff/states"
 
+export const FACEOFF_IMAGE_SIZES = "(max-width: 640px) 42vw, 200px"
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).slice(0, 2)
   const letters = parts.map((part) => part[0]?.toUpperCase() ?? "").join("")
@@ -61,7 +63,7 @@ export function MatchupCard({
               alt=""
               fill
               priority={priority}
-              sizes="(max-width: 640px) 42vw, 200px"
+              sizes={FACEOFF_IMAGE_SIZES}
               className="object-cover object-top"
               onError={() => setFailed(true)}
             />
