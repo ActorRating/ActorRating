@@ -3,6 +3,7 @@ import {
   AR_SRC_COOKIE,
   AR_SRC_MAX_AGE_SEC,
   arSrcCookieOptions,
+  isValidSource,
   normalizeAcquisitionSource,
 } from "@/lib/tracking/source"
 
@@ -91,7 +92,21 @@ export function ratingUtmFromSignup(fields: SignupUtmFields): RatingUtmFields {
   }
 }
 
-/** Persist first-touch UTM detail cookies alongside ar_src. */
+/**
+ * Campaign value to store, or null when there is nothing new to write.
+ * An existing non-empty campaign cookie always wins.
+ */
+export function campaignCookieToSet(
+  utmCampaign: string | null | undefined,
+  existingCampaign: string | null | undefined,
+): string | null {
+  const next = clip(utmCampaign, 200)
+  if (!next) return null
+  if (clip(existingCampaign, 200)) return null
+  return next
+}
+
+/** Persist first-touch UTM detail cookies alongside ar_src. Does not replace ar_src once set. */
 export function applyFirstTouchAttributionCookies(
   response: NextResponse,
   input: {
@@ -102,6 +117,7 @@ export function applyFirstTouchAttributionCookies(
     utmTerm?: string | null
     utmContent: string | null
     existingSource?: string | null
+    existingCampaign?: string | null
   },
 ) {
   if (input.existingSource) return
@@ -114,12 +130,9 @@ export function applyFirstTouchAttributionCookies(
   if (input.utmMedium) {
     response.cookies.set(AR_UTM_MEDIUM_COOKIE, input.utmMedium, UTM_COOKIE_OPTIONS)
   }
-  if (input.utmCampaign) {
-    response.cookies.set(
-      AR_UTM_CAMPAIGN_COOKIE,
-      input.utmCampaign,
-      UTM_COOKIE_OPTIONS,
-    )
+  const campaign = campaignCookieToSet(input.utmCampaign, input.existingCampaign)
+  if (campaign) {
+    response.cookies.set(AR_UTM_CAMPAIGN_COOKIE, campaign, UTM_COOKIE_OPTIONS)
   }
   if (input.utmTerm) {
     response.cookies.set(AR_UTM_TERM_COOKIE, input.utmTerm, UTM_COOKIE_OPTIONS)
@@ -131,4 +144,52 @@ export function applyFirstTouchAttributionCookies(
       UTM_COOKIE_OPTIONS,
     )
   }
+}
+
+/**
+ * Store utm_campaign when the landing URL has one and the cookie is empty.
+ * Independent of ar_src: a recognized source is not required, and an existing
+ * ar_src does not block the write. Never replaces a campaign cookie already set.
+ */
+export function fillEmptyCampaignCookie(
+  response: NextResponse,
+  input: {
+    utmCampaign: string | null | undefined
+    existingCampaign: string | null | undefined
+  },
+) {
+  if (response.cookies.get(AR_UTM_CAMPAIGN_COOKIE)?.value) return
+  const campaign = campaignCookieToSet(input.utmCampaign, input.existingCampaign)
+  if (!campaign) return
+  response.cookies.set(AR_UTM_CAMPAIGN_COOKIE, campaign, UTM_COOKIE_OPTIONS)
+}
+
+/** ar_src first-touch, then a campaign fill that does not depend on ar_src. */
+export function applyPageviewAttributionCookies(
+  response: NextResponse,
+  input: {
+    attribution?: {
+      source: string
+      utmSource?: string | null
+      utmMedium: string | null
+      utmCampaign: string | null
+      utmTerm?: string | null
+      utmContent: string | null
+      existingSource?: string | null
+    } | null
+    utmCampaign?: string | null
+    existingCampaign?: string | null
+  },
+) {
+  const attribution = input.attribution
+  if (attribution?.source && isValidSource(attribution.source)) {
+    applyFirstTouchAttributionCookies(response, {
+      ...attribution,
+      existingCampaign: input.existingCampaign,
+    })
+  }
+  fillEmptyCampaignCookie(response, {
+    utmCampaign: input.utmCampaign,
+    existingCampaign: input.existingCampaign,
+  })
 }

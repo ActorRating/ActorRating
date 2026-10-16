@@ -17,7 +17,10 @@ import {
   truncateReferrer,
 } from "@/lib/analytics/pageview"
 import { normalizeInviteCode } from "@/lib/invites"
-import { applyFirstTouchAttributionCookies } from "@/lib/tracking/attribution-cookies"
+import {
+  applyPageviewAttributionCookies,
+  AR_UTM_CAMPAIGN_COOKIE,
+} from "@/lib/tracking/attribution-cookies"
 import {
   AR_SRC_COOKIE,
   inferAcquisitionSourceFromReferrer,
@@ -34,19 +37,27 @@ type Body = {
   referrer?: unknown
 }
 
-function emptyOk(attribution?: {
-  source: string
-  utmSource?: string | null
-  utmMedium: string | null
-  utmCampaign: string | null
-  utmTerm?: string | null
-  utmContent: string | null
-  existingSource?: string | null
-} | null) {
+function emptyOk(
+  attribution?: {
+    source: string
+    utmSource?: string | null
+    utmMedium: string | null
+    utmCampaign: string | null
+    utmTerm?: string | null
+    utmContent: string | null
+    existingSource?: string | null
+  } | null,
+  campaign?: {
+    utmCampaign: string | null
+    existingCampaign: string | null
+  },
+) {
   const res = new NextResponse(null, { status: 204 })
-  if (attribution?.source && isValidSource(attribution.source)) {
-    applyFirstTouchAttributionCookies(res, attribution)
-  }
+  applyPageviewAttributionCookies(res, {
+    attribution,
+    utmCampaign: campaign?.utmCampaign,
+    existingCampaign: campaign?.existingCampaign,
+  })
   return res
 }
 
@@ -81,8 +92,12 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
  *
  * First-touch acquisition: prefer tagged utm_source / ?src=, else infer from
  * organic referrer (google / bing / x / …). Sets ar_src for 30 days when unset.
+ * utm_campaign is stored in its own cookie when that cookie is empty, even if
+ * ar_src is already set or the source is not a recognized channel.
  */
 export async function POST(request: NextRequest) {
+  let campaignFromUrl: string | null = null
+  const existingCampaign = request.cookies.get(AR_UTM_CAMPAIGN_COOKIE)?.value ?? null
   let attributionToSet: {
     source: string
     utmSource?: string | null
@@ -126,6 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = parseUtmParams(params)
+    campaignFromUrl = utmCampaign
 
     const referrer = truncateReferrer(
       typeof body.referrer === "string"
@@ -259,5 +275,8 @@ export async function POST(request: NextRequest) {
     // Swallow — analytics must never break the product
   }
 
-  return emptyOk(attributionToSet)
+  return emptyOk(attributionToSet, {
+    utmCampaign: campaignFromUrl,
+    existingCampaign,
+  })
 }
