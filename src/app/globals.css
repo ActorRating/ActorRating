@@ -807,8 +807,15 @@ video {
   }
 }
 
-/* Ultrawide: fit the whole still, then ease the sides into black with no hard edge. */
-@media (min-aspect-ratio: 1.9) {
+/* Laptop and desktop: fill the frame with the full still. Side fade is only for wide monitors below. */
+.hero-still-stage > .hero-still {
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* Wide monitors only: ease the sides into black. A short MacBook window can
+   exceed 1.9 aspect ratio without being a wide display, so also require width. */
+@media (min-width: 2000px) and (min-aspect-ratio: 1.9) {
   .hero-still-stage > .hero-still {
     object-fit: contain;
     -webkit-mask-image: linear-gradient(
@@ -906,17 +913,13 @@ video {
 
 .hero-backdrop-wash--cinematic {
   background:
-    /* Left + right soft vignette */
-    linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0.35) 0%,
-      rgba(0, 0, 0, 0.18) 5%,
-      rgba(0, 0, 0, 0.06) 12%,
-      transparent 20%,
-      transparent 80%,
-      rgba(0, 0, 0, 0.06) 88%,
-      rgba(0, 0, 0, 0.18) 95%,
-      rgba(0, 0, 0, 0.35) 100%
+    /* Soft vignette on every edge */
+    radial-gradient(
+      ellipse 72% 66% at 50% 42%,
+      transparent 22%,
+      rgba(0, 0, 0, 0.2) 48%,
+      rgba(0, 0, 0, 0.48) 72%,
+      rgba(0, 0, 0, 0.72) 100%
     ),
     /* Top soft darkening under nav */
     linear-gradient(
@@ -949,16 +952,12 @@ video {
 @media (orientation: landscape) and (min-width: 1024px) {
   .hero-backdrop-wash--cinematic {
     background:
-      linear-gradient(
-        to right,
-        rgba(0, 0, 0, 0.35) 0%,
-        rgba(0, 0, 0, 0.18) 5%,
-        rgba(0, 0, 0, 0.06) 12%,
-        transparent 20%,
-        transparent 80%,
-        rgba(0, 0, 0, 0.06) 88%,
-        rgba(0, 0, 0, 0.18) 95%,
-        rgba(0, 0, 0, 0.35) 100%
+      radial-gradient(
+        ellipse 72% 66% at 50% 42%,
+        transparent 22%,
+        rgba(0, 0, 0, 0.2) 48%,
+        rgba(0, 0, 0, 0.48) 72%,
+        rgba(0, 0, 0, 0.72) 100%
       ),
       linear-gradient(
         to bottom,
@@ -970,17 +969,10 @@ video {
       linear-gradient(
         180deg,
         transparent 0%,
-        transparent 2%,
-        rgba(0, 0, 0, 0.02) 10%,
-        rgba(0, 0, 0, 0.05) 20%,
-        rgba(0, 0, 0, 0.1) 32%,
-        rgba(0, 0, 0, 0.18) 44%,
-        rgba(0, 0, 0, 0.3) 55%,
-        rgba(0, 0, 0, 0.45) 66%,
-        rgba(0, 0, 0, 0.62) 76%,
-        rgba(0, 0, 0, 0.78) 85%,
-        rgba(0, 0, 0, 0.9) 92%,
-        rgba(0, 0, 0, 0.97) 97%,
+        transparent 55%,
+        rgba(0, 0, 0, 0.22) 68%,
+        rgba(0, 0, 0, 0.5) 78%,
+        rgba(0, 0, 0, 0.78) 88%,
         #000 100%
       );
   }

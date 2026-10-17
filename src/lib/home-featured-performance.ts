@@ -26,7 +26,7 @@ export const FIXED_LANDING_HERO = {
   headline: 'How do you rate Matt Damon in The Odyssey?',
   subline:
     'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
-  /** Forest still, cropped so Damon faces camera at the center of the frame */
+  /** Full forest still — Damon with the army, not the tighter center crop */
   backdropUrl: '/hero/odyssey-damon-forest.jpg',
 } as const
 
