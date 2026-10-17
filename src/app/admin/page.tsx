@@ -17,6 +17,8 @@ import WaitlistPanel from "@/components/admin/WaitlistPanel"
 import AdminTabs from "@/components/admin/AdminTabs"
 import { parseAdminTab, type AdminTabId } from "@/lib/admin/tabs"
 import { getAdminData } from "@/lib/admin/getAdminData"
+import { getRatingDistribution } from "@/lib/admin/rating-distribution"
+import RatingDistributionPanel from "@/components/admin/RatingDistributionPanel"
 import { getCommentedRatings } from "@/lib/admin/getCommentedRatings"
 import { getCohort1RecentlyCrossedIndexable } from "@/lib/admin/getCohort1RecentlyIndexable"
 import { getUsersWithStats } from "@/lib/admin/getUsersWithStats"
@@ -251,9 +253,10 @@ export default async function AdminDashboardPage({
 }
 
 async function OverviewTab() {
-  const [data, pageViews] = await Promise.all([
+  const [data, pageViews, ratingDistribution] = await Promise.all([
     getAdminData(),
     getPageViewAnalytics(7),
+    getRatingDistribution(),
   ])
 
   return (
@@ -288,6 +291,7 @@ async function OverviewTab() {
       </section>
 
       <GrowthChart data={data.growthLast7Days} title="Ratings growth — last 7 days" />
+      <RatingDistributionPanel report={ratingDistribution} />
     </div>
   )
 }
