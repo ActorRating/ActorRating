@@ -20,14 +20,14 @@ export const HOME_PRIMARY_RATE_HREF = "/rate/the-godfather-1972/marlon-brando"
 
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
-  actor: 'Robert Pattinson',
-  movie: 'Primetime',
+  actor: 'Matt Damon',
+  movie: 'The Odyssey',
   year: 2026,
-  headline: 'How do you rate Robert Pattinson in Primetime?',
+  headline: 'How do you rate Matt Damon in The Odyssey?',
   subline:
     'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
-  /** Wide cinematic still (Pattinson on the stairs — not the vertical poster) */
-  backdropUrl: 'https://image.tmdb.org/t/p/w1920/mbnopFljGL3UIkSC22uQap4y5ah.jpg',
+  /** Forest still, cropped so Damon faces camera at the center of the frame */
+  backdropUrl: '/hero/odyssey-damon-forest.jpg',
 } as const
 
 export function fixedLandingHeroLookupTarget(): {
@@ -70,7 +70,7 @@ export function enrichedToFeaturedPayload(
   }
 }
 
-/** Fixed Primetime landing hero (not weekly rotation). */
+/** Fixed Odyssey landing hero (not weekly rotation). */
 export function buildFixedLandingHero(
   perf: EnrichedPerformance | null | undefined,
 ): FeaturedHeroPayload {

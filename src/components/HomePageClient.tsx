@@ -24,7 +24,7 @@ import {
 } from "@/lib/performances-page-targets";
 import type { EnrichedPerformance } from "@/lib/performances-by-lookup";
 import { upgradeActorImageRes } from "@/lib/tmdb";
-import { getRateUrl } from "@/lib/slugHelper";
+import { getActorUrl, getRateUrl } from "@/lib/slugHelper";
 import { createActorSlug, createMovieSlug } from "@/lib/createSlug";
 import {
   type FeaturedHeroPayload,
@@ -100,8 +100,27 @@ const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 // Desktop: full-bleed still, manifesto last line on fold bottom, CTA band below.
 // Mobile: image fitted at top, centered sans manifesto, CTA directly under it.
 
-const HERO_BACKDROP_FALLBACK =
-  "https://image.tmdb.org/t/p/w1920/mbnopFljGL3UIkSC22uQap4y5ah.jpg";
+const HERO_BACKDROP_FALLBACK = "/hero/odyssey-damon-forest.jpg";
+
+/** Vertical credit on the still, same placement as Letterboxd’s film link. */
+function HeroSubjectLink({ name }: { name: string }) {
+  const href = getActorUrl({
+    id: createActorSlug(name),
+    name,
+    slug: createActorSlug(name),
+  });
+  return (
+    <div className="pointer-events-none absolute inset-y-0 right-0 z-20 flex w-9 items-center justify-center sm:w-11">
+      <Link
+        href={href}
+        aria-label={name}
+        className="pointer-events-auto text-[11px] font-semibold uppercase tracking-[0.28em] text-white/80 transition-colors hover:text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.65)] [writing-mode:vertical-rl] sm:text-xs"
+      >
+        {name}
+      </Link>
+    </div>
+  );
+}
 
 function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   return (
@@ -112,7 +131,7 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
         fill
         priority
         quality={90}
-        className="object-cover object-center"
+        className={mobile ? "object-cover object-center" : "hero-still object-cover object-center"}
         sizes="100vw"
       />
       {/* Readability wash — mid-start darkening on desktop + iPad landscape */}
@@ -123,6 +142,7 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
             : "hero-backdrop-wash hero-backdrop-wash--cinematic absolute inset-0 pointer-events-none"
         }
       />
+      {mobile ? null : <div className="hero-wide-fade pointer-events-none absolute inset-0" />}
     </>
   );
 }
@@ -234,12 +254,13 @@ function HeroSection({
       {/* ── Desktop / large tablet (lg+): full-bleed still ── */}
       <section className="relative hidden lg:flex h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
-          <div className="absolute inset-0" aria-hidden>
+          <div className="hero-still-stage absolute inset-0" aria-hidden>
             <HeroBackdrop src={posterSrc} />
           </div>
         ) : (
           <div className="absolute inset-0 bg-black" />
         )}
+        <HeroSubjectLink name={featured.actorName} />
 
         {/* iPad / tall screens: manifesto + CTA in the lower third */}
         <div className="hero-cinematic-centered relative z-10 flex-1 flex-col items-center justify-end px-8 pb-[8vh] text-center">
@@ -247,7 +268,7 @@ function HeroSection({
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
-            className="hero-manifesto-cinematic max-w-3xl text-white"
+            className="hero-manifesto-cinematic text-white"
             style={HERO_MANIFESTO}
           >
             Rate performances you&apos;ve&nbsp;seen.
@@ -273,7 +294,7 @@ function HeroSection({
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
-            className="hero-manifesto-cinematic w-full max-w-3xl px-8 pb-7 text-center text-white"
+            className="hero-manifesto-cinematic w-full px-8 pb-7 text-center text-white"
             style={HERO_MANIFESTO}
           >
             Rate performances you&apos;ve&nbsp;seen.

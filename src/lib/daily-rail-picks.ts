@@ -89,11 +89,11 @@ export function pickDailySlice<T>(
 
 /** Fixed lead for Popular Right Now (always first). */
 export const POPULAR_RIGHT_NOW_PINNED: PerformanceTarget = {
-  actor: "Robert Pattinson",
-  movie: "Primetime",
-  character: "Chris Hansen",
+  actor: "Tom Cruise",
+  movie: "Digger",
+  character: "Digger Rockwell",
   year: 2026,
-  posterPath: "/lmrulvLbmaejTix1YaMxo1oGhH1.jpg",
+  posterPath: "/tPvspXZzprJhYu6jGXvX1myfmlj.jpg",
 }
 
 /** Currently-in-conversation / theatrical-era performances (2024–2026). */

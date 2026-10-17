@@ -1,6 +1,7 @@
 /**
- * Server-only daily landing / discover rails.
- * Popular + recent rotate by UTC date; legendary stays curated.
+ * Server-only landing / discover rails.
+ * Popular and recent are ranked from live catalogue data and refreshed each UTC day.
+ * Legendary stays curated. Digger is pinned at the front of Popular Right Now.
  */
 
 import { Prisma } from "@prisma/client"
@@ -15,7 +16,6 @@ import {
 import { LEGENDARY_PERFORMANCE_TARGETS } from "@/lib/performances-page-targets"
 import {
   DAILY_RAIL_COUNT,
-  pickDailySlice,
   popularRightNowTargets,
   recentFavoritesTargets,
   secondsUntilNextUtcMidnight,
@@ -118,7 +118,7 @@ async function padWithLookup(
   return rows.slice(0, needed)
 }
 
-/** Always lead Popular Right Now with Primetime / Pattinson when present in DB. */
+/** Always lead Popular Right Now with Digger / Tom Cruise when present in DB. */
 async function withPinnedPopularLead(
   list: EnrichedPerformance[],
 ): Promise<EnrichedPerformance[]> {
@@ -165,7 +165,7 @@ async function loadCatalogLeads(kind: "popular" | "recent"): Promise<CatalogLead
         )`
       : Prisma.sql`(
           m."releaseDate" IS NOT NULL
-          AND m."releaseDate" <= CURRENT_DATE - INTERVAL '14 days'
+          AND m."releaseDate" <= CURRENT_DATE
           AND m."releaseDate" >= CURRENT_DATE - INTERVAL '42 months'
           AND COALESCE(m."tmdbVoteCount", 0) >= 300
           AND (
@@ -234,7 +234,7 @@ async function loadCatalogLeads(kind: "popular" | "recent"): Promise<CatalogLead
       ${
         kind === "popular"
           ? Prisma.sql`leads.heat DESC, leads."releaseDate" DESC NULLS LAST, leads."tmdbVoteCount" DESC NULLS LAST`
-          : Prisma.sql`leads."communityAvg" DESC NULLS LAST, leads."tmdbRating" DESC NULLS LAST, leads."tmdbVoteCount" DESC NULLS LAST`
+          : Prisma.sql`leads."releaseDate" DESC NULLS LAST, leads."communityAvg" DESC NULLS LAST, leads."tmdbRating" DESC NULLS LAST`
       }
     LIMIT 48
   `
@@ -251,8 +251,35 @@ function scorePopular(row: CatalogLeadRow, now: Date): number {
 }
 
 function scoreRecent(row: CatalogLeadRow): number {
-  const quality = row.communityAvg ?? row.tmdbRating ?? 0
-  return quality * 10 + Math.min(row.ratingCount, 20)
+  const release = row.releaseDate ? new Date(row.releaseDate).getTime() : 0
+  const quality = row.communityAvg ?? (row.tmdbRating != null ? row.tmdbRating * 10 : 0)
+  return release + quality
+}
+
+/** Highest-ranked rows, skipping actors or movies already used. No date shuffle. */
+function takeRanked(
+  rows: CatalogLeadRow[],
+  count: number,
+  exclude?: { actors: Set<string>; movies: Set<string> },
+): CatalogLeadRow[] {
+  const seenActors = new Set(
+    [...(exclude?.actors ?? [])].map((s) => s.toLowerCase()),
+  )
+  const seenMovies = new Set(
+    [...(exclude?.movies ?? [])].map((s) => s.toLowerCase()),
+  )
+  const out: CatalogLeadRow[] = []
+  for (const row of rows) {
+    if (out.length >= count) break
+    const actor = row.actorName.trim().toLowerCase()
+    const movie = row.movieTitle.trim().toLowerCase()
+    if (!actor || !movie) continue
+    if (seenActors.has(actor) || seenMovies.has(movie)) continue
+    seenActors.add(actor)
+    seenMovies.add(movie)
+    out.push(row)
+  }
+  return out
 }
 
 async function pickFromCatalog(
@@ -273,14 +300,7 @@ async function pickFromCatalog(
         ? scorePopular(b, now) - scorePopular(a, now)
         : scoreRecent(b) - scoreRecent(a),
     )
-  const picked = pickDailySlice(scored, {
-    seed: `${kind}:${utcDateKey(now)}`,
-    count: DAILY_RAIL_COUNT,
-    actorKey: (r) => r.actorName,
-    movieKey: (r) => r.movieTitle,
-    excludeActors: exclude?.actors,
-    excludeMovies: exclude?.movies,
-  })
+  const picked = takeRanked(scored, DAILY_RAIL_COUNT, exclude)
   return picked.map(toEnriched)
 }
 
@@ -333,7 +353,7 @@ export async function loadLandingRails(
   if (isStaticProductionBuild()) return empty
 
   const dateKey = utcDateKey(now)
-  const cacheKey = makeCacheKey("landing:daily-rails", [dateKey, "pin-primetime-v1"])
+  const cacheKey = makeCacheKey("landing:daily-rails", [dateKey, "pin-digger-v1"])
   const cached = await cacheGet<LandingRailsPayload>(cacheKey)
   if (cached?.dateKey === dateKey) return cached
 

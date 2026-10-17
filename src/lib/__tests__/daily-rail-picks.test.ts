@@ -15,7 +15,7 @@ describe("daily rail picks", () => {
     expect(utcDateKey(new Date("2026-09-01T23:59:59.000Z"))).toBe("2026-09-01")
   })
 
-  it("pins Primetime first in Popular Right Now", () => {
+  it("pins Digger first in Popular Right Now", () => {
     const popular = popularRightNowTargets(new Date("2026-09-01T12:00:00.000Z"))
     expect(popular[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
     expect(popular).toHaveLength(DAILY_RAIL_COUNT)
@@ -33,8 +33,8 @@ describe("daily rail picks", () => {
     const b = popularRightNowTargets(new Date("2026-09-08T12:00:00.000Z"))
     const rest = (list: typeof a) =>
       list.slice(1).map((t) => `${t.actor}:${t.movie}`).sort()
-    expect(a[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
-    expect(b[0]).toEqual(POPULAR_RIGHT_NOW_PINNED)
+    expect(a[0].movie).toBe("Digger")
+    expect(b[0].movie).toBe("Digger")
     expect(rest(a)).not.toEqual(rest(b))
   })
 

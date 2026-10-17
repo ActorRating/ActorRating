@@ -790,6 +790,7 @@ video {
   .hero-manifesto-cinematic {
     font-size: 2.75rem !important; /* 44px */
     line-height: 1.28 !important;
+    white-space: nowrap;
   }
 }
 
@@ -803,6 +804,67 @@ video {
 @media (min-width: 1536px) {
   .hero-manifesto-cinematic {
     font-size: 3.5rem !important; /* 56px */
+  }
+}
+
+/* Ultrawide: fit the whole still, then ease the sides into black with no hard edge. */
+@media (min-aspect-ratio: 1.9) {
+  .hero-still-stage > .hero-still {
+    object-fit: contain;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      transparent 12%,
+      rgba(0, 0, 0, 0.05) 16%,
+      rgba(0, 0, 0, 0.14) 21%,
+      rgba(0, 0, 0, 0.28) 26%,
+      rgba(0, 0, 0, 0.46) 31%,
+      rgba(0, 0, 0, 0.66) 36%,
+      rgba(0, 0, 0, 0.84) 41%,
+      #000 46%,
+      #000 54%,
+      rgba(0, 0, 0, 0.84) 59%,
+      rgba(0, 0, 0, 0.66) 64%,
+      rgba(0, 0, 0, 0.46) 69%,
+      rgba(0, 0, 0, 0.28) 74%,
+      rgba(0, 0, 0, 0.14) 79%,
+      rgba(0, 0, 0, 0.05) 84%,
+      transparent 88%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      transparent 12%,
+      rgba(0, 0, 0, 0.05) 16%,
+      rgba(0, 0, 0, 0.14) 21%,
+      rgba(0, 0, 0, 0.28) 26%,
+      rgba(0, 0, 0, 0.46) 31%,
+      rgba(0, 0, 0, 0.66) 36%,
+      rgba(0, 0, 0, 0.84) 41%,
+      #000 46%,
+      #000 54%,
+      rgba(0, 0, 0, 0.84) 59%,
+      rgba(0, 0, 0, 0.66) 64%,
+      rgba(0, 0, 0, 0.46) 69%,
+      rgba(0, 0, 0, 0.28) 74%,
+      rgba(0, 0, 0, 0.14) 79%,
+      rgba(0, 0, 0, 0.05) 84%,
+      transparent 88%,
+      transparent 100%
+    );
+  }
+
+  .hero-wide-fade {
+    background: linear-gradient(
+      to right,
+      #000 0%,
+      rgba(0, 0, 0, 0.2) 22%,
+      transparent 46%,
+      transparent 54%,
+      rgba(0, 0, 0, 0.2) 78%,
+      #000 100%
+    );
   }
 }
 
