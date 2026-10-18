@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
-import { adminVisibleUserEmailSql, isAdminHiddenUserEmail } from "@/lib/admin/hidden-users"
+import { isAdminHiddenUserEmail } from "@/lib/admin/hidden-users"
 
 /**
  * Named in scripts/cleanup-demo-data.ts and scripts/seed-performances.ts.
@@ -12,7 +12,7 @@ export const SCRIPT_DEMO_EMAILS = ["demo@local.test", "seed_user@example.com"] a
 /** Named in scripts/cleanup-demo-data.ts as the demo rating slug. */
 export const DEMO_RATING_SLUG = "demo-123"
 
-const CACHE_KEY = "admin:rating-distribution:v1"
+const CACHE_KEY = "admin:rating-distribution:v2"
 const CACHE_TTL_MS = 60_000
 
 export type RatingExclusionKind = "seed-domain" | "script-demo" | "admin-hidden" | "demo-slug"
@@ -53,6 +53,15 @@ export type RatingDistributionReport = {
   remainingTop1PercentOfRemaining: number | null
   remainingTop3PercentOfRemaining: number | null
   remainingTop5PercentOfRemaining: number | null
+}
+
+/** One Rating row plus the account email needed to apply the exclusion rules. */
+export type RatingDistributionInput = {
+  userId: string | null
+  email: string | null
+  slug: string | null
+  actorId: string
+  movieId: string
 }
 
 type AggregateRow = {
@@ -166,108 +175,147 @@ export function reportFromAggregates(row: AggregateRow): RatingDistributionRepor
   }
 }
 
+function pairKey(actorId: string, movieId: string) {
+  return `${actorId}\0${movieId}`
+}
+
+function countAtLeast(counts: Map<string, number>, minimum: number) {
+  let pairs = 0
+  for (const count of counts.values()) {
+    if (count >= minimum) pairs += 1
+  }
+  return pairs
+}
+
+/** Top accounts by rating count, then user id, matching the previous SQL ordering. */
+function topAccountRatings(counts: Map<string, number>, limit: number) {
+  const ranked = [...counts.entries()].sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1]
+    if (a[0] < b[0]) return -1
+    if (a[0] > b[0]) return 1
+    return 0
+  })
+  let total = 0
+  for (const [, count] of ranked.slice(0, limit)) total += count
+  return total
+}
+
+/**
+ * Count every Rating row once. A null slug is not an exclusion: SQL `slug = 'demo-123'`
+ * is unknown when slug is null, and `NOT (unknown OR false)` dropped every unflagged row.
+ */
+export function aggregateRatingDistribution(
+  rows: RatingDistributionInput[],
+): RatingDistributionReport {
+  const actors = new Set<string>()
+  const pairs = new Map<string, number>()
+  const signedIn = new Map<string, number>()
+  const remainingActors = new Set<string>()
+  const remainingPairs = new Map<string, number>()
+  const remainingSignedInAccounts = new Map<string, number>()
+
+  let signedInRatings = 0
+  let guestRatings = 0
+  let seedDomainRatings = 0
+  let scriptDemoRatings = 0
+  let adminHiddenOtherRatings = 0
+  let demoSlugRatings = 0
+  let excludedRatings = 0
+  let remainingSignedIn = 0
+  let remainingGuest = 0
+
+  for (const row of rows) {
+    const guest = row.userId == null
+    if (guest) guestRatings += 1
+    else signedInRatings += 1
+
+    actors.add(row.actorId)
+    const key = pairKey(row.actorId, row.movieId)
+    pairs.set(key, (pairs.get(key) ?? 0) + 1)
+    if (row.userId != null) {
+      signedIn.set(row.userId, (signedIn.get(row.userId) ?? 0) + 1)
+    }
+
+    const kinds = classifyRatingExclusion({ email: row.email, slug: row.slug })
+    if (kinds.includes("seed-domain")) seedDomainRatings += 1
+    if (kinds.includes("script-demo")) scriptDemoRatings += 1
+    if (kinds.includes("admin-hidden")) adminHiddenOtherRatings += 1
+    if (kinds.includes("demo-slug")) demoSlugRatings += 1
+    if (kinds.length > 0) {
+      excludedRatings += 1
+      continue
+    }
+
+    if (row.userId == null) {
+      remainingGuest += 1
+    } else {
+      remainingSignedIn += 1
+      remainingSignedInAccounts.set(
+        row.userId,
+        (remainingSignedInAccounts.get(row.userId) ?? 0) + 1,
+      )
+    }
+    remainingActors.add(row.actorId)
+    remainingPairs.set(key, (remainingPairs.get(key) ?? 0) + 1)
+  }
+
+  return reportFromAggregates({
+    totalRatings: rows.length,
+    signedInRatings,
+    guestRatings,
+    distinctActors: actors.size,
+    distinctPairs: pairs.size,
+    pairsAtLeast5: countAtLeast(pairs, 5),
+    pairsAtLeast10: countAtLeast(pairs, 10),
+    pairsAtLeast25: countAtLeast(pairs, 25),
+    signedInAccounts: signedIn.size,
+    top1Ratings: topAccountRatings(signedIn, 1),
+    top3Ratings: topAccountRatings(signedIn, 3),
+    top5Ratings: topAccountRatings(signedIn, 5),
+    seedDomainRatings,
+    scriptDemoRatings,
+    adminHiddenOtherRatings,
+    demoSlugRatings,
+    excludedRatings,
+    remainingRatings: remainingSignedIn + remainingGuest,
+    remainingSignedIn,
+    remainingGuest,
+    remainingDistinctActors: remainingActors.size,
+    remainingDistinctPairs: remainingPairs.size,
+    remainingPairsAtLeast5: countAtLeast(remainingPairs, 5),
+    remainingPairsAtLeast10: countAtLeast(remainingPairs, 10),
+    remainingPairsAtLeast25: countAtLeast(remainingPairs, 25),
+    remainingSignedInAccounts: remainingSignedInAccounts.size,
+    remainingTop1Ratings: topAccountRatings(remainingSignedInAccounts, 1),
+    remainingTop3Ratings: topAccountRatings(remainingSignedInAccounts, 3),
+    remainingTop5Ratings: topAccountRatings(remainingSignedInAccounts, 5),
+  })
+}
+
+type RatingDistributionQueryRow = {
+  userId: string | null
+  email: string | null
+  slug: string | null
+  actorId: string
+  movieId: string
+}
+
 export async function getRatingDistribution(): Promise<RatingDistributionReport | null> {
   const cached = getCache<RatingDistributionReport>(CACHE_KEY)
   if (cached) return cached
 
-  const scriptEmails = SCRIPT_DEMO_EMAILS.map((email) => Prisma.sql`${email}`)
   try {
-    const rows = await prisma.$queryRaw<AggregateRow[]>(Prisma.sql`
-      WITH base AS (
-        SELECT
-          r."userId",
-          r."actorId",
-          r."movieId",
-          (r."userId" IS NULL) AS is_guest,
-          (r."slug" = ${DEMO_RATING_SLUG}) AS is_demo_slug,
-          (u."id" IS NOT NULL AND LOWER(u."email") LIKE '%@actorrating.local') AS is_seed_domain,
-          (u."id" IS NOT NULL AND LOWER(u."email") IN (${Prisma.join(scriptEmails)})) AS is_script_demo,
-          (
-            u."id" IS NOT NULL
-            AND NOT (${adminVisibleUserEmailSql("u.email")})
-          ) AS is_admin_hidden
-        FROM "Rating" r
-        LEFT JOIN "User" u ON u."id" = r."userId"
-      ),
-      flagged AS (
-        SELECT
-          *,
-          (
-            is_demo_slug
-            OR is_seed_domain
-            OR is_script_demo
-            OR is_admin_hidden
-          ) AS excluded,
-          (is_admin_hidden AND NOT is_seed_domain AND NOT is_script_demo) AS is_admin_hidden_other
-        FROM base
-      ),
-      kept AS (
-        SELECT * FROM flagged WHERE NOT excluded
-      ),
-      pairs AS (
-        SELECT "actorId", "movieId", COUNT(*)::int AS n
-        FROM flagged
-        GROUP BY "actorId", "movieId"
-      ),
-      kept_pairs AS (
-        SELECT "actorId", "movieId", COUNT(*)::int AS n
-        FROM kept
-        GROUP BY "actorId", "movieId"
-      ),
-      signed AS (
-        SELECT "userId", COUNT(*)::int AS n
-        FROM flagged
-        WHERE "userId" IS NOT NULL
-        GROUP BY "userId"
-      ),
-      ranked AS (
-        SELECT n, ROW_NUMBER() OVER (ORDER BY n DESC, "userId") AS rk
-        FROM signed
-      ),
-      kept_signed AS (
-        SELECT "userId", COUNT(*)::int AS n
-        FROM kept
-        WHERE "userId" IS NOT NULL
-        GROUP BY "userId"
-      ),
-      kept_ranked AS (
-        SELECT n, ROW_NUMBER() OVER (ORDER BY n DESC, "userId") AS rk
-        FROM kept_signed
-      )
+    const rows = await prisma.$queryRaw<RatingDistributionQueryRow[]>(Prisma.sql`
       SELECT
-        (SELECT COUNT(*)::int FROM flagged) AS "totalRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE NOT is_guest) AS "signedInRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE is_guest) AS "guestRatings",
-        (SELECT COUNT(DISTINCT "actorId")::int FROM flagged) AS "distinctActors",
-        (SELECT COUNT(*)::int FROM pairs) AS "distinctPairs",
-        (SELECT COUNT(*)::int FROM pairs WHERE n >= 5) AS "pairsAtLeast5",
-        (SELECT COUNT(*)::int FROM pairs WHERE n >= 10) AS "pairsAtLeast10",
-        (SELECT COUNT(*)::int FROM pairs WHERE n >= 25) AS "pairsAtLeast25",
-        (SELECT COUNT(*)::int FROM signed) AS "signedInAccounts",
-        COALESCE((SELECT SUM(n)::int FROM ranked WHERE rk <= 1), 0) AS "top1Ratings",
-        COALESCE((SELECT SUM(n)::int FROM ranked WHERE rk <= 3), 0) AS "top3Ratings",
-        COALESCE((SELECT SUM(n)::int FROM ranked WHERE rk <= 5), 0) AS "top5Ratings",
-        (SELECT COUNT(*)::int FROM flagged WHERE is_seed_domain) AS "seedDomainRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE is_script_demo) AS "scriptDemoRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE is_admin_hidden_other) AS "adminHiddenOtherRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE is_demo_slug) AS "demoSlugRatings",
-        (SELECT COUNT(*)::int FROM flagged WHERE excluded) AS "excludedRatings",
-        (SELECT COUNT(*)::int FROM kept) AS "remainingRatings",
-        (SELECT COUNT(*)::int FROM kept WHERE NOT is_guest) AS "remainingSignedIn",
-        (SELECT COUNT(*)::int FROM kept WHERE is_guest) AS "remainingGuest",
-        (SELECT COUNT(DISTINCT "actorId")::int FROM kept) AS "remainingDistinctActors",
-        (SELECT COUNT(*)::int FROM kept_pairs) AS "remainingDistinctPairs",
-        (SELECT COUNT(*)::int FROM kept_pairs WHERE n >= 5) AS "remainingPairsAtLeast5",
-        (SELECT COUNT(*)::int FROM kept_pairs WHERE n >= 10) AS "remainingPairsAtLeast10",
-        (SELECT COUNT(*)::int FROM kept_pairs WHERE n >= 25) AS "remainingPairsAtLeast25",
-        (SELECT COUNT(*)::int FROM kept_signed) AS "remainingSignedInAccounts",
-        COALESCE((SELECT SUM(n)::int FROM kept_ranked WHERE rk <= 1), 0) AS "remainingTop1Ratings",
-        COALESCE((SELECT SUM(n)::int FROM kept_ranked WHERE rk <= 3), 0) AS "remainingTop3Ratings",
-        COALESCE((SELECT SUM(n)::int FROM kept_ranked WHERE rk <= 5), 0) AS "remainingTop5Ratings"
+        r."userId" AS "userId",
+        u."email" AS "email",
+        r."slug" AS "slug",
+        r."actorId" AS "actorId",
+        r."movieId" AS "movieId"
+      FROM "Rating" r
+      LEFT JOIN "User" u ON u."id" = r."userId"
     `)
-    const row = rows[0]
-    if (!row) return null
-    const report = reportFromAggregates(row)
+    const report = aggregateRatingDistribution(rows)
     setCache(CACHE_KEY, report, CACHE_TTL_MS)
     return report
   } catch (error) {
