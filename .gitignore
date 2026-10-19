@@ -12,6 +12,7 @@
 /coverage
 # next.js
 /.next/
+/test/fixtures/bot-metadata-app/.next/
 /out/
 # production
 /build

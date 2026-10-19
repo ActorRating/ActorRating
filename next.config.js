@@ -39,12 +39,13 @@ const nextConfig = {
       '/lists': ['./content/lists/**/*'],
       '/lists/[slug]': ['./content/lists/**/*'],
     },
-    // Serve complete (non-streamed) HTML to crawlers so they never capture a
-    // loading skeleton or empty Suspense fallback instead of real content.
-    // Next.js already includes Googlebot by default; this extends the list.
-    htmlLimitedBots:
-      /Googlebot|AdsBot-Google|Storebot-Google|Google-InspectionTool|GoogleOther|Google-Extended|Mediapartners-Google|AdsBot-Google-Mobile|Bingbot|DuckDuckBot|YandexBot|Baiduspider|Slurp|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Applebot|Applebot-Extended|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|anthropic-ai|PerplexityBot|AhrefsBot|SemrushBot|MJ12bot/,
   },
+  // Next.js 15.4.8 reads this only at the top level. Under `experimental` it
+  // is ignored, and the built-in pattern does not include Googlebot, so async
+  // metadata is streamed into <body>. Matching crawlers get title, description,
+  // and canonical inside <head> in the initial HTML.
+  htmlLimitedBots:
+    /Googlebot|AdsBot-Google|Storebot-Google|Google-InspectionTool|GoogleOther|Google-Extended|Mediapartners-Google|AdsBot-Google-Mobile|Bingbot|DuckDuckBot|YandexBot|Baiduspider|Slurp|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Applebot|Applebot-Extended|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|anthropic-ai|PerplexityBot|AhrefsBot|SemrushBot|MJ12bot/,
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
