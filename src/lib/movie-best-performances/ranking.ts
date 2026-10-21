@@ -18,6 +18,7 @@ export type RankablePerformance = {
   actorId: string
   actorName: string
   actorSlug: string | null
+  actorImageUrl: string | null
   character: string | null
   tier: HubTier
   order: number | null

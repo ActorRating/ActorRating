@@ -51,7 +51,7 @@ type PerfRow = {
   userId: string | null
   createdAt: Date
   seededAggregateScore: number | null
-  actor: { id: string; name: string; slug: string | null }
+  actor: { id: string; name: string; slug: string | null; imageUrl: string | null }
 }
 
 function resolveCharacter(
@@ -120,7 +120,7 @@ export async function loadMovieBestPerformancesHub(
       userId: true,
       createdAt: true,
       seededAggregateScore: true,
-      actor: { select: { id: true, name: true, slug: true } },
+      actor: { select: { id: true, name: true, slug: true, imageUrl: true } },
     },
   })
 
@@ -164,6 +164,7 @@ export async function loadMovieBestPerformancesHub(
       actorId: best.actorId,
       actorName: best.actor.name,
       actorSlug: best.actor.slug,
+      actorImageUrl: best.actor.imageUrl,
       character,
       tier: best.tier,
       order: best.order,

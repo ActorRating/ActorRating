@@ -19,6 +19,7 @@ function role(
     actorId: overrides.actorId ?? `a-${overrides.actorName}`,
     actorName: overrides.actorName,
     actorSlug: overrides.actorSlug ?? overrides.actorName.toLowerCase().replace(/\s+/g, "-"),
+    actorImageUrl: overrides.actorImageUrl ?? null,
     character: overrides.character ?? null,
     tier: overrides.tier ?? "LEAD",
     order: overrides.order ?? 0,
