@@ -21,7 +21,7 @@ const NAV_LINKS = [
 ] as const
 
 const DESKTOP_LINK_CLASS =
-  'navbar-link-desktop group relative inline-flex items-center px-2 py-2 text-[13px] xl:px-2.5 xl:py-2.5 xl:text-[14px] font-bold uppercase tracking-[0.04em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-10 xl:min-h-11 whitespace-nowrap shrink-0'
+  'navbar-link-desktop group relative inline-flex items-center px-1.5 py-2 text-[13px] xl:px-2.5 xl:py-2.5 xl:text-[14px] font-bold uppercase tracking-[0.04em] text-white hover:text-[#FFD700] transition-colors duration-200 min-h-10 xl:min-h-11 whitespace-nowrap shrink-0'
 
 function DesktopNavLink({
   href,
@@ -105,12 +105,10 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
     setMobileSearchOpen(false)
   }
 
-  // Desktop links + inline search use `xl` (not `lg`): at ~1024–1279px signed-out
-  // nav (Discover… + Sign In/Join Free) overflows into the search field.
   const desktopSearch = (
     <form
       onSubmit={handleSearch}
-      className="hidden xl:flex items-center navbar-search-form"
+      className="hidden lg:flex items-center navbar-search-form shrink-0"
       role="search"
     >
       <label htmlFor="navbar-search" className="sr-only">
@@ -123,7 +121,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder=""
-          className="navbar-search-input w-40 xl:w-44 h-8 pl-3 pr-8 rounded-full text-sm text-white outline-none transition-colors duration-200"
+          className="navbar-search-input w-36 xl:w-44 h-8 pl-3 pr-8 rounded-full text-sm text-white outline-none transition-colors duration-200"
           autoComplete="off"
         />
         <button
@@ -142,13 +140,14 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
     <div className="navbar-cinematic">
       <nav className="relative w-full z-[1]" suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex justify-between items-center h-16 sm:h-20">
+          <div className="flex items-center gap-2 sm:gap-3 h-16 sm:h-20">
 
             <div className="flex items-center flex-shrink-0">
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden xl:flex items-center gap-1.5 xl:gap-2.5 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
+            {/* All text links share one gap; centered between wordmark and search */}
+            <div className="hidden lg:flex flex-1 items-center justify-center gap-0.5 xl:gap-2 min-w-0 pointer-events-auto navbar-content relative z-20">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
@@ -171,12 +170,12 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               )}
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 ml-auto lg:ml-0 shrink-0 relative z-30">
               {desktopSearch}
 
               <button
                 type="button"
-                className="xl:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
+                className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
                   setMobileSearchOpen((open) => !open)
                   setMobileMenuOpen(false)
@@ -188,7 +187,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               </button>
 
               <button
-                className="xl:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
+                className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
                   setMobileMenuOpen(!mobileMenuOpen)
                   setMobileSearchOpen(false)
@@ -209,7 +208,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-            className="xl:hidden overflow-hidden border-b border-white/10 bg-black"
+            className="lg:hidden overflow-hidden border-b border-white/10 bg-black"
           >
             <form onSubmit={handleSearch} className="px-4 py-3" role="search">
               <label htmlFor="navbar-search-mobile" className="sr-only">
@@ -240,7 +239,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-            className="absolute top-full left-0 right-0 z-40 xl:hidden"
+            className="absolute top-full left-0 right-0 z-40 lg:hidden"
             style={{
               background: 'linear-gradient(to bottom, #000000 0%, #1c1c1c 100%)',
               borderBottom: '1px solid rgba(255,215,0,0.1)',

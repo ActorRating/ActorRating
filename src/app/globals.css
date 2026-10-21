@@ -1042,22 +1042,27 @@ video {
     display: none !important;
   }
 
-  /* Tablet viewing distance — 12.5px desktop links are too small on iPad Pro */
-  .navbar-cinematic .navbar-link-desktop {
-    font-size: 15px !important;
-    letter-spacing: 0.03em !important;
-    padding: 0.5rem 0.65rem !important;
-    min-height: 44px;
-  }
+  /*
+    Larger tap targets on iPad — only from xl up. At lg (~1024) the same bump
+    used to push signed-out links into the search field.
+  */
+  @media (min-width: 1280px) {
+    .navbar-cinematic .navbar-link-desktop {
+      font-size: 15px !important;
+      letter-spacing: 0.03em !important;
+      padding: 0.5rem 0.65rem !important;
+      min-height: 44px;
+    }
 
-  .navbar-cinematic .navbar-auth-link {
-    font-size: 14px !important;
-    letter-spacing: 0.02em !important;
-    padding: 0.5rem 0.55rem !important;
-  }
+    .navbar-cinematic .navbar-auth-link {
+      font-size: 14px !important;
+      letter-spacing: 0.02em !important;
+      padding: 0.5rem 0.55rem !important;
+    }
 
-  .navbar-cinematic .navbar-search-input {
-    width: 7.5rem !important;
+    .navbar-cinematic .navbar-search-input {
+      width: 7.5rem !important;
+    }
   }
 }
 
