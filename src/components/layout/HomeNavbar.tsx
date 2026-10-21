@@ -105,10 +105,12 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
     setMobileSearchOpen(false)
   }
 
+  // Desktop links + inline search use `xl` (not `lg`): at ~1024–1279px signed-out
+  // nav (Discover… + Sign In/Join Free) overflows into the search field.
   const desktopSearch = (
     <form
       onSubmit={handleSearch}
-      className="hidden lg:flex items-center navbar-search-form"
+      className="hidden xl:flex items-center navbar-search-form"
       role="search"
     >
       <label htmlFor="navbar-search" className="sr-only">
@@ -146,7 +148,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               <Logo href={homeHref} showText />
             </div>
 
-            <div className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
+            <div className="hidden xl:flex items-center gap-1.5 xl:gap-2.5 pointer-events-auto navbar-content shrink min-w-0 relative z-20">
               {NAV_LINKS.map((link) => (
                 <DesktopNavLink key={link.href} href={link.href}>
                   {link.label}
@@ -174,7 +176,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
 
               <button
                 type="button"
-                className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
+                className="xl:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
                   setMobileSearchOpen((open) => !open)
                   setMobileMenuOpen(false)
@@ -186,7 +188,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
               </button>
 
               <button
-                className="lg:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
+                className="xl:hidden p-2.5 text-white hover:text-[#FFD700] transition-colors duration-200"
                 onClick={() => {
                   setMobileMenuOpen(!mobileMenuOpen)
                   setMobileSearchOpen(false)
@@ -207,7 +209,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-            className="lg:hidden overflow-hidden border-b border-white/10 bg-black"
+            className="xl:hidden overflow-hidden border-b border-white/10 bg-black"
           >
             <form onSubmit={handleSearch} className="px-4 py-3" role="search">
               <label htmlFor="navbar-search-mobile" className="sr-only">
@@ -238,7 +240,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-            className="absolute top-full left-0 right-0 z-40 lg:hidden"
+            className="absolute top-full left-0 right-0 z-40 xl:hidden"
             style={{
               background: 'linear-gradient(to bottom, #000000 0%, #1c1c1c 100%)',
               borderBottom: '1px solid rgba(255,215,0,0.1)',

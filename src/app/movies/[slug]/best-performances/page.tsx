@@ -148,7 +148,12 @@ export default async function BestPerformancesHubPage({ params }: Props) {
       />
       <OdysseyHubTracker movieSlug={movieSlug} movieTitle={hub.movie.title} />
       <HomeLayout>
-        <main className="min-h-screen bg-black text-white">
+        {/*
+          HomeLayout’s <main> has pt-16/sm:pt-20 for the navbar. Pull the hero
+          back up so the forest still starts flush under the nav (landing pattern),
+          not below a black gap.
+        */}
+        <div className="min-h-screen bg-black text-white -mt-16 sm:-mt-20">
           {/* ── Mobile / tablet: still on top (landing stacked pattern) ── */}
           <section className="lg:hidden bg-black">
             {heroStill ? (
@@ -548,7 +553,7 @@ export default async function BestPerformancesHubPage({ params }: Props) {
               </Link>
             </p>
           </div>
-        </main>
+        </div>
       </HomeLayout>
     </>
   )
