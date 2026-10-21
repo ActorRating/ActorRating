@@ -1,43 +1,41 @@
 /**
  * Actor page: /actors/[id]
- * Prefetch actor data on the server for faster first paint.
+ * Prefetch actor data on the server via Prisma (no self-HTTP) for crawlable HTML.
  */
 
-export const revalidate = 60
+export const revalidate = 21600
 
+import { notFound } from 'next/navigation'
 import { withIsoDates } from '@/lib/dateUtils'
+import {
+  ACTOR_CRAWL_SHELL_LIMIT,
+  buildActorCrawlShellEntries,
+  loadActorPageData,
+  type ActorPageData,
+} from '@/lib/actor-page-data'
 import ActorPageClient from './ActorPageClient'
+import ActorPageCrawlShell from '@/components/seo/ActorPageCrawlShell'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 
-function buildActorJsonLd(data: any, baseUrl: string) {
+function buildActorJsonLd(data: ActorPageData, baseUrl: string) {
   const base = baseUrl.replace(/\/$/, '')
   const personUrl = `${base}/actors/${data.slug || data.id}`
 
   const hasPartRaw =
     Array.isArray(data.performances) &&
     data.performances
-      .filter((p: any) => p?.movie?.title)
-      .map((p: any) => ({
+      .filter((p) => p?.movie?.title)
+      .map((p) => ({
         '@type': 'Movie' as const,
-        name: p.movie.title,
-        url: `${base}/movies/${p.movie.slug || p.movie.id}`,
+        name: p.movie!.title,
+        url: `${base}/movies/${p.movie!.slug || p.movie!.id}`,
       }))
   const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw.slice(0, 25) : []
 
-  const ratings = data.ratings || []
-  const ratingCount =
-    typeof data.totalRatingCount === 'number' ? data.totalRatingCount : ratings.length
-  const aggregateFromApi =
-    typeof data.aggregateWeightedScore === 'number' ? data.aggregateWeightedScore : null
-  const hasAggregateRating =
-    ratingCount >= 1 &&
-    (aggregateFromApi != null || ratings.some((r: any) => r.weightedScore != null))
-  const avg100 =
-    aggregateFromApi != null
-      ? aggregateFromApi
-      : hasAggregateRating
-        ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
-        : null
+  const ratingCount = data.totalRatingCount
+  const aggregateFromApi = data.aggregateWeightedScore
+  const hasAggregateRating = ratingCount >= 1 && aggregateFromApi != null
+  const avg100 = hasAggregateRating ? aggregateFromApi : null
   const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
 
   return {
@@ -66,44 +64,47 @@ export default async function ActorPage({
 }) {
   const { id } = await params
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  // Legacy UUID URLs keep the soft-410 client message (HTTP 200) for compatibility.
   if (isUUID) return <ActorPageClient />
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-  try {
-    const res = await fetch(`${baseUrl}/api/actors/${id}`, {
-      // Dev: always fresh so filmography posters match DB; prod: ISR as before.
-      ...(process.env.NODE_ENV === 'development'
-        ? { cache: 'no-store' as const }
-        : { next: { revalidate: 21600 } }),
-      headers: { 'Content-Type': 'application/json' },
-    })
-    if (!res.ok) return <ActorPageClient />
-    const data = await res.json()
-    const jsonLd = buildActorJsonLd(data, baseUrl)
-    const crumbs = breadcrumbJsonLd(baseUrl, [
-      { name: 'Home', path: '/' },
-      { name: data.name, path: `/actors/${data.slug || data.id}` },
-    ])
-    const initialActor = withIsoDates(data)
-    const initialPerformances = Array.isArray(data.performances)
-      ? data.performances.map((p: Record<string, unknown>) => withIsoDates(p))
-      : []
-    return (
-      <>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
-        />
-        <ActorPageClient
-          initialActor={initialActor}
-          initialPerformances={initialPerformances}
-        />
-      </>
-    )
-  } catch {
-    return <ActorPageClient />
+  // Do not catch DB errors into an empty shell — let Next retry / error instead of
+  // returning a thin 200 that Google can index.
+  const data = await loadActorPageData(id)
+  if (!data || !('performances' in data)) {
+    notFound()
   }
+
+  const jsonLd = buildActorJsonLd(data, baseUrl)
+  const crumbs = breadcrumbJsonLd(baseUrl, [
+    { name: 'Home', path: '/' },
+    { name: data.name, path: `/actors/${data.slug || data.id}` },
+  ])
+  const initialActor = withIsoDates({ ...data })
+  const initialPerformances = data.performances.map((p) => withIsoDates({ ...p }))
+  const crawlEntries = buildActorCrawlShellEntries(data, data.performances, ACTOR_CRAWL_SHELL_LIMIT)
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
+      />
+      <ActorPageClient
+        initialActor={initialActor}
+        initialPerformances={initialPerformances}
+      />
+      <ActorPageCrawlShell
+        actorName={data.name}
+        intro={data.bio}
+        totalRatingCount={data.totalRatingCount}
+        entries={crawlEntries}
+        cappedFrom={data.performances.length}
+      />
+    </>
+  )
 }

@@ -15,6 +15,7 @@ import ChunkErrorReload from "@/components/layout/ChunkErrorReload";
 import { SearchPreloadTrigger } from "@/components/SearchPreloadTrigger";
 import { GaPageViewTracker } from "@/components/analytics/GaPageViewTracker";
 import { FirstPartyPageViewTracker } from "@/components/analytics/FirstPartyPageViewTracker";
+import { QualifiedVisitTracker } from "@/components/analytics/QualifiedVisitTracker";
 import { GOOGLE_ADS_ID } from "@/lib/analytics/google-ads";
 
 /** Production GA4 property — override via NEXT_PUBLIC_GA_ID when needed. */
@@ -174,6 +175,9 @@ export default async function RootLayout({
                 </Suspense>
                 <Suspense fallback={null}>
                   <FirstPartyPageViewTracker />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <QualifiedVisitTracker />
                 </Suspense>
                 <SearchPreloadTrigger />
                 <ChunkErrorReload />

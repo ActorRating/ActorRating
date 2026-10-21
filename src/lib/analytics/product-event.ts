@@ -9,6 +9,7 @@ import {
   evaluatePageViewBot,
   normalizePageViewPath,
 } from "@/lib/analytics/pageview"
+import { extractRequestAnalyticsSignals } from "@/lib/analytics/request-signals"
 import { normalizeAcquisitionSource } from "@/lib/tracking/source"
 
 export const TRACKED_PRODUCT_EVENTS = [
@@ -17,6 +18,7 @@ export const TRACKED_PRODUCT_EVENTS = [
   "rating_submitted",
   "signup_started",
   "search_used",
+  "qualified_visit",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",
@@ -94,11 +96,19 @@ export async function persistProductEvent(
   const utmContent = clipString(body.utm_content, 200)
   const actor = clipString(body.actor, 200)
   const movie = clipString(body.movie, 200)
-  const properties = sanitizeProperties(body.properties)
+  const clientProperties = sanitizeProperties(body.properties)
 
   const userAgent = (request.headers.get("user-agent") || "").slice(0, 1000)
   const acceptLanguage = request.headers.get("accept-language")
   const ipHash = hashIp(getClientIp(request))
+  // Country/ASN reserved — extractRequestAnalyticsSignals returns null until CF headers verified.
+  const signals = extractRequestAnalyticsSignals(request)
+  const properties = {
+    ...(clientProperties ?? {}),
+    accept_language_present: signals.acceptLanguagePresent,
+    sec_fetch_present: signals.secFetchPresent,
+    ...(signals.country ? { country: signals.country } : {}),
+  }
 
   const bot = evaluatePageViewBot({
     path: path ?? "/",
@@ -132,7 +142,7 @@ export async function persistProductEvent(
       utmCampaign,
       utmTerm,
       utmContent,
-      properties: properties ?? undefined,
+      properties: Object.keys(properties).length > 0 ? properties : undefined,
       userId,
       ipHash,
       userAgent,

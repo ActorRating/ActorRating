@@ -134,6 +134,7 @@ const FIRST_PARTY_EVENT_NAMES = new Set([
   "rating_submitted",
   "signup_started",
   "search_used",
+  "qualified_visit",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",
@@ -247,6 +248,25 @@ export function trackPerformanceViewed(input: PerformanceEventInput) {
       movie: input.movie,
       year: input.year,
       auth_status: input.auth_status,
+    },
+  )
+}
+
+/**
+ * Engaged page load: tab visible ≥5s + real interaction (once per load).
+ * First-party ProductEvent only via beacon; attribution matches pageview cookies.
+ */
+export function trackQualifiedVisit(input?: {
+  interaction?: string | null
+  dwell_ms?: number
+}) {
+  trackEventWithAttribution(
+    "qualified_visit",
+    "Qualified Visit",
+    "qualified_visit",
+    {
+      interaction: input?.interaction ?? null,
+      dwell_ms: input?.dwell_ms ?? null,
     },
   )
 }
