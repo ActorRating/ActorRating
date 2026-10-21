@@ -135,6 +135,8 @@ const FIRST_PARTY_EVENT_NAMES = new Set([
   "signup_started",
   "search_used",
   "qualified_visit",
+  "hub_view",
+  "hub_rate_click",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",
@@ -269,6 +271,30 @@ export function trackQualifiedVisit(input?: {
       dwell_ms: input?.dwell_ms ?? null,
     },
   )
+}
+
+/** Best-performances hub page view (first-party ProductEvent). */
+export function trackHubView(input: {
+  movie: string
+  movie_slug: string
+}) {
+  trackEventWithAttribution("hub_view", "Hub View", "hub_view", {
+    movie: input.movie,
+    movie_slug: input.movie_slug,
+  })
+}
+
+/** Rate CTA click from a best-performances hub (includes performance id). */
+export function trackHubRateClick(input: {
+  performance_id: string
+  movie: string
+  movie_slug: string
+}) {
+  trackEventWithAttribution("hub_rate_click", "Hub Rate Click", "hub_rate_click", {
+    performance_id: input.performance_id,
+    movie: input.movie,
+    movie_slug: input.movie_slug,
+  })
 }
 
 /**

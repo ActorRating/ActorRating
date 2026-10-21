@@ -383,6 +383,12 @@ function generateStatic(outDir: string): void {
     { url: `${BASE_URL}/craft/character-believability`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
     { url: `${BASE_URL}/craft/technical-skill`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
     { url: `${BASE_URL}/craft/chemistry-interaction`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
+    {
+      url: `${BASE_URL}/movies/the-odyssey-2026/best-performances`,
+      lastModified: now,
+      changeFrequency: "hourly",
+      priority: 0.85,
+    },
     { url: `${BASE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ]

@@ -19,6 +19,8 @@ export const TRACKED_PRODUCT_EVENTS = [
   "signup_started",
   "search_used",
   "qualified_visit",
+  "hub_view",
+  "hub_rate_click",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",
