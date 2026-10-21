@@ -5,7 +5,11 @@
  */
 
 import { computeCommunityStatsFromRatings } from "@/lib/ratings/community-stats"
-import { loadMovieBestPerformancesHub } from "@/lib/movie-best-performances/load-hub"
+import {
+  loadMovieBestPerformancesHub,
+  omitDuplicateCastCharacters,
+} from "@/lib/movie-best-performances/load-hub"
+import type { RankablePerformance } from "@/lib/movie-best-performances/ranking"
 
 describe("hub score parity with community-stats rule", () => {
   it("uses signed-in-only averages identical to computeCommunityStatsFromRatings", async () => {
@@ -143,5 +147,46 @@ describe("hub score parity with community-stats rule", () => {
         values: expect.arrayContaining(["Circe", "Penelope"]),
       },
     ])
+  })
+
+  it("omits a character billed to two different actors on the same film", () => {
+    const base = {
+      performanceId: "p",
+      actorSlug: "x",
+      actorImageUrl: null,
+      tier: "SUPPORTING" as const,
+      order: 1,
+      avg10: null,
+      count: 0,
+    }
+    const roles: RankablePerformance[] = [
+      {
+        ...base,
+        performanceId: "p1",
+        actorId: "a1",
+        actorName: "Charlize Theron",
+        character: "Circe",
+      },
+      {
+        ...base,
+        performanceId: "p2",
+        actorId: "a2",
+        actorName: "Samantha Morton",
+        character: "Circe",
+      },
+      {
+        ...base,
+        performanceId: "p3",
+        actorId: "a3",
+        actorName: "Matt Damon",
+        character: "Odysseus",
+      },
+    ]
+    const { roles: cleaned, omitted } = omitDuplicateCastCharacters(roles)
+    expect(cleaned.find((r) => r.actorId === "a1")?.character).toBeNull()
+    expect(cleaned.find((r) => r.actorId === "a2")?.character).toBeNull()
+    expect(cleaned.find((r) => r.actorId === "a3")?.character).toBe("Odysseus")
+    expect(omitted).toHaveLength(2)
+    expect(omitted.every((o) => o.reason === "duplicate_across_cast")).toBe(true)
   })
 })

@@ -26,8 +26,11 @@ export type HubMovie = {
 export type OmittedCharacter = {
   actorId: string
   actorName: string
-  /** Conflicting non-empty Performance.character values for the same actor/movie pair. */
-  reason: "conflicting"
+  /**
+   * conflicting — multiple different characters on the same actor/movie pair.
+   * duplicate_across_cast — same character name on 2+ actors (unreliable billing data).
+   */
+  reason: "conflicting" | "duplicate_across_cast"
   values: string[]
 }
 
@@ -65,27 +68,55 @@ function resolveCharacter(
         .filter((c): c is string => Boolean(c)),
     ),
   ]
-  if (values.length === 1) {
-    return { character: values[0], omitted: null }
-  }
   if (values.length === 0) {
-    // No DB character — omit from display (not uncertain, just absent).
     return { character: null, omitted: null }
   }
-  return {
-    character: null,
-    omitted: {
-      actorId: rows[0]?.actorId ?? "",
-      actorName,
-      reason: "conflicting",
-      values,
-    },
+  if (values.length > 1) {
+    return {
+      character: null,
+      omitted: {
+        actorId: rows[0]?.actorId ?? "",
+        actorName,
+        reason: "conflicting",
+        values,
+      },
+    }
   }
+  // Prefer the canonical row’s character when it matches the sole distinct value.
+  const best = [...rows].sort(comparePerformanceSeoRows)[0]
+  const canonical = best?.character?.trim() || values[0]
+  return { character: canonical, omitted: null }
 }
 
 function pickCanonicalRow(rows: PerfRow[]): PerfRow {
   const sorted = [...rows].sort(comparePerformanceSeoRows)
   return sorted[0]
+}
+
+/**
+ * When the same character name is billed to 2+ actors on one film, TMDB/billing
+ * data is unreliable — omit rather than show a wrong credit (e.g. two “Circe”).
+ */
+export function omitDuplicateCastCharacters(
+  roles: RankablePerformance[],
+): { roles: RankablePerformance[]; omitted: OmittedCharacter[] } {
+  const counts = new Map<string, number>()
+  for (const r of roles) {
+    if (!r.character) continue
+    counts.set(r.character, (counts.get(r.character) ?? 0) + 1)
+  }
+  const omitted: OmittedCharacter[] = []
+  const next = roles.map((r) => {
+    if (!r.character || (counts.get(r.character) ?? 0) < 2) return r
+    omitted.push({
+      actorId: r.actorId,
+      actorName: r.actorName,
+      reason: "duplicate_across_cast",
+      values: [r.character],
+    })
+    return { ...r, character: null }
+  })
+  return { roles: next, omitted }
 }
 
 export async function loadMovieBestPerformancesHub(
@@ -151,7 +182,7 @@ export async function loadMovieBestPerformancesHub(
   }
 
   const omittedCharacters: OmittedCharacter[] = []
-  const allRoles: RankablePerformance[] = []
+  const built: RankablePerformance[] = []
 
   for (const [, rows] of byActor) {
     const best = pickCanonicalRow(rows)
@@ -159,7 +190,7 @@ export async function loadMovieBestPerformancesHub(
     if (omitted) omittedCharacters.push(omitted)
 
     const stats = computeCommunityStatsFromRatings(ratingsByActor.get(best.actorId) ?? [])
-    allRoles.push({
+    built.push({
       performanceId: best.id,
       actorId: best.actorId,
       actorName: best.actor.name,
@@ -172,6 +203,9 @@ export async function loadMovieBestPerformancesHub(
       count: stats.count,
     })
   }
+
+  const { roles: allRoles, omitted: dupOmitted } = omitDuplicateCastCharacters(built)
+  omittedCharacters.push(...dupOmitted)
 
   const totalSignedInRatings = allRoles.reduce((s, r) => s + r.count, 0)
   const priorC = bayesianPriorC(allRoles)
