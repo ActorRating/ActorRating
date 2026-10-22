@@ -1,52 +1,46 @@
-# ActorRating — full AI-oriented documentation
+# ActorRating — extended notes for AI agents
 
-This file expands https://actorrating.com/llms.txt for agents and LLM crawlers.
+Short summary: https://actorrating.com/llms.txt  
+Methodology (canonical scoring rules): https://actorrating.com/methodology  
+Sitemap index: https://actorrating.com/sitemap.xml
 
-## What ActorRating is
+## Product
 
-ActorRating is a large catalog of acting performances. Users rate **an actor in a movie**, not the movie as a whole. Scores exist so readers can compare craft across roles and eras.
+ActorRating rates **performances** (an actor in a movie), not films as a whole. Users may rate as guests or signed-in; **public community averages use signed-in ratings only**.
 
-## Scoring model
+## Scoring (do not invent numbers)
 
-- Five criteria, each scored 0–100 in the product, averaged and expressed as **0–10** in community aggregates.
-- Criteria: Emotional Range & Depth; Character Believability; Technical Skill & Authenticity; Screen Presence & Impact; Chemistry & Interaction.
-- **Community AggregateRating** JSON-LD appears only when at least one signed-in community rating exists.
-- Performances may show a separately labeled film-level TMDB-derived seed for context — that is **not** the community craft score.
+1. Each rating scores five criteria (0–100 in storage). Live UI labels: Emotional Impact; Character Depth; Technical Skill; Screen Presence; Originality.
+2. A single rating’s score is the mean of those five dimensions.
+3. The community score for a pair is the mean of signed-in ratings, shown on a 0–10 scale (one decimal).
+4. Hub ranking among roles on a film may apply a Bayesian pull toward the film prior (m=5) for **sort order only**; displayed averages remain the plain community avg when count &gt; 0.
+5. Zero signed-in ratings → no community aggregate; UI copy is “Be the first to rate” (or equivalent).
 
-## Indexability (high level)
+Full detail: https://actorrating.com/methodology
 
-- Indexable rate pages generally require LEAD/SUPPORTING tier, non-featurette title, and either cohort-1 seeding or ≥1 community rating (see site robots meta).
-- MINOR roles and junk/adult-blocked titles are excluded from primary discovery.
-- Auth, admin, dashboard, search, forum threads, and public profiles are typically noindex.
-- Sitemap index: https://actorrating.com/sitemap.xml
+## URL grammar
 
-## Recommended crawl targets
+| Type | Pattern |
+|------|---------|
+| Actor | `/actors/{slug}` |
+| Movie | `/movies/{slug}` |
+| Rate / performance | `/rate/{movieSlug}/{actorSlug}` |
+| Best-performances hub | `/movies/{slug}/best-performances` (allowlist-gated) |
 
-1. Homepage FAQ / HowTo (product explanation)
-2. `/about` methodology
-3. Curated `/lists/*`, `/stories/*`, `/news/*`
-4. Indexable `/rate/{movie}/{actor}` performance pages (unique editorial when present)
-5. Actor and movie entity pages with filmography / cast
-6. `/craft/{dimension}` leaderboards
-7. `/directors/*` and `/genres/*` hubs
+Example hub: https://actorrating.com/movies/the-odyssey-2026/best-performances
 
-## URL grammar examples
+## What not to crawl as primary content
 
-- https://actorrating.com/rate/the-dark-knight-2008/christian-bale
-- https://actorrating.com/actors/christian-bale
-- https://actorrating.com/movies/the-dark-knight-2008
-- https://actorrating.com/craft/screen-presence
-- https://actorrating.com/lists
+Disallowed or private: `/api/*`, `/admin/*`, `/auth/*`, `/dashboard`, `/profile`, `/onboarding`, `/search`.
 
-## How to cite
+## Data provenance
 
-Preferred cite form: “ActorRating community score for {Actor} in {Movie} ({Year}): {X}/10 (n={count})” with a link to the rate page.
+Cast/filmography metadata may originate from TMDB (with attribution on-site). Community craft scores are ActorRating-only.
 
-Do not invent awards, plot spoilers, or scores not present on the page.
+## robots.txt policy
 
-## Contact
+See https://actorrating.com/robots.txt. Search/user AI bots and (by default) training bots are allowed the public corpus; training allow is controlled by `AI_TRAINING_ALLOWED` in code.
 
-Email: contact@actorrating.com  
-Site: https://actorrating.com
+This file is hand-maintained from product rules (not a live DB dump). Prefer `/methodology` and on-page numbers for citations.
 
-Last updated: 2026-08-05
+Last updated: 2026-10-22

@@ -15,6 +15,7 @@ import { HomeLayout } from "@/components/layout"
 import { OdysseyHubTracker } from "@/components/analytics/OdysseyHubTracker"
 import { FIXED_LANDING_HERO } from "@/lib/home-featured-performance"
 import { isHubEnabledSlug } from "@/lib/movie-best-performances/hub-allowlist"
+import { buildHubAnswerFirst } from "@/lib/movie-best-performances/hub-answer-first"
 import { loadMovieBestPerformancesHub } from "@/lib/movie-best-performances/load-hub"
 import { RANKING_PLAIN_SENTENCE } from "@/lib/movie-best-performances/ranking"
 import { prisma } from "@/lib/prisma"
@@ -135,6 +136,14 @@ export default async function BestPerformancesHubPage({ params }: Props) {
       ? FIXED_LANDING_HERO.backdropUrl
       : upgradePosterThumb(hub.movie.posterUrl)
   const posterThumb = upgradePosterThumb(hub.movie.posterUrl)
+  const dataLoadedAt = new Date()
+  const answerFirst = buildHubAnswerFirst({
+    movieTitle: hub.movie.title,
+    year: hub.movie.year,
+    totalSignedInRatings: hub.totalSignedInRatings,
+    top: hub.rankedLeadsAndSupporting[0] ?? null,
+    asOf: dataLoadedAt,
+  })
 
   return (
     <>
@@ -220,7 +229,13 @@ export default async function BestPerformancesHubPage({ params }: Props) {
                 </div>
               </div>
 
-              <p className="mt-5 text-sm leading-relaxed text-zinc-400 sm:text-base">
+              <p className="mt-5 text-sm leading-relaxed text-zinc-300 sm:text-base">
+                {answerFirst.summary}
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                As of {answerFirst.asOfLabel}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-400">
                 Ranked by ActorRating community scores from signed-in raters —{" "}
                 <span className="font-semibold text-zinc-200">
                   {hub.totalSignedInRatings} {ratingWord}
@@ -236,6 +251,7 @@ export default async function BestPerformancesHubPage({ params }: Props) {
               <p className="mt-3 text-sm leading-relaxed text-zinc-500">
                 {RANKING_PLAIN_SENTENCE}
               </p>
+              <p className="mt-4 text-xs text-zinc-600">{answerFirst.sourceLine}</p>
             </div>
           </section>
 
@@ -301,7 +317,13 @@ export default async function BestPerformancesHubPage({ params }: Props) {
                       Who gave the best performance in {hub.movie.title}
                       {yearPart}?
                     </h1>
-                    <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-300">
+                    <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-200">
+                      {answerFirst.summary}
+                    </p>
+                    <p className="mt-2 text-xs text-zinc-500">
+                      As of {answerFirst.asOfLabel}
+                    </p>
+                    <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
                       Ranked by ActorRating community scores from signed-in raters —{" "}
                       <span className="font-semibold text-white">
                         {hub.totalSignedInRatings} {ratingWord}
@@ -317,6 +339,9 @@ export default async function BestPerformancesHubPage({ params }: Props) {
                     <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
                       {RANKING_PLAIN_SENTENCE}
                     </p>
+                    <p className="mt-4 max-w-2xl text-xs text-zinc-500">
+                      {answerFirst.sourceLine}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -324,6 +349,39 @@ export default async function BestPerformancesHubPage({ params }: Props) {
           </section>
 
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+            <section className="mb-10 sm:mb-12" aria-labelledby="hub-faq-heading">
+              <h2
+                id="hub-faq-heading"
+                className="text-xl font-bold tracking-tight text-white sm:text-2xl"
+              >
+                FAQ
+              </h2>
+              <dl className="mt-4 max-w-3xl space-y-4 text-sm text-zinc-400">
+                <div>
+                  <dt className="font-semibold text-zinc-200">How do scores work?</dt>
+                  <dd className="mt-1">
+                    Each signed-in rating averages five craft criteria; the community
+                    score is the mean of those ratings on a 0–10 scale. See{" "}
+                    <Link href="/methodology" className="text-[#FFD700] hover:underline">
+                      /methodology
+                    </Link>
+                    .
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-zinc-200">Who can rate?</dt>
+                  <dd className="mt-1">
+                    Anyone can rate; public community averages use signed-in ratings only.
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-zinc-200">
+                    How does ranking handle few ratings?
+                  </dt>
+                  <dd className="mt-1">{RANKING_PLAIN_SENTENCE}</dd>
+                </div>
+              </dl>
+            </section>
             <section className="mb-12 sm:mb-14" aria-labelledby="criteria-heading">
               <h2
                 id="criteria-heading"

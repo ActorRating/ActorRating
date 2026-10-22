@@ -1,49 +1,42 @@
 # ActorRating
 
-> Community ratings for individual acting performances — craft, not movie quality.
+> Community ratings for individual acting performances — craft criteria, not overall film quality.
 
-ActorRating lets people rate an actor's work in a specific film using five Oscar-inspired criteria. Aggregates are community scores on a 0–10 scale (criteria stored 0–100 internally).
+ActorRating is a catalog where people rate an actor’s work in a specific movie. Public community scores use signed-in ratings only (guest ratings are excluded from the public average). Scores are shown on a 0–10 scale.
 
 Website: https://actorrating.com  
+Methodology: https://actorrating.com/methodology  
 Sitemap: https://actorrating.com/sitemap.xml  
-Full docs: https://actorrating.com/llms-full.txt  
 Contact: contact@actorrating.com
 
-## Rating criteria
+## How scores work
 
-1. Emotional Range & Depth
-2. Character Believability
-3. Technical Skill & Authenticity
-4. Screen Presence & Impact
-5. Chemistry & Interaction
+See https://actorrating.com/methodology for the live rules: five craft criteria (UI labels: Emotional Impact, Character Depth, Technical Skill, Screen Presence, Originality), per-rating mean then mean across signed-in raters, Bayesian ranking prior for short lists (m=5), and refresh intervals.
 
-## URL patterns
+## URL patterns (public corpus)
 
-- Performance rate page (primary): `https://actorrating.com/rate/{movie-slug}/{actor-slug}`
 - Actor: `https://actorrating.com/actors/{actor-slug}`
 - Movie: `https://actorrating.com/movies/{movie-slug}`
-- Craft leaderboard: `https://actorrating.com/craft/{dimension}`
-- Director hub: `https://actorrating.com/directors/{director-slug}`
-- Genre hub: `https://actorrating.com/genres/{genre-slug}`
+- Performance (rate page): `https://actorrating.com/rate/{movie-slug}/{actor-slug}`
+- Best performances hub (allowlisted films): `https://actorrating.com/movies/{movie-slug}/best-performances`
+- Example hub: https://actorrating.com/movies/the-odyssey-2026/best-performances
 
-## Key hubs
+## Indexability (honest summary)
 
-- [Home](https://actorrating.com/)
-- [About / methodology](https://actorrating.com/about)
+- Not every `/rate/...` URL is indexable. Indexable rate pages generally require an eligible role tier, a non-featurette title, and enough signed-in community ratings (see site `robots` meta / rate-page gate).
+- `/admin`, `/api`, `/auth`, `/dashboard`, `/profile`, `/search`, and similar product surfaces are disallowed or noindex.
+
+## Key pages
+
+- [Methodology](https://actorrating.com/methodology)
+- [About](https://actorrating.com/about)
 - [Discover](https://actorrating.com/discover)
 - [Lists](https://actorrating.com/lists)
 - [Stories](https://actorrating.com/stories)
 - [News](https://actorrating.com/news)
-- [Forum](https://actorrating.com/forum)
 
-## Citation policy
+## Citation
 
-- Cite ActorRating community scores only when the page shows a community aggregate (signed ratings).
-- Do not treat TMDB film vote averages as ActorRating community scores.
-- Prefer linking to the canonical `/rate/{movie}/{actor}` URL.
+Cite ActorRating community scores only when the page shows a real community aggregate. Prefer the canonical `/rate/{movie}/{actor}` URL. Do not treat TMDB film averages as ActorRating craft scores.
 
-## Optional product surfaces (often noindex)
-
-- `/search`, `/dashboard`, `/auth/*`, `/admin/*` — product UI, not primary corpus.
-
-Last updated: 2026-08-05
+Last updated: 2026-10-22

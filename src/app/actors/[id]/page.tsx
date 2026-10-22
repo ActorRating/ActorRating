@@ -11,51 +11,11 @@ import {
   ACTOR_CRAWL_SHELL_LIMIT,
   buildActorCrawlShellEntries,
   loadActorPageData,
-  type ActorPageData,
 } from '@/lib/actor-page-data'
 import ActorPageClient from './ActorPageClient'
 import ActorPageCrawlShell from '@/components/seo/ActorPageCrawlShell'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
-
-function buildActorJsonLd(data: ActorPageData, baseUrl: string) {
-  const base = baseUrl.replace(/\/$/, '')
-  const personUrl = `${base}/actors/${data.slug || data.id}`
-
-  const hasPartRaw =
-    Array.isArray(data.performances) &&
-    data.performances
-      .filter((p) => p?.movie?.title)
-      .map((p) => ({
-        '@type': 'Movie' as const,
-        name: p.movie!.title,
-        url: `${base}/movies/${p.movie!.slug || p.movie!.id}`,
-      }))
-  const hasPart = Array.isArray(hasPartRaw) ? hasPartRaw.slice(0, 25) : []
-
-  const ratingCount = data.totalRatingCount
-  const aggregateFromApi = data.aggregateWeightedScore
-  const hasAggregateRating = ratingCount >= 1 && aggregateFromApi != null
-  const avg100 = hasAggregateRating ? aggregateFromApi : null
-  const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: data.name,
-    url: personUrl,
-    ...(hasPart.length > 0 && { hasPart }),
-    ...(ratingCount >= 1 &&
-      ratingValue10 != null && {
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: String(ratingValue10),
-          ratingCount: String(ratingCount),
-          bestRating: 10,
-          worstRating: 0,
-        },
-      }),
-  }
-}
+import { buildActorJsonLd } from '@/lib/seo/actor-jsonld'
 
 export default async function ActorPage({
   params,

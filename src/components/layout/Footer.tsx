@@ -138,6 +138,9 @@ export function Footer() {
               <Link href="/about" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 About
               </Link>
+              <Link href="/methodology" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
+                Methodology
+              </Link>
               <Link href="/privacy" className="text-sm text-[#666] hover:text-[#FFD700] transition-colors duration-200">
                 Privacy Policy
               </Link>

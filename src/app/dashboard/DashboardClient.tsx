@@ -207,29 +207,6 @@ export default function DashboardClient({
     ]
   };
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "What can I do on my dashboard?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Your dashboard allows you to search for actors, browse popular performers, view your past ratings, and discover new performances to rate."
-        }
-      },
-      {
-        "@type": "Question",
-        name: "How do I rate a performance from my dashboard?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Click on any actor card or use the search bar to find a specific actor and movie. Then navigate to their performance page to rate with the quick single slider or across five criteria."
-        }
-      }
-    ]
-  };
-
   // Show loading spinner while data is being fetched
   if (isLoadingData && isInitialized) {
     return (
@@ -262,12 +239,6 @@ export default function DashboardClient({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(howToSchema)
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqSchema)
           }}
         />
         <main className="min-h-screen bg-black">

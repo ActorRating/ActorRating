@@ -4,6 +4,7 @@ import {
   type PageViewAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
 import type { QualifiedTrafficMetrics } from "@/lib/admin/getQualifiedTrafficMetrics"
+import type { ValuableRaterMetrics } from "@/lib/admin/valuable-raters"
 
 function formatRatio(value: number | null): string {
   if (value == null || !Number.isFinite(value)) return "n/a"
@@ -87,10 +88,64 @@ function ChannelTable({
   )
 }
 
+function ValuableRaterTable({
+  title,
+  rows,
+}: {
+  title: string
+  rows: ValuableRaterMetrics["bySource"]
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-left">
+          <thead>
+            <tr className="text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="border-b border-border px-3 py-3 font-medium">Key</th>
+              <th className="border-b border-border px-3 py-3 font-medium">New raters</th>
+              <th className="border-b border-border px-3 py-3 font-medium">Engaged</th>
+              <th className="border-b border-border px-3 py-3 font-medium">Returning</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-3 py-4 text-sm text-muted-foreground">
+                  No valuable-rater channel data in this window.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.key} className="text-sm text-foreground/95">
+                  <td className="border-b border-border/60 px-3 py-3 font-medium break-all">
+                    {row.key}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums">
+                    {formatCount(row.newRaters)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums">
+                    {formatCount(row.engagedRaters)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums">
+                    {formatCount(row.returningRaters)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 export function QualifiedTrafficSection({
   data,
+  valuableRaters,
 }: {
   data: QualifiedTrafficMetrics
+  valuableRaters?: ValuableRaterMetrics | null
 }) {
   const windowLabel = analyticsWindowLabel(data.days as PageViewAnalyticsDays)
 
@@ -189,6 +244,48 @@ export function QualifiedTrafficSection({
         <ChannelTable title="By first-touch utm_source / source" rows={data.bySource} />
         <ChannelTable title="By first-touch utm_campaign" rows={data.byCampaign} />
       </div>
+
+      {valuableRaters ? (
+        <div className="space-y-4 border-t border-border/60 pt-6">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Valuable raters</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              New = distinct userId/anonId with ≥1 rating in window. Engaged = first-ever
+              rating in window and ≥3 ratings within 7 days of that first. Returning =
+              first-ever rating in window and ≥2 distinct UTC days within 21 days. Channel
+              keys use the first rating&apos;s utm.{" "}
+              {valuableRaters.guestIdentityNote}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard
+              title="New raters"
+              value={formatCount(valuableRaters.newRaters)}
+              subtitle="Distinct raters with ≥1 rating in window"
+            />
+            <StatCard
+              title="Engaged raters"
+              value={formatCount(valuableRaters.engagedRaters)}
+              subtitle="≥3 ratings within 7d of first (first in window)"
+            />
+            <StatCard
+              title="Returning raters"
+              value={formatCount(valuableRaters.returningRaters)}
+              subtitle="≥2 distinct days within 21d of first (first in window)"
+            />
+          </div>
+          <div className="space-y-8">
+            <ValuableRaterTable
+              title="Valuable raters by first-rating utm_source"
+              rows={valuableRaters.bySource}
+            />
+            <ValuableRaterTable
+              title="Valuable raters by first-rating utm_campaign"
+              rows={valuableRaters.byCampaign}
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

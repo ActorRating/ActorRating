@@ -20,6 +20,14 @@ export default function ActorPageCrawlShell({
   entries,
   cappedFrom,
 }: Props) {
+  const ratedEntries = entries.filter((e) => e.ratingCount > 0)
+  const topRated = ratedEntries[0]
+  const performancesListed = cappedFrom && cappedFrom > 0 ? cappedFrom : entries.length
+  const answerSentence =
+    topRated && totalRatingCount > 0
+      ? `${actorName} has ${performancesListed} performances listed; ${ratedEntries.length} have community ratings. Highest community-rated: ${topRated.character ? `${topRated.character} in ${topRated.movieTitle}` : topRated.movieTitle} (${topRated.scoreLabel}, ${topRated.ratingCount} ${topRated.ratingCount === 1 ? "rating" : "ratings"}).`
+      : null
+
   const factualIntro =
     intro?.trim() ||
     (totalRatingCount > 0
@@ -41,6 +49,11 @@ export default function ActorPageCrawlShell({
           {actorName} performances ranked &amp; rated
         </h1>
       </div>
+      {answerSentence ? (
+        <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-300">
+          {answerSentence}
+        </p>
+      ) : null}
       <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-500">
         {factualIntro}
       </p>

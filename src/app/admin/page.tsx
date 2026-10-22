@@ -27,7 +27,10 @@ import {
   parseAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
 import { getQualifiedTrafficMetrics } from "@/lib/admin/getQualifiedTrafficMetrics"
+import { getValuableRaterMetrics } from "@/lib/admin/getValuableRaterMetrics"
+import { getAiTrafficMetrics } from "@/lib/admin/getAiTrafficMetrics"
 import { QualifiedTrafficSection } from "@/components/admin/QualifiedTrafficSection"
+import { AiTrafficSection } from "@/components/admin/AiTrafficSection"
 import { getXTrafficAnalytics } from "@/lib/admin/getXTrafficAnalytics"
 import { getInviteAnalytics } from "@/lib/admin/getInviteAnalytics"
 import { formatAdminDateTime, formatRelativeTime } from "@/lib/admin/time"
@@ -305,9 +308,17 @@ async function TrafficTab({
   searchParams: AdminSearchParams
   pvDays: ReturnType<typeof parseAnalyticsDays>
 }) {
-  const [pageViewAnalytics, qualifiedTraffic, paidFunnel] = await Promise.all([
+  const [
+    pageViewAnalytics,
+    qualifiedTraffic,
+    valuableRaters,
+    aiTraffic,
+    paidFunnel,
+  ] = await Promise.all([
     getPageViewAnalytics(pvDays),
     getQualifiedTrafficMetrics(pvDays),
+    getValuableRaterMetrics(pvDays),
+    getAiTrafficMetrics(pvDays),
     getPaidAttributionFunnel(pvDays === 1 ? 1 : pvDays),
   ])
   return (
@@ -321,7 +332,11 @@ async function TrafficTab({
           })
         }
       />
-      <QualifiedTrafficSection data={qualifiedTraffic} />
+      <QualifiedTrafficSection
+        data={qualifiedTraffic}
+        valuableRaters={valuableRaters}
+      />
+      <AiTrafficSection data={aiTraffic} />
       <PaidAttributionFunnel
         days={paidFunnel.days}
         byCampaign={paidFunnel.byCampaign}

@@ -11,55 +11,7 @@ import { prisma } from '@/lib/prisma'
 import { isFeaturetteMovie, matchesFeaturetteTitle } from '@/lib/non-rateable'
 import MoviePageClient from './MoviePageClient'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
-
-function buildMovieJsonLd(data: any, baseUrl: string) {
-  const base = baseUrl.replace(/\/$/, '')
-  const movieUrl = `${base}/movies/${data.slug || data.id}`
-
-  const actor =
-    Array.isArray(data.performances) &&
-    data.performances
-      .filter((p: any) => p?.actor?.name)
-      .map((p: any) => ({
-        '@type': 'Person' as const,
-        name: p.actor.name,
-        url: `${base}/actors/${p.actor.slug || p.actor.id}`,
-      }))
-
-  const ratings = data.ratings || []
-  const ratingCount =
-    typeof data.totalRatingCount === 'number' ? data.totalRatingCount : ratings.length
-  const aggregateFromApi =
-    typeof data.aggregateWeightedScore === 'number' ? data.aggregateWeightedScore : null
-  const hasScores =
-    aggregateFromApi != null || ratings.some((r: any) => r.weightedScore != null)
-  const avg100 =
-    aggregateFromApi != null
-      ? aggregateFromApi
-      : hasScores && ratingCount >= 1
-        ? ratings.reduce((sum: number, r: any) => sum + (Number(r.weightedScore) || 0), 0) / ratingCount
-        : null
-  const ratingValue10 = avg100 != null && avg100 > 0 ? Number((avg100 / 10).toFixed(1)) : null
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Movie',
-    name: data.title,
-    url: movieUrl,
-    ...(data.year && { datePublished: String(data.year) }),
-    ...(Array.isArray(actor) && actor.length > 0 && { actor }),
-    ...(ratingCount >= 1 &&
-      ratingValue10 != null && {
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: String(ratingValue10),
-          ratingCount: String(ratingCount),
-          bestRating: 10,
-          worstRating: 0,
-        },
-      }),
-  }
-}
+import { buildMovieJsonLd } from '@/lib/seo/movie-jsonld'
 
 export default async function MoviePage({
   params,

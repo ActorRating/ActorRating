@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { breadcrumbJsonLd } from "@/lib/seo/breadcrumb-jsonld"
+import { buildMovieAggregateRating } from "@/lib/seo/aggregate-rating-jsonld"
 import { generateRatePageMetadata } from "@/lib/rate-page-metadata"
 
 type Props = {
@@ -100,7 +101,11 @@ export default async function RateLayout({ params, children }: Props) {
   const base = baseUrl.replace(/\/$/, "")
   const pageUrl = `${base}/rate/${canonMovieSeg}/${canonActorSeg}`
 
-  // Always emit Person + Movie identity. AggregateRating only with real community ratings.
+  // Person has no aggregateRating. Movie aggregate only when n >= 3 (shared helper).
+  const movieAggregate = buildMovieAggregateRating({
+    ratingValue10: avg10,
+    ratingCount,
+  })
   const graph: Array<Record<string, unknown>> = [
     {
       "@type": "Person",
@@ -118,16 +123,7 @@ export default async function RateLayout({ params, children }: Props) {
         name: data.actor.name,
         url: `${base}/actors/${canonActorSeg}`,
       },
-      ...(ratingCount >= 1 &&
-        avg10 != null && {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: String(avg10),
-            ratingCount: String(ratingCount),
-            bestRating: 10,
-            worstRating: 0,
-          },
-        }),
+      ...(movieAggregate ? { aggregateRating: movieAggregate } : {}),
     },
   ]
 
