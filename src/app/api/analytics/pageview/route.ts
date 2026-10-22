@@ -9,6 +9,9 @@ import {
   detectInternalEntityCrawl,
   detectInternalFleetCrawl,
   detectInternalPathCrawl,
+  hasHumanEngagementSignal,
+  listUnflagableCrawlPageViewIds,
+  unflagCrawlPageViews,
 } from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
@@ -195,15 +198,29 @@ export async function POST(request: NextRequest) {
       userId = null
     }
 
+    // Path/entity crawl softens for IPs with recent human product signals.
+    // Fleet detection is unchanged and does not use this exemption.
+    let humanExempt = false
     try {
-      const crawl = await detectInternalPathCrawl(prisma, ipHash, {
-        path,
-        referrer,
-        utmSource: storedUtmSource,
-        utmMedium,
-        utmCampaign,
-        userId,
-      })
+      humanExempt = await hasHumanEngagementSignal(prisma, ipHash)
+    } catch {
+      humanExempt = false
+    }
+
+    try {
+      const crawl = await detectInternalPathCrawl(
+        prisma,
+        ipHash,
+        {
+          path,
+          referrer,
+          utmSource: storedUtmSource,
+          utmMedium,
+          utmCampaign,
+          userId,
+        },
+        { humanExempt },
+      )
       if (crawl.isCrawl) {
         isLikelyBot = true
         siblingIds = crawl.siblingIds
@@ -213,14 +230,19 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const entity = await detectInternalEntityCrawl(prisma, ipHash, {
-        path,
-        referrer,
-        utmSource: storedUtmSource,
-        utmMedium,
-        utmCampaign,
-        userId,
-      })
+      const entity = await detectInternalEntityCrawl(
+        prisma,
+        ipHash,
+        {
+          path,
+          referrer,
+          utmSource: storedUtmSource,
+          utmMedium,
+          utmCampaign,
+          userId,
+        },
+        { humanExempt },
+      )
       if (entity.isCrawl) {
         isLikelyBot = true
         siblingIds = [...new Set([...siblingIds, ...entity.siblingIds])]
@@ -267,7 +289,13 @@ export async function POST(request: NextRequest) {
     })
 
     try {
-      await flagSiblingsAsBots(siblingIds)
+      if (humanExempt) {
+        // Previously crawl-flagged siblings → human again; never re-flag this pass.
+        const unflagIds = await listUnflagableCrawlPageViewIds(prisma, ipHash)
+        await unflagCrawlPageViews(prisma, unflagIds)
+      } else {
+        await flagSiblingsAsBots(siblingIds)
+      }
     } catch {
       // Non-fatal
     }

@@ -13,11 +13,17 @@ import {
   scrollPastThreshold,
   type QualifiedVisitState,
 } from "@/lib/analytics/qualified-visit"
+import {
+  hasQualifiedVisitBeenSent,
+  markQualifiedVisitSent,
+  qualifiedVisitStorageKey,
+} from "@/lib/analytics/qualified-visit-storage"
 
 /**
  * Fires first-party `qualified_visit` once per page load when the tab has been
  * visible ≥5s and the user has scrolled / moved / touched / typed.
  * Passive listeners only — must not affect rating UI or Core Web Vitals.
+ * sessionStorage (`qv:{pathname}{search}`) survives remounts; in-memory `fired` is the fast path.
  */
 export function QualifiedVisitTracker() {
   const pathname = usePathname()
@@ -30,10 +36,14 @@ export function QualifiedVisitTracker() {
 
     const search = searchParams?.toString() ? `?${searchParams.toString()}` : ""
     const key = `${pathname}${search}`
+    const storageKey = qualifiedVisitStorageKey(pathname, search)
     if (keyRef.current !== key) {
       keyRef.current = key
       stateRef.current = createQualifiedVisitState()
-      if (document.visibilityState === "visible") {
+      // Remount / Strict Mode: storage says already sent → treat as fired.
+      if (hasQualifiedVisitBeenSent(storageKey)) {
+        stateRef.current = markFired(stateRef.current)
+      } else if (document.visibilityState === "visible") {
         stateRef.current = onVisibilityChange(stateRef.current, true, performance.now())
       }
     }
@@ -41,10 +51,17 @@ export function QualifiedVisitTracker() {
     const tryFire = () => {
       const now = performance.now()
       stateRef.current = flushVisibleTime(stateRef.current, now)
+      if (hasQualifiedVisitBeenSent(storageKey)) {
+        if (!stateRef.current.fired) {
+          stateRef.current = markFired(stateRef.current)
+        }
+        return
+      }
       if (!shouldFireQualifiedVisit(stateRef.current, now)) return
       const interaction = stateRef.current.lastInteraction
       const dwellMs = Math.round(stateRef.current.visibleAccumulatedMs)
       stateRef.current = markFired(stateRef.current)
+      markQualifiedVisitSent(storageKey)
       trackQualifiedVisit({
         interaction,
         dwell_ms: dwellMs,

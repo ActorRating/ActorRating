@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**
- * First-party product event beacon. Failures never surface to the client.
+ * First-party product event beacon.
+ * Most failures / drops → 204. Per-IP hour cap → 429.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +17,10 @@ export async function POST(request: NextRequest) {
       return new NextResponse(null, { status: 204 })
     }
 
-    await persistProductEvent(request, body)
+    const result = await persistProductEvent(request, body)
+    return new NextResponse(null, { status: result.status })
   } catch {
     // Swallow — analytics must never break the product
+    return new NextResponse(null, { status: 204 })
   }
-
-  return new NextResponse(null, { status: 204 })
 }

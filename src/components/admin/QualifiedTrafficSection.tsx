@@ -10,6 +10,19 @@ function formatRatio(value: number | null): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
+function formatHumanToQualified(
+  ratio: number | null,
+  exceeded: boolean,
+): { value: string; note: string | null } {
+  if (exceeded) {
+    return {
+      value: "n/a",
+      note: "Qualified count exceeds human pageviews — ratio hidden (max 100%).",
+    }
+  }
+  return { value: formatRatio(ratio), note: null }
+}
+
 function formatCount(value: number): string {
   return value.toLocaleString()
 }
@@ -88,9 +101,10 @@ export function QualifiedTrafficSection({
           Qualified traffic ({windowLabel})
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Site-wide first-party funnel. Human pageviews use the existing{" "}
-          <code className="text-xs">isLikelyBot = false</code> filter. Qualified visits require
-          ≥5s visible dwell plus a real interaction (scroll / pointer / touch / key).
+          Site-wide first-party funnel. Human pageviews use{" "}
+          <code className="text-xs">isLikelyBot = false</code>. Qualified visits are non-bot{" "}
+          <code className="text-xs">qualified_visit</code> events that matched a PageView
+          (same IP + path, 15m) with server dedupe.
         </p>
       </div>
 
@@ -101,9 +115,14 @@ export function QualifiedTrafficSection({
           subtitle="Non-bot PageView rows"
         />
         <StatCard
+          title="Bot-flagged pageviews"
+          value={formatCount(data.botPageviews)}
+          subtitle="PageView rows with isLikelyBot = true"
+        />
+        <StatCard
           title="Qualified visits"
           value={formatCount(data.qualifiedVisits)}
-          subtitle="ProductEvent qualified_visit (non-bot)"
+          subtitle="Non-bot qualified_visit (server-gated)"
         />
         <StatCard
           title="Ratings"
@@ -120,11 +139,22 @@ export function QualifiedTrafficSection({
           value={formatCount(data.repeatRaters)}
           subtitle="Signups in window with ≥2 lifetime ratings"
         />
-        <StatCard
-          title="Human → qualified"
-          value={formatRatio(data.humanToQualifiedRatio)}
-          subtitle="qualified visits ÷ human pageviews"
-        />
+        {(() => {
+          const hq = formatHumanToQualified(
+            data.humanToQualifiedRatio,
+            data.humanToQualifiedExceeded,
+          )
+          return (
+            <StatCard
+              title="Human → qualified"
+              value={hq.value}
+              subtitle={
+                hq.note ??
+                "qualified visits ÷ human pageviews (capped at 100%)"
+              }
+            />
+          )
+        })()}
         <StatCard
           title="Qualified → rating"
           value={formatRatio(data.qualifiedToRatingRatio)}

@@ -29,12 +29,23 @@ export type QualifiedTrafficChannelRow = {
 export type QualifiedTrafficMetrics = {
   days: PageViewAnalyticsDays
   humanPageviews: number
+  /** PageView rows with isLikelyBot = true in the same window. */
+  botPageviews: number
+  /**
+   * Non-bot ProductEvent qualified_visit rows (server gates: pageview match,
+   * dedupe, bot parity with matching PageView).
+   */
   qualifiedVisits: number
   ratings: number
   signups: number
   repeatRaters: number
-  /** qualifiedVisits / humanPageviews when humanPageviews > 0; else null */
+  /**
+   * qualifiedVisits / humanPageviews, capped at 1.
+   * null when humanPageviews is 0, or when qualified exceeds human (show n/a).
+   */
   humanToQualifiedRatio: number | null
+  /** True when qualifiedVisits > humanPageviews (ratio shown as n/a). */
+  humanToQualifiedExceeded: boolean
   /** ratings / qualifiedVisits when qualifiedVisits > 0; else null */
   qualifiedToRatingRatio: number | null
   /**
@@ -66,11 +77,13 @@ function emptyMetrics(days: PageViewAnalyticsDays): QualifiedTrafficMetrics {
   return {
     days,
     humanPageviews: 0,
+    botPageviews: 0,
     qualifiedVisits: 0,
     ratings: 0,
     signups: 0,
     repeatRaters: 0,
     humanToQualifiedRatio: null,
+    humanToQualifiedExceeded: false,
     qualifiedToRatingRatio: null,
     humanPageviewsWithoutQualifiedShare: null,
     bySource: [],
@@ -130,11 +143,21 @@ export function computeQualifiedTrafficRatios(input: {
   ratings: number
 }): Pick<
   QualifiedTrafficMetrics,
-  "humanToQualifiedRatio" | "qualifiedToRatingRatio" | "humanPageviewsWithoutQualifiedShare"
+  | "humanToQualifiedRatio"
+  | "humanToQualifiedExceeded"
+  | "qualifiedToRatingRatio"
+  | "humanPageviewsWithoutQualifiedShare"
 > {
   const { humanPageviews, qualifiedVisits, ratings } = input
+  const exceeded = humanPageviews > 0 && qualifiedVisits > humanPageviews
   return {
-    humanToQualifiedRatio: ratio(qualifiedVisits, humanPageviews),
+    // Cap at 100%; if numerator somehow exceeds denominator, expose n/a instead.
+    humanToQualifiedRatio: exceeded
+      ? null
+      : humanPageviews > 0
+        ? Math.min(1, qualifiedVisits / humanPageviews)
+        : null,
+    humanToQualifiedExceeded: exceeded,
     qualifiedToRatingRatio: ratio(ratings, qualifiedVisits),
     humanPageviewsWithoutQualifiedShare:
       humanPageviews > 0
@@ -146,7 +169,7 @@ export function computeQualifiedTrafficRatios(input: {
 export async function getQualifiedTrafficMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<QualifiedTrafficMetrics> {
-  const cacheKey = `admin:qualified-traffic:${days}`
+  const cacheKey = `admin:qualified-traffic:v2:${days}`
   const cached = getCache<QualifiedTrafficMetrics>(cacheKey)
   if (cached) return cached
 
@@ -155,6 +178,7 @@ export async function getQualifiedTrafficMetrics(
   try {
     const [
       humanRows,
+      botRows,
       qualifiedRows,
       ratingRows,
       signupRows,
@@ -172,6 +196,12 @@ export async function getQualifiedTrafficMetrics(
         SELECT COUNT(*)::bigint AS count
         FROM "PageView"
         WHERE "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+      `),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS count
+        FROM "PageView"
+        WHERE "isLikelyBot" = true
           AND "createdAt" >= NOW() - ${interval}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
@@ -286,6 +316,7 @@ export async function getQualifiedTrafficMetrics(
     ])
 
     const humanPageviews = toNumber(humanRows[0]?.count)
+    const botPageviews = toNumber(botRows[0]?.count)
     const qualifiedVisits = toNumber(qualifiedRows[0]?.count)
     const ratings = toNumber(ratingRows[0]?.count)
     const signups = toNumber(signupRows[0]?.count)
@@ -299,6 +330,7 @@ export async function getQualifiedTrafficMetrics(
     const data: QualifiedTrafficMetrics = {
       days,
       humanPageviews,
+      botPageviews,
       qualifiedVisits,
       ratings,
       signups,

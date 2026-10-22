@@ -2,7 +2,10 @@ import type { BotCategory } from "@prisma/client"
 import type { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { getClientIp } from "@/lib/requestProtection"
+import {
+  checkMemoryIpRateLimit,
+  getClientIp,
+} from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
 import { resolveBotCategory } from "@/lib/analytics/bot-category"
 import {
@@ -11,6 +14,13 @@ import {
 } from "@/lib/analytics/pageview"
 import { extractRequestAnalyticsSignals } from "@/lib/analytics/request-signals"
 import { normalizeAcquisitionSource } from "@/lib/tracking/source"
+import {
+  PRODUCT_EVENT_IP_HOUR_MAX,
+  PRODUCT_EVENT_IP_HOUR_WINDOW_MS,
+  QUALIFIED_VISIT_DEDUPE_WINDOW_MS,
+  QUALIFIED_VISIT_PAGEVIEW_LOOKBACK_MS,
+  gateQualifiedVisitPersist,
+} from "@/lib/analytics/qualified-visit-persist"
 
 export const TRACKED_PRODUCT_EVENTS = [
   "performance_viewed",
@@ -55,6 +65,17 @@ export type ProductEventBody = {
   properties?: unknown
 }
 
+export type PersistProductEventResult = {
+  /** HTTP status for the beacon response. */
+  status: 204 | 429
+  stored: boolean
+}
+
+const productEventIpHourWindow = new Map<
+  string,
+  { count: number; resetAt: number }
+>()
+
 function clipString(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null
   const trimmed = value.trim()
@@ -75,17 +96,26 @@ function sanitizeProperties(value: unknown): Record<string, unknown> | null {
   return Object.keys(out).length > 0 ? out : null
 }
 
+/** Test seam: reset the process-local product-event IP hour window. */
+export function resetProductEventIpHourWindowForTests(): void {
+  productEventIpHourWindow.clear()
+}
+
 export async function persistProductEvent(
   request: NextRequest,
   body: ProductEventBody,
-): Promise<boolean> {
+): Promise<PersistProductEventResult> {
   const name = clipString(body.name, 80)
-  if (!name || !isTrackedProductEvent(name)) return false
+  if (!name || !isTrackedProductEvent(name)) {
+    return { status: 204, stored: false }
+  }
 
   const path = normalizePageViewPath(
     typeof body.path === "string" ? body.path : "",
   )
-  if (path?.startsWith("/api/")) return false
+  if (path?.startsWith("/api/")) {
+    return { status: 204, stored: false }
+  }
 
   const source =
     normalizeAcquisitionSource(clipString(body.source, 50)) ??
@@ -103,6 +133,17 @@ export async function persistProductEvent(
   const userAgent = (request.headers.get("user-agent") || "").slice(0, 1000)
   const acceptLanguage = request.headers.get("accept-language")
   const ipHash = hashIp(getClientIp(request))
+
+  // Cap all product events per IP (60 / hour). Over budget → 429, no write.
+  if (
+    !checkMemoryIpRateLimit(productEventIpHourWindow, ipHash, {
+      windowMs: PRODUCT_EVENT_IP_HOUR_WINDOW_MS,
+      maxRequests: PRODUCT_EVENT_IP_HOUR_MAX,
+    })
+  ) {
+    return { status: 429, stored: false }
+  }
+
   // Country/ASN reserved — extractRequestAnalyticsSignals returns null until CF headers verified.
   const signals = extractRequestAnalyticsSignals(request)
   const properties = {
@@ -119,6 +160,50 @@ export async function persistProductEvent(
     ipHash,
   })
 
+  let isLikelyBot = bot.isLikelyBot
+
+  if (name === "qualified_visit") {
+    const qPath = path ?? "/"
+    const dedupeSince = new Date(Date.now() - QUALIFIED_VISIT_DEDUPE_WINDOW_MS)
+    const pageviewSince = new Date(
+      Date.now() - QUALIFIED_VISIT_PAGEVIEW_LOOKBACK_MS,
+    )
+
+    const [recentDuplicate, matchingPageView] = await Promise.all([
+      prisma.productEvent.findFirst({
+        where: {
+          name: "qualified_visit",
+          ipHash,
+          path: qPath,
+          createdAt: { gte: dedupeSince },
+        },
+        select: { id: true },
+      }),
+      prisma.pageView.findFirst({
+        where: {
+          ipHash,
+          path: qPath,
+          createdAt: { gte: pageviewSince },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { isLikelyBot: true },
+      }),
+    ])
+
+    const gate = gateQualifiedVisitPersist({
+      hasRecentDuplicate: Boolean(recentDuplicate),
+      matchingPageView: matchingPageView
+        ? { isLikelyBot: matchingPageView.isLikelyBot }
+        : null,
+      evaluateBotIsLikelyBot: bot.isLikelyBot,
+    })
+
+    if (!gate.accept) {
+      return { status: 204, stored: false }
+    }
+    isLikelyBot = gate.isLikelyBot
+  }
+
   let userId: string | null = null
   try {
     const session = await auth()
@@ -128,7 +213,7 @@ export async function persistProductEvent(
   }
 
   const botCategory: BotCategory | null = resolveBotCategory(
-    bot.isLikelyBot,
+    isLikelyBot,
     userAgent,
   )
 
@@ -148,10 +233,10 @@ export async function persistProductEvent(
       userId,
       ipHash,
       userAgent,
-      isLikelyBot: bot.isLikelyBot,
+      isLikelyBot,
       botCategory,
     },
   })
 
-  return true
+  return { status: 204, stored: true }
 }
