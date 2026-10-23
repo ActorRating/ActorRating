@@ -39,21 +39,22 @@ function ChannelTable({
     <div>
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left">
+        <table className="w-full min-w-[800px] border-separate border-spacing-0 text-left">
           <thead>
             <tr className="text-xs uppercase tracking-wide text-muted-foreground">
               <th className="border-b border-border px-3 py-3 font-medium">Key</th>
-              <th className="border-b border-border px-3 py-3 font-medium">Human PV</th>
+              <th className="border-b border-border px-3 py-3 font-medium">Engaged</th>
               <th className="border-b border-border px-3 py-3 font-medium">Qualified</th>
               <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
               <th className="border-b border-border px-3 py-3 font-medium">Signups</th>
               <th className="border-b border-border px-3 py-3 font-medium">Repeat raters</th>
+              <th className="border-b border-border px-3 py-3 font-medium">Human PV</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-4 text-sm text-muted-foreground">
+                <td colSpan={7} className="px-3 py-4 text-sm text-muted-foreground">
                   No channel data in this window.
                 </td>
               </tr>
@@ -64,7 +65,7 @@ function ChannelTable({
                     {row.key}
                   </td>
                   <td className="border-b border-border/60 px-3 py-3 tabular-nums">
-                    {formatCount(row.humanPageviews)}
+                    {formatCount(row.engagedHumans)}
                   </td>
                   <td className="border-b border-border/60 px-3 py-3 tabular-nums">
                     {formatCount(row.qualifiedVisits)}
@@ -77,6 +78,9 @@ function ChannelTable({
                   </td>
                   <td className="border-b border-border/60 px-3 py-3 tabular-nums">
                     {formatCount(row.repeatRaters)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums text-muted-foreground">
+                    {formatCount(row.humanPageviews)}
                   </td>
                 </tr>
               ))
@@ -156,28 +160,24 @@ export function QualifiedTrafficSection({
           Qualified traffic ({windowLabel})
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Site-wide first-party funnel. Human pageviews use{" "}
-          <code className="text-xs">isLikelyBot = false</code>. Qualified visits are non-bot{" "}
-          <code className="text-xs">qualified_visit</code> events that matched a PageView
-          (same IP + path, 15m) with server dedupe.
+          Site-wide first-party funnel.{" "}
+          <strong className="font-medium text-foreground/90">Engaged humans</strong> =
+          distinct IPs with a non-bot{" "}
+          <code className="text-xs">qualified_visit</code> (5s dwell + interaction,
+          server-gated). Use that number for “real people,” not raw pageviews.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          title="Human pageviews"
-          value={formatCount(data.humanPageviews)}
-          subtitle="Non-bot PageView rows"
-        />
-        <StatCard
-          title="Bot-flagged pageviews"
-          value={formatCount(data.botPageviews)}
-          subtitle="PageView rows with isLikelyBot = true"
+          title="Engaged humans"
+          value={formatCount(data.engagedHumans)}
+          subtitle="Distinct IPs with qualified_visit (reliable)"
         />
         <StatCard
           title="Qualified visits"
           value={formatCount(data.qualifiedVisits)}
-          subtitle="Non-bot qualified_visit (server-gated)"
+          subtitle="Non-bot qualified_visit events (server-gated)"
         />
         <StatCard
           title="Ratings"
@@ -194,32 +194,50 @@ export function QualifiedTrafficSection({
           value={formatCount(data.repeatRaters)}
           subtitle="Signups in window with ≥2 lifetime ratings"
         />
-        {(() => {
-          const hq = formatHumanToQualified(
-            data.humanToQualifiedRatio,
-            data.humanToQualifiedExceeded,
-          )
-          return (
-            <StatCard
-              title="Human → qualified"
-              value={hq.value}
-              subtitle={
-                hq.note ??
-                "qualified visits ÷ human pageviews (capped at 100%)"
-              }
-            />
-          )
-        })()}
         <StatCard
           title="Qualified → rating"
           value={formatRatio(data.qualifiedToRatingRatio)}
           subtitle="ratings ÷ qualified visits"
         />
-        <StatCard
-          title="Human PV without qualified"
-          value={formatRatio(data.humanPageviewsWithoutQualifiedShare)}
-          subtitle="Bot-suspicion indicator (not a bot count): share of human PV exceeding qualified visits"
-        />
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground">
+          Noisy PageView (not for decisions)
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Human pageviews"
+            value={formatCount(data.humanPageviews)}
+            subtitle="isLikelyBot=false only — includes zero-dwell spoofed Chrome"
+          />
+          <StatCard
+            title="Bot-flagged pageviews"
+            value={formatCount(data.botPageviews)}
+            subtitle="PageView rows with isLikelyBot = true"
+          />
+          {(() => {
+            const hq = formatHumanToQualified(
+              data.humanToQualifiedRatio,
+              data.humanToQualifiedExceeded,
+            )
+            return (
+              <StatCard
+                title="Human → qualified"
+                value={hq.value}
+                subtitle={
+                  hq.note ??
+                  "qualified visits ÷ human pageviews (capped at 100%)"
+                }
+              />
+            )
+          })()}
+          <StatCard
+            title="Human PV without qualified"
+            value={formatRatio(data.humanPageviewsWithoutQualifiedShare)}
+            subtitle="Bot-suspicion indicator (not a bot count)"
+          />
+        </div>
       </div>
 
       <div className="rounded-xl border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
@@ -227,15 +245,15 @@ export function QualifiedTrafficSection({
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>
             <strong className="font-medium text-foreground/90">Trust for decisions:</strong>{" "}
-            ratings, signups, repeat raters, and qualified visits.
+            engaged humans, qualified visits, ratings, signups, repeat raters.
           </li>
           <li>
-            <strong className="font-medium text-foreground/90">Noisy:</strong> raw PageView totals
-            and Umami “visitors” (often zero-dwell headless Chrome with no referrer).
+            <strong className="font-medium text-foreground/90">Noisy:</strong> raw PageView
+            totals and Umami “visitors” (often zero-dwell headless Chrome with no referrer).
           </li>
           <li>
             Same window: Umami pageviews should be in the same ballpark as all PageView rows
-            (both load on the root layout). Prefer human + qualified_visit over Umami uniques.
+            (both load on the root layout). Prefer engaged + qualified_visit over Umami uniques.
           </li>
         </ul>
       </div>

@@ -1,14 +1,15 @@
 /**
  * Site-wide qualified-traffic funnel for /admin?tab=traffic.
  *
- * Trust for decisions: ratings, signups, qualified_visit counts.
+ * Trust for decisions: engaged humans (distinct ipHash on qualified_visit),
+ * qualified_visit counts, ratings, signups.
  * Noisy / directional only: raw PageView totals, Umami “visitors” (often includes
  * zero-dwell headless Chrome). Human pageviews still use isLikelyBot=false but
  * can include spoofed browsers that never qualify.
  *
  * Umami reconciliation (same calendar window):
  * - Compare Umami pageviews ≈ first-party PageView rows (both fire on root layout).
- * - Prefer first-party human + qualified_visit over Umami unique visitors.
+ * - Prefer engaged humans + qualified_visit over Umami unique visitors.
  * - Prefer Rating / User signup counts over any analytics “conversion” estimate.
  */
 
@@ -19,6 +20,8 @@ import type { PageViewAnalyticsDays } from "@/lib/admin/getPageViewAnalytics"
 
 export type QualifiedTrafficChannelRow = {
   key: string
+  /** Distinct ipHash on non-bot qualified_visit for this channel. */
+  engagedHumans: number
   humanPageviews: number
   qualifiedVisits: number
   ratings: number
@@ -28,6 +31,11 @@ export type QualifiedTrafficChannelRow = {
 
 export type QualifiedTrafficMetrics = {
   days: PageViewAnalyticsDays
+  /**
+   * Reliable humans: COUNT(DISTINCT ipHash) on non-bot qualified_visit
+   * in the window (engagement-proven, not isLikelyBot=false alone).
+   */
+  engagedHumans: number
   humanPageviews: number
   /** PageView rows with isLikelyBot = true in the same window. */
   botPageviews: number
@@ -76,6 +84,7 @@ function intervalForDays(days: PageViewAnalyticsDays): Prisma.Sql {
 function emptyMetrics(days: PageViewAnalyticsDays): QualifiedTrafficMetrics {
   return {
     days,
+    engagedHumans: 0,
     humanPageviews: 0,
     botPageviews: 0,
     qualifiedVisits: 0,
@@ -95,7 +104,26 @@ type CountRow = { count: bigint | number }
 type KeyCountRow = { key: string; count: bigint | number }
 type KeyUserRow = { key: string; signups: bigint | number; repeatRaters: bigint | number }
 
-function mergeChannelMaps(
+/**
+ * Pure helper: distinct ipHash count (engaged humans), not event row count.
+ * Exported for unit tests.
+ */
+export function countDistinctEngagedHumans(
+  events: Array<{ ipHash: string }>,
+): number {
+  const set = new Set<string>()
+  for (const e of events) {
+    const ip = e.ipHash?.trim()
+    if (ip) set.add(ip)
+  }
+  return set.size
+}
+
+/**
+ * Merge channel breakdown maps. Exported for unit tests.
+ */
+export function mergeQualifiedTrafficChannels(
+  engaged: KeyCountRow[],
   human: KeyCountRow[],
   qualified: KeyCountRow[],
   ratings: KeyCountRow[],
@@ -108,6 +136,7 @@ function mergeChannelMaps(
     if (!row) {
       row = {
         key: k,
+        engagedHumans: 0,
         humanPageviews: 0,
         qualifiedVisits: 0,
         ratings: 0,
@@ -118,6 +147,7 @@ function mergeChannelMaps(
     }
     return row
   }
+  for (const r of engaged) ensure(r.key).engagedHumans = toNumber(r.count)
   for (const r of human) ensure(r.key).humanPageviews = toNumber(r.count)
   for (const r of qualified) ensure(r.key).qualifiedVisits = toNumber(r.count)
   for (const r of ratings) ensure(r.key).ratings = toNumber(r.count)
@@ -128,9 +158,10 @@ function mergeChannelMaps(
   }
   return [...map.values()].sort(
     (a, b) =>
-      b.humanPageviews - a.humanPageviews ||
+      b.engagedHumans - a.engagedHumans ||
       b.qualifiedVisits - a.qualifiedVisits ||
-      b.ratings - a.ratings,
+      b.ratings - a.ratings ||
+      b.humanPageviews - a.humanPageviews,
   )
 }
 
@@ -169,7 +200,7 @@ export function computeQualifiedTrafficRatios(input: {
 export async function getQualifiedTrafficMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<QualifiedTrafficMetrics> {
-  const cacheKey = `admin:qualified-traffic:v2:${days}`
+  const cacheKey = `admin:qualified-traffic:v3:${days}`
   const cached = getCache<QualifiedTrafficMetrics>(cacheKey)
   if (cached) return cached
 
@@ -177,21 +208,31 @@ export async function getQualifiedTrafficMetrics(
 
   try {
     const [
+      engagedRows,
       humanRows,
       botRows,
       qualifiedRows,
       ratingRows,
       signupRows,
       repeatRows,
+      engagedBySource,
       humanBySource,
       qualifiedBySource,
       ratingsBySource,
       usersBySource,
+      engagedByCampaign,
       humanByCampaign,
       qualifiedByCampaign,
       ratingsByCampaign,
       usersByCampaign,
     ] = await Promise.all([
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(DISTINCT "ipHash")::bigint AS count
+        FROM "ProductEvent"
+        WHERE "name" = 'qualified_visit'
+          AND "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+      `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
         FROM "PageView"
@@ -228,6 +269,17 @@ export async function getQualifiedTrafficMetrics(
           AND (
             SELECT COUNT(*) FROM "Rating" r WHERE r."userId" = u."id"
           ) >= 2
+      `),
+      prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
+        SELECT COALESCE(NULLIF(BTRIM("utmSource"), ''), '(none)') AS key,
+               COUNT(DISTINCT "ipHash")::bigint AS count
+        FROM "ProductEvent"
+        WHERE "name" = 'qualified_visit'
+          AND "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 25
       `),
       prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
         SELECT COALESCE(NULLIF(BTRIM("utmSource"), ''), '(none)') AS key,
@@ -273,6 +325,17 @@ export async function getQualifiedTrafficMetrics(
       `),
       prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
         SELECT COALESCE(NULLIF(BTRIM("utmCampaign"), ''), '(none)') AS key,
+               COUNT(DISTINCT "ipHash")::bigint AS count
+        FROM "ProductEvent"
+        WHERE "name" = 'qualified_visit'
+          AND "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 25
+      `),
+      prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
+        SELECT COALESCE(NULLIF(BTRIM("utmCampaign"), ''), '(none)') AS key,
                COUNT(*)::bigint AS count
         FROM "PageView"
         WHERE "isLikelyBot" = false
@@ -315,6 +378,7 @@ export async function getQualifiedTrafficMetrics(
       `),
     ])
 
+    const engagedHumans = toNumber(engagedRows[0]?.count)
     const humanPageviews = toNumber(humanRows[0]?.count)
     const botPageviews = toNumber(botRows[0]?.count)
     const qualifiedVisits = toNumber(qualifiedRows[0]?.count)
@@ -329,6 +393,7 @@ export async function getQualifiedTrafficMetrics(
 
     const data: QualifiedTrafficMetrics = {
       days,
+      engagedHumans,
       humanPageviews,
       botPageviews,
       qualifiedVisits,
@@ -336,13 +401,15 @@ export async function getQualifiedTrafficMetrics(
       signups,
       repeatRaters,
       ...ratios,
-      bySource: mergeChannelMaps(
+      bySource: mergeQualifiedTrafficChannels(
+        engagedBySource,
         humanBySource,
         qualifiedBySource,
         ratingsBySource,
         usersBySource,
       ),
-      byCampaign: mergeChannelMaps(
+      byCampaign: mergeQualifiedTrafficChannels(
+        engagedByCampaign,
         humanByCampaign,
         qualifiedByCampaign,
         ratingsByCampaign,

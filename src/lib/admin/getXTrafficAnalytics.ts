@@ -35,6 +35,11 @@ export type XTrafficAnalytics = {
   /** Human pageviews attributed to X (tagged and/or organic referrer) */
   xPageviews: number
   uniqueVisitors: number
+  /**
+   * Reliable X humans: DISTINCT ipHash on non-bot qualified_visit with
+   * source=x or utm_source in (x, twitter).
+   */
+  engagedHumans: number
   /** Share of all human pageviews in the window */
   pctOfHumanTraffic: number
   taggedPageviews: number
@@ -234,6 +239,7 @@ function emptyAnalytics(days: PageViewAnalyticsDays): XTrafficAnalytics {
     days,
     xPageviews: 0,
     uniqueVisitors: 0,
+    engagedHumans: 0,
     pctOfHumanTraffic: 0,
     taggedPageviews: 0,
     organicPageviews: 0,
@@ -261,7 +267,7 @@ function emptyAnalytics(days: PageViewAnalyticsDays): XTrafficAnalytics {
 export async function getXTrafficAnalytics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<XTrafficAnalytics> {
-  const cacheKey = `admin:x-traffic:${days}`
+  const cacheKey = `admin:x-traffic:v2:${days}`
   const cached = getCache<XTrafficAnalytics>(cacheKey)
   if (cached) return cached
 
@@ -277,6 +283,7 @@ export async function getXTrafficAnalytics(
       organicRows,
       bothRows,
       uniqueRows,
+      engagedRows,
       seriesRows,
       pathRows,
       usersFromX,
@@ -325,6 +332,14 @@ export async function getXTrafficAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND ${X_ATTRIBUTED_SQL}
+      `),
+      prisma.$queryRaw<CountRow[]>(Prisma.sql`
+        SELECT COUNT(DISTINCT "ipHash")::bigint AS count
+        FROM "ProductEvent"
+        WHERE "name" = 'qualified_visit'
+          AND "isLikelyBot" = false
+          AND "createdAt" >= NOW() - ${interval}
+          AND ${X_EVENT_ATTRIBUTED_SQL}
       `),
       days === 1
         ? prisma.$queryRaw<DayCountRow[]>(Prisma.sql`
@@ -474,6 +489,7 @@ export async function getXTrafficAnalytics(
     const organicPageviews = toNumber(organicRows[0]?.count ?? 0)
     const bothPageviews = toNumber(bothRows[0]?.count ?? 0)
     const uniqueVisitors = toNumber(uniqueRows[0]?.count ?? 0)
+    const engagedHumans = toNumber(engagedRows[0]?.count ?? 0)
 
     // Prisma OR on referrer may include false positives (e.g. other hosts with "x.com" substring).
     // Filter recent rows to true X attribution.
@@ -501,6 +517,7 @@ export async function getXTrafficAnalytics(
       days,
       xPageviews,
       uniqueVisitors,
+      engagedHumans,
       pctOfHumanTraffic: humanTotal > 0 ? (xPageviews / humanTotal) * 100 : 0,
       taggedPageviews,
       organicPageviews,

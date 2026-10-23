@@ -27,8 +27,11 @@ export default function XTrafficSection({ data, hrefForDays }: Props) {
         <div>
           <h2 className="text-xl font-semibold text-foreground">X traffic</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Human pageviews from tagged links (<code className="text-xs">utm_source=x</code> /{" "}
-            <code className="text-xs">src=x</code>) or organic referrers (x.com, twitter.com, t.co).
+            Prefer <strong className="font-medium text-foreground/90">Engaged humans</strong>{" "}
+            (distinct IPs with X-attributed <code className="text-xs">qualified_visit</code>).
+            Pageviews from tagged links (<code className="text-xs">utm_source=x</code> /{" "}
+            <code className="text-xs">src=x</code>) or organic referrers (x.com, twitter.com, t.co)
+            are noisier.
           </p>
         </div>
         <div className="flex gap-2 text-sm">
@@ -50,28 +53,33 @@ export default function XTrafficSection({ data, hrefForDays }: Props) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          title={`Engaged humans (${windowLabel})`}
+          value={data.engagedHumans}
+          subtitle="Distinct IPs with X-attributed qualified_visit"
+        />
+        <StatCard
           title={`X pageviews (${windowLabel})`}
           value={data.xPageviews}
-          subtitle={`${data.pctOfHumanTraffic.toFixed(1)}% of human traffic`}
+          subtitle={`${data.pctOfHumanTraffic.toFixed(1)}% of human PageViews (noisy)`}
         />
         <StatCard
           title={`Unique visitors (${windowLabel})`}
           value={data.uniqueVisitors}
-          subtitle="Distinct IPs, X-attributed"
+          subtitle="Distinct IPs on X PageViews (not engagement-gated)"
         />
         <StatCard
           title={`Tagged (${windowLabel})`}
           value={data.taggedPageviews}
           subtitle="utm_source / src = x"
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title={`Organic (${windowLabel})`}
           value={data.organicPageviews}
           subtitle="Referrer x.com / twitter / t.co"
         />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           title={`Both tagged + organic (${windowLabel})`}
           value={data.bothPageviews}
