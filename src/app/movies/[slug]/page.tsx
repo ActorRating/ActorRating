@@ -9,7 +9,9 @@ import { notFound } from 'next/navigation'
 import { withIsoDates } from '@/lib/dateUtils'
 import { prisma } from '@/lib/prisma'
 import { isFeaturetteMovie, matchesFeaturetteTitle } from '@/lib/non-rateable'
+import { isHubEnabledSlug } from '@/lib/movie-best-performances/hub-allowlist'
 import MoviePageClient from './MoviePageClient'
+import MovieHubCrawlLink from '@/components/seo/MovieHubCrawlLink'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 import { buildMovieJsonLd } from '@/lib/seo/movie-jsonld'
 
@@ -34,6 +36,8 @@ export default async function MoviePage({
   }
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+  // Hub link is SSR-only for allowlisted path slugs (not UUID alias URLs).
+  const hubCrawlLink = isHubEnabledSlug(slug) ? <MovieHubCrawlLink slug={slug} /> : null
   if (isUUID) return <MoviePageClient />
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
   try {
@@ -42,7 +46,14 @@ export default async function MoviePage({
       headers: { 'Content-Type': 'application/json' },
     })
     if (res.status === 410) notFound()
-    if (!res.ok) return <MoviePageClient />
+    if (!res.ok) {
+      return (
+        <>
+          {hubCrawlLink}
+          <MoviePageClient />
+        </>
+      )
+    }
     const data = await res.json()
     const jsonLd = buildMovieJsonLd(data, baseUrl)
     const crumbs = breadcrumbJsonLd(baseUrl, [
@@ -63,6 +74,7 @@ export default async function MoviePage({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
         />
+        {hubCrawlLink}
         <MoviePageClient
           initialMovie={initialMovie}
           initialPerformances={initialPerformances}
@@ -70,6 +82,11 @@ export default async function MoviePage({
       </>
     )
   } catch {
-    return <MoviePageClient />
+    return (
+      <>
+        {hubCrawlLink}
+        <MoviePageClient />
+      </>
+    )
   }
 }

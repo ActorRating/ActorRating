@@ -12,6 +12,7 @@ import {
   buildActorCrawlShellEntries,
   loadActorPageData,
 } from '@/lib/actor-page-data'
+import { findHubPathInFilmography } from '@/lib/movie-best-performances/hub-allowlist'
 import ActorPageClient from './ActorPageClient'
 import ActorPageCrawlShell from '@/components/seo/ActorPageCrawlShell'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
@@ -43,6 +44,10 @@ export default async function ActorPage({
   const initialActor = withIsoDates({ ...data })
   const initialPerformances = data.performances.map((p) => withIsoDates({ ...p }))
   const crawlEntries = buildActorCrawlShellEntries(data, data.performances, ACTOR_CRAWL_SHELL_LIMIT)
+  // No extra queries: scan performances already loaded for this actor page.
+  const hubPath = findHubPathInFilmography(
+    data.performances.map((p) => ({ slug: p.movie?.slug ?? null })),
+  )
 
   return (
     <>
@@ -64,6 +69,7 @@ export default async function ActorPage({
         totalRatingCount={data.totalRatingCount}
         entries={crawlEntries}
         cappedFrom={data.performances.length}
+        hubPath={hubPath}
       />
     </>
   )

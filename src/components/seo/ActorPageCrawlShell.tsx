@@ -7,6 +7,8 @@ type Props = {
   totalRatingCount: number
   entries: ActorCrawlShellEntry[]
   cappedFrom?: number
+  /** Allowlisted hub path derived from already-loaded filmography (no extra queries). */
+  hubPath?: string | null
 }
 
 /**
@@ -19,6 +21,7 @@ export default function ActorPageCrawlShell({
   totalRatingCount,
   entries,
   cappedFrom,
+  hubPath,
 }: Props) {
   const ratedEntries = entries.filter((e) => e.ratingCount > 0)
   const topRated = ratedEntries[0]
@@ -57,6 +60,13 @@ export default function ActorPageCrawlShell({
       <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-500">
         {factualIntro}
       </p>
+      {hubPath ? (
+        <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-400">
+          <Link href={hubPath} className="text-[#FFD700] underline-offset-2 hover:underline">
+            See the community ranking of performances in this film
+          </Link>
+        </p>
+      ) : null}
       {entries.length > 0 ? (
         <ol className="mx-auto max-w-2xl list-decimal space-y-2 pl-5 text-left text-sm text-zinc-400">
           {entries.map((entry) => (

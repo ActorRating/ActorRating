@@ -22,6 +22,8 @@ import { isSelfOnlyCreditPair } from "../src/lib/non-rateable"
 import { isRatePageIndexable, MIN_COMMUNITY_RATINGS_FOR_INDEX } from "../src/lib/rate-page-seo"
 import { pickCanonicalPerformanceSeoMeta } from "../src/lib/rate-page-canonical-perf"
 import { isSitemapEligibleRateMovie } from "../src/lib/rate-page-sitemap-eligibility"
+import { listStaticSitemapPaths } from "../src/lib/seo/static-sitemap-urls"
+import { HUB_ENABLED_SLUGS } from "../src/lib/movie-best-performances/hub-allowlist"
 
 /**
  * Bump when sitemap indexability logic changes — printed at gen start so
@@ -370,29 +372,12 @@ async function resolveCuratedPerformancePairs(): Promise<
 
 function generateStatic(outDir: string): void {
   const now = new Date()
-  const urls: UrlEntry[] = [
-    { url: BASE_URL, lastModified: now, changeFrequency: "daily", priority: 1.0 },
-    { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/methodology`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/lists`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE_URL}/forum`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/stories`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE_URL}/news`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE_URL}/discover`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/craft/emotional-range`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${BASE_URL}/craft/screen-presence`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${BASE_URL}/craft/character-believability`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
-    { url: `${BASE_URL}/craft/technical-skill`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
-    { url: `${BASE_URL}/craft/chemistry-interaction`, lastModified: now, changeFrequency: "daily", priority: 0.65 },
-    {
-      url: `${BASE_URL}/movies/the-odyssey-2026/best-performances`,
-      lastModified: now,
-      changeFrequency: "hourly",
-      priority: 0.85,
-    },
-    { url: `${BASE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-  ]
+  const urls: UrlEntry[] = listStaticSitemapPaths().map((entry) => ({
+    url: entry.path === "/" ? BASE_URL : `${BASE_URL}${entry.path}`,
+    lastModified: now,
+    changeFrequency: entry.changeFrequency,
+    priority: entry.priority,
+  }))
   writeXml(outDir, "static.xml", buildUrlsetXml(urls))
   console.log(`    → ${urls.length} URLs (auth URLs excluded — layout is noindex)`)
 }
@@ -895,6 +880,13 @@ function validateGeneratedSet(outDir: string): void {
   const staticUrls = countUrlTags(staticXml)
   if (staticUrls < 1) throw new Error("static.xml: no URLs")
   if (!validateLocHosts(staticXml)) throw new Error("static.xml: invalid loc")
+  for (const slug of HUB_ENABLED_SLUGS) {
+    const hubLoc = `${BASE_URL}/movies/${slug}/best-performances`
+    const hubHits = staticXml.split(hubLoc).length - 1
+    if (hubHits !== 1) {
+      throw new Error(`static.xml: expected hub loc exactly once (${hubLoc}), found ${hubHits}`)
+    }
+  }
 
   const checkSeries = (prefix: string, count: number) => {
     if (count < 0) throw new Error(`Invalid ${prefix} count`)

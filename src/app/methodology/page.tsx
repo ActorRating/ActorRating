@@ -120,7 +120,14 @@ export default function MethodologyPage() {
                 On best-performances hubs, <strong className="text-white">displayed</strong>{" "}
                 scores remain the plain community average and signed-in count.{" "}
                 <strong className="text-white">Sort order</strong> uses a Bayesian pull toward the
-                film prior so a single extreme score does not dominate:
+                film prior so a single extreme score does not dominate. Example:{" "}
+                <Link
+                  href="/movies/the-odyssey-2026/best-performances"
+                  className="text-[#FFD700] underline-offset-2 hover:underline"
+                >
+                  community ranking for The Odyssey (2026)
+                </Link>
+                .
               </p>
               <p className="font-mono text-sm text-white/70 bg-white/5 rounded-lg px-4 py-3">
                 sortScore = (n/(n+m))·avg10 + (m/(n+m))·C
