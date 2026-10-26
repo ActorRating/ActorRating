@@ -1,0 +1,93 @@
+# First-party traffic analytics
+
+How `/admin?tab=traffic` decides what is a human, an unknown client, or a bot — and the
+ops steps that are outside the codebase.
+
+## Trust model (three buckets, never "human by default")
+
+| Bucket  | Meaning | How a pageview gets there |
+| ------- | ------- | ------------------------- |
+| **Human**   | Positive proof | `engaged = true` (server-gated `qualified_visit` wrote back to the row), signed-in `userId`, `dwellMs ≥ 5000` **and** an interaction from the dwell beacon, or the same `visitorId` proved human elsewhere in the window (rating, qualified_visit, signup, hub click, face-off vote, search). Legacy rows without `visitorId` fall back to IP-level proof. |
+| **Unknown** | JS ran, nothing proved | `isLikelyBot = false` and none of the above. Zero-dwell spoofed browsers live here. Not counted as humans anywhere. |
+| **Bot**     | Flagged | UA list, header consistency (`ua_hint_mismatch`, `headless_hint`, `missing_sec_fetch`, `cross_site_beacon`, `mobile_hint_mismatch`), client signals (`webdriver`, `zero_screen`), `ip_burst`, crawl heuristics (`crawl_path`, `crawl_entity`, `crawl_fleet`, `crawl_sibling`), Cloudflare verified bot (`cf_verified_bot`), nightly reclassifier (`reclassified_no_engagement`). The reason list is stored in `PageView.botReason` and surfaced in the dashboard. |
+
+Behavioural flags (`crawl_*`, `reclassified_*`) are reversible: when a visitor later proves
+human, the pageview route unflags them (`listUnflagableCrawlPageViewIds`).
+
+## Identity & sessions
+
+- `ar_vid` — signed visitor id, 1 year, HttpOnly. `ar_sid` — signed session id, rolling 30-minute
+  inactivity window, HttpOnly. Both are set/refreshed by `POST /api/analytics/pageview` and stored
+  on `PageView` / `ProductEvent`. Signing (HMAC with `ANALYTICS_IP_SALT` → `AUTH_SECRET`) stops
+  clients from minting ids to inflate visitor counts.
+- Session trust: Bot if any pageview is bot, else Human if any pageview is human, else Unknown.
+- Engaged session (GA4 definition): engaged pageview, or ≥2 pageviews, or ≥10s.
+- Bounce (classic): exactly one pageview and no engaged pageview. Shown for Human sessions
+  (headline) and for Human+Unknown (what GA/Umami-style tools would show).
+- `/admin/*` is excluded from every traffic query.
+
+## Beacons
+
+| Endpoint | Sent by | Purpose |
+| --- | --- | --- |
+| `POST /api/analytics/pageview` | `FirstPartyPageViewTracker` (fetch, so Set-Cookie applies) | Creates the row, returns `{ id }`. Body includes `signals` (webdriver, screen, viewport, dpr, timezone, languages, touch points, cores, visibility). |
+| `POST /api/analytics/dwell` | `FirstPartyPageViewTracker` on `pagehide` / tab hide / route change (`sendBeacon`) | Raises `dwellMs`, fills `interaction`. Never sets `engaged`. |
+| `POST /api/analytics/event` (`qualified_visit`) | `QualifiedVisitTracker` after ≥5s visible + interaction | Server-gated; on acceptance sets `engaged = true` on the referenced `pageview_id`. |
+
+All beacon rate limits (`pv`, `pe`, `dw`) go through `checkSharedRateLimit`: Upstash Redis when
+`UPSTASH_REDIS_REST_URL/_TOKEN` are set, otherwise a per-process memory window (resets on deploy).
+
+## Ops steps outside the repo
+
+### 1. Migration (required for the new columns)
+
+```
+npx prisma migrate deploy
+```
+
+Migration `20261103100000_pageview_sessions_and_trust` is additive (new nullable columns + indexes).
+Until it runs, the pageview/dwell/event routes will fail their DB writes and fall back to 204
+(analytics never breaks the product), so deploy code and migration together.
+
+### 2. Cloudflare → origin headers
+
+The app already reads `cf-connecting-ip` (preferred over the client-controlled first `x-forwarded-for`
+entry) and `cf-ipcountry`. The verified-bot flag is **not** sent as a header by default:
+
+- Cloudflare dashboard → Rules → Transform Rules → **Modify Request Header** → Create rule
+- Name: `verified-bot-to-origin`
+- When: *Custom filter expression* → `(cf.client.bot)`
+- Then: *Set static* header `x-cf-verified-bot` = `1`
+
+`cf.client.bot` is available on every plan. Bot score / JA4 fingerprinting need Enterprise and are
+not used.
+
+### 3. Traefik trusted IPs (so headers cannot be spoofed by direct-to-origin requests)
+
+Make sure the Traefik entrypoint only trusts forwarded headers from Cloudflare ranges
+(`entryPoints.websecure.forwardedHeaders.trustedIPs = [Cloudflare IPv4/IPv6 ranges]`) and that the
+origin is not reachable except through Cloudflare (Cloudflare "Authenticated Origin Pulls" or a
+firewall allow-list). Otherwise a client hitting the origin directly can forge `cf-connecting-ip`,
+`cf-ipcountry` and `x-cf-verified-bot`.
+
+### 4. Nightly reclassifier (Coolify Scheduled Task)
+
+```
+node scripts/run-reclassify-pageviews-cron.js        # daily, e.g. 03:30 UTC
+```
+
+Flags visitors with ≥5 non-bot pageviews in the last 48h (older than 2h, so beacons settled) and zero
+positive signals as `UNIDENTIFIED` / `reclassified_no_engagement`. Preview without writing:
+`npx tsx scripts/reclassify-unknown-pageviews.ts --dry`. HTTP alternative:
+`GET /api/cron/reclassify-pageviews?secret=$CRON_SECRET[&dry=1]`.
+
+### 5. Optional: Upstash Redis
+
+Set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` so burst / event / dwell rate limits are
+shared across replicas and survive deploys.
+
+## What this still cannot do
+
+A bot that runs JavaScript, waits ≥5 s, moves the pointer and scrolls will be counted as human here —
+and by GA4, Plausible, Umami and Cloudflare's free tier. The goal of this system is to make the
+*unknown* population visible instead of calling it human, and to attribute every bot flag to a reason.

@@ -70,6 +70,22 @@ model PageView {
   isLikelyBot Boolean      @default(false)
   /// Set only when isLikelyBot: disclosed crawler vs unidentified/spoofed.
   botCategory BotCategory?
+  /// Comma-joined reasons that flagged this row (user_agent, ip_burst, ua_hint_mismatch, crawl_path, …).
+  botReason   String?      @db.VarChar(120)
+  /// Signed first-party visitor id (ar_vid cookie, 1y). Null for legacy rows / cookie-less clients.
+  visitorId   String?      @db.VarChar(64)
+  /// Rolling 30-minute session id (ar_sid cookie). Null for legacy rows.
+  sessionId   String?      @db.VarChar(64)
+  /// Positive human proof on this pageview: qualified_visit (≥5s visible + interaction) matched it.
+  engaged     Boolean      @default(false)
+  /// Visible time on page reported by the pagehide beacon (or qualified_visit).
+  dwellMs     Int?
+  /// First real interaction seen on this page (pointermove / touchstart / scroll / keydown).
+  interaction String?      @db.VarChar(20)
+  /// cf-ipcountry (ISO 3166-1 alpha-2) when the request came through Cloudflare.
+  country     String?      @db.VarChar(2)
+  /// Low-cost client fingerprint signals (webdriver, screen, tz, languages…) for bot diagnosis.
+  clientSignals Json?
   createdAt   DateTime     @default(now())
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -81,6 +97,9 @@ model PageView {
   @@index([utmCampaign, createdAt])
   @@index([utmTerm, createdAt])
   @@index([ipHash, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([engaged, createdAt])
 }
 
 /// First-party product events for admin funnels (performance_viewed, rating_submitted, etc.).
@@ -103,6 +122,9 @@ model ProductEvent {
   userAgent   String       @db.Text
   isLikelyBot Boolean      @default(false)
   botCategory BotCategory?
+  /// Same visitor / session ids as PageView (ar_vid / ar_sid cookies).
+  visitorId   String?      @db.VarChar(64)
+  sessionId   String?      @db.VarChar(64)
   createdAt   DateTime     @default(now())
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -113,6 +135,8 @@ model ProductEvent {
   @@index([isLikelyBot, createdAt])
   @@index([ipHash, createdAt])
   @@index([path, createdAt])
+  @@index([visitorId, createdAt])
+  @@index([sessionId, createdAt])
 }
 
 model Account {

@@ -276,6 +276,6 @@ test("flagged IP that later rates is unflagged in the same pass", async () => {
   await unflagCrawlPageViews(prisma as never, ids)
   expect(updateMany).toHaveBeenCalledWith({
     where: { id: { in: ["pv-1", "pv-2"] } },
-    data: { isLikelyBot: false, botCategory: null },
+    data: { isLikelyBot: false, botCategory: null, botReason: null },
   })
 })

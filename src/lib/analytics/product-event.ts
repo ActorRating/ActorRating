@@ -2,17 +2,16 @@ import type { BotCategory } from "@prisma/client"
 import type { NextRequest } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import {
-  checkMemoryIpRateLimit,
-  getClientIp,
-} from "@/lib/requestProtection"
+import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
 import { resolveBotCategory } from "@/lib/analytics/bot-category"
 import {
   evaluatePageViewBot,
   normalizePageViewPath,
 } from "@/lib/analytics/pageview"
+import { checkSharedRateLimit } from "@/lib/analytics/rate-limit"
 import { extractRequestAnalyticsSignals } from "@/lib/analytics/request-signals"
+import { peekVisitorSession } from "@/lib/analytics/visitor-session"
 import { normalizeAcquisitionSource } from "@/lib/tracking/source"
 import {
   PRODUCT_EVENT_IP_HOUR_MAX,
@@ -133,18 +132,22 @@ export async function persistProductEvent(
   const userAgent = (request.headers.get("user-agent") || "").slice(0, 1000)
   const acceptLanguage = request.headers.get("accept-language")
   const ipHash = hashIp(getClientIp(request))
+  const { visitorId, sessionId } = peekVisitorSession(request)
 
   // Cap all product events per IP (60 / hour). Over budget → 429, no write.
-  if (
-    !checkMemoryIpRateLimit(productEventIpHourWindow, ipHash, {
+  const underBudget = await checkSharedRateLimit(
+    "pe",
+    ipHash,
+    {
       windowMs: PRODUCT_EVENT_IP_HOUR_WINDOW_MS,
       maxRequests: PRODUCT_EVENT_IP_HOUR_MAX,
-    })
-  ) {
+    },
+    productEventIpHourWindow,
+  )
+  if (!underBudget) {
     return { status: 429, stored: false }
   }
 
-  // Country/ASN reserved — extractRequestAnalyticsSignals returns null until CF headers verified.
   const signals = extractRequestAnalyticsSignals(request)
   const properties = {
     ...(clientProperties ?? {}),
@@ -158,9 +161,12 @@ export async function persistProductEvent(
     userAgent,
     acceptLanguage,
     ipHash,
+    headers: request.headers,
+    cloudflareVerifiedBot: signals.cloudflareVerifiedBot,
   })
 
   let isLikelyBot = bot.isLikelyBot
+  let engagedPageViewId: string | null = null
 
   if (name === "qualified_visit") {
     const qPath = path ?? "/"
@@ -168,26 +174,41 @@ export async function persistProductEvent(
     const pageviewSince = new Date(
       Date.now() - QUALIFIED_VISIT_PAGEVIEW_LOOKBACK_MS,
     )
+    const claimedPageViewId =
+      typeof clientProperties?.pageview_id === "string"
+        ? clientProperties.pageview_id.slice(0, 64)
+        : null
+    // Identity for matching: visitor cookie when present, else IP.
+    const identity = visitorId ? { OR: [{ visitorId }, { ipHash }] } : { ipHash }
 
     const [recentDuplicate, matchingPageView] = await Promise.all([
       prisma.productEvent.findFirst({
         where: {
           name: "qualified_visit",
-          ipHash,
+          ...identity,
           path: qPath,
           createdAt: { gte: dedupeSince },
         },
         select: { id: true },
       }),
-      prisma.pageView.findFirst({
-        where: {
-          ipHash,
-          path: qPath,
-          createdAt: { gte: pageviewSince },
-        },
-        orderBy: { createdAt: "desc" },
-        select: { isLikelyBot: true },
-      }),
+      claimedPageViewId
+        ? prisma.pageView.findFirst({
+            where: {
+              id: claimedPageViewId,
+              ...identity,
+              createdAt: { gte: pageviewSince },
+            },
+            select: { id: true, isLikelyBot: true },
+          })
+        : prisma.pageView.findFirst({
+            where: {
+              ...identity,
+              path: qPath,
+              createdAt: { gte: pageviewSince },
+            },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, isLikelyBot: true },
+          }),
     ])
 
     const gate = gateQualifiedVisitPersist({
@@ -202,6 +223,9 @@ export async function persistProductEvent(
       return { status: 204, stored: false }
     }
     isLikelyBot = gate.isLikelyBot
+    if (!isLikelyBot && matchingPageView) {
+      engagedPageViewId = matchingPageView.id
+    }
   }
 
   let userId: string | null = null
@@ -235,8 +259,52 @@ export async function persistProductEvent(
       userAgent,
       isLikelyBot,
       botCategory,
+      visitorId,
+      sessionId,
     },
   })
 
+  // Positive human proof flows back to the PageView row (Human / Unknown split).
+  if (engagedPageViewId) {
+    const dwell =
+      typeof clientProperties?.dwell_ms === "number" &&
+      Number.isFinite(clientProperties.dwell_ms)
+        ? Math.max(0, Math.min(Math.round(clientProperties.dwell_ms), 6 * 60 * 60 * 1000))
+        : null
+    const interaction =
+      typeof clientProperties?.interaction === "string"
+        ? clientProperties.interaction.slice(0, 20)
+        : null
+    try {
+      await markPageViewEngaged(engagedPageViewId, { dwellMs: dwell, interaction })
+    } catch {
+      // Non-fatal: the qualified_visit row is already stored.
+    }
+  }
+
   return { status: 204, stored: true }
+}
+
+/** Set engaged=true and raise dwell/interaction on a PageView row (never lowers dwell). */
+export async function markPageViewEngaged(
+  pageViewId: string,
+  input: { dwellMs: number | null; interaction: string | null },
+): Promise<void> {
+  const current = await prisma.pageView.findUnique({
+    where: { id: pageViewId },
+    select: { dwellMs: true, interaction: true },
+  })
+  if (!current) return
+  const dwellMs =
+    input.dwellMs == null
+      ? current.dwellMs
+      : Math.max(current.dwellMs ?? 0, input.dwellMs)
+  await prisma.pageView.update({
+    where: { id: pageViewId },
+    data: {
+      engaged: true,
+      dwellMs,
+      interaction: current.interaction ?? input.interaction,
+    },
+  })
 }

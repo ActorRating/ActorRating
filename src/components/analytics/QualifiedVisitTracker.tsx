@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { trackQualifiedVisit } from "@/lib/analytics"
+import { getCurrentPageViewId, pageViewKey } from "@/lib/analytics/pageview-client"
 import {
   createQualifiedVisitState,
   flushVisibleTime,
@@ -65,6 +66,7 @@ export function QualifiedVisitTracker() {
       trackQualifiedVisit({
         interaction,
         dwell_ms: dwellMs,
+        pageview_id: getCurrentPageViewId(pageViewKey(pathname, search)),
       })
     }
 

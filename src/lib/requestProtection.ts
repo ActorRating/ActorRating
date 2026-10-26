@@ -14,7 +14,15 @@ const INVALID_RESOURCE_PARAMS = new Set([
   "[object object]",
 ])
 
+/**
+ * Client IP behind Cloudflare → Traefik. `cf-connecting-ip` is set by Cloudflare
+ * and cannot be influenced by the client, whereas the *first* `x-forwarded-for`
+ * entry is whatever the client sent (Cloudflare appends, it does not replace).
+ * Falls back to XFF / x-real-ip for non-proxied requests (local dev, health checks).
+ */
 export function getClientIp(request: NextRequest): string {
+  const cf = request.headers.get("cf-connecting-ip")?.trim()
+  if (cf) return cf
   const xff = request.headers.get("x-forwarded-for")
   if (xff) return xff.split(",")[0]?.trim() || "unknown"
   return request.headers.get("x-real-ip") || "unknown"

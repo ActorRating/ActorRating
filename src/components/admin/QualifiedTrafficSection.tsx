@@ -207,9 +207,9 @@ export function QualifiedTrafficSection({
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Human pageviews"
+            title="Non-bot pageviews"
             value={formatCount(data.humanPageviews)}
-            subtitle="isLikelyBot=false only — includes zero-dwell spoofed Chrome"
+            subtitle="isLikelyBot=false (Human + Unknown) — see trust split above for proven humans"
           />
           <StatCard
             title="Bot-flagged pageviews"
@@ -227,13 +227,13 @@ export function QualifiedTrafficSection({
                 value={hq.value}
                 subtitle={
                   hq.note ??
-                  "qualified visits ÷ human pageviews (capped at 100%)"
+                  "qualified visits ÷ non-bot pageviews (capped at 100%)"
                 }
               />
             )
           })()}
           <StatCard
-            title="Human PV without qualified"
+            title="Non-bot PV without qualified"
             value={formatRatio(data.humanPageviewsWithoutQualifiedShare)}
             subtitle="Bot-suspicion indicator (not a bot count)"
           />

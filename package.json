@@ -47,7 +47,9 @@
     "journal:cron": "node scripts/run-site-journal-cron.js",
     "catalog:cron": "node scripts/run-catalog-sync-cron.js",
     "faceoff:sync": "tsx scripts/sync-faceoff-pool.ts",
-    "sitemaps:cron": "node scripts/run-generate-sitemaps-cron.js"
+    "sitemaps:cron": "node scripts/run-generate-sitemaps-cron.js",
+    "pageviews:reclassify": "tsx scripts/reclassify-unknown-pageviews.ts",
+    "pageviews:reclassify:cron": "node scripts/run-reclassify-pageviews-cron.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

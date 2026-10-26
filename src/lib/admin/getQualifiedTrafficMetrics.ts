@@ -238,12 +238,14 @@ export async function getQualifiedTrafficMetrics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
         FROM "PageView"
         WHERE "isLikelyBot" = true
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -287,6 +289,7 @@ export async function getQualifiedTrafficMetrics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -340,6 +343,7 @@ export async function getQualifiedTrafficMetrics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25

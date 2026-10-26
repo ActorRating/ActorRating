@@ -261,6 +261,8 @@ export function trackPerformanceViewed(input: PerformanceEventInput) {
 export function trackQualifiedVisit(input?: {
   interaction?: string | null
   dwell_ms?: number
+  /** PageView row id from the pageview beacon so the server can mark it engaged. */
+  pageview_id?: string | null
 }) {
   trackEventWithAttribution(
     "qualified_visit",
@@ -269,6 +271,7 @@ export function trackQualifiedVisit(input?: {
     {
       interaction: input?.interaction ?? null,
       dwell_ms: input?.dwell_ms ?? null,
+      ...(input?.pageview_id ? { pageview_id: input.pageview_id } : {}),
     },
   )
 }

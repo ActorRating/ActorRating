@@ -27,6 +27,8 @@ import {
   parseAnalyticsDays,
 } from "@/lib/admin/getPageViewAnalytics"
 import { getQualifiedTrafficMetrics } from "@/lib/admin/getQualifiedTrafficMetrics"
+import { getTrafficTrustMetrics } from "@/lib/admin/getTrafficTrustMetrics"
+import { TrafficTrustSection } from "@/components/admin/TrafficTrustSection"
 import { getValuableRaterMetrics } from "@/lib/admin/getValuableRaterMetrics"
 import { getAiTrafficMetrics } from "@/lib/admin/getAiTrafficMetrics"
 import { QualifiedTrafficSection } from "@/components/admin/QualifiedTrafficSection"
@@ -258,9 +260,9 @@ export default async function AdminDashboardPage({
 }
 
 async function OverviewTab() {
-  const [data, pageViews, ratingDistribution] = await Promise.all([
+  const [data, trafficTrust, ratingDistribution] = await Promise.all([
     getAdminData(),
-    getPageViewAnalytics(7),
+    getTrafficTrustMetrics(7),
     getRatingDistribution(),
   ])
 
@@ -275,9 +277,9 @@ async function OverviewTab() {
           subtitle="users who rated"
         />
         <StatCard
-          title="Unique humans (7d)"
-          value={pageViews.uniqueHumanVisitors}
-          subtitle="Distinct IPs, non-bot"
+          title="Distinct humans (7d)"
+          value={trafficTrust.human.visitors}
+          subtitle={`Proven-human visitors · ${trafficTrust.unknown.visitors} unknown`}
         />
         <StatCard
           title="Total Ratings"
@@ -310,12 +312,14 @@ async function TrafficTab({
 }) {
   const [
     pageViewAnalytics,
+    trafficTrust,
     qualifiedTraffic,
     valuableRaters,
     aiTraffic,
     paidFunnel,
   ] = await Promise.all([
     getPageViewAnalytics(pvDays),
+    getTrafficTrustMetrics(pvDays),
     getQualifiedTrafficMetrics(pvDays),
     getValuableRaterMetrics(pvDays),
     getAiTrafficMetrics(pvDays),
@@ -332,6 +336,7 @@ async function TrafficTab({
           })
         }
       />
+      <TrafficTrustSection data={trafficTrust} />
       <QualifiedTrafficSection
         data={qualifiedTraffic}
         valuableRaters={valuableRaters}

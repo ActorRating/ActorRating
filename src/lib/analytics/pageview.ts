@@ -1,8 +1,12 @@
 import type { NextRequest } from "next/server"
+import { isInvalidResourceParam } from "@/lib/requestProtection"
+import { checkSharedRateLimit } from "@/lib/analytics/rate-limit"
 import {
-  checkMemoryIpRateLimit,
-  isInvalidResourceParam,
-} from "@/lib/requestProtection"
+  detectClientSignalFlags,
+  detectHeaderInconsistencies,
+  type ClientSignals,
+  type HeaderGetter,
+} from "@/lib/analytics/request-signals"
 
 /** Substrings that usually mean a crawler / automated client. */
 export const BOT_UA_SUBSTRINGS = [
@@ -60,11 +64,39 @@ export type PageViewBotInput = {
   userAgent: string
   acceptLanguage: string | null
   ipHash: string
+  /** Request headers for sec-ch-ua / sec-fetch consistency checks (optional). */
+  headers?: HeaderGetter | null
+  /** Sanitized client-side signals from the beacon body (optional). */
+  clientSignals?: ClientSignals | null
+  /** Cloudflare verified-bot flag (Transform Rule header). */
+  cloudflareVerifiedBot?: boolean
+  /** Result of the async burst check, when the caller already ran it. */
+  ipBurst?: boolean
 }
+
+export type PageViewBotReason =
+  | "user_agent"
+  | "missing_accept_language"
+  | "junk_path"
+  | "ip_burst"
+  | "cf_verified_bot"
+  | "ua_hint_mismatch"
+  | "headless_hint"
+  | "missing_sec_fetch"
+  | "cross_site_beacon"
+  | "mobile_hint_mismatch"
+  | "webdriver"
+  | "zero_screen"
 
 export type PageViewBotResult = {
   isLikelyBot: boolean
-  reasons: string[]
+  reasons: PageViewBotReason[]
+}
+
+/** Join reasons for the `botReason` column (120 chars). */
+export function formatBotReason(reasons: readonly string[]): string | null {
+  if (reasons.length === 0) return null
+  return [...new Set(reasons)].join(",").slice(0, 120)
 }
 
 export function userAgentLooksLikeBot(userAgent: string): boolean {
@@ -88,17 +120,28 @@ export function pathLooksLikeJunk(path: string): boolean {
   return false
 }
 
-/** True when this ipHash exceeded the pageview write budget (still log, flag as bot). */
-export function isPageViewBurst(ipHash: string): boolean {
-  return !checkMemoryIpRateLimit(pageViewIpWindow, ipHash, {
+/**
+ * True when this ipHash exceeded the pageview write budget (still log, flag as bot).
+ * Shared across instances via Upstash when configured; memory fallback otherwise.
+ */
+export async function isPageViewBurst(ipHash: string): Promise<boolean> {
+  const ok = await checkSharedRateLimit("pv", ipHash, {
     windowMs: PAGEVIEW_WINDOW_MS,
     maxRequests: PAGEVIEW_MAX_PER_IP,
-  })
+  }, pageViewIpWindow)
+  return !ok
 }
 
+/**
+ * Pure bot evaluation. Burst detection is async and must be passed in via
+ * `ipBurst` (see `isPageViewBurst`) — this function never touches I/O.
+ */
 export function evaluatePageViewBot(input: PageViewBotInput): PageViewBotResult {
-  const reasons: string[] = []
+  const reasons: PageViewBotReason[] = []
 
+  if (input.cloudflareVerifiedBot) {
+    reasons.push("cf_verified_bot")
+  }
   if (userAgentLooksLikeBot(input.userAgent)) {
     reasons.push("user_agent")
   }
@@ -108,8 +151,16 @@ export function evaluatePageViewBot(input: PageViewBotInput): PageViewBotResult 
   if (pathLooksLikeJunk(input.path)) {
     reasons.push("junk_path")
   }
-  if (isPageViewBurst(input.ipHash)) {
+  if (input.ipBurst) {
     reasons.push("ip_burst")
+  }
+  if (input.headers) {
+    for (const r of detectHeaderInconsistencies(input.headers, input.userAgent)) {
+      reasons.push(r)
+    }
+  }
+  for (const r of detectClientSignalFlags(input.clientSignals ?? null)) {
+    reasons.push(r)
   }
 
   return {
@@ -175,7 +226,7 @@ export function truncateReferrer(referrer: string | null | undefined): string | 
   return t.slice(0, 1000)
 }
 
-/** Helper for tests / demos: evaluate without mutating the burst window twice. */
+/** Helper for tests / demos: header-based evaluation without the burst window. */
 export function evaluatePageViewBotFromRequest(
   request: NextRequest,
   path: string,
@@ -186,5 +237,6 @@ export function evaluatePageViewBotFromRequest(
     userAgent: request.headers.get("user-agent") || "",
     acceptLanguage: request.headers.get("accept-language"),
     ipHash,
+    headers: request.headers,
   })
 }

@@ -181,6 +181,7 @@ export async function getPageViewAnalytics(
             FROM "PageView"
             WHERE "isLikelyBot" = false
               AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
             GROUP BY DATE_TRUNC('hour', "createdAt")
             ORDER BY day ASC
           `)
@@ -189,6 +190,7 @@ export async function getPageViewAnalytics(
             FROM "PageView"
             WHERE "isLikelyBot" = false
               AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
             GROUP BY DATE_TRUNC('day', "createdAt")
             ORDER BY day ASC
           `),
@@ -212,6 +214,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 15
@@ -223,6 +226,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 20
@@ -232,6 +236,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY "path"
         ORDER BY count DESC
         LIMIT 20
@@ -240,6 +245,7 @@ export async function getPageViewAnalytics(
         SELECT "isLikelyBot", COUNT(*)::bigint AS count
         FROM "PageView"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY "isLikelyBot"
       `),
       prisma.$queryRaw<Array<{ botCategory: string | null; count: bigint | number }>>(Prisma.sql`
@@ -247,6 +253,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "isLikelyBot" = true
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
         GROUP BY "botCategory"
       `),
       prisma.$queryRaw<Array<{ count: bigint | number }>>(Prisma.sql`
@@ -254,6 +261,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND "path" NOT LIKE '/admin%'
       `),
       prisma.pageView.findMany({
         where: {

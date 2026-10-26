@@ -90,7 +90,8 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
         <div>
           <h2 className="text-xl font-semibold text-foreground">First-party traffic</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Human pageviews from our own DB (bots flagged, not dropped). Independent of GA4.
+            Non-bot pageviews from our own DB (bots flagged, not dropped; /admin excluded).
+            “Non-bot” = Human + Unknown — see the trust split below for proven humans.
           </p>
         </div>
         <div className="flex gap-2 text-sm">
@@ -112,14 +113,14 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          title={`Unique humans (${windowLabel})`}
+          title={`Non-bot IPs (${windowLabel})`}
           value={data.uniqueHumanVisitors}
-          subtitle="Distinct IPs, non-bot pageviews"
+          subtitle="Distinct IPs, non-bot pageviews (includes Unknown)"
         />
         <StatCard
-          title={`Human pageviews (${windowLabel})`}
+          title={`Non-bot pageviews (${windowLabel})`}
           value={data.botVsHuman.human}
-          subtitle={`${humanPct.toFixed(1)}% of traffic`}
+          subtitle={`${humanPct.toFixed(1)}% of traffic · Human + Unknown`}
         />
         <StatCard
           title={`Bot total (${windowLabel})`}
@@ -142,14 +143,14 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
         data={data.humanPageviewsByDay}
         title={
           data.days === 1
-            ? "Real Pageviews — last 24 hours (human only, by hour)"
-            : `Real Pageviews — last ${data.days} days (human only)`
+            ? "Non-bot pageviews — last 24 hours (by hour)"
+            : `Non-bot pageviews — last ${data.days} days`
         }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankTable
-          title={`Top Referrers (${windowLabel}, human)`}
+          title={`Top Referrers (${windowLabel}, non-bot)`}
           columns={["Domain", "Views"]}
           rows={data.topReferrers.map((r) => ({
             key: r.domain,
@@ -159,7 +160,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
           empty="No referrers yet — waiting for pageview data."
         />
         <RankTable
-          title={`UTM Source Breakdown (${windowLabel}, human)`}
+          title={`UTM Source Breakdown (${windowLabel}, non-bot)`}
           columns={["utm_source", "Views"]}
           rows={data.utmSourceBreakdown.map((r) => ({
             key: r.source,
@@ -171,7 +172,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
       </div>
 
       <RankTable
-        title={`Top Pages (${windowLabel}, human)`}
+        title={`Top Pages (${windowLabel}, non-bot)`}
         columns={["Path", "Views"]}
         rows={data.topPages.map((r) => ({
           key: r.path,
@@ -182,7 +183,7 @@ export default function PageViewAnalyticsSection({ data, hrefForDays }: Props) {
       />
 
       <section className="rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Last human viewed pages</h2>
+        <h2 className="text-lg font-semibold text-foreground">Last non-bot viewed pages</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Latest non-bot pageviews site-wide (excludes /admin and flagged crawlers; not limited to
           the selected window).

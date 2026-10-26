@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { BotCategory } from "@prisma/client"
+import type { BotCategory, Prisma } from "@prisma/client"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
@@ -15,10 +15,20 @@ import {
 } from "@/lib/analytics/internal-crawl"
 import {
   evaluatePageViewBot,
+  formatBotReason,
+  isPageViewBurst,
   normalizePageViewPath,
   parseUtmParams,
   truncateReferrer,
 } from "@/lib/analytics/pageview"
+import {
+  extractRequestAnalyticsSignals,
+  parseClientSignals,
+} from "@/lib/analytics/request-signals"
+import {
+  applyVisitorSessionCookies,
+  readVisitorSession,
+} from "@/lib/analytics/visitor-session"
 import { normalizeInviteCode } from "@/lib/invites"
 import {
   applyPageviewAttributionCookies,
@@ -38,33 +48,46 @@ type Body = {
   path?: unknown
   search?: unknown
   referrer?: unknown
+  /** Client-side signals (webdriver, screen, tz, …) — see parseClientSignals. */
+  signals?: unknown
 }
 
-function emptyOk(
-  attribution?: {
-    source: string
-    utmSource?: string | null
-    utmMedium: string | null
-    utmCampaign: string | null
-    utmTerm?: string | null
-    utmContent: string | null
-    existingSource?: string | null
-  } | null,
-  campaign?: {
-    utmCampaign: string | null
-    existingCampaign: string | null
-  },
-) {
-  const res = new NextResponse(null, { status: 204 })
+type AttributionToSet = {
+  source: string
+  utmSource?: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmTerm?: string | null
+  utmContent: string | null
+  existingSource?: string | null
+} | null
+
+type ResponseExtras = {
+  attribution?: AttributionToSet
+  campaign?: { utmCampaign: string | null; existingCampaign: string | null }
+  identity?: { visitorId: string; sessionId: string } | null
+}
+
+/**
+ * 204 when nothing was stored, 200 `{ id }` when a PageView row was written so
+ * the client can attach dwell / qualified_visit to the exact row.
+ */
+function respond(pageViewId: string | null, extras: ResponseExtras = {}) {
+  const res = pageViewId
+    ? NextResponse.json({ id: pageViewId }, { status: 200 })
+    : new NextResponse(null, { status: 204 })
   applyPageviewAttributionCookies(res, {
-    attribution,
-    utmCampaign: campaign?.utmCampaign,
-    existingCampaign: campaign?.existingCampaign,
+    attribution: extras.attribution,
+    utmCampaign: extras.campaign?.utmCampaign,
+    existingCampaign: extras.campaign?.existingCampaign,
   })
+  if (extras.identity) {
+    applyVisitorSessionCookies(res, extras.identity)
+  }
   return res
 }
 
-async function flagSiblingsAsBots(siblingIds: string[]) {
+async function flagSiblingsAsBots(siblingIds: string[], reason: string) {
   if (siblingIds.length === 0) return
 
   const siblings = await prisma.pageView.findMany({
@@ -84,14 +107,17 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
   for (const [botCategory, ids] of byCategory) {
     await prisma.pageView.updateMany({
       where: { id: { in: ids } },
-      data: { isLikelyBot: true, botCategory },
+      data: { isLikelyBot: true, botCategory, botReason: reason },
     })
   }
 }
 
 /**
  * First-party pageview beacon. Failures never surface to the client —
- * always 204 so logging cannot break navigation.
+ * always 2xx so logging cannot break navigation.
+ *
+ * Identity: signed `ar_vid` (1y) + rolling `ar_sid` (30m) cookies are read and
+ * refreshed on every beacon; both are stored on the row for session metrics.
  *
  * First-touch acquisition: prefer tagged utm_source / ?src=, else infer from
  * organic referrer (google / bing / x / …). Sets ar_src for 30 days when unset.
@@ -101,32 +127,26 @@ async function flagSiblingsAsBots(siblingIds: string[]) {
 export async function POST(request: NextRequest) {
   let campaignFromUrl: string | null = null
   const existingCampaign = request.cookies.get(AR_UTM_CAMPAIGN_COOKIE)?.value ?? null
-  let attributionToSet: {
-    source: string
-    utmSource?: string | null
-    utmMedium: string | null
-    utmCampaign: string | null
-    utmTerm?: string | null
-    utmContent: string | null
-    existingSource?: string | null
-  } | null = null
+  let attributionToSet: AttributionToSet = null
+  let identity: { visitorId: string; sessionId: string } | null = null
+  let createdId: string | null = null
 
   try {
     let body: Body = {}
     try {
       body = (await request.json()) as Body
     } catch {
-      return emptyOk()
+      return respond(null)
     }
 
     const pathBase = normalizePageViewPath(typeof body.path === "string" ? body.path : "")
     if (!pathBase) {
-      return emptyOk()
+      return respond(null)
     }
 
     // Never log our own beacon / auth APIs as "pages"
     if (pathBase.startsWith("/api/")) {
-      return emptyOk()
+      return respond(null)
     }
 
     const search = typeof body.search === "string" ? body.search : ""
@@ -180,49 +200,67 @@ export async function POST(request: NextRequest) {
     const acceptLanguage = request.headers.get("accept-language")
     const ipHash = hashIp(getClientIp(request))
 
+    const session = readVisitorSession(request)
+    identity = { visitorId: session.visitorId, sessionId: session.sessionId }
+
+    const requestSignals = extractRequestAnalyticsSignals(request)
+    const clientSignals = parseClientSignals(body.signals)
+
+    let ipBurst = false
+    try {
+      ipBurst = await isPageViewBurst(ipHash)
+    } catch {
+      ipBurst = false
+    }
+
     const bot = evaluatePageViewBot({
       path,
       userAgent,
       acceptLanguage,
       ipHash,
+      headers: request.headers,
+      clientSignals,
+      cloudflareVerifiedBot: requestSignals.cloudflareVerifiedBot,
+      ipBurst,
     })
 
     let isLikelyBot = bot.isLikelyBot
+    const reasons: string[] = [...bot.reasons]
     let siblingIds: string[] = []
+    let siblingReason = "crawl_sibling"
 
     let userId: string | null = null
     try {
-      const session = await auth()
-      userId = session?.user?.id ?? null
+      const authSession = await auth()
+      userId = authSession?.user?.id ?? null
     } catch {
       userId = null
     }
 
-    // Path/entity crawl softens for IPs with recent human product signals.
+    // Path/entity crawl softens for IPs/visitors with recent human product signals.
     // Fleet detection is unchanged and does not use this exemption.
     let humanExempt = false
     try {
-      humanExempt = await hasHumanEngagementSignal(prisma, ipHash)
+      humanExempt = await hasHumanEngagementSignal(prisma, ipHash, session.visitorId)
     } catch {
       humanExempt = false
     }
 
+    const crawlCurrent = {
+      path,
+      referrer,
+      utmSource: storedUtmSource,
+      utmMedium,
+      utmCampaign,
+      userId,
+    }
+
     try {
-      const crawl = await detectInternalPathCrawl(
-        prisma,
-        ipHash,
-        {
-          path,
-          referrer,
-          utmSource: storedUtmSource,
-          utmMedium,
-          utmCampaign,
-          userId,
-        },
-        { humanExempt },
-      )
+      const crawl = await detectInternalPathCrawl(prisma, ipHash, crawlCurrent, { humanExempt })
       if (crawl.isCrawl) {
         isLikelyBot = true
+        reasons.push("crawl_path")
+        siblingReason = "crawl_path"
         siblingIds = crawl.siblingIds
       }
     } catch {
@@ -230,21 +268,11 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const entity = await detectInternalEntityCrawl(
-        prisma,
-        ipHash,
-        {
-          path,
-          referrer,
-          utmSource: storedUtmSource,
-          utmMedium,
-          utmCampaign,
-          userId,
-        },
-        { humanExempt },
-      )
+      const entity = await detectInternalEntityCrawl(prisma, ipHash, crawlCurrent, { humanExempt })
       if (entity.isCrawl) {
         isLikelyBot = true
+        reasons.push("crawl_entity")
+        siblingReason = "crawl_entity"
         siblingIds = [...new Set([...siblingIds, ...entity.siblingIds])]
       }
     } catch {
@@ -252,26 +280,20 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const fleet = await detectInternalFleetCrawl(prisma, {
-        path,
-        referrer,
-        utmSource: storedUtmSource,
-        utmMedium,
-        utmCampaign,
-        ipHash,
-        userId,
-      })
+      const fleet = await detectInternalFleetCrawl(prisma, { ...crawlCurrent, ipHash, userId })
       if (fleet.isFleet) {
         isLikelyBot = true
+        reasons.push("crawl_fleet")
+        siblingReason = "crawl_fleet"
         siblingIds = [...new Set([...siblingIds, ...fleet.siblingIds])]
       }
     } catch {
       // Fleet detection must not block logging
     }
 
-    const botCategory = resolveBotCategory(isLikelyBot, userAgent)
+    const botCategory = resolveBotCategory(isLikelyBot, userAgent, reasons)
 
-    await prisma.pageView.create({
+    const created = await prisma.pageView.create({
       data: {
         path,
         referrer,
@@ -285,16 +307,25 @@ export async function POST(request: NextRequest) {
         userAgent,
         isLikelyBot,
         botCategory,
+        botReason: isLikelyBot ? formatBotReason(reasons) : null,
+        visitorId: session.visitorId,
+        sessionId: session.sessionId,
+        country: requestSignals.country,
+        clientSignals: clientSignals
+          ? (clientSignals as unknown as Prisma.InputJsonValue)
+          : undefined,
       },
+      select: { id: true },
     })
+    createdId = created.id
 
     try {
       if (humanExempt) {
         // Previously crawl-flagged siblings → human again; never re-flag this pass.
-        const unflagIds = await listUnflagableCrawlPageViewIds(prisma, ipHash)
+        const unflagIds = await listUnflagableCrawlPageViewIds(prisma, ipHash, session.visitorId)
         await unflagCrawlPageViews(prisma, unflagIds)
       } else {
-        await flagSiblingsAsBots(siblingIds)
+        await flagSiblingsAsBots(siblingIds, siblingReason)
       }
     } catch {
       // Non-fatal
@@ -303,8 +334,9 @@ export async function POST(request: NextRequest) {
     // Swallow — analytics must never break the product
   }
 
-  return emptyOk(attributionToSet, {
-    utmCampaign: campaignFromUrl,
-    existingCampaign,
+  return respond(createdId, {
+    attribution: attributionToSet,
+    campaign: { utmCampaign: campaignFromUrl, existingCampaign },
+    identity,
   })
 }

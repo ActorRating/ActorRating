@@ -256,24 +256,37 @@ export function matchesInternalFleetCrawl(
 export async function hasHumanEngagementSignal(
   prisma: PrismaClient,
   ipHash: string,
+  visitorId?: string | null,
 ): Promise<boolean> {
   const since = new Date(Date.now() - HUMAN_ENGAGEMENT_LOOKBACK_MS)
+  const identity = visitorId ? { OR: [{ ipHash }, { visitorId }] } : { ipHash }
 
   const event = await prisma.productEvent.findFirst({
     where: {
-      ipHash,
-      createdAt: { gte: since },
-      OR: [
-        { name: "qualified_visit" },
-        { name: "rating_submitted" },
-        { name: "signup_started" },
-        { name: "hub_rate_click" },
-        { name: { startsWith: "faceoff_" } },
+      AND: [
+        identity,
+        {
+          OR: [
+            { name: "qualified_visit" },
+            { name: "rating_submitted" },
+            { name: "signup_started" },
+            { name: "hub_rate_click" },
+            { name: { startsWith: "faceoff_" } },
+          ],
+        },
       ],
+      createdAt: { gte: since },
     },
     select: { id: true },
   })
   if (event) return true
+
+  // Engaged pageview (dwell + interaction written back) on this visitor or IP.
+  const engaged = await prisma.pageView.findFirst({
+    where: { ...identity, engaged: true, createdAt: { gte: since } },
+    select: { id: true },
+  })
+  if (engaged) return true
 
   const userRows = await prisma.pageView.findMany({
     where: {
@@ -310,11 +323,12 @@ export async function hasHumanEngagementSignal(
 export async function listUnflagableCrawlPageViewIds(
   prisma: PrismaClient,
   ipHash: string,
+  visitorId?: string | null,
 ): Promise<string[]> {
   const since = new Date(Date.now() - HUMAN_ENGAGEMENT_LOOKBACK_MS)
   const rows = await prisma.pageView.findMany({
     where: {
-      ipHash,
+      ...(visitorId ? { OR: [{ ipHash }, { visitorId }] } : { ipHash }),
       isLikelyBot: true,
       createdAt: { gte: since },
       userId: null,
@@ -327,9 +341,17 @@ export async function listUnflagableCrawlPageViewIds(
       utmMedium: true,
       utmCampaign: true,
       userId: true,
+      botReason: true,
     },
   })
-  return rows.filter((r) => isCrawlEligibleRow(r)).map((r) => r.id)
+  return rows
+    .filter(
+      (r) =>
+        isCrawlEligibleRow(r) ||
+        // Behavioural flags (crawl_*, reclassified_*) are reversible once the visitor proves human.
+        (r.botReason != null && /^(crawl_|reclassified_)/.test(r.botReason)),
+    )
+    .map((r) => r.id)
 }
 
 export async function unflagCrawlPageViews(
@@ -339,7 +361,7 @@ export async function unflagCrawlPageViews(
   if (ids.length === 0) return
   await prisma.pageView.updateMany({
     where: { id: { in: ids } },
-    data: { isLikelyBot: false, botCategory: null },
+    data: { isLikelyBot: false, botCategory: null, botReason: null },
   })
 }
 

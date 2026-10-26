@@ -73,7 +73,10 @@ export function isKnownCrawlerUserAgent(userAgent: string | null | undefined): b
 export function resolveBotCategory(
   isLikelyBot: boolean,
   userAgent: string | null | undefined,
+  reasons?: readonly string[],
 ): BotCategory | null {
   if (!isLikelyBot) return null
+  // Cloudflare-verified bots are disclosed crawlers even when the UA is generic.
+  if (reasons?.includes("cf_verified_bot")) return "KNOWN_CRAWLER"
   return isKnownCrawlerUserAgent(userAgent) ? "KNOWN_CRAWLER" : "UNIDENTIFIED"
 }
