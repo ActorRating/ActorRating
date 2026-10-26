@@ -159,6 +159,8 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
       WHERE "createdAt" >= NOW() - ${interval}
         AND "path" NOT LIKE '/admin%'
     ),
+    -- Cookie-bound only. Do NOT promote by ipHash: CGNAT + crawl fleets share IPs
+    -- with one real qualified_visit and would turn thousands of hop pageviews into "Human".
     proven_visitors AS (
       SELECT DISTINCT "visitorId" FROM w
       WHERE "visitorId" IS NOT NULL AND "isLikelyBot" = false
@@ -170,12 +172,6 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
         AND "visitorId" IS NOT NULL AND "isLikelyBot" = false
         AND "name" IN ${PROOF_EVENT_NAMES}
     ),
-    proven_ips AS (
-      SELECT DISTINCT "ipHash" FROM "ProductEvent"
-      WHERE "createdAt" >= NOW() - ${interval}
-        AND "isLikelyBot" = false
-        AND "name" IN ${PROOF_EVENT_NAMES}
-    ),
     classified AS (
       SELECT w.*,
         CASE
@@ -184,8 +180,6 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
           WHEN w."dwellMs" >= 5000 AND w."interaction" IS NOT NULL THEN 'HUMAN'
           WHEN w."visitorId" IS NOT NULL
                AND EXISTS (SELECT 1 FROM proven_visitors pv WHERE pv."visitorId" = w."visitorId") THEN 'HUMAN'
-          WHEN w."visitorId" IS NULL
-               AND EXISTS (SELECT 1 FROM proven_ips pi WHERE pi."ipHash" = w."ipHash") THEN 'HUMAN'
           ELSE 'UNKNOWN'
         END AS trust
       FROM w
@@ -196,7 +190,7 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
 export async function getTrafficTrustMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<TrafficTrustMetrics> {
-  const cacheKey = `admin:traffic-trust:v1:${days}`
+  const cacheKey = `admin:traffic-trust:v2:${days}`
   const cached = getCache<TrafficTrustMetrics>(cacheKey)
   if (cached) return cached
 

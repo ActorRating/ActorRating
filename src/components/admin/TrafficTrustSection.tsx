@@ -135,11 +135,11 @@ export function TrafficTrustSection({ data }: { data: TrafficTrustMetrics }) {
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Nothing is counted as human by default. <strong className="font-medium text-foreground/90">Human</strong> needs
-          positive proof (engaged pageview, signed-in, ≥5s dwell + interaction, or the same visitor proved
-          human elsewhere in the window). <strong className="font-medium text-foreground/90">Unknown</strong> ran our JS
-          but never proved anything — zero-dwell spoofed browsers live here. <strong className="font-medium text-foreground/90">Bot</strong> was
-          flagged by UA, header consistency, burst, crawl pattern, Cloudflare verified-bot or the nightly reclassifier.
-          Sessions use the rolling 30-minute <code className="text-xs">ar_sid</code> cookie; /admin is excluded.
+          row-level proof (engaged, signed-in, ≥5s dwell + interaction) or the same <code className="text-xs">ar_vid</code> visitor
+          proved human elsewhere — never “same IP once, so all hops are human.” <strong className="font-medium text-foreground/90">Unknown</strong> ran our JS
+          but never proved anything (legacy pre-cookie traffic and zero-dwell spoofed browsers). <strong className="font-medium text-foreground/90">Bot</strong> was
+          flagged by UA, header consistency, burst, crawl, verified-bot or reclassifier.
+          Sessions need <code className="text-xs">ar_sid</code> (post-deploy beacons only); /admin is excluded.
         </p>
       </div>
 

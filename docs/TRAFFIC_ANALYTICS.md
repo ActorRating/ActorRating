@@ -7,7 +7,7 @@ ops steps that are outside the codebase.
 
 | Bucket  | Meaning | How a pageview gets there |
 | ------- | ------- | ------------------------- |
-| **Human**   | Positive proof | `engaged = true` (server-gated `qualified_visit` wrote back to the row), signed-in `userId`, `dwellMs ≥ 5000` **and** an interaction from the dwell beacon, or the same `visitorId` proved human elsewhere in the window (rating, qualified_visit, signup, hub click, face-off vote, search). Legacy rows without `visitorId` fall back to IP-level proof. |
+| **Human**   | Positive proof | `engaged = true` (server-gated `qualified_visit` wrote back to the row), signed-in `userId`, `dwellMs ≥ 5000` **and** an interaction from the dwell beacon, or the same `visitorId` (`ar_vid`) proved human elsewhere in the window. **Not** by shared IP — that over-counted crawl fleets on CGNAT / humanExempt IPs. Legacy rows without `visitorId` stay Unknown unless the row itself has engaged/dwell/userId. |
 | **Unknown** | JS ran, nothing proved | `isLikelyBot = false` and none of the above. Zero-dwell spoofed browsers live here. Not counted as humans anywhere. |
 | **Bot**     | Flagged | UA list, header consistency (`ua_hint_mismatch`, `headless_hint`, `missing_sec_fetch`, `cross_site_beacon`, `mobile_hint_mismatch`), client signals (`webdriver`, `zero_screen`), `ip_burst`, crawl heuristics (`crawl_path`, `crawl_entity`, `crawl_fleet`, `crawl_sibling`), Cloudflare verified bot (`cf_verified_bot`), nightly reclassifier (`reclassified_no_engagement`). The reason list is stored in `PageView.botReason` and surfaced in the dashboard. |
 
