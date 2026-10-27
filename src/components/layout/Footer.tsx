@@ -64,7 +64,7 @@ export function Footer() {
               The leading place online to rate and find great acting — from silent film to today.
             </p>
             <p className="text-xs text-[#444] tracking-wider uppercase mb-6">
-              The IMDB for Acting Performance
+              The IMDB for Acting Performances
             </p>
             <div className="flex items-center gap-3">
               {SOCIALS.map(({ label, href, Icon }) => (

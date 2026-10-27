@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import { Geist, Geist_Mono, Cormorant_Garamond } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Geist, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { buildDevNextAuthSession, isDevMode } from "@/lib/devAuth";
@@ -28,16 +26,11 @@ const geistSans = Geist({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 const cormorantGaramond = Cormorant_Garamond({
   variable: "--font-cormorant-garamond",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  // Display headings use 400/600/700; drop unused 300/500 to cut font bytes.
+  weight: ["400", "600", "700"],
   display: "swap",
   preload: true,
 });
@@ -132,7 +125,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${cormorantGaramond.variable}`}
+      className={`${geistSans.variable} ${cormorantGaramond.variable}`}
     >
       <head>
         {/*
@@ -182,9 +175,6 @@ export default async function RootLayout({
                 <SearchPreloadTrigger />
                 <ChunkErrorReload />
                 <Suspense fallback={null}>{children}</Suspense>
-                {/* These may show "blocked" in console when ad/privacy blockers are used — that's expected */}
-                <Analytics />
-                <SpeedInsights />
               </NavigationProgressProvider>
             </MixpanelAnalyticsProvider>
           </CookieConsentProvider>

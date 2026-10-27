@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import AdminNav from "@/components/admin/AdminNav"
+import { geistMono } from "@/lib/fonts-mono"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +24,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`${geistMono.variable} min-h-screen bg-background`}>
       <Suspense fallback={null}>
         <AdminNav />
       </Suspense>

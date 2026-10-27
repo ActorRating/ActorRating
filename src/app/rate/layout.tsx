@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { geistMono } from "@/lib/fonts-mono"
 
 export const dynamic = "force-dynamic"
 
@@ -13,5 +14,5 @@ export default function RateLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <div className={geistMono.variable}>{children}</div>
 }

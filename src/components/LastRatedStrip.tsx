@@ -3,6 +3,9 @@
 /**
  * Live “Just rated” ticker — polls recent community ratings and scrolls them.
  * Each chip navigates to that performance’s rate page.
+ *
+ * Reserves strip height while loading so late insertion does not shift layout.
+ * Collapses when the feed is empty after the first successful load.
  */
 
 import { useEffect, useState } from "react"
@@ -12,6 +15,9 @@ import { upgradePosterThumbRes } from "@/components/poster/PosterRails"
 import { InstantNavLink } from "@/components/ui/InstantNavLink"
 
 const POLL_MS = 15_000
+/** Matches loaded strip: py-5/6 + label row + chip row (~8 / 32 / 44). */
+const STRIP_RESERVE =
+  "min-h-[7.5rem] sm:min-h-[8.25rem] border-y border-white/[0.06] bg-black"
 const SANS: React.CSSProperties = {
   fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
 }
@@ -96,6 +102,34 @@ function Chip({ item }: { item: RecentRatingFeedItem }) {
   )
 }
 
+function StripSkeleton() {
+  return (
+    <section
+      className={`${STRIP_RESERVE} py-5 sm:py-6`}
+      aria-hidden
+      style={SANS}
+    >
+      <div className="px-5 sm:px-8 mb-3.5 sm:mb-4 flex items-center gap-3">
+        <div className="h-3 w-20 rounded bg-white/[0.06]" />
+        <span className="h-px flex-1 bg-white/[0.08]" />
+        <div className="h-3 w-10 rounded bg-white/[0.04]" />
+      </div>
+      <div className="flex gap-2.5 overflow-hidden px-5 sm:px-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="inline-flex h-11 shrink-0 items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.03] pl-1.5 pr-3.5"
+            style={{ width: `${11 + (i % 3) * 2.5}rem` }}
+          >
+            <span className="h-8 w-8 shrink-0 rounded-full bg-zinc-900" />
+            <span className="h-3 flex-1 rounded bg-white/[0.06]" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function LastRatedStrip() {
   const [items, setItems] = useState<RecentRatingFeedItem[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -128,13 +162,14 @@ export function LastRatedStrip() {
     }
   }, [])
 
-  if (!loaded || items.length === 0) return null
+  if (!loaded) return <StripSkeleton />
+  if (items.length === 0) return null
 
   const loop = reduceMotion ? items : [...items, ...items]
 
   return (
     <section
-      className="border-y border-white/[0.06] bg-black py-5 sm:py-6"
+      className={`${STRIP_RESERVE} py-5 sm:py-6`}
       aria-label="Just rated"
       style={SANS}
     >

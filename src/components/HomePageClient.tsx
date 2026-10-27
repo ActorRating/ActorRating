@@ -32,7 +32,7 @@ import {
   fixedLandingHeroLookupTarget,
   HOME_PRIMARY_RATE_HREF,
 } from "@/lib/home-featured-performance";
-import { trackFaceOff } from "@/lib/analytics";
+import { trackFaceOff, trackHomeRateClick } from "@/lib/analytics";
 import {
   getCurrentWeeklyHeroConfig,
   WEEKLY_FEATURED_SECTION_TITLE,
@@ -100,7 +100,15 @@ const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 // Desktop: full-bleed still, manifesto last line on fold bottom, CTA band below.
 // Mobile: image fitted at top, centered sans manifesto, CTA directly under it.
 
-const HERO_BACKDROP_FALLBACK = "/hero/odyssey-damon-forest.jpg";
+const HERO_BACKDROP_FALLBACK = "/hero/odyssey-damon-forest.webp";
+const HERO_BACKDROP_AVIF = "/hero/odyssey-damon-forest.avif";
+const HERO_BACKDROP_JPEG = "/hero/odyssey-damon-forest-1920.jpg";
+/** Cap desktop LCP width; mobile is full viewport width. */
+const HERO_IMAGE_SIZES = "(max-width: 1023px) 100vw, 1920px";
+
+function isLocalHeroStill(src: string): boolean {
+  return src.startsWith("/hero/");
+}
 
 /** Vertical credit on the still, same placement as Letterboxd’s film link. */
 function HeroSubjectLink({ name }: { name: string }) {
@@ -123,17 +131,39 @@ function HeroSubjectLink({ name }: { name: string }) {
 }
 
 function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
+  const imgClass = mobile
+    ? "object-cover object-center"
+    : "hero-still object-cover object-center";
+  const localHero = isLocalHeroStill(src);
+
   return (
     <>
-      <Image
-        src={src}
-        alt=""
-        fill
-        priority
-        quality={90}
-        className={mobile ? "object-cover object-center" : "hero-still object-cover object-center"}
-        sizes="100vw"
-      />
+      {localHero ? (
+        // Pre-encoded AVIF/WebP via native <picture> (no new deps; next/image wrappers break <picture>).
+        <picture>
+          <source srcSet={HERO_BACKDROP_AVIF} type="image/avif" sizes={HERO_IMAGE_SIZES} />
+          <source srcSet={HERO_BACKDROP_FALLBACK} type="image/webp" sizes={HERO_IMAGE_SIZES} />
+          {/* eslint-disable-next-line @next/next/no-img-element -- LCP still; formats handled above */}
+          <img
+            src={HERO_BACKDROP_JPEG}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            sizes={HERO_IMAGE_SIZES}
+            className={`absolute inset-0 h-full w-full ${imgClass}`}
+          />
+        </picture>
+      ) : (
+        <Image
+          src={src}
+          alt=""
+          fill
+          priority
+          quality={75}
+          className={imgClass}
+          sizes={HERO_IMAGE_SIZES}
+        />
+      )}
       {/* Readability wash — mid-start darkening on desktop + iPad landscape */}
       <div
         className={
@@ -157,6 +187,7 @@ function HeroPrimaryCta({ faceoffEnabled = false }: { faceoffEnabled?: boolean }
           href={HOME_PRIMARY_RATE_HREF}
           prefetch={false}
           onMouseEnter={() => router.prefetch(HOME_PRIMARY_RATE_HREF)}
+          onClick={() => trackHomeRateClick("hero")}
           className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-md text-black text-sm sm:text-base font-bold tracking-wide transition-transform hover:scale-[1.02] min-h-[44px]"
           style={{ background: GOLD }}
         >
@@ -222,7 +253,6 @@ function HeroSection({
                 width={56}
                 height={56}
                 className="object-contain"
-                priority
               />
             </div>
             <span
@@ -393,6 +423,7 @@ function ClosingStrip() {
         href={HOME_PRIMARY_RATE_HREF}
         prefetch={false}
         onMouseEnter={() => router.prefetch(HOME_PRIMARY_RATE_HREF)}
+        onClick={() => trackHomeRateClick("closing")}
       >
         <span
           className="inline-flex items-center gap-2 px-8 py-3.5 rounded-md text-black font-bold tracking-wide transition-transform hover:scale-[1.02]"
@@ -676,11 +707,13 @@ export default function HomePageClient({
             title="Popular Right Now"
             performances={popular}
             characterTargets={POPULAR_RIGHT_NOW_CHARACTER_TARGETS}
+            priorityCount={0}
           />
         ) : (
           <StaticPosterRail
             title="Popular Right Now"
             items={popularItems}
+            priorityCount={0}
           />
         )}
         {!legendaryItems ? (
@@ -688,11 +721,13 @@ export default function HomePageClient({
             title="Legendary Performances"
             performances={legendary}
             characterTargets={LEGENDARY_PERFORMANCE_TARGETS}
+            priorityCount={0}
           />
         ) : (
           <StaticPosterRail
             title="Legendary Performances"
             items={legendaryItems}
+            priorityCount={0}
           />
         )}
         {!recentItems ? (
@@ -700,11 +735,13 @@ export default function HomePageClient({
             title="Recent Favorites"
             performances={recent}
             characterTargets={RECENT_FAVORITES_POOL}
+            priorityCount={0}
           />
         ) : (
           <StaticPosterRail
             title="Recent Favorites"
             items={recentItems}
+            priorityCount={0}
           />
         )}
       </div>

@@ -137,6 +137,7 @@ const FIRST_PARTY_EVENT_NAMES = new Set([
   "qualified_visit",
   "hub_view",
   "hub_rate_click",
+  "home_rate_click",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",
@@ -297,6 +298,13 @@ export function trackHubRateClick(input: {
     performance_id: input.performance_id,
     movie: input.movie,
     movie_slug: input.movie_slug,
+  })
+}
+
+/** Homepage "Rate a Performance" CTA (hero or closing strip). */
+export function trackHomeRateClick(button: "hero" | "closing") {
+  trackEventWithAttribution("home_rate_click", "Home Rate Click", "home_rate_click", {
+    button,
   })
 }
 

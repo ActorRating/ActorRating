@@ -15,8 +15,8 @@ export type FeaturedHeroPayload = {
   subline: string
 }
 
-/** Guest-first homepage primary CTA — indexable page with live community ratings. */
-export const HOME_PRIMARY_RATE_HREF = "/rate/the-godfather-1972/marlon-brando"
+/** Guest-first homepage primary CTA — Odyssey best-performances hub. */
+export const HOME_PRIMARY_RATE_HREF = "/movies/the-odyssey-2026/best-performances"
 
 /** Fixed landing hero — change this when you want a new featured still. */
 export const FIXED_LANDING_HERO = {
@@ -26,8 +26,8 @@ export const FIXED_LANDING_HERO = {
   headline: 'How do you rate Matt Damon in The Odyssey?',
   subline:
     'One quick score—or five Oscar-inspired dimensions: emotional range, believability, technical skill, screen presence, and chemistry.',
-  /** Full forest still — Damon with the army, not the tighter center crop */
-  backdropUrl: '/hero/odyssey-damon-forest.jpg',
+  /** Full forest still — Damon with the army (pre-sized WebP; AVIF via <picture>) */
+  backdropUrl: '/hero/odyssey-damon-forest.webp',
 } as const
 
 export function fixedLandingHeroLookupTarget(): {

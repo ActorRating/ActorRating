@@ -30,6 +30,7 @@ export const TRACKED_PRODUCT_EVENTS = [
   "qualified_visit",
   "hub_view",
   "hub_rate_click",
+  "home_rate_click",
   "faceoff_started",
   "faceoff_matchup_viewed",
   "faceoff_vote_submitted",

@@ -170,11 +170,14 @@ export function StaticPosterRail({
   subtitle,
   items,
   flush,
+  priorityCount = 4,
 }: {
   title?: string;
   subtitle?: string;
   items: PerformanceTarget[];
   flush?: boolean;
+  /** How many leading posters get `priority` (0 on homepage so only the hero LCP competes). */
+  priorityCount?: number;
 }) {
   return (
     <div className={flush ? "pb-1" : "mb-10 sm:mb-14"}>
@@ -201,7 +204,7 @@ export function StaticPosterRail({
                   actorName={item.actor}
                   characterName={item.character}
                   movieTitle={item.movie}
-                  priority={i < 4}
+                  priority={i < priorityCount}
                 />
               );
             })}
@@ -218,12 +221,15 @@ export function PosterRail({
   performances,
   characterTargets,
   flush,
+  priorityCount = 4,
 }: {
   title?: string;
   subtitle?: string;
   performances: EnrichedPerformance[];
   characterTargets: PerformanceTarget[];
   flush?: boolean;
+  /** How many leading posters get `priority` (0 on homepage so only the hero LCP competes). */
+  priorityCount?: number;
 }) {
   const router = useRouter();
 
@@ -275,7 +281,7 @@ export function PosterRail({
                     actorName={actor.name}
                     characterName={character}
                     movieTitle={movie.title}
-                    priority={i < 4}
+                    priority={i < priorityCount}
                     onPrefetch={() => router.prefetch(href)}
                   />
                 </div>
