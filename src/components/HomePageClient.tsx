@@ -218,9 +218,9 @@ function HeroSection({
   return (
     <>
       {/*
-        Stacked (phone / iPad / square): still on top, copy on black below.
-        Cinematic full-bleed only when CSS says the viewport is wide+landscape
-        (.hero-layout-cinematic) — avoids burying the still under washes on mid sizes.
+        Stacked: phone + portrait/square tablets.
+        Cinematic (.hero-layout-cinematic): past square into landscape
+        (horizontal iPad, desktop) — see globals.css aspect breakpoint.
       */}
       <section className="hero-layout-stacked bg-black">
         <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[50svh] md:max-h-[48svh] overflow-hidden">

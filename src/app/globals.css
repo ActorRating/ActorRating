@@ -1056,9 +1056,9 @@ video {
 
 /*
   Landing hero layouts:
-  - Stacked by default (phone, iPad, square / tall windows) — still then black copy.
-  - Cinematic only on wide landscape desktops — full-bleed still + CTA band.
-  Avoids the old lg+ path that buried mid-size stills under overlay text + washes.
+  - Stacked: phone + portrait / square tablets (taller than ~5:4).
+  - Cinematic: past square into landscape (iPad horizontal, desktops) —
+    full-bleed still + CTA band. 5/4 catches ~4:3 iPad landscape; 3/2 did not.
 */
 .hero-layout-stacked {
   display: block;
@@ -1072,14 +1072,14 @@ video {
   display: none;
 }
 
-/* Clear absolute lg+ nav when mid-size viewports still use stacked */
+/* Clear absolute lg+ nav when portrait/square tablets still use stacked */
 @media (min-width: 1024px) {
   .hero-layout-stacked {
     padding-top: 5rem;
   }
 }
 
-@media (min-width: 1100px) and (min-aspect-ratio: 3 / 2) {
+@media (min-width: 1024px) and (min-aspect-ratio: 5 / 4) {
   .hero-layout-stacked {
     display: none !important;
     padding-top: 0;
@@ -1120,8 +1120,8 @@ video {
   }
 }
 
-/* iPad / large tablet nav tap targets — only when the bar is wide enough */
-@media (min-width: 1280px) and (max-aspect-ratio: 3 / 2) {
+/* Portrait / near-square large tablets — roomier nav tap targets */
+@media (min-width: 1280px) and (max-aspect-ratio: 5 / 4) {
   .navbar-cinematic .navbar-link-desktop {
     font-size: 15px !important;
     letter-spacing: 0.03em !important;
