@@ -29,6 +29,7 @@ import {
   applyVisitorSessionCookies,
   readVisitorSession,
 } from "@/lib/analytics/visitor-session"
+import { shouldSkipAnalyticsStorage } from "@/lib/analytics/internal-traffic"
 import { normalizeInviteCode } from "@/lib/invites"
 import {
   applyPageviewAttributionCookies,
@@ -203,6 +204,26 @@ export async function POST(request: NextRequest) {
     const session = readVisitorSession(request)
     identity = { visitorId: session.visitorId, sessionId: session.sessionId }
 
+    let userId: string | null = null
+    let sessionEmail: string | null = null
+    try {
+      const authSession = await auth()
+      userId = authSession?.user?.id ?? null
+      sessionEmail = authSession?.user?.email ?? null
+    } catch {
+      userId = null
+      sessionEmail = null
+    }
+
+    // Internal traffic: still refresh ar_vid/ar_sid + attribution cookies, skip DB row.
+    if (shouldSkipAnalyticsStorage(request, sessionEmail)) {
+      return respond(null, {
+        attribution: attributionToSet,
+        campaign: { utmCampaign: campaignFromUrl, existingCampaign },
+        identity,
+      })
+    }
+
     const requestSignals = extractRequestAnalyticsSignals(request)
     const clientSignals = parseClientSignals(body.signals)
 
@@ -228,14 +249,6 @@ export async function POST(request: NextRequest) {
     const reasons: string[] = [...bot.reasons]
     let siblingIds: string[] = []
     let siblingReason = "crawl_sibling"
-
-    let userId: string | null = null
-    try {
-      const authSession = await auth()
-      userId = authSession?.user?.id ?? null
-    } catch {
-      userId = null
-    }
 
     // Path/entity crawl softens for IPs/visitors with recent human product signals.
     // Fleet detection is unchanged and does not use this exemption.

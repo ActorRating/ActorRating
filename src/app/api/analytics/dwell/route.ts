@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { getClientIp } from "@/lib/requestProtection"
 import { hashIp } from "@/lib/analytics/ip-hash"
 import { normalizePageViewPath } from "@/lib/analytics/pageview"
 import { checkSharedRateLimit } from "@/lib/analytics/rate-limit"
 import { peekVisitorSession } from "@/lib/analytics/visitor-session"
+import { shouldSkipAnalyticsStorage } from "@/lib/analytics/internal-traffic"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -31,6 +33,17 @@ const INTERACTIONS = new Set(["pointermove", "touchstart", "scroll", "keydown"])
  */
 export async function POST(request: NextRequest) {
   try {
+    let sessionEmail: string | null = null
+    try {
+      const authSession = await auth()
+      sessionEmail = authSession?.user?.email ?? null
+    } catch {
+      sessionEmail = null
+    }
+    if (shouldSkipAnalyticsStorage(request, sessionEmail)) {
+      return new NextResponse(null, { status: 204 })
+    }
+
     let body: Body = {}
     try {
       body = (await request.json()) as Body

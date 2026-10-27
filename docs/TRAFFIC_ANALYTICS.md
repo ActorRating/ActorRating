@@ -25,14 +25,67 @@ human, the pageview route unflags them (`listUnflagableCrawlPageViewIds`).
 - Bounce (classic): exactly one pageview and no engaged pageview. Shown for Human sessions
   (headline) and for Human+Unknown (what GA/Umami-style tools would show).
 - `/admin/*` is excluded from every traffic query.
+- **Internal traffic** (admin’s own devices) is also excluded from **writes**: after a
+  successful `/admin` visit, the browser gets an HttpOnly `ar_internal=1` cookie (1 year,
+  `Path=/`, `SameSite=Lax`). Analytics beacons skip DB storage when that cookie is present
+  **or** the Auth.js session email equals `ADMIN_EMAIL`. The cookie is never used for
+  authorization. Attribution (`ar_src` / UTM) and visitor/session cookies (`ar_vid` /
+  `ar_sid`) are still refreshed on pageview so product flows stay unchanged.
+
+### Debug override (`ar_track=1`)
+
+To record analytics from an internal browser (cookie and/or admin session), open any page
+with `?ar_track=1` (e.g. `https://actorrating.com/?ar_track=1`). Client trackers forward
+that flag onto beacons as:
+
+- query: `POST /api/analytics/pageview?ar_track=1` (also dwell / event)
+- and/or header: `x-ar-track: 1`
+
+When the override is present, storage is **not** skipped. Equivalent: call the beacon URL
+directly with `?ar_track=1` or set the header yourself.
+
+### Historical rows (admin `userId`) — read-only inventory
+
+Before deleting or flagging anything, count rows already tied to the admin account:
+
+```sql
+-- 1) Resolve admin user id
+SELECT id, email FROM "User"
+WHERE lower(email) = lower(:admin_email);  -- ADMIN_EMAIL
+
+-- 2) Counts (replace :user_id)
+SELECT COUNT(*) AS pageviews_by_userid
+FROM "PageView"
+WHERE "userId" = :user_id;
+
+SELECT COUNT(*) AS productevents_by_userid
+FROM "ProductEvent"
+WHERE "userId" = :user_id;
+
+-- Optional: how many of those pageviews would classify as Human on the row alone
+SELECT COUNT(*) AS pageviews_row_level_human_proof
+FROM "PageView"
+WHERE "userId" = :user_id
+  AND (
+    "engaged" = true
+    OR ("dwellMs" >= 5000 AND "interaction" IS NOT NULL)
+  );
+```
+
+**Recommendation:** do **not** add an `isInternal` column for this. Going forward, write-skipping
+covers new beacons. For historical Human inflation, prefer a **read-time filter** in traffic
+queries (`userId` not equal to the admin user id, or `userId` not in a small denylist). That
+avoids a migration/backfill and keeps raw rows for debugging. An `isInternal` flag only pays off
+if you need many operators/devices without Auth.js `userId` (cookie-only) reflected in history —
+those rows cannot be found by `userId` anyway.
 
 ## Beacons
 
 | Endpoint | Sent by | Purpose |
 | --- | --- | --- |
-| `POST /api/analytics/pageview` | `FirstPartyPageViewTracker` (fetch, so Set-Cookie applies) | Creates the row, returns `{ id }`. Body includes `signals` (webdriver, screen, viewport, dpr, timezone, languages, touch points, cores, visibility). |
-| `POST /api/analytics/dwell` | `FirstPartyPageViewTracker` on `pagehide` / tab hide / route change (`sendBeacon`) | Raises `dwellMs`, fills `interaction`. Never sets `engaged`. |
-| `POST /api/analytics/event` (`qualified_visit`) | `QualifiedVisitTracker` after ≥5s visible + interaction | Server-gated; on acceptance sets `engaged = true` on the referenced `pageview_id`. |
+| `POST /api/analytics/pageview` | `FirstPartyPageViewTracker` (fetch, so Set-Cookie applies) | Creates the row, returns `{ id }`. Body includes `signals` (webdriver, screen, viewport, dpr, timezone, languages, touch points, cores, visibility). Skips the row (still sets cookies) for internal traffic unless `ar_track=1`. |
+| `POST /api/analytics/dwell` | `FirstPartyPageViewTracker` on `pagehide` / tab hide / route change (`sendBeacon`) | Raises `dwellMs`, fills `interaction`. Never sets `engaged`. No-op for internal traffic unless overridden. |
+| `POST /api/analytics/event` (`qualified_visit` and other ProductEvents) | `QualifiedVisitTracker` / `lib/analytics` | Server-gated; on acceptance sets `engaged = true` on the referenced `pageview_id`. No-op for internal traffic unless overridden. |
 
 All beacon rate limits (`pv`, `pe`, `dw`) go through `checkSharedRateLimit`: Upstash Redis when
 `UPSTASH_REDIS_REST_URL/_TOKEN` are set, otherwise a per-process memory window (resets on deploy).

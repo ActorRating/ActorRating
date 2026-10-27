@@ -103,6 +103,28 @@ export function dwellMarkInteraction(state: DwellState, interaction: string): Dw
   return state.interaction ? state : { ...state, interaction }
 }
 
+/**
+ * When the current page URL has `?ar_track=1`, forward that override on beacons
+ * so internal traffic (admin cookie / ADMIN_EMAIL) can still be recorded for tests.
+ * sendBeacon cannot set headers — use the query string there.
+ */
+export function pageHasAnalyticsTrackOverride(): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    return new URLSearchParams(window.location.search).get("ar_track") === "1"
+  } catch {
+    return false
+  }
+}
+
+export function analyticsTrackOverrideQuery(): string {
+  return pageHasAnalyticsTrackOverride() ? "?ar_track=1" : ""
+}
+
+export function analyticsTrackOverrideHeaders(): Record<string, string> {
+  return pageHasAnalyticsTrackOverride() ? { "x-ar-track": "1" } : {}
+}
+
 /** Post the dwell beacon (sendBeacon preferred; keepalive fetch fallback). */
 export function sendDwellBeacon(payload: {
   id: string | null
@@ -113,17 +135,21 @@ export function sendDwellBeacon(payload: {
   if (typeof window === "undefined") return
   if (payload.dwellMs < 250) return // nothing meaningful to record
   const json = JSON.stringify(payload)
+  const url = `/api/analytics/dwell${analyticsTrackOverrideQuery()}`
   try {
     if (typeof navigator.sendBeacon === "function") {
       const blob = new Blob([json], { type: "application/json" })
-      if (navigator.sendBeacon("/api/analytics/dwell", blob)) return
+      if (navigator.sendBeacon(url, blob)) return
     }
   } catch {
     // fall through
   }
-  void fetch("/api/analytics/dwell", {
+  void fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...analyticsTrackOverrideHeaders(),
+    },
     body: json,
     keepalive: true,
     credentials: "same-origin",

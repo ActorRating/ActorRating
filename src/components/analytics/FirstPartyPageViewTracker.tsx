@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import {
+  analyticsTrackOverrideHeaders,
+  analyticsTrackOverrideQuery,
   collectClientSignals,
   createDwellState,
   dwellMarkInteraction,
@@ -45,9 +47,12 @@ export function FirstPartyPageViewTracker() {
       })
 
       // Prefer fetch (not sendBeacon) so Set-Cookie for ar_src / ar_vid / ar_sid is applied.
-      void fetch("/api/analytics/pageview", {
+      void fetch(`/api/analytics/pageview${analyticsTrackOverrideQuery()}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...analyticsTrackOverrideHeaders(),
+        },
         body: payload,
         keepalive: true,
         credentials: "same-origin",

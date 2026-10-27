@@ -20,6 +20,7 @@ import {
   QUALIFIED_VISIT_PAGEVIEW_LOOKBACK_MS,
   gateQualifiedVisitPersist,
 } from "@/lib/analytics/qualified-visit-persist"
+import { shouldSkipAnalyticsStorage } from "@/lib/analytics/internal-traffic"
 
 export const TRACKED_PRODUCT_EVENTS = [
   "performance_viewed",
@@ -114,6 +115,20 @@ export async function persistProductEvent(
     typeof body.path === "string" ? body.path : "",
   )
   if (path?.startsWith("/api/")) {
+    return { status: 204, stored: false }
+  }
+
+  let userId: string | null = null
+  let sessionEmail: string | null = null
+  try {
+    const authSession = await auth()
+    userId = authSession?.user?.id ?? null
+    sessionEmail = authSession?.user?.email ?? null
+  } catch {
+    userId = null
+    sessionEmail = null
+  }
+  if (shouldSkipAnalyticsStorage(request, sessionEmail)) {
     return { status: 204, stored: false }
   }
 
@@ -227,14 +242,6 @@ export async function persistProductEvent(
     if (!isLikelyBot && matchingPageView) {
       engagedPageViewId = matchingPageView.id
     }
-  }
-
-  let userId: string | null = null
-  try {
-    const session = await auth()
-    userId = session?.user?.id ?? null
-  } catch {
-    userId = null
   }
 
   const botCategory: BotCategory | null = resolveBotCategory(

@@ -168,9 +168,21 @@ function beaconFirstPartyEvent(
     ...properties
   } = payload
 
-  void fetch("/api/analytics/event", {
+  // Dynamic import avoided — keep beacon sync; duplicate the tiny page-URL check.
+  const trackOverride = (() => {
+    try {
+      return new URLSearchParams(window.location.search).get("ar_track") === "1"
+    } catch {
+      return false
+    }
+  })()
+
+  void fetch(`/api/analytics/event${trackOverride ? "?ar_track=1" : ""}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(trackOverride ? { "x-ar-track": "1" } : {}),
+    },
     body: JSON.stringify({
       name,
       path: window.location.pathname,
