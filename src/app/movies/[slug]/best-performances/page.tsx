@@ -255,9 +255,13 @@ export default async function BestPerformancesHubPage({ params }: Props) {
             </div>
           </section>
 
-          {/* ── Desktop: full-bleed still with landing washes ── */}
+          {/*
+            Desktop: fixed-height still with a short overlay only.
+            Long answer-first / methodology copy used to sit inside this box
+            (justify-end + mb-auto) and overflow upward into the navbar.
+          */}
           <section className="relative hidden lg:block bg-black overflow-hidden">
-            <div className="relative h-[min(62svh,640px)] w-full min-h-[420px]">
+            <div className="relative h-[min(58svh,560px)] w-full min-h-[380px]">
               {heroStill ? (
                 <div className="hero-still-stage absolute inset-0" aria-hidden>
                   <Image
@@ -276,23 +280,18 @@ export default async function BestPerformancesHubPage({ params }: Props) {
                 <div className="absolute inset-0 bg-black" />
               )}
 
-              <div
-                className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-6 lg:px-8 pb-12"
-                style={{
-                  paddingTop: "max(5.5rem, calc(5rem + env(safe-area-inset-top, 0px)))",
-                }}
+              <Link
+                href={filmPath}
+                className="absolute left-6 top-[max(5.5rem,calc(4.5rem+env(safe-area-inset-top,0px)))] z-20 inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-zinc-400 transition-colors hover:border-white/20 hover:text-white lg:left-8"
+                aria-label={`Back to ${hub.movie.title}`}
               >
-                <Link
-                  href={filmPath}
-                  className="mb-auto inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-zinc-400 transition-colors hover:border-white/20 hover:text-white"
-                  aria-label={`Back to ${hub.movie.title}`}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Link>
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
 
-                <div className="mt-8 flex items-end gap-8">
+              <div className="relative z-10 mx-auto flex h-full max-w-7xl items-end px-6 pb-10 lg:px-8">
+                <div className="flex max-w-4xl items-end gap-8">
                   {posterThumb ? (
-                    <div className="relative aspect-[2/3] w-36 shrink-0 overflow-hidden rounded-md ring-1 ring-white/[0.08] shadow-2xl shadow-black/70">
+                    <div className="relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-md ring-1 ring-white/[0.08] shadow-2xl shadow-black/70 xl:w-36">
                       <Image
                         src={posterThumb}
                         alt=""
@@ -311,40 +310,42 @@ export default async function BestPerformancesHubPage({ params }: Props) {
                       Community ranking
                     </p>
                     <h1
-                      className="max-w-3xl text-5xl font-bold leading-[1.1] tracking-tight text-white xl:text-[3.35rem]"
+                      className="text-4xl font-bold leading-[1.12] tracking-tight text-white xl:text-5xl"
                       style={DISPLAY}
                     >
                       Who gave the best performance in {hub.movie.title}
                       {yearPart}?
                     </h1>
-                    <p className="mt-5 max-w-2xl text-lg leading-relaxed text-zinc-200">
-                      {answerFirst.summary}
-                    </p>
-                    <p className="mt-2 text-xs text-zinc-500">
-                      As of {answerFirst.asOfLabel}
-                    </p>
-                    <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
-                      Ranked by ActorRating community scores from signed-in raters —{" "}
+                    <p className="mt-4 text-base text-zinc-300">
                       <span className="font-semibold text-white">
                         {hub.totalSignedInRatings} {ratingWord}
-                      </span>{" "}
-                      so far.{" "}
+                      </span>
+                      {" · "}
                       <Link
                         href={filmPath}
                         className="text-[#FFD700] underline-offset-2 hover:underline"
                       >
-                        Open the film page
+                        Film page
                       </Link>
-                    </p>
-                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
-                      {RANKING_PLAIN_SENTENCE}
-                    </p>
-                    <p className="mt-4 max-w-2xl text-xs text-zinc-500">
-                      {answerFirst.sourceLine}
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="mx-auto max-w-7xl px-6 pb-2 pt-8 lg:px-8">
+              <p className="max-w-2xl text-lg leading-relaxed text-zinc-200">
+                {answerFirst.summary}
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                As of {answerFirst.asOfLabel}
+              </p>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
+                {RANKING_PLAIN_SENTENCE}
+              </p>
+              <p className="mt-3 max-w-2xl text-xs text-zinc-500">
+                {answerFirst.sourceLine}
+              </p>
             </div>
           </section>
 
