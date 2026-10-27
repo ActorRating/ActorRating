@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
 import type { PageViewAnalyticsDays } from "@/lib/admin/getPageViewAnalytics"
 import {
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
+import {
   emptyValuableRaterMetrics,
   GUEST_IDENTITY_NOTE,
   type ValuableRaterChannelRow,
@@ -44,11 +48,13 @@ function mapChannel(rows: ChannelRow[]): ValuableRaterChannelRow[] {
 export async function getValuableRaterMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<ValuableRaterMetrics> {
-  const cacheKey = `admin:valuable-raters:v1:${days}`
+  const internalIds = await resolveInternalUserIds()
+  const cacheKey = `admin:valuable-raters:v2:${days}:${internalIds.join(",")}`
   const cached = getCache<ValuableRaterMetrics>(cacheKey)
   if (cached) return cached
 
   const interval = intervalForDays(days)
+  const excl = sqlUserIdNotInternal(internalIds)
 
   try {
     const [newRows, engagedRows, returningRows, bySource, byCampaign] =
@@ -64,6 +70,7 @@ export async function getValuableRaterMetrics(
             FROM "Rating"
             WHERE "createdAt" >= NOW() - ${interval}
               AND ("userId" IS NOT NULL OR "anonId" IS NOT NULL)
+              AND ${excl}
           ) t
         `),
         prisma.$queryRaw<CountRow[]>(Prisma.sql`
@@ -76,6 +83,7 @@ export async function getValuableRaterMetrics(
               "createdAt"
             FROM "Rating"
             WHERE ("userId" IS NOT NULL OR "anonId" IS NOT NULL)
+              AND ${excl}
           ),
           firsts AS (
             SELECT rater, MIN("createdAt") AS first_at
@@ -106,6 +114,7 @@ export async function getValuableRaterMetrics(
               "createdAt"
             FROM "Rating"
             WHERE ("userId" IS NOT NULL OR "anonId" IS NOT NULL)
+              AND ${excl}
           ),
           firsts AS (
             SELECT rater, MIN("createdAt") AS first_at
@@ -139,6 +148,7 @@ export async function getValuableRaterMetrics(
               "utmCampaign"
             FROM "Rating"
             WHERE ("userId" IS NOT NULL OR "anonId" IS NOT NULL)
+              AND ${excl}
           ),
           firsts AS (
             SELECT
@@ -210,6 +220,7 @@ export async function getValuableRaterMetrics(
               "utmCampaign"
             FROM "Rating"
             WHERE ("userId" IS NOT NULL OR "anonId" IS NOT NULL)
+              AND ${excl}
           ),
           firsts AS (
             SELECT

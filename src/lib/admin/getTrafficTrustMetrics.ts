@@ -20,6 +20,10 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
 import type { PageViewAnalyticsDays } from "@/lib/admin/getPageViewAnalytics"
+import {
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
 
 export type TrustLevel = "HUMAN" | "UNKNOWN" | "BOT"
 
@@ -53,6 +57,8 @@ export type TrafficTrustMetrics = {
   humanCountries: Array<{ country: string; count: number }>
   humanTopPages: Array<{ path: string; count: number }>
   humanTopReferrers: Array<{ domain: string; count: number }>
+  /** Operator accounts excluded via INTERNAL_USER_IDS + ADMIN_EMAIL. */
+  internalUsersExcluded: number
 }
 
 type TrustRow = {
@@ -107,6 +113,7 @@ function emptyMetrics(days: PageViewAnalyticsDays): TrafficTrustMetrics {
     humanCountries: [],
     humanTopPages: [],
     humanTopReferrers: [],
+    internalUsersExcluded: 0,
   }
 }
 
@@ -150,7 +157,9 @@ const PROOF_EVENT_NAMES = Prisma.raw(
 )
 
 /** Shared CTE prefix: windowed pageviews (no /admin) classified into trust levels. */
-function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
+function classifiedCte(interval: Prisma.Sql, internalIds: string[]): Prisma.Sql {
+  const exclPv = sqlUserIdNotInternal(internalIds)
+  const exclPe = sqlUserIdNotInternal(internalIds)
   return Prisma.sql`
     WITH w AS (
       SELECT "id", "path", "referrer", "userId", "ipHash", "visitorId", "sessionId",
@@ -158,6 +167,7 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
       FROM "PageView"
       WHERE "createdAt" >= NOW() - ${interval}
         AND "path" NOT LIKE '/admin%'
+        AND ${exclPv}
     ),
     -- Cookie-bound only. Do NOT promote by ipHash: CGNAT + crawl fleets share IPs
     -- with one real qualified_visit and would turn thousands of hop pageviews into "Human".
@@ -171,6 +181,7 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
       WHERE "createdAt" >= NOW() - ${interval}
         AND "visitorId" IS NOT NULL AND "isLikelyBot" = false
         AND "name" IN ${PROOF_EVENT_NAMES}
+        AND ${exclPe}
     ),
     classified AS (
       SELECT w.*,
@@ -190,12 +201,14 @@ function classifiedCte(interval: Prisma.Sql): Prisma.Sql {
 export async function getTrafficTrustMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<TrafficTrustMetrics> {
-  const cacheKey = `admin:traffic-trust:v2:${days}`
+  const internalIds = await resolveInternalUserIds()
+  const cacheKey = `admin:traffic-trust:v3:${days}:${internalIds.join(",")}`
   const cached = getCache<TrafficTrustMetrics>(cacheKey)
   if (cached) return cached
 
   const interval = intervalForDays(days)
-  const cte = classifiedCte(interval)
+  const cte = classifiedCte(interval, internalIds)
+  const exclPv = sqlUserIdNotInternal(internalIds)
 
   try {
     const [
@@ -253,6 +266,7 @@ export async function getTrafficTrustMetrics(
           AND "path" NOT LIKE '/admin%'
           AND "isLikelyBot" = false
           AND "sessionId" IS NULL
+          AND ${exclPv}
       `),
       prisma.$queryRaw<NamedCountRow[]>(Prisma.sql`
         SELECT COALESCE(NULLIF(BTRIM("botReason"), ''), '(unspecified / legacy)') AS name,
@@ -260,6 +274,7 @@ export async function getTrafficTrustMetrics(
         FROM "PageView"
         WHERE "createdAt" >= NOW() - ${interval}
           AND "isLikelyBot" = true
+          AND ${exclPv}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 12
@@ -345,12 +360,13 @@ export async function getTrafficTrustMetrics(
         domain: r.name ?? "(direct)",
         count: toNumber(r.count),
       })),
+      internalUsersExcluded: internalIds.length,
     }
 
     setCache(cacheKey, data, 30_000)
     return data
   } catch (error) {
     console.error("Admin query failed getTrafficTrustMetrics", error)
-    return emptyMetrics(days)
+    return { ...emptyMetrics(days), internalUsersExcluded: internalIds.length }
   }
 }

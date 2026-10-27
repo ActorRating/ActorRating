@@ -7,6 +7,10 @@ import {
   classifyAiCrawlerFamily,
 } from "@/lib/analytics/ai-crawlers"
 import { AI_REFERRAL_CHANNEL_KEY } from "@/lib/analytics/ai-referral"
+import {
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
 
 function toNumber(value: bigint | number | null | undefined): number {
   if (typeof value === "bigint") return Number(value)
@@ -102,12 +106,16 @@ type UaPathRow = { userAgent: string; path: string; count: bigint | number }
 export async function getAiTrafficMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<AiTrafficMetrics> {
-  const cacheKey = `admin:ai-traffic:v1:${days}`
+  const internalIds = await resolveInternalUserIds()
+  const cacheKey = `admin:ai-traffic:v2:${days}:${internalIds.join(",")}`
   const cached = getCache<AiTrafficMetrics>(cacheKey)
   if (cached) return cached
 
   const interval = intervalForDays(days)
   const refPred = aiReferralReferrerSql()
+  const excl = sqlUserIdNotInternal(internalIds)
+  const exclPv = sqlUserIdNotInternal(internalIds, 'pv."userId"')
+  const exclE = sqlUserIdNotInternal(internalIds, 'e."userId"')
 
   try {
     const [pvRows, qvRows, ratingRows, signupRows, uaRows] = await Promise.all([
@@ -116,6 +124,7 @@ export async function getAiTrafficMetrics(
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND ${refPred}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
@@ -124,11 +133,13 @@ export async function getAiTrafficMetrics(
         WHERE e."name" = 'qualified_visit'
           AND e."isLikelyBot" = false
           AND e."createdAt" >= NOW() - ${interval}
+          AND ${exclE}
           AND e."ipHash" IN (
             SELECT DISTINCT pv."ipHash"
             FROM "PageView" pv
             WHERE pv."isLikelyBot" = false
               AND pv."createdAt" >= NOW() - ${interval}
+              AND ${exclPv}
               AND ${aiReferralReferrerSql("pv.\"referrer\"")}
           )
       `),
@@ -137,11 +148,13 @@ export async function getAiTrafficMetrics(
         FROM "ProductEvent" e
         WHERE e."name" = 'rating_submitted'
           AND e."createdAt" >= NOW() - ${interval}
+          AND ${exclE}
           AND e."ipHash" IN (
             SELECT DISTINCT pv."ipHash"
             FROM "PageView" pv
             WHERE pv."isLikelyBot" = false
               AND pv."createdAt" >= NOW() - ${interval}
+              AND ${exclPv}
               AND ${aiReferralReferrerSql("pv.\"referrer\"")}
           )
       `),
@@ -150,11 +163,13 @@ export async function getAiTrafficMetrics(
         FROM "ProductEvent" e
         WHERE e."name" = 'signup_started'
           AND e."createdAt" >= NOW() - ${interval}
+          AND ${exclE}
           AND e."ipHash" IN (
             SELECT DISTINCT pv."ipHash"
             FROM "PageView" pv
             WHERE pv."isLikelyBot" = false
               AND pv."createdAt" >= NOW() - ${interval}
+              AND ${exclPv}
               AND ${aiReferralReferrerSql("pv.\"referrer\"")}
           )
       `),
@@ -162,6 +177,7 @@ export async function getAiTrafficMetrics(
         SELECT "userAgent", "path", COUNT(*)::bigint AS count
         FROM "PageView"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND "userAgent" IS NOT NULL
           AND BTRIM("userAgent") <> ''
         GROUP BY "userAgent", "path"

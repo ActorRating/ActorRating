@@ -2,6 +2,11 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
 import type { AdminGrowthPoint } from "@/lib/admin/getAdminData"
+import {
+  prismaWhereUserIdNotInternal,
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
 
 export type PageViewAnalyticsDays = 1 | 7 | 30
 
@@ -156,13 +161,15 @@ function intervalForDays(days: PageViewAnalyticsDays): Prisma.Sql {
 export async function getPageViewAnalytics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<PageViewAnalytics> {
-  const cacheKey = `admin:pageviews:${days}`
+  const internalIds = await resolveInternalUserIds()
+  const cacheKey = `admin:pageviews:v2:${days}:${internalIds.join(",")}`
   const cached = getCache<PageViewAnalytics>(cacheKey)
   if (cached) return cached
 
   const todayStart = startOfToday()
   const now = new Date()
   const interval = intervalForDays(days)
+  const excl = sqlUserIdNotInternal(internalIds)
 
   try {
     const [
@@ -181,7 +188,8 @@ export async function getPageViewAnalytics(
             FROM "PageView"
             WHERE "isLikelyBot" = false
               AND "createdAt" >= NOW() - ${interval}
-          AND "path" NOT LIKE '/admin%'
+              AND "path" NOT LIKE '/admin%'
+              AND ${excl}
             GROUP BY DATE_TRUNC('hour', "createdAt")
             ORDER BY day ASC
           `)
@@ -190,7 +198,8 @@ export async function getPageViewAnalytics(
             FROM "PageView"
             WHERE "isLikelyBot" = false
               AND "createdAt" >= NOW() - ${interval}
-          AND "path" NOT LIKE '/admin%'
+              AND "path" NOT LIKE '/admin%'
+              AND ${excl}
             GROUP BY DATE_TRUNC('day', "createdAt")
             ORDER BY day ASC
           `),
@@ -215,6 +224,7 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 15
@@ -227,6 +237,7 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 20
@@ -237,6 +248,7 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY "path"
         ORDER BY count DESC
         LIMIT 20
@@ -246,6 +258,7 @@ export async function getPageViewAnalytics(
         FROM "PageView"
         WHERE "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY "isLikelyBot"
       `),
       prisma.$queryRaw<Array<{ botCategory: string | null; count: bigint | number }>>(Prisma.sql`
@@ -254,6 +267,7 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = true
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY "botCategory"
       `),
       prisma.$queryRaw<Array<{ count: bigint | number }>>(Prisma.sql`
@@ -262,12 +276,14 @@ export async function getPageViewAnalytics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
       `),
       prisma.pageView.findMany({
         where: {
           isLikelyBot: false,
           // Admin browsing is not "site traffic" — keep the feed product-facing.
           NOT: { path: { startsWith: "/admin" } },
+          ...prismaWhereUserIdNotInternal(internalIds),
         },
         orderBy: { createdAt: "desc" },
         take: 30,

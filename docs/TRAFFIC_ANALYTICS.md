@@ -72,12 +72,16 @@ WHERE "userId" = :user_id
   );
 ```
 
-**Recommendation:** do **not** add an `isInternal` column for this. Going forward, write-skipping
-covers new beacons. For historical Human inflation, prefer a **read-time filter** in traffic
-queries (`userId` not equal to the admin user id, or `userId` not in a small denylist). That
-avoids a migration/backfill and keeps raw rows for debugging. An `isInternal` flag only pays off
-if you need many operators/devices without Auth.js `userId` (cookie-only) reflected in history —
-those rows cannot be found by `userId` anyway.
+**Recommendation (implemented):** admin traffic queries apply a **read-time filter** that drops
+`PageView` / `ProductEvent` / `Rating` rows whose `userId` is internal. IDs come from:
+
+- `INTERNAL_USER_IDS` — comma-separated User ids (Coolify env)
+- plus the User row whose email equals `ADMIN_EMAIL`
+
+Example Coolify env: `INTERNAL_USER_IDS=cmo6zd0pe000klb0113pehfd2`
+
+Write-skipping (`ar_internal` / admin email) still prevents new rows; the read filter cleans
+history in the dashboard without a migration.
 
 ## Beacons
 

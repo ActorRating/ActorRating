@@ -141,6 +141,24 @@ export function TrafficTrustSection({ data }: { data: TrafficTrustMetrics }) {
           flagged by UA, header consistency, burst, crawl, verified-bot or reclassifier.
           Sessions need <code className="text-xs">ar_sid</code> (post-deploy beacons only); /admin is excluded.
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center rounded-md border border-border/80 bg-background/60 px-2 py-0.5 text-xs font-medium text-foreground/90">
+            Internal accounts excluded
+          </span>{" "}
+          {data.internalUsersExcluded > 0 ? (
+            <>
+              Read-time filter on — {count(data.internalUsersExcluded)} user
+              {data.internalUsersExcluded === 1 ? "" : "s"} (
+              <code className="text-xs">ADMIN_EMAIL</code>
+              {` + INTERNAL_USER_IDS`}).
+            </>
+          ) : (
+            <>
+              No internal user ids resolved yet (set <code className="text-xs">ADMIN_EMAIL</code> /
+              <code className="text-xs"> INTERNAL_USER_IDS</code>).
+            </>
+          )}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

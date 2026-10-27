@@ -17,6 +17,10 @@ import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getCache, setCache } from "@/lib/admin/cache"
 import type { PageViewAnalyticsDays } from "@/lib/admin/getPageViewAnalytics"
+import {
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
 
 export type QualifiedTrafficChannelRow = {
   key: string
@@ -200,11 +204,13 @@ export function computeQualifiedTrafficRatios(input: {
 export async function getQualifiedTrafficMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<QualifiedTrafficMetrics> {
-  const cacheKey = `admin:qualified-traffic:v3:${days}`
+  const internalIds = await resolveInternalUserIds()
+  const cacheKey = `admin:qualified-traffic:v4:${days}:${internalIds.join(",")}`
   const cached = getCache<QualifiedTrafficMetrics>(cacheKey)
   if (cached) return cached
 
   const interval = intervalForDays(days)
+  const excl = sqlUserIdNotInternal(internalIds)
 
   try {
     const [
@@ -232,6 +238,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -239,6 +246,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -246,6 +254,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "isLikelyBot" = true
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -253,11 +262,13 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
         FROM "Rating"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
       `),
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
         SELECT COUNT(*)::bigint AS count
@@ -279,6 +290,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -290,6 +302,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -301,6 +314,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -310,6 +324,7 @@ export async function getQualifiedTrafficMetrics(
                COUNT(*)::bigint AS count
         FROM "Rating"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -333,6 +348,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -344,6 +360,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
           AND "path" NOT LIKE '/admin%'
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -355,6 +372,7 @@ export async function getQualifiedTrafficMetrics(
         WHERE "name" = 'qualified_visit'
           AND "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25
@@ -364,6 +382,7 @@ export async function getQualifiedTrafficMetrics(
                COUNT(*)::bigint AS count
         FROM "Rating"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 25

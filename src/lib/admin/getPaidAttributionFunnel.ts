@@ -1,5 +1,9 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import {
+  resolveInternalUserIds,
+  sqlUserIdNotInternal,
+} from "@/lib/admin/internal-users"
 
 export type PaidFunnelRow = {
   key: string
@@ -24,6 +28,8 @@ export async function getPaidAttributionFunnel(days = 30): Promise<{
   byCampaign: PaidFunnelRow[]
   byTerm: PaidFunnelRow[]
 }> {
+  const internalIds = await resolveInternalUserIds()
+  const excl = sqlUserIdNotInternal(internalIds)
   const interval = Prisma.raw(`INTERVAL '${Math.min(Math.max(days, 1), 90)} days'`)
 
   const [campaignViews, campaignRatings, campaignUsers, termViews, termRatings, termUsers] =
@@ -34,6 +40,7 @@ export async function getPaidAttributionFunnel(days = 30): Promise<{
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND "utmCampaign" IS NOT NULL
           AND BTRIM("utmCampaign") <> ''
         GROUP BY 1
@@ -45,6 +52,7 @@ export async function getPaidAttributionFunnel(days = 30): Promise<{
                COUNT(*)::bigint AS ratings
         FROM "Rating"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND "utmCampaign" IS NOT NULL
           AND BTRIM("utmCampaign") <> ''
         GROUP BY 1
@@ -69,6 +77,7 @@ export async function getPaidAttributionFunnel(days = 30): Promise<{
         FROM "PageView"
         WHERE "isLikelyBot" = false
           AND "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND "utmTerm" IS NOT NULL
           AND BTRIM("utmTerm") <> ''
         GROUP BY 1
@@ -80,6 +89,7 @@ export async function getPaidAttributionFunnel(days = 30): Promise<{
                COUNT(*)::bigint AS ratings
         FROM "Rating"
         WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
           AND "utmTerm" IS NOT NULL
           AND BTRIM("utmTerm") <> ''
         GROUP BY 1
