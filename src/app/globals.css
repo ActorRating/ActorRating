@@ -876,40 +876,66 @@ video {
   }
 }
 
-/* Hero backdrop readability washes */
 /* Hero backdrop readability washes — Letterboxd-style edge + bottom fades */
 .hero-backdrop-wash--stacked {
   background:
     linear-gradient(
       to right,
-      rgba(0, 0, 0, 0.22) 0%,
-      rgba(0, 0, 0, 0.08) 10%,
-      transparent 20%,
-      transparent 80%,
-      rgba(0, 0, 0, 0.08) 90%,
-      rgba(0, 0, 0, 0.22) 100%
+      rgba(0, 0, 0, 0.18) 0%,
+      rgba(0, 0, 0, 0.06) 12%,
+      transparent 22%,
+      transparent 78%,
+      rgba(0, 0, 0, 0.06) 88%,
+      rgba(0, 0, 0, 0.18) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(0, 0, 0, 0.22) 0%,
-      rgba(0, 0, 0, 0.08) 40%,
-      transparent 75%
+      rgba(0, 0, 0, 0.18) 0%,
+      rgba(0, 0, 0, 0.06) 28%,
+      transparent 55%
     ),
-    /* Soft bottom fade into page black — begins high in the frame */
+    /*
+      Bottom veil only — keep the upper still clear. True dissolve into page
+      black is handled by .hero-still-stage--stacked mask (avoids banded overlays).
+    */
     linear-gradient(
       180deg,
       transparent 0%,
-      transparent 8%,
-      rgba(0, 0, 0, 0.03) 18%,
-      rgba(0, 0, 0, 0.08) 28%,
-      rgba(0, 0, 0, 0.16) 40%,
-      rgba(0, 0, 0, 0.28) 52%,
-      rgba(0, 0, 0, 0.44) 64%,
-      rgba(0, 0, 0, 0.62) 76%,
-      rgba(0, 0, 0, 0.8) 88%,
-      rgba(0, 0, 0, 0.94) 96%,
+      transparent 58%,
+      rgba(0, 0, 0, 0.08) 72%,
+      rgba(0, 0, 0, 0.28) 84%,
+      rgba(0, 0, 0, 0.55) 92%,
+      rgba(0, 0, 0, 0.82) 97%,
       #000 100%
     );
+}
+
+/*
+  Mobile/tablet stacked hero: dissolve the still pixels into black (mask), not
+  just paint opaque black on top — overlay ramps band on compressed forest stills.
+*/
+.hero-still-stage--stacked picture img,
+.hero-still-stage--stacked > img {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 48%,
+    rgba(0, 0, 0, 0.92) 62%,
+    rgba(0, 0, 0, 0.7) 74%,
+    rgba(0, 0, 0, 0.4) 84%,
+    rgba(0, 0, 0, 0.15) 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 48%,
+    rgba(0, 0, 0, 0.92) 62%,
+    rgba(0, 0, 0, 0.7) 74%,
+    rgba(0, 0, 0, 0.4) 84%,
+    rgba(0, 0, 0, 0.15) 92%,
+    transparent 100%
+  );
 }
 
 .hero-backdrop-wash--cinematic {

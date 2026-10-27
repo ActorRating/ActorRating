@@ -13,7 +13,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { HomeLayout } from "@/components/layout"
 import { OdysseyHubTracker } from "@/components/analytics/OdysseyHubTracker"
-import { FIXED_LANDING_HERO } from "@/lib/home-featured-performance"
+import { OdysseyForestStill } from "@/components/hero/OdysseyForestStill"
 import { isHubEnabledSlug } from "@/lib/movie-best-performances/hub-allowlist"
 import { buildHubAnswerFirst } from "@/lib/movie-best-performances/hub-answer-first"
 import { loadMovieBestPerformancesHub } from "@/lib/movie-best-performances/load-hub"
@@ -131,11 +131,12 @@ export default async function BestPerformancesHubPage({ params }: Props) {
   }
 
   const ratingWord = hub.totalSignedInRatings === 1 ? "rating" : "ratings"
-  const heroStill =
-    movieSlug === "the-odyssey-2026"
-      ? FIXED_LANDING_HERO.backdropUrl
-      : upgradePosterThumb(hub.movie.posterUrl)
+  const isOdysseyForest = movieSlug === "the-odyssey-2026"
+  const heroStill = isOdysseyForest
+    ? null
+    : upgradePosterThumb(hub.movie.posterUrl)
   const posterThumb = upgradePosterThumb(hub.movie.posterUrl)
+  const showHeroStill = isOdysseyForest || Boolean(heroStill)
   const dataLoadedAt = new Date()
   const answerFirst = buildHubAnswerFirst({
     movieTitle: hub.movie.title,
@@ -158,24 +159,28 @@ export default async function BestPerformancesHubPage({ params }: Props) {
       <OdysseyHubTracker movieSlug={movieSlug} movieTitle={hub.movie.title} />
       <HomeLayout>
         {/*
-          HomeLayout’s <main> has pt-16/sm:pt-20 for the navbar. Pull the hero
-          back up so the forest still starts flush under the nav (landing pattern),
-          not below a black gap.
+          HomeLayout main has pt-16/20. On <lg the nav is in-flow, so cancel that
+          padding. On lg+ the nav is absolute/transparent — keep the padding so
+          the forest still starts below the navbar (not under it).
         */}
-        <div className="min-h-screen bg-black text-white -mt-16 sm:-mt-20">
+        <div className="min-h-screen bg-black text-white -mt-16 sm:-mt-20 lg:mt-0">
           {/* ── Mobile / tablet: still on top (landing stacked pattern) ── */}
           <section className="lg:hidden bg-black">
-            {heroStill ? (
-              <div className="relative w-full aspect-[16/10] max-h-[48svh] overflow-hidden">
-                <Image
-                  src={heroStill}
-                  alt=""
-                  fill
-                  priority
-                  quality={90}
-                  className="object-cover object-center"
-                  sizes="100vw"
-                />
+            {showHeroStill ? (
+              <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[48svh] overflow-hidden">
+                {isOdysseyForest ? (
+                  <OdysseyForestStill />
+                ) : heroStill ? (
+                  <Image
+                    src={heroStill}
+                    alt=""
+                    fill
+                    priority
+                    quality={90}
+                    className="object-cover object-center"
+                    sizes="100vw"
+                  />
+                ) : null}
                 <div
                   className="hero-backdrop-wash hero-backdrop-wash--stacked absolute inset-0 pointer-events-none"
                   aria-hidden
@@ -186,7 +191,7 @@ export default async function BestPerformancesHubPage({ params }: Props) {
             <div
               className="px-4 sm:px-6 pt-6 pb-10"
               style={{
-                paddingTop: heroStill
+                paddingTop: showHeroStill
                   ? undefined
                   : "max(5.5rem, calc(5rem + env(safe-area-inset-top, 0px)))",
               }}
@@ -262,17 +267,21 @@ export default async function BestPerformancesHubPage({ params }: Props) {
           */}
           <section className="relative hidden lg:block bg-black overflow-hidden">
             <div className="relative h-[min(58svh,560px)] w-full min-h-[380px]">
-              {heroStill ? (
+              {showHeroStill ? (
                 <div className="hero-still-stage absolute inset-0" aria-hidden>
-                  <Image
-                    src={heroStill}
-                    alt=""
-                    fill
-                    priority
-                    quality={90}
-                    className="hero-still object-cover object-center"
-                    sizes="100vw"
-                  />
+                  {isOdysseyForest ? (
+                    <OdysseyForestStill imgClassName="hero-still object-cover object-center" />
+                  ) : heroStill ? (
+                    <Image
+                      src={heroStill}
+                      alt=""
+                      fill
+                      priority
+                      quality={90}
+                      className="hero-still object-cover object-center"
+                      sizes="(max-width: 1920px) 100vw, 2125px"
+                    />
+                  ) : null}
                   <div className="hero-backdrop-wash hero-backdrop-wash--cinematic absolute inset-0 pointer-events-none" />
                   <div className="hero-wide-fade pointer-events-none absolute inset-0" />
                 </div>
@@ -282,7 +291,7 @@ export default async function BestPerformancesHubPage({ params }: Props) {
 
               <Link
                 href={filmPath}
-                className="absolute left-6 top-[max(5.5rem,calc(4.5rem+env(safe-area-inset-top,0px)))] z-20 inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-zinc-400 transition-colors hover:border-white/20 hover:text-white lg:left-8"
+                className="absolute left-6 top-6 z-20 inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-zinc-400 transition-colors hover:border-white/20 hover:text-white lg:left-8"
                 aria-label={`Back to ${hub.movie.title}`}
               >
                 <ArrowLeft className="h-5 w-5" />

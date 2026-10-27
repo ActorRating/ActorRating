@@ -40,6 +40,7 @@ import {
 } from "@/lib/weekly-hero-performance";
 import { resolveCharacterDisplay } from "@/lib/character";
 import { LastRatedStrip } from "@/components/LastRatedStrip";
+import { OdysseyForestStill } from "@/components/hero/OdysseyForestStill";
 import {
   PosterRail,
   StaticPosterRail,
@@ -101,10 +102,6 @@ const LANDING_RAILS_MIN = Math.max(6, DAILY_RAIL_COUNT - 2);
 // Mobile: image fitted at top, centered sans manifesto, CTA directly under it.
 
 const HERO_BACKDROP_FALLBACK = "/hero/odyssey-damon-forest.webp";
-const HERO_BACKDROP_AVIF = "/hero/odyssey-damon-forest.avif";
-const HERO_BACKDROP_JPEG = "/hero/odyssey-damon-forest-1920.jpg";
-/** Cap desktop LCP width; mobile is full viewport width. */
-const HERO_IMAGE_SIZES = "(max-width: 1023px) 100vw, 1920px";
 
 function isLocalHeroStill(src: string): boolean {
   return src.startsWith("/hero/");
@@ -139,29 +136,16 @@ function HeroBackdrop({ src, mobile }: { src: string; mobile?: boolean }) {
   return (
     <>
       {localHero ? (
-        // Pre-encoded AVIF/WebP via native <picture> (no new deps; next/image wrappers break <picture>).
-        <picture>
-          <source srcSet={HERO_BACKDROP_AVIF} type="image/avif" sizes={HERO_IMAGE_SIZES} />
-          <source srcSet={HERO_BACKDROP_FALLBACK} type="image/webp" sizes={HERO_IMAGE_SIZES} />
-          {/* eslint-disable-next-line @next/next/no-img-element -- LCP still; formats handled above */}
-          <img
-            src={HERO_BACKDROP_JPEG}
-            alt=""
-            fetchPriority="high"
-            decoding="async"
-            sizes={HERO_IMAGE_SIZES}
-            className={`absolute inset-0 h-full w-full ${imgClass}`}
-          />
-        </picture>
+        <OdysseyForestStill imgClassName={imgClass} />
       ) : (
         <Image
           src={src}
           alt=""
           fill
           priority
-          quality={75}
+          quality={85}
           className={imgClass}
-          sizes={HERO_IMAGE_SIZES}
+          sizes="(max-width: 1023px) 100vw, 2125px"
         />
       )}
       {/* Readability wash — mid-start darkening on desktop + iPad landscape */}
@@ -235,7 +219,7 @@ function HeroSection({
     <>
       {/* ── Mobile + tablet: image on top, then branding + manifesto + CTA ── */}
       <section className="lg:hidden bg-black">
-        <div className="relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[46svh] md:max-h-[42svh] overflow-hidden">
+        <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[46svh] md:max-h-[42svh] overflow-hidden">
           {posterSrc ? <HeroBackdrop src={posterSrc} mobile /> : null}
         </div>
         <div className="px-5 sm:px-8 pt-6 pb-8 text-center">
