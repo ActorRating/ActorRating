@@ -217,12 +217,16 @@ function HeroSection({
 
   return (
     <>
-      {/* ── Mobile + tablet: image on top, then branding + manifesto + CTA ── */}
-      <section className="lg:hidden bg-black">
-        <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[46svh] md:max-h-[42svh] overflow-hidden">
+      {/*
+        Stacked (phone / iPad / square): still on top, copy on black below.
+        Cinematic full-bleed only when CSS says the viewport is wide+landscape
+        (.hero-layout-cinematic) — avoids burying the still under washes on mid sizes.
+      */}
+      <section className="hero-layout-stacked bg-black">
+        <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[50svh] md:max-h-[48svh] overflow-hidden">
           {posterSrc ? <HeroBackdrop src={posterSrc} mobile /> : null}
         </div>
-        <div className="px-5 sm:px-8 pt-6 pb-8 text-center">
+        <div className="px-5 sm:px-8 pt-6 pb-8 text-center md:px-10 md:pt-8 md:pb-10">
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -265,8 +269,8 @@ function HeroSection({
         </div>
       </section>
 
-      {/* ── Desktop / large tablet (lg+): full-bleed still ── */}
-      <section className="relative hidden lg:flex h-[100svh] w-full overflow-clip bg-black flex-col">
+      {/* Wide landscape desktop: full-bleed still + bottom-pinned manifesto */}
+      <section className="hero-layout-cinematic relative h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
           <div className="hero-still-stage absolute inset-0" aria-hidden>
             <HeroBackdrop src={posterSrc} />
@@ -276,33 +280,7 @@ function HeroSection({
         )}
         <HeroSubjectLink name={featured.actorName} />
 
-        {/* iPad / tall screens: manifesto + CTA in the lower third */}
-        <div className="hero-cinematic-centered relative z-10 flex-1 flex-col items-center justify-end px-8 pb-[8vh] text-center">
-          <motion.h1
-            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-            className="hero-manifesto-cinematic text-white"
-            style={HERO_MANIFESTO}
-          >
-            Rate performances you&apos;ve&nbsp;seen.
-            <br />
-            Save the ones that floored&nbsp;you.
-            <br />
-            Tell the internet who deserved&nbsp;it.
-          </motion.h1>
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
-            className="mt-12 flex flex-col items-center scroll-mt-28"
-          >
-            <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
-          </motion.div>
-        </div>
-
-        {/* Desktop: manifesto pinned to fold bottom */}
-        <div className="hero-cinematic-bottom relative z-10 w-full flex-1 flex-col items-center">
+        <div className="relative z-10 flex w-full flex-1 flex-col items-center">
           <div className="flex-1 w-full" aria-hidden />
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
@@ -320,7 +298,6 @@ function HeroSection({
         </div>
       </section>
 
-      {/* CTA band — only with bottom-pinned desktop hero */}
       <section className="hero-cta-band relative bg-black px-8 pt-9 pb-11 text-center scroll-mt-28">
         <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
       </section>
