@@ -19,7 +19,11 @@ export function OdysseyForestStill({
   imgClassName = "object-cover object-center",
 }: Props) {
   return (
-    <picture className={className}>
+    // picture must fill the stage — inline <picture> collapses and the still
+    // only paints ~16:9 (e.g. 768px in a 1024 iPad Pro frame), leaving a hard black seam.
+    <picture
+      className={`absolute inset-0 block h-full w-full ${className ?? ""}`}
+    >
       <source srcSet={AVIF} type="image/avif" sizes={SIZES} />
       <source srcSet={WEBP} type="image/webp" sizes={SIZES} />
       {/* eslint-disable-next-line @next/next/no-img-element -- LCP still; formats via <picture> */}
@@ -29,7 +33,7 @@ export function OdysseyForestStill({
         fetchPriority="high"
         decoding="async"
         sizes={SIZES}
-        className={`absolute inset-0 h-full w-full ${imgClassName}`}
+        className={`absolute inset-0 ${imgClassName}`}
       />
     </picture>
   )

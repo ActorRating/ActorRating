@@ -226,12 +226,13 @@ function HeroSection({
         <div className="hero-still-stage--stacked relative w-full aspect-[16/10] max-h-[52svh] sm:max-h-[50svh] md:max-h-[48svh] overflow-hidden">
           {posterSrc ? <HeroBackdrop src={posterSrc} mobile /> : null}
         </div>
-        <div className="px-5 sm:px-8 pt-6 pb-8 text-center md:px-10 md:pt-8 md:pb-10">
+        {/* -mt pulls wordmark into the still’s bottom fade so it sits higher on phones */}
+        <div className="relative z-[1] -mt-14 px-5 pb-8 pt-0 text-center sm:-mt-16 sm:px-8 sm:pt-1 md:-mt-4 md:px-10 md:pb-10 md:pt-3">
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="mb-5 flex items-center justify-center gap-0.5"
+            className="mb-3 flex items-center justify-center gap-0.5 sm:mb-4"
             aria-label="ActorRating"
           >
             <div className="relative w-14 h-14 shrink-0">
@@ -270,9 +271,9 @@ function HeroSection({
       </section>
 
       {/*
-        Cinematic full-bleed:
-        - Tablet landscape (iPad mini/Pro horizontal): lower-third manifesto + CTA
-        - Wide desktop only: last line on the fold + CTA band below
+        Cinematic full-bleed (globals.css):
+        - Normal desktop: last line on the fold + CTA band below
+        - iPad landscape only: lower-third manifesto + CTA + bottom fade
       */}
       <section className="hero-layout-cinematic relative h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
@@ -282,9 +283,11 @@ function HeroSection({
         ) : (
           <div className="absolute inset-0 bg-black" />
         )}
+        {/* Dedicated bottom ramp — wash alone was too weak / inconsistent on iPad */}
+        <div className="hero-cinematic-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 z-[1]" aria-hidden />
         <HeroSubjectLink name={featured.actorName} />
 
-        <div className="hero-cinematic-tablet relative z-10 flex-1 flex-col items-center justify-end px-8 pb-[7vh] text-center">
+        <div className="hero-cinematic-tablet relative z-10 flex-1 flex-col items-center justify-end px-8 pb-12 text-center">
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -302,7 +305,7 @@ function HeroSection({
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
-            className="mt-10 flex flex-col items-center scroll-mt-28"
+            className="hero-cinematic-tablet-cta mt-6 flex w-full flex-col items-center scroll-mt-28"
           >
             <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
           </motion.div>

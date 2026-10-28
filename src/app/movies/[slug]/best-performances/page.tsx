@@ -261,12 +261,12 @@ export default async function BestPerformancesHubPage({ params }: Props) {
           </section>
 
           {/*
-            Desktop: fixed-height still with a short overlay only.
-            Long answer-first / methodology copy used to sit inside this box
-            (justify-end + mb-auto) and overflow upward into the navbar.
+            Desktop: full remaining viewport below the in-flow nav pad so the
+            short overlay (items-end) sits on the fold — not mid-screen.
+            Long answer-first / methodology copy stays below this box.
           */}
           <section className="relative hidden lg:block bg-black overflow-hidden">
-            <div className="relative h-[min(58svh,560px)] w-full min-h-[380px]">
+            <div className="relative h-[calc(100svh-5rem)] w-full min-h-[420px]">
               {showHeroStill ? (
                 <div className="hero-still-stage absolute inset-0" aria-hidden>
                   {isOdysseyForest ? (
