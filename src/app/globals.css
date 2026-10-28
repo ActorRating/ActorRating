@@ -786,23 +786,23 @@ video {
   }
 }
 
-/* Cinematic hero: larger Cormorant on wide screens */
+/* Cinematic hero: larger Cormorant; nowrap only on wide desktop */
 @media (min-width: 1024px) {
   .hero-manifesto-cinematic {
-    font-size: 2.75rem !important; /* 44px */
-    line-height: 1.28 !important;
+    font-size: 2.35rem !important; /* tablet landscape */
+    line-height: 1.3 !important;
+  }
+}
+
+@media (min-width: 1280px) and (min-aspect-ratio: 16 / 10) {
+  .hero-manifesto-cinematic {
+    font-size: 3.25rem !important; /* 52px */
+    line-height: 1.25 !important;
     white-space: nowrap;
   }
 }
 
-@media (min-width: 1280px) {
-  .hero-manifesto-cinematic {
-    font-size: 3.25rem !important; /* 52px */
-    line-height: 1.25 !important;
-  }
-}
-
-@media (min-width: 1536px) {
+@media (min-width: 1536px) and (min-aspect-ratio: 16 / 10) {
   .hero-manifesto-cinematic {
     font-size: 3.5rem !important; /* 56px */
   }
@@ -989,15 +989,13 @@ video {
 
 .hero-backdrop-wash--cinematic {
   background:
-    /* Soft vignette on every edge */
     radial-gradient(
       ellipse 72% 66% at 50% 42%,
-      transparent 22%,
-      rgba(0, 0, 0, 0.2) 48%,
-      rgba(0, 0, 0, 0.48) 72%,
-      rgba(0, 0, 0, 0.72) 100%
+      transparent 28%,
+      rgba(0, 0, 0, 0.16) 52%,
+      rgba(0, 0, 0, 0.4) 76%,
+      rgba(0, 0, 0, 0.62) 100%
     ),
-    /* Top soft darkening under nav */
     linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0.28) 0%,
@@ -1005,27 +1003,27 @@ video {
       rgba(0, 0, 0, 0.04) 22%,
       transparent 34%
     ),
-    /* Bottom fade — starts high, long soft ramp into CTA black */
+    /*
+      Default = tablet landscape: smooth lower-third darkening under manifesto + CTA.
+      (Wide desktop overrides below — clearer mid-frame, fade into fold bottom.)
+    */
     linear-gradient(
       180deg,
       transparent 0%,
-      transparent 4%,
-      rgba(0, 0, 0, 0.02) 12%,
-      rgba(0, 0, 0, 0.05) 22%,
-      rgba(0, 0, 0, 0.1) 34%,
-      rgba(0, 0, 0, 0.18) 46%,
-      rgba(0, 0, 0, 0.3) 58%,
-      rgba(0, 0, 0, 0.45) 68%,
-      rgba(0, 0, 0, 0.62) 78%,
-      rgba(0, 0, 0, 0.78) 86%,
-      rgba(0, 0, 0, 0.9) 92%,
-      rgba(0, 0, 0, 0.97) 97%,
+      transparent 38%,
+      rgba(0, 0, 0, 0.06) 48%,
+      rgba(0, 0, 0, 0.14) 56%,
+      rgba(0, 0, 0, 0.28) 64%,
+      rgba(0, 0, 0, 0.44) 72%,
+      rgba(0, 0, 0, 0.62) 80%,
+      rgba(0, 0, 0, 0.78) 88%,
+      rgba(0, 0, 0, 0.9) 94%,
       #000 100%
     );
 }
 
-/* Desktop + iPad landscape: bottom darkening starts high in the frame */
-@media (orientation: landscape) and (min-width: 1024px) {
+/* Wide desktop only: keep mid-frame open, soft ramp into bottom-pinned line */
+@media (min-width: 1280px) and (min-aspect-ratio: 16 / 10) {
   .hero-backdrop-wash--cinematic {
     background:
       radial-gradient(
@@ -1045,10 +1043,11 @@ video {
       linear-gradient(
         180deg,
         transparent 0%,
-        transparent 55%,
-        rgba(0, 0, 0, 0.22) 68%,
-        rgba(0, 0, 0, 0.5) 78%,
-        rgba(0, 0, 0, 0.78) 88%,
+        transparent 52%,
+        rgba(0, 0, 0, 0.1) 64%,
+        rgba(0, 0, 0, 0.28) 74%,
+        rgba(0, 0, 0, 0.52) 84%,
+        rgba(0, 0, 0, 0.78) 92%,
         #000 100%
       );
   }
@@ -1056,15 +1055,23 @@ video {
 
 /*
   Landing hero layouts:
-  - Stacked: phone + portrait / square tablets (taller than ~5:4).
-  - Cinematic: past square into landscape (iPad horizontal, desktops) —
-    full-bleed still + CTA band. 5/4 catches ~4:3 iPad landscape; 3/2 did not.
+  - Stacked: phone + portrait / square tablets.
+  - Cinematic tablet (iPad horizontal): lower-third text + CTA on the still.
+  - Cinematic desktop (wide): last line on the fold + CTA band below.
 */
 .hero-layout-stacked {
   display: block;
 }
 
 .hero-layout-cinematic {
+  display: none;
+}
+
+.hero-cinematic-tablet {
+  display: none;
+}
+
+.hero-cinematic-desktop {
   display: none;
 }
 
@@ -1079,6 +1086,7 @@ video {
   }
 }
 
+/* Landscape tablets + short laptops: cinematic with lower-third chrome */
 @media (min-width: 1024px) and (min-aspect-ratio: 5 / 4) {
   .hero-layout-stacked {
     display: none !important;
@@ -1086,6 +1094,29 @@ video {
   }
 
   .hero-layout-cinematic {
+    display: flex !important;
+  }
+
+  .hero-cinematic-tablet {
+    display: flex !important;
+  }
+
+  .hero-cinematic-desktop {
+    display: none !important;
+  }
+
+  .hero-cta-band {
+    display: none !important;
+  }
+}
+
+/* Wide desktop only: bottom-pinned manifesto + CTA band under the fold */
+@media (min-width: 1280px) and (min-aspect-ratio: 16 / 10) {
+  .hero-cinematic-tablet {
+    display: none !important;
+  }
+
+  .hero-cinematic-desktop {
     display: flex !important;
   }
 

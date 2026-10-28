@@ -269,7 +269,11 @@ function HeroSection({
         </div>
       </section>
 
-      {/* Wide landscape desktop: full-bleed still + bottom-pinned manifesto */}
+      {/*
+        Cinematic full-bleed:
+        - Tablet landscape (iPad mini/Pro horizontal): lower-third manifesto + CTA
+        - Wide desktop only: last line on the fold + CTA band below
+      */}
       <section className="hero-layout-cinematic relative h-[100svh] w-full overflow-clip bg-black flex-col">
         {posterSrc ? (
           <div className="hero-still-stage absolute inset-0" aria-hidden>
@@ -280,7 +284,31 @@ function HeroSection({
         )}
         <HeroSubjectLink name={featured.actorName} />
 
-        <div className="relative z-10 flex w-full flex-1 flex-col items-center">
+        <div className="hero-cinematic-tablet relative z-10 flex-1 flex-col items-center justify-end px-8 pb-[7vh] text-center">
+          <motion.h1
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="hero-manifesto-cinematic text-white"
+            style={HERO_MANIFESTO}
+          >
+            Rate performances you&apos;ve&nbsp;seen.
+            <br />
+            Save the ones that floored&nbsp;you.
+            <br />
+            Tell the internet who deserved&nbsp;it.
+          </motion.h1>
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.08 }}
+            className="mt-10 flex flex-col items-center scroll-mt-28"
+          >
+            <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
+          </motion.div>
+        </div>
+
+        <div className="hero-cinematic-desktop relative z-10 w-full flex-1 flex-col items-center">
           <div className="flex-1 w-full" aria-hidden />
           <motion.h1
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
