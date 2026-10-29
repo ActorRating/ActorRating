@@ -1,5 +1,8 @@
 /**
- * Prune PageView rows older than 90 days so the table stays bounded.
+ * Hard-ceiling prune: delete PageView / ProductEvent rows older than N days.
+ *
+ * Prefer the 7-day Unknown/Bot rollup plan first (see
+ * scripts/pageview-retention-plan.sql) — this script is the final backstop.
  *
  * Manual for now (Coolify Terminal after image includes scripts, or local with DATABASE_URL):
  *   npx tsx scripts/prune-pageviews.ts

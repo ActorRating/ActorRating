@@ -144,6 +144,9 @@ function ValuableRaterTable({
   )
 }
 
+/**
+ * Diagnostics-only funnel detail. Decision metrics live in RealTrafficSection.
+ */
 export function QualifiedTrafficSection({
   data,
   valuableRaters,
@@ -157,48 +160,12 @@ export function QualifiedTrafficSection({
     <section className="space-y-6 rounded-2xl border border-border/70 bg-secondary/30 p-6 shadow-sm">
       <div>
         <h2 className="text-xl font-semibold text-foreground">
-          Qualified traffic ({windowLabel})
+          Qualified funnel detail ({windowLabel})
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Site-wide first-party funnel.{" "}
-          <strong className="font-medium text-foreground/90">Engaged humans</strong> =
-          distinct IPs with a non-bot{" "}
-          <code className="text-xs">qualified_visit</code> (5s dwell + interaction,
-          server-gated). Use that number for “real people,” not raw pageviews.
+          Noisy PageView ratios, campaigns, and valuable-rater channel breakdowns.
+          Headline numbers are in <strong className="font-medium text-foreground/90">Real traffic</strong> above.
         </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          title="Engaged humans"
-          value={formatCount(data.engagedHumans)}
-          subtitle="Distinct IPs with qualified_visit (reliable)"
-        />
-        <StatCard
-          title="Qualified visits"
-          value={formatCount(data.qualifiedVisits)}
-          subtitle="Non-bot qualified_visit events (server-gated)"
-        />
-        <StatCard
-          title="Ratings"
-          value={formatCount(data.ratings)}
-          subtitle="Rating rows created in window"
-        />
-        <StatCard
-          title="Signups"
-          value={formatCount(data.signups)}
-          subtitle="User accounts created in window"
-        />
-        <StatCard
-          title="Repeat raters"
-          value={formatCount(data.repeatRaters)}
-          subtitle="Signups in window with ≥2 lifetime ratings"
-        />
-        <StatCard
-          title="Qualified → rating"
-          value={formatRatio(data.qualifiedToRatingRatio)}
-          subtitle="ratings ÷ qualified visits"
-        />
       </div>
 
       <div className="space-y-3">
@@ -209,7 +176,7 @@ export function QualifiedTrafficSection({
           <StatCard
             title="Non-bot pageviews"
             value={formatCount(data.humanPageviews)}
-            subtitle="isLikelyBot=false (Human + Unknown) — see trust split above for proven humans"
+            subtitle="isLikelyBot=false (Human + Unknown)"
           />
           <StatCard
             title="Bot-flagged pageviews"
@@ -223,7 +190,7 @@ export function QualifiedTrafficSection({
             )
             return (
               <StatCard
-                title="Human → qualified"
+                title="Non-bot → qualified"
                 value={hq.value}
                 subtitle={
                   hq.note ??
@@ -233,63 +200,42 @@ export function QualifiedTrafficSection({
             )
           })()}
           <StatCard
-            title="Non-bot PV without qualified"
-            value={formatRatio(data.humanPageviewsWithoutQualifiedShare)}
-            subtitle="Bot-suspicion indicator (not a bot count)"
+            title="Qualified → rating"
+            value={formatRatio(data.qualifiedToRatingRatio)}
+            subtitle="ratings ÷ qualified visits"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">Umami vs first-party</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>
-            <strong className="font-medium text-foreground/90">Trust for decisions:</strong>{" "}
-            engaged humans, qualified visits, ratings, signups, repeat raters.
-          </li>
-          <li>
-            <strong className="font-medium text-foreground/90">Noisy:</strong> raw PageView
-            totals and Umami “visitors” (often zero-dwell headless Chrome with no referrer).
-          </li>
-          <li>
-            Same window: Umami pageviews should be in the same ballpark as all PageView rows
-            (both load on the root layout). Prefer engaged + qualified_visit over Umami uniques.
-          </li>
-        </ul>
-      </div>
-
       <div className="space-y-8">
-        <ChannelTable title="By first-touch utm_source / source" rows={data.bySource} />
         <ChannelTable title="By first-touch utm_campaign" rows={data.byCampaign} />
       </div>
 
       {valuableRaters ? (
         <div className="space-y-4 border-t border-border/60 pt-6">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Valuable raters</h3>
+            <h3 className="text-lg font-semibold text-foreground">Valuable raters detail</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              New = distinct userId/anonId with ≥1 rating in window. Engaged = first-ever
-              rating in window and ≥3 ratings within 7 days of that first. Returning =
-              first-ever rating in window and ≥2 distinct UTC days within 21 days. Channel
-              keys use the first rating&apos;s utm.{" "}
+              Engaged = first-ever rating in window and ≥3 ratings within 7 days of that first.
+              Channel keys use the first rating&apos;s utm.{" "}
               {valuableRaters.guestIdentityNote}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard
-              title="New raters"
-              value={formatCount(valuableRaters.newRaters)}
-              subtitle="Distinct raters with ≥1 rating in window"
-            />
             <StatCard
               title="Engaged raters"
               value={formatCount(valuableRaters.engagedRaters)}
               subtitle="≥3 ratings within 7d of first (first in window)"
             />
             <StatCard
-              title="Returning raters"
-              value={formatCount(valuableRaters.returningRaters)}
-              subtitle="≥2 distinct days within 21d of first (first in window)"
+              title="Repeat raters (signups)"
+              value={formatCount(data.repeatRaters)}
+              subtitle="Signups in window with ≥2 lifetime ratings"
+            />
+            <StatCard
+              title="Non-bot PV without qualified"
+              value={formatRatio(data.humanPageviewsWithoutQualifiedShare)}
+              subtitle="Bot-suspicion indicator (not a bot count)"
             />
           </div>
           <div className="space-y-8">

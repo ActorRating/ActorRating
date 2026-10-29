@@ -348,8 +348,12 @@ export async function listUnflagableCrawlPageViewIds(
     .filter(
       (r) =>
         isCrawlEligibleRow(r) ||
-        // Behavioural flags (crawl_*, reclassified_*) are reversible once the visitor proves human.
-        (r.botReason != null && /^(crawl_|reclassified_)/.test(r.botReason)),
+        // Behavioural flags are reversible once the visitor proves human.
+        // Keep in sync with isReversibleBotSuspectReason in bot-suspect.ts.
+        (r.botReason != null &&
+          /^(crawl_|reclassified_|internal_ref_new_visitor|cookie_less_burst)/.test(
+            r.botReason,
+          )),
     )
     .map((r) => r.id)
 }

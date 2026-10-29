@@ -6,6 +6,8 @@ import StatCard from "@/components/admin/StatCard"
 import RecentRatings from "@/components/admin/RecentRatings"
 import GrowthChart from "@/components/admin/GrowthChart"
 import PageViewAnalyticsSection from "@/components/admin/PageViewAnalyticsSection"
+import { RealTrafficSection } from "@/components/admin/RealTrafficSection"
+import { TrafficDiagnosticsSection } from "@/components/admin/TrafficDiagnosticsSection"
 import { PaidAttributionFunnel } from "@/components/admin/PaidAttributionFunnel"
 import { getPaidAttributionFunnel } from "@/lib/admin/getPaidAttributionFunnel"
 import XTrafficSection from "@/components/admin/XTrafficSection"
@@ -260,9 +262,9 @@ export default async function AdminDashboardPage({
 }
 
 async function OverviewTab() {
-  const [data, trafficTrust, ratingDistribution] = await Promise.all([
+  const [data, qualifiedTraffic, ratingDistribution] = await Promise.all([
     getAdminData(),
-    getTrafficTrustMetrics(7),
+    getQualifiedTrafficMetrics(7),
     getRatingDistribution(),
   ])
 
@@ -277,9 +279,9 @@ async function OverviewTab() {
           subtitle="users who rated"
         />
         <StatCard
-          title="Distinct humans (7d)"
-          value={trafficTrust.human.visitors}
-          subtitle={`Proven-human visitors · ${trafficTrust.unknown.visitors} unknown`}
+          title="Engaged humans (7d)"
+          value={qualifiedTraffic.engagedHumans}
+          subtitle={`${qualifiedTraffic.qualifiedVisits.toLocaleString()} qualified visits · not dwell-only “proven visitors”`}
         />
         <StatCard
           title="Total Ratings"
@@ -325,28 +327,36 @@ async function TrafficTab({
     getAiTrafficMetrics(pvDays),
     getPaidAttributionFunnel(pvDays === 1 ? 1 : pvDays),
   ])
+  const hrefForDays = (days: ReturnType<typeof parseAnalyticsDays>) =>
+    createQueryString(searchParams, {
+      tab: "traffic",
+      pv: String(days === 1 ? 24 : days),
+    })
+
   return (
     <div className="space-y-8">
-      <PageViewAnalyticsSection
-        data={pageViewAnalytics}
-        hrefForDays={(days) =>
-          createQueryString(searchParams, {
-            tab: "traffic",
-            pv: String(days === 1 ? 24 : days),
-          })
-        }
-      />
-      <TrafficTrustSection data={trafficTrust} />
-      <QualifiedTrafficSection
+      <RealTrafficSection
         data={qualifiedTraffic}
         valuableRaters={valuableRaters}
+        hrefForDays={hrefForDays}
       />
-      <AiTrafficSection data={aiTraffic} />
-      <PaidAttributionFunnel
-        days={paidFunnel.days}
-        byCampaign={paidFunnel.byCampaign}
-        byTerm={paidFunnel.byTerm}
-      />
+      <TrafficDiagnosticsSection>
+        <PageViewAnalyticsSection
+          data={pageViewAnalytics}
+          hrefForDays={hrefForDays}
+        />
+        <TrafficTrustSection data={trafficTrust} />
+        <QualifiedTrafficSection
+          data={qualifiedTraffic}
+          valuableRaters={valuableRaters}
+        />
+        <AiTrafficSection data={aiTraffic} />
+        <PaidAttributionFunnel
+          days={paidFunnel.days}
+          byCampaign={paidFunnel.byCampaign}
+          byTerm={paidFunnel.byTerm}
+        />
+      </TrafficDiagnosticsSection>
     </div>
   )
 }

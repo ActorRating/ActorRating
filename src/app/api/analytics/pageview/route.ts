@@ -14,6 +14,10 @@ import {
   unflagCrawlPageViews,
 } from "@/lib/analytics/internal-crawl"
 import {
+  evaluateBotSuspectReasons,
+  isCookieLessPageViewBurst,
+} from "@/lib/analytics/bot-suspect"
+import {
   evaluatePageViewBot,
   formatBotReason,
   isPageViewBurst,
@@ -257,6 +261,26 @@ export async function POST(request: NextRequest) {
       humanExempt = await hasHumanEngagementSignal(prisma, ipHash, session.visitorId)
     } catch {
       humanExempt = false
+    }
+
+    // Bot-suspect: internal-referrer first visit (no prior ar_vid) + cookie-less IP burst.
+    // Rows stay stored; Human proof still exempts / can later unflag.
+    let cookieLessBurst = false
+    if (!humanExempt) {
+      try {
+        cookieLessBurst = await isCookieLessPageViewBurst(ipHash, session.isNewVisitor)
+      } catch {
+        cookieLessBurst = false
+      }
+    }
+    for (const r of evaluateBotSuspectReasons({
+      isNewVisitor: session.isNewVisitor,
+      referrer,
+      humanExempt,
+      cookieLessBurst,
+    })) {
+      isLikelyBot = true
+      reasons.push(r)
     }
 
     const crawlCurrent = {

@@ -126,6 +126,22 @@ export function countDistinctEngagedHumans(
 /**
  * Merge channel breakdown maps. Exported for unit tests.
  */
+/**
+ * Channels always shown on the Real traffic by-source table (zeros when empty).
+ * Includes organic/social keys admins care about beyond tagged VALID_SOURCES.
+ */
+export const PREFERRED_TRAFFIC_CHANNELS = [
+  "tiktok",
+  "youtube",
+  "instagram",
+  "x",
+  "reddit",
+  "google",
+  "bing",
+  "chatgpt.com",
+  "(none)",
+] as const
+
 export function mergeQualifiedTrafficChannels(
   engaged: KeyCountRow[],
   human: KeyCountRow[],
@@ -167,6 +183,37 @@ export function mergeQualifiedTrafficChannels(
       b.ratings - a.ratings ||
       b.humanPageviews - a.humanPageviews,
   )
+}
+
+/**
+ * Pin preferred channels (with zeros) then append any other keys from `rows`.
+ * Exported for unit tests / Real traffic table.
+ */
+export function pinPreferredTrafficChannels(
+  rows: QualifiedTrafficChannelRow[],
+  preferred: readonly string[] = PREFERRED_TRAFFIC_CHANNELS,
+): QualifiedTrafficChannelRow[] {
+  const byKey = new Map(rows.map((r) => [r.key, r]))
+  const empty = (key: string): QualifiedTrafficChannelRow => ({
+    key,
+    engagedHumans: 0,
+    humanPageviews: 0,
+    qualifiedVisits: 0,
+    ratings: 0,
+    signups: 0,
+    repeatRaters: 0,
+  })
+  const pinned = preferred.map((key) => byKey.get(key) ?? empty(key))
+  const preferredSet = new Set(preferred)
+  const extras = rows
+    .filter((r) => !preferredSet.has(r.key))
+    .sort(
+      (a, b) =>
+        b.engagedHumans - a.engagedHumans ||
+        b.qualifiedVisits - a.qualifiedVisits ||
+        b.ratings - a.ratings,
+    )
+  return [...pinned, ...extras]
 }
 
 /**

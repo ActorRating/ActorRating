@@ -163,9 +163,9 @@ export function TrafficTrustSection({ data }: { data: TrafficTrustMetrics }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="Distinct humans"
+          title="Proven visitors (dwell incl.)"
           value={count(data.human.visitors)}
-          subtitle="Visitors (ar_vid) with ≥1 proven-human pageview"
+          subtitle="ar_vid with engaged / signed-in / ≥5s dwell+interaction — can be inflated by dwell-only scrapers; prefer Engaged humans"
         />
         <StatCard
           title="Human sessions"

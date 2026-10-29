@@ -6,6 +6,8 @@ import {
   computeQualifiedTrafficRatios,
   countDistinctEngagedHumans,
   mergeQualifiedTrafficChannels,
+  pinPreferredTrafficChannels,
+  PREFERRED_TRAFFIC_CHANNELS,
 } from "@/lib/admin/getQualifiedTrafficMetrics"
 
 describe("computeQualifiedTrafficRatios", () => {
@@ -138,5 +140,37 @@ describe("mergeQualifiedTrafficChannels", () => {
       engagedHumans: 0,
       humanPageviews: 9000,
     })
+  })
+})
+
+describe("pinPreferredTrafficChannels", () => {
+  it("always includes preferred keys with zeros, then extras", () => {
+    const pinned = pinPreferredTrafficChannels([
+      {
+        key: "google",
+        engagedHumans: 3,
+        humanPageviews: 10,
+        qualifiedVisits: 4,
+        ratings: 1,
+        signups: 0,
+        repeatRaters: 0,
+      },
+      {
+        key: "newsletter",
+        engagedHumans: 1,
+        humanPageviews: 2,
+        qualifiedVisits: 1,
+        ratings: 0,
+        signups: 0,
+        repeatRaters: 0,
+      },
+    ])
+    expect(pinned.map((r) => r.key).slice(0, PREFERRED_TRAFFIC_CHANNELS.length)).toEqual([
+      ...PREFERRED_TRAFFIC_CHANNELS,
+    ])
+    expect(pinned.find((r) => r.key === "google")?.engagedHumans).toBe(3)
+    expect(pinned.find((r) => r.key === "tiktok")?.engagedHumans).toBe(0)
+    expect(pinned.find((r) => r.key === "chatgpt.com")?.engagedHumans).toBe(0)
+    expect(pinned.at(-1)?.key).toBe("newsletter")
   })
 })

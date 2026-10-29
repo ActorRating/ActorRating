@@ -9,10 +9,19 @@ ops steps that are outside the codebase.
 | ------- | ------- | ------------------------- |
 | **Human**   | Positive proof | `engaged = true` (server-gated `qualified_visit` wrote back to the row), signed-in `userId`, `dwellMs ≥ 5000` **and** an interaction from the dwell beacon, or the same `visitorId` (`ar_vid`) proved human elsewhere in the window. **Not** by shared IP — that over-counted crawl fleets on CGNAT / humanExempt IPs. Legacy rows without `visitorId` stay Unknown unless the row itself has engaged/dwell/userId. |
 | **Unknown** | JS ran, nothing proved | `isLikelyBot = false` and none of the above. Zero-dwell spoofed browsers live here. Not counted as humans anywhere. |
-| **Bot**     | Flagged | UA list, header consistency (`ua_hint_mismatch`, `headless_hint`, `missing_sec_fetch`, `cross_site_beacon`, `mobile_hint_mismatch`), client signals (`webdriver`, `zero_screen`), `ip_burst`, crawl heuristics (`crawl_path`, `crawl_entity`, `crawl_fleet`, `crawl_sibling`), Cloudflare verified bot (`cf_verified_bot`), nightly reclassifier (`reclassified_no_engagement`). The reason list is stored in `PageView.botReason` and surfaced in the dashboard. |
+| **Bot**     | Flagged | UA list, header consistency (`ua_hint_mismatch`, `headless_hint`, `missing_sec_fetch`, `cross_site_beacon`, `mobile_hint_mismatch`), client signals (`webdriver`, `zero_screen`), `ip_burst`, crawl heuristics (`crawl_path`, `crawl_entity`, `crawl_fleet`, `crawl_sibling`), Cloudflare verified bot (`cf_verified_bot`), nightly reclassifier (`reclassified_no_engagement`), bot-suspect (`internal_ref_new_visitor`: first pageview with no prior `ar_vid` + internal actorrating.com referrer; `cookie_less_burst`: >10 cookie-less pageviews / IP / hour). Rows stay stored. The reason list is in `PageView.botReason`. |
 
-Behavioural flags (`crawl_*`, `reclassified_*`) are reversible: when a visitor later proves
-human, the pageview route unflags them (`listUnflagableCrawlPageViewIds`).
+Behavioural flags (`crawl_*`, `reclassified_*`, `internal_ref_new_visitor`, `cookie_less_burst`)
+are reversible: when a visitor later proves human, the pageview route unflags them
+(`listUnflagableCrawlPageViewIds`). Human proof (qualified_visit / rating / etc.) still
+exempts these rules at write time.
+
+**Admin UI:** `/admin?tab=traffic` leads with **Real traffic (use these)** — engaged humans,
+qualified visits, new/returning raters, ratings, signups, by-source. Everything else
+(non-bot PV, trust split, AI crawlers, referrers, recent pages) lives under collapsed
+**Diagnostics**. Prefer engaged humans over “proven visitors”: Human trust can include
+dwell-only proof (`dwellMs ≥ 5s` + interaction) without a `qualified_visit`, which scrapers
+can fake.
 
 ## Identity & sessions
 
