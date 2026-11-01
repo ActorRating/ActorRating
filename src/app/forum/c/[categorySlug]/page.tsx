@@ -18,9 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug: categorySlug },
     select: { name: true, description: true },
   })
-  if (!cat) return { title: "Forum — ActorRating" }
+  if (!cat) return { title: "Forum" }
   return {
-    title: `${cat.name} — Debate Forum — ActorRating`,
+    title: `${cat.name} — Debate Forum`,
     description: cat.description || `Debates in ${cat.name} on ActorRating.`,
     alternates: { canonical: `${BASE_URL}/forum/c/${categorySlug}` },
   }

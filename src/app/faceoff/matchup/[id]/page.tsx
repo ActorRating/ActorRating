@@ -1,3 +1,4 @@
+import { DEFAULT_OG_IMAGE_URL } from "@/lib/seo/social"
 import type { Metadata } from "next"
 import { FaceOffExperience } from "@/components/faceoff/FaceOffExperience"
 import { isFaceOffEnabled } from "@/lib/faceoff/constants"
@@ -12,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const canonical = `https://actorrating.com/faceoff/matchup/${id}`
   let title = "Face-Off matchup"
   let description = "Which performance wins? Make your pick on ActorRating."
-  let image = "https://actorrating.com/logo.png"
+  let image: string = DEFAULT_OG_IMAGE_URL
   try {
     const share = await getShare(id)
     if (share) {

@@ -1,3 +1,4 @@
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { isRatePageIndexable } from "@/lib/rate-page-seo"
@@ -100,7 +101,7 @@ export function buildRatePageMetadata(source: RatePageMetadataSource): Metadata 
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary_large_image", creator: TWITTER_CREATOR,
       title,
       description,
       ...(ogImage ? { images: [ogImage] } : {}),

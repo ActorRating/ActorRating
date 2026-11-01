@@ -1,3 +1,4 @@
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...(doc.coverImage ? { images: [{ url: doc.coverImage }] } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary_large_image", creator: TWITTER_CREATOR,
       title: doc.title,
       description: doc.description,
       ...(doc.coverImage ? { images: [doc.coverImage] } : {}),

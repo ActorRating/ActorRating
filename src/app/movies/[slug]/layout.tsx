@@ -1,5 +1,6 @@
 export const revalidate = 60;
 
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       },
       twitter: {
-        card: "summary_large_image",
+        card: "summary_large_image", creator: TWITTER_CREATOR,
         title,
         description,
         ...(ogImage ? { images: [ogImage] } : {}),

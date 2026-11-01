@@ -45,7 +45,7 @@ const nextConfig = {
   // metadata is streamed into <body>. Matching crawlers get title, description,
   // and canonical inside <head> in the initial HTML.
   htmlLimitedBots:
-    /Googlebot|AdsBot-Google|Storebot-Google|Google-InspectionTool|GoogleOther|Google-Extended|Mediapartners-Google|AdsBot-Google-Mobile|Bingbot|DuckDuckBot|YandexBot|Baiduspider|Slurp|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Applebot|Applebot-Extended|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|anthropic-ai|PerplexityBot|AhrefsBot|SemrushBot|MJ12bot/,
+    /Googlebot|AdsBot-Google|Storebot-Google|Google-InspectionTool|GoogleOther|Google-Extended|Mediapartners-Google|AdsBot-Google-Mobile|Bingbot|DuckDuckBot|YandexBot|Baiduspider|Slurp|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Applebot|Applebot-Extended|GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|anthropic-ai|PerplexityBot|AhrefsBot|SemrushBot|MJ12bot|Seobility|Screaming Frog|Sitebulb|Amazonbot|Meta-ExternalAgent|CCBot|PetalBot|Bytespider/,
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],

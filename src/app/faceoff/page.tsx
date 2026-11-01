@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { FaceOffExperience } from "@/components/faceoff/FaceOffExperience"
 import { isFaceOffEnabled } from "@/lib/faceoff/constants"
+import { DEFAULT_OG_IMAGE, TWITTER_CREATOR } from "@/lib/seo/social"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +13,14 @@ export const metadata: Metadata = {
     title: "ActorRating Face-Off",
     description: "Which performance wins? Make your pick on ActorRating.",
     url: "https://actorrating.com/faceoff",
-    images: [{ url: "https://actorrating.com/logo.png", width: 1200, height: 630, alt: "ActorRating" }],
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ActorRating Face-Off",
+    description: "Which performance wins? Make your pick on ActorRating.",
+    images: [DEFAULT_OG_IMAGE.url],
+    creator: TWITTER_CREATOR,
   },
 }
 
@@ -27,5 +35,22 @@ export default function FaceOffPage() {
       </main>
     )
   }
-  return <FaceOffExperience />
+  return (
+    <>
+      {/*
+        Server-rendered heading + intro for crawlers (the experience below is
+        client-rendered). Visually hidden: the interactive UI is unchanged.
+      */}
+      <section className="sr-only" aria-label="About Face-Off">
+        <h1>Face-Off: which acting performance wins?</h1>
+        <p>
+          Compare actors and acting performances head to head. Pick the stronger
+          performance in each matchup, see how the ActorRating community voted, and
+          watch the Face-Off rankings change. Scores judge acting craft, not the
+          overall film.
+        </p>
+      </section>
+      <FaceOffExperience />
+    </>
+  )
 }

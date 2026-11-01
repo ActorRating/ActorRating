@@ -18,6 +18,16 @@ import ActorPageCrawlShell from '@/components/seo/ActorPageCrawlShell'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 import { buildActorJsonLd } from '@/lib/seo/actor-jsonld'
 
+/**
+ * Without generateStaticParams a dynamic route is never put in Next's ISR manifest,
+ * so `revalidate` is ignored and every request is rendered with
+ * `Cache-Control: no-store`. Returning [] prerenders nothing at build time but
+ * enables on-demand ISR (first hit renders, then served from cache until revalidate).
+ */
+export function generateStaticParams() {
+  return []
+}
+
 export default async function ActorPage({
   params,
 }: {

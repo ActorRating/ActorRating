@@ -11,7 +11,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https:
 const DISPLAY = 'var(--font-cormorant-garamond), "Cormorant Garamond", Georgia, serif'
 
 export const metadata: Metadata = {
-  title: "News — ActorRating",
+  title: "News",
   description:
     "ActorRating Journal — essays on craft, criteria, and building a scoreboard for acting.",
   alternates: { canonical: `${BASE_URL}/news` },

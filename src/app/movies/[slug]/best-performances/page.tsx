@@ -5,6 +5,7 @@
 
 export const revalidate = 3600
 
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { CSSProperties } from "react"
 import type { Metadata } from "next"
 import Image from "next/image"
@@ -75,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...(movie.posterUrl ? { images: [{ url: movie.posterUrl }] } : {}),
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary_large_image", creator: TWITTER_CREATOR,
       title,
       description,
       ...(movie.posterUrl ? { images: [movie.posterUrl] } : {}),

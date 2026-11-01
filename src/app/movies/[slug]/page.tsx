@@ -5,7 +5,7 @@
 
 export const revalidate = 60
 
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import { withIsoDates } from '@/lib/dateUtils'
 import { prisma } from '@/lib/prisma'
 import { isFeaturetteMovie, matchesFeaturetteTitle } from '@/lib/non-rateable'
@@ -14,6 +14,11 @@ import MoviePageClient from './MoviePageClient'
 import MovieHubCrawlLink from '@/components/seo/MovieHubCrawlLink'
 import { breadcrumbJsonLd } from '@/lib/seo/breadcrumb-jsonld'
 import { buildMovieJsonLd } from '@/lib/seo/movie-jsonld'
+
+/** See actors/[id]/page.tsx: enables on-demand ISR so `revalidate` actually applies. */
+export function generateStaticParams() {
+  return []
+}
 
 export default async function MoviePage({
   params,
@@ -81,7 +86,10 @@ export default async function MoviePage({
         />
       </>
     )
-  } catch {
+  } catch (err) {
+    // notFound() above throws a control-flow error; swallowing it here turned every
+    // unknown/removed movie into a 200 "soft 404" (client-rendered shell).
+    unstable_rethrow(err)
     return (
       <>
         {hubCrawlLink}

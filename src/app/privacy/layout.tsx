@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — ActorRating",
+  title: "Privacy Policy",
   description:
     "Read the ActorRating privacy policy. Learn how we collect, use, and protect your personal data in compliance with GDPR and KVKK.",
   robots: { index: true, follow: true },

@@ -71,7 +71,9 @@ export async function GET() {
   const entries: string[] = []
 
   if (fs.existsSync(path.join(SITEMAPS_DIR, 'static.xml'))) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/static.xml`, today))
+    // Use the generation date (like the chunk entries), not "today": a lastmod that
+    // changes on every request tells crawlers nothing and erodes trust in the rest.
+    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/static.xml`, genDate))
   }
 
   for (let i = 1; i <= actorCount; i++) {

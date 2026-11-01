@@ -1,3 +1,4 @@
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -102,7 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const user = await getPublicUser(username)
   if (!user) {
     return {
-      title: "User Profile | ActorRating",
+      title: "User Profile",
       description: "Public ActorRating profile.",
       robots: { index: false, follow: false },
     }
@@ -114,7 +115,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = `${displayName}'s public ActorRating profile. Explore ratings and activity.`
 
   return {
-    title: `${displayName} | ActorRating`,
+    title: displayName,
     description,
     // Thin public profiles — followable but not SEO targets.
     robots: { index: false, follow: true },
@@ -127,6 +128,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
+      creator: TWITTER_CREATOR,
       title: `${displayName} | ActorRating`,
       description,
     },

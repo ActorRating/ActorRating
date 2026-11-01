@@ -47,15 +47,22 @@ const CRITERIA = [
   },
 ] as const;
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({
+  children,
+  as: Tag = "h2",
+}: {
+  children: React.ReactNode;
+  /** The first section on the page is the page's single <h1> (same styling). */
+  as?: "h1" | "h2";
+}) {
   return (
     <div className="mb-8 sm:mb-10">
-      <h2
+      <Tag
         className="text-xs font-semibold tracking-[0.18em] uppercase text-[#FFD700]"
         style={SANS}
       >
         {children}
-      </h2>
+      </Tag>
       <div className="mt-3 h-px w-full bg-zinc-700" aria-hidden />
     </div>
   );
@@ -137,7 +144,7 @@ export function AboutContent() {
           <div className="min-w-0 max-w-2xl">
             {/* ── About ActorRating ───────────────────────────── */}
             <section id="about" className="scroll-mt-28 mb-16 sm:mb-20">
-              <SectionTitle>About ActorRating</SectionTitle>
+              <SectionTitle as="h1">About ActorRating</SectionTitle>
 
               <Entry question="What is ActorRating?">
                 <p>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "KVKK Aydınlatma Metni — ActorRating",
+  title: "KVKK Aydınlatma Metni",
   description:
     "ActorRating KVKK kişisel verilerin korunması kanunu kapsamında aydınlatma metni.",
   robots: { index: true, follow: true },

@@ -18,6 +18,12 @@ import {
 import { withEditorialCovers } from "@/lib/editorial/enrich-covers";
 import { auth } from "@/auth";
 import { isFaceOffEnabled } from "@/lib/faceoff/constants";
+import {
+  DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_URL,
+  SITE_URL,
+  TWITTER_CREATOR,
+} from "@/lib/seo/social";
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
@@ -32,14 +38,7 @@ export const metadata: Metadata = {
     description: "Rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Compare actors and see who truly deserved the awards.",
     url: "https://actorrating.com",
     siteName: "ActorRating",
-    images: [
-      {
-        url: "https://actorrating.com/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "ActorRating - Rate Acting Performances",
-      },
-    ],
+    images: [DEFAULT_OG_IMAGE],
     locale: "en_US",
     type: "website",
   },
@@ -47,7 +46,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ActorRating — Rate Acting Performances",
     description: "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria. Compare and see who deserved the awards.",
-    images: ["https://actorrating.com/logo.png"],
+    images: [DEFAULT_OG_IMAGE_URL],
+    creator: TWITTER_CREATOR,
   },
   alternates: {
     canonical: "https://actorrating.com",
@@ -88,10 +88,29 @@ export default async function Home() {
     withEditorialCovers(allStories.slice(0, 7)),
     withEditorialCovers(allNews.slice(0, 5)),
   ]);
+  // Publisher entity (brand/knowledge-panel signal). sameAs lists only profiles
+  // confirmed in the codebase (@ActorRating on X).
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: "ActorRating",
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/logos/android-chrome-512x512.png`,
+      width: 512,
+      height: 512,
+    },
+    sameAs: ["https://x.com/ActorRating"],
+  };
+
   // JSON-LD structured data
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    publisher: { "@id": `${SITE_URL}/#organization` },
     name: "ActorRating",
     url: "https://actorrating.com",
     description: "Community-driven platform for rating 570K+ acting performances and 208K+ actors. Quick single-slider or 5-criteria ratings.",
@@ -172,6 +191,10 @@ export default async function Home() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -15,6 +15,11 @@ import { GaPageViewTracker } from "@/components/analytics/GaPageViewTracker";
 import { FirstPartyPageViewTracker } from "@/components/analytics/FirstPartyPageViewTracker";
 import { QualifiedVisitTracker } from "@/components/analytics/QualifiedVisitTracker";
 import { GOOGLE_ADS_ID } from "@/lib/analytics/google-ads";
+import {
+  DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_URL,
+  TWITTER_CREATOR,
+} from "@/lib/seo/social";
 
 /** Production GA4 property — override via NEXT_PUBLIC_GA_ID when needed. */
 const GA_MEASUREMENT_ID =
@@ -77,14 +82,7 @@ export const metadata: Metadata = {
       "Community-driven platform to rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Discover and rank the best acting performances.",
     url: "https://actorrating.com",
     siteName: "ActorRating",
-    images: [
-      {
-        url: "https://actorrating.com/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "ActorRating Logo",
-      },
-    ],
+    images: [DEFAULT_OG_IMAGE],
     locale: "en_US",
     type: "website",
   },
@@ -93,8 +91,8 @@ export const metadata: Metadata = {
     title: "ActorRating — Acting Performance Ratings & Reviews",
     description:
       "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Join the community.",
-    images: ["https://actorrating.com/logo.png"],
-    creator: "@ActorRating",
+    images: [DEFAULT_OG_IMAGE_URL],
+    creator: TWITTER_CREATOR,
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -174,7 +172,14 @@ export default async function RootLayout({
                 </Suspense>
                 <SearchPreloadTrigger />
                 <ChunkErrorReload />
-                <Suspense fallback={null}>{children}</Suspense>
+                {/*
+                  Do NOT wrap {children} in <Suspense>: it makes Next stream the whole
+                  page into `<div hidden id="S:n">` chunks that only a JS swap reveals.
+                  Crawlers that skip JS (SEO tools, AI bots) then see an empty body, and
+                  notFound() can no longer change the HTTP status (soft-404s).
+                  Same rule for loading.tsx on indexable routes.
+                */}
+                {children}
               </NavigationProgressProvider>
             </MixpanelAnalyticsProvider>
           </CookieConsentProvider>

@@ -1,3 +1,4 @@
+import { TWITTER_CREATOR } from "@/lib/seo/social"
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         type: "website",
       },
       twitter: {
-        card: "summary_large_image",
+        card: "summary_large_image", creator: TWITTER_CREATOR,
         title,
         description,
       },

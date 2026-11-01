@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Gizlilik Politikası — ActorRating",
+  title: "Gizlilik Politikası",
   description: "ActorRating gizlilik politikasını okuyun.",
   robots: { index: false, follow: true },
 }

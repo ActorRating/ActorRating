@@ -19,9 +19,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug: threadSlug },
     select: { title: true },
   })
-  if (!thread) return { title: "Thread — ActorRating", robots: { index: false, follow: false } }
+  if (!thread) return { title: "Thread", robots: { index: false, follow: false } }
   return {
-    title: `${thread.title} — Debate Forum — ActorRating`,
+    title: `${thread.title} — Debate Forum`,
     alternates: { canonical: `${BASE_URL}/forum/t/${threadSlug}` },
     // Thin UGC: discoverable via forum hub, not as standalone SEO targets.
     robots: { index: false, follow: true },

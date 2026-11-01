@@ -218,6 +218,15 @@ function HeroSection({
   return (
     <>
       {/*
+        The page's single <h1>. The three hero layouts below each show the same
+        manifesto as an aria-hidden <p> (only one is displayed per breakpoint), so
+        crawlers and screen readers get exactly one heading in every layout.
+      */}
+      <h1 className="sr-only">
+        Rate performances you&apos;ve seen. Save the ones that floored you. Tell the
+        internet who deserved it.
+      </h1>
+      {/*
         Stacked: phone + portrait/square tablets.
         Cinematic (.hero-layout-cinematic): past square into landscape
         (horizontal iPad, desktop) — see globals.css aspect breakpoint.
@@ -251,7 +260,8 @@ function HeroSection({
               ActorRating
             </span>
           </motion.div>
-          <motion.h1
+          <motion.p
+            aria-hidden="true"
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: reduceMotion ? 0 : 0.05 }}
@@ -263,7 +273,7 @@ function HeroSection({
             Save the ones that floored&nbsp;you.
             <br />
             Tell the internet who deserved&nbsp;it.
-          </motion.h1>
+          </motion.p>
           <div className="mt-6 flex flex-col items-center scroll-mt-28">
             <HeroPrimaryCta faceoffEnabled={faceoffEnabled} />
           </div>
@@ -288,7 +298,8 @@ function HeroSection({
         <HeroSubjectLink name={featured.actorName} />
 
         <div className="hero-cinematic-tablet relative z-10 flex-1 flex-col items-center justify-end px-8 pb-12 text-center">
-          <motion.h1
+          <motion.p
+            aria-hidden="true"
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
@@ -300,7 +311,7 @@ function HeroSection({
             Save the ones that floored&nbsp;you.
             <br />
             Tell the internet who deserved&nbsp;it.
-          </motion.h1>
+          </motion.p>
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -313,7 +324,8 @@ function HeroSection({
 
         <div className="hero-cinematic-desktop relative z-10 w-full flex-1 flex-col items-center">
           <div className="flex-1 w-full" aria-hidden />
-          <motion.h1
+          <motion.p
+            aria-hidden="true"
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55 }}
@@ -325,7 +337,7 @@ function HeroSection({
             Save the ones that floored&nbsp;you.
             <br />
             Tell the internet who deserved&nbsp;it.
-          </motion.h1>
+          </motion.p>
         </div>
       </section>
 

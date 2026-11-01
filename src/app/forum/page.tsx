@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
 
 export const metadata: Metadata = {
-  title: "Debate Forum — ActorRating",
+  title: "Debate Forum",
   description:
     "Role showdowns, snubs, craft debates, and film talk — community discussions about acting performances.",
   alternates: { canonical: `${BASE_URL}/forum` },

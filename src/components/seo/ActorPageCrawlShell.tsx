@@ -48,9 +48,10 @@ export default function ActorPageCrawlShell({
         <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">
           Filmography
         </p>
-        <h1 className="text-lg font-semibold tracking-tight text-zinc-100 sm:text-xl">
+        {/* ActorPageClient already renders the page's <h1> (the actor's name). */}
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-100 sm:text-xl">
           {actorName} performances ranked &amp; rated
-        </h1>
+        </h2>
       </div>
       {answerSentence ? (
         <p className="mx-auto max-w-2xl text-center text-sm leading-relaxed text-zinc-300">

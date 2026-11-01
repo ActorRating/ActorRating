@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import NewForumThreadClient from "./NewForumThreadClient"
 
 export const metadata: Metadata = {
-  title: "New thread — Debate Forum — ActorRating",
+  title: "New thread — Debate Forum",
   robots: { index: false, follow: false },
 }
 
