@@ -29,6 +29,14 @@ export type QualifiedTrafficChannelRow = {
   humanPageviews: number
   qualifiedVisits: number
   ratings: number
+  /**
+   * Distinct raters (userId or anonId) with a Rating stamped to this first-touch source.
+   */
+  distinctRaters: number
+  /**
+   * ratings / distinctRaters when distinctRaters > 0; else null (UI shows n/a).
+   */
+  ratingsPerRater: number | null
   signups: number
   repeatRaters: number
 }
@@ -142,12 +150,22 @@ export const PREFERRED_TRAFFIC_CHANNELS = [
   "(none)",
 ] as const
 
+/** Pure: ratings / distinctRaters, or null when the denominator is 0. */
+export function ratingsPerRaterRatio(
+  ratings: number,
+  distinctRaters: number,
+): number | null {
+  if (distinctRaters <= 0) return null
+  return ratings / distinctRaters
+}
+
 export function mergeQualifiedTrafficChannels(
   engaged: KeyCountRow[],
   human: KeyCountRow[],
   qualified: KeyCountRow[],
   ratings: KeyCountRow[],
   users: KeyUserRow[],
+  distinctRaters: KeyCountRow[] = [],
 ): QualifiedTrafficChannelRow[] {
   const map = new Map<string, QualifiedTrafficChannelRow>()
   const ensure = (key: string) => {
@@ -160,6 +178,8 @@ export function mergeQualifiedTrafficChannels(
         humanPageviews: 0,
         qualifiedVisits: 0,
         ratings: 0,
+        distinctRaters: 0,
+        ratingsPerRater: null,
         signups: 0,
         repeatRaters: 0,
       }
@@ -171,10 +191,14 @@ export function mergeQualifiedTrafficChannels(
   for (const r of human) ensure(r.key).humanPageviews = toNumber(r.count)
   for (const r of qualified) ensure(r.key).qualifiedVisits = toNumber(r.count)
   for (const r of ratings) ensure(r.key).ratings = toNumber(r.count)
+  for (const r of distinctRaters) ensure(r.key).distinctRaters = toNumber(r.count)
   for (const r of users) {
     const row = ensure(r.key)
     row.signups = toNumber(r.signups)
     row.repeatRaters = toNumber(r.repeatRaters)
+  }
+  for (const row of map.values()) {
+    row.ratingsPerRater = ratingsPerRaterRatio(row.ratings, row.distinctRaters)
   }
   return [...map.values()].sort(
     (a, b) =>
@@ -200,6 +224,8 @@ export function pinPreferredTrafficChannels(
     humanPageviews: 0,
     qualifiedVisits: 0,
     ratings: 0,
+    distinctRaters: 0,
+    ratingsPerRater: null,
     signups: 0,
     repeatRaters: 0,
   })
@@ -252,7 +278,7 @@ export async function getQualifiedTrafficMetrics(
   days: PageViewAnalyticsDays = 7,
 ): Promise<QualifiedTrafficMetrics> {
   const internalIds = await resolveInternalUserIds()
-  const cacheKey = `admin:qualified-traffic:v4:${days}:${internalIds.join(",")}`
+  const cacheKey = `admin:qualified-traffic:v5:${days}:${internalIds.join(",")}`
   const cached = getCache<QualifiedTrafficMetrics>(cacheKey)
   if (cached) return cached
 
@@ -272,11 +298,13 @@ export async function getQualifiedTrafficMetrics(
       humanBySource,
       qualifiedBySource,
       ratingsBySource,
+      distinctRatersBySource,
       usersBySource,
       engagedByCampaign,
       humanByCampaign,
       qualifiedByCampaign,
       ratingsByCampaign,
+      distinctRatersByCampaign,
       usersByCampaign,
     ] = await Promise.all([
       prisma.$queryRaw<CountRow[]>(Prisma.sql`
@@ -376,6 +404,17 @@ export async function getQualifiedTrafficMetrics(
         ORDER BY count DESC
         LIMIT 25
       `),
+      prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
+        SELECT COALESCE(NULLIF(BTRIM("utmSource"), ''), '(none)') AS key,
+               COUNT(DISTINCT COALESCE("userId", "anonId"))::bigint AS count
+        FROM "Rating"
+        WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
+          AND COALESCE("userId", "anonId") IS NOT NULL
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 25
+      `),
       prisma.$queryRaw<KeyUserRow[]>(Prisma.sql`
         SELECT COALESCE(NULLIF(BTRIM(u."signupUtmSource"), ''), '(none)') AS key,
                COUNT(*)::bigint AS signups,
@@ -434,6 +473,17 @@ export async function getQualifiedTrafficMetrics(
         ORDER BY count DESC
         LIMIT 25
       `),
+      prisma.$queryRaw<KeyCountRow[]>(Prisma.sql`
+        SELECT COALESCE(NULLIF(BTRIM("utmCampaign"), ''), '(none)') AS key,
+               COUNT(DISTINCT COALESCE("userId", "anonId"))::bigint AS count
+        FROM "Rating"
+        WHERE "createdAt" >= NOW() - ${interval}
+          AND ${excl}
+          AND COALESCE("userId", "anonId") IS NOT NULL
+        GROUP BY 1
+        ORDER BY count DESC
+        LIMIT 25
+      `),
       prisma.$queryRaw<KeyUserRow[]>(Prisma.sql`
         SELECT COALESCE(NULLIF(BTRIM(u."signupUtmCampaign"), ''), '(none)') AS key,
                COUNT(*)::bigint AS signups,
@@ -477,6 +527,7 @@ export async function getQualifiedTrafficMetrics(
         qualifiedBySource,
         ratingsBySource,
         usersBySource,
+        distinctRatersBySource,
       ),
       byCampaign: mergeQualifiedTrafficChannels(
         engagedByCampaign,
@@ -484,6 +535,7 @@ export async function getQualifiedTrafficMetrics(
         qualifiedByCampaign,
         ratingsByCampaign,
         usersByCampaign,
+        distinctRatersByCampaign,
       ),
     }
 

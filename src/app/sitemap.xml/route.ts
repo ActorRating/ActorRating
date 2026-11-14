@@ -1,29 +1,36 @@
 export const dynamic = "force-dynamic"
 
-import { NextResponse } from 'next/server'
-import * as fs from 'fs'
-import * as path from 'path'
+import { NextResponse } from "next/server"
+import * as fs from "fs"
+import * as path from "path"
+import {
+  listSitemapIndexFilenames,
+  maxLastmodFromUrlsetXml,
+  resolveSitemapIndexLastmod,
+} from "@/lib/seo/priority-sitemap"
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://actorrating.com'
-const SITEMAPS_DIR = path.join(process.cwd(), 'public', 'sitemaps')
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://actorrating.com"
+const SITEMAPS_DIR = path.join(process.cwd(), "public", "sitemaps")
 
 interface Manifest {
   generatedAt: string
+  prioritySitemapCount?: number
   actorSitemapCount: number
   movieSitemapCount: number
   performanceSitemapCount: number
   listSitemapCount?: number
   storySitemapCount?: number
   newsSitemapCount?: number
+  sitemapLastmods?: Record<string, string>
 }
 
 function escapeXml(str: string): string {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
 }
 
 function sitemapEntry(loc: string, lastmod: string): string {
@@ -40,8 +47,27 @@ function existingChunkCount(prefix: string, claimed: number): number {
   return n
 }
 
+function lastmodForFile(
+  filename: string,
+  lastmods: Record<string, string> | undefined,
+  fallbackYmd: string,
+): string {
+  const fromManifest = resolveSitemapIndexLastmod(filename, lastmods, fallbackYmd)
+  if (lastmods?.[filename]) return fromManifest
+
+  // Fallback: max URL lastmod inside the child sitemap (real rating/update dates).
+  try {
+    const xml = fs.readFileSync(path.join(SITEMAPS_DIR, filename), "utf-8")
+    const max = maxLastmodFromUrlsetXml(xml)
+    if (max) return max
+  } catch {
+    /* missing file handled by caller */
+  }
+  return fromManifest
+}
+
 export async function GET() {
-  const manifestPath = path.join(SITEMAPS_DIR, '_manifest.json')
+  const manifestPath = path.join(SITEMAPS_DIR, "_manifest.json")
   let manifest: Manifest = {
     generatedAt: new Date().toISOString(),
     actorSitemapCount: 0,
@@ -50,75 +76,72 @@ export async function GET() {
   }
 
   try {
-    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as Manifest
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as Manifest
   } catch (error) {
     console.warn(
       `[sitemap.xml] Manifest missing or unreadable at ${manifestPath}. Falling back to static sitemap only.`,
-      error
+      error,
     )
   }
 
-  const today = new Date().toISOString().split('T')[0]
-  const genDate = (manifest.generatedAt || new Date().toISOString()).split('T')[0]
+  const today = new Date().toISOString().split("T")[0]
+  const genDate = (manifest.generatedAt || new Date().toISOString()).split("T")[0]
 
-  const actorCount = existingChunkCount('actors', manifest.actorSitemapCount || 0)
-  const movieCount = existingChunkCount('movies', manifest.movieSitemapCount || 0)
+  const actorCount = existingChunkCount("actors", manifest.actorSitemapCount || 0)
+  const movieCount = existingChunkCount("movies", manifest.movieSitemapCount || 0)
   const performanceCount = existingChunkCount(
-    'performances',
+    "performances",
     manifest.performanceSitemapCount || 0,
   )
 
-  const entries: string[] = []
+  const priorityExists =
+    (manifest.prioritySitemapCount ?? 0) > 0 &&
+    fs.existsSync(path.join(SITEMAPS_DIR, "priority.xml"))
 
-  if (fs.existsSync(path.join(SITEMAPS_DIR, 'static.xml'))) {
-    // Use the generation date (like the chunk entries), not "today": a lastmod that
-    // changes on every request tells crawlers nothing and erodes trust in the rest.
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/static.xml`, genDate))
-  }
+  const filenames = listSitemapIndexFilenames({
+    prioritySitemapCount: priorityExists ? 1 : 0,
+    actorSitemapCount: actorCount,
+    movieSitemapCount: movieCount,
+    performanceSitemapCount: performanceCount,
+    listSitemapCount:
+      (manifest.listSitemapCount ?? 0) > 0 &&
+      fs.existsSync(path.join(SITEMAPS_DIR, "lists.xml"))
+        ? 1
+        : 0,
+    storySitemapCount:
+      (manifest.storySitemapCount ?? 0) > 0 &&
+      fs.existsSync(path.join(SITEMAPS_DIR, "stories.xml"))
+        ? 1
+        : 0,
+    newsSitemapCount:
+      (manifest.newsSitemapCount ?? 0) > 0 &&
+      fs.existsSync(path.join(SITEMAPS_DIR, "news.xml"))
+        ? 1
+        : 0,
+  }).filter((name) => {
+    if (name === "static.xml") {
+      return fs.existsSync(path.join(SITEMAPS_DIR, "static.xml"))
+    }
+    return true
+  })
 
-  for (let i = 1; i <= actorCount; i++) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/actors-${i}.xml`, genDate))
-  }
-
-  for (let i = 1; i <= movieCount; i++) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/movies-${i}.xml`, genDate))
-  }
-
-  for (let i = 1; i <= performanceCount; i++) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/performances-${i}.xml`, genDate))
-  }
-
-  if (
-    (manifest.listSitemapCount ?? 0) > 0 &&
-    fs.existsSync(path.join(SITEMAPS_DIR, 'lists.xml'))
-  ) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/lists.xml`, genDate))
-  }
-
-  if (
-    (manifest.storySitemapCount ?? 0) > 0 &&
-    fs.existsSync(path.join(SITEMAPS_DIR, 'stories.xml'))
-  ) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/stories.xml`, genDate))
-  }
-
-  if (
-    (manifest.newsSitemapCount ?? 0) > 0 &&
-    fs.existsSync(path.join(SITEMAPS_DIR, 'news.xml'))
-  ) {
-    entries.push(sitemapEntry(`${BASE_URL}/sitemaps/news.xml`, genDate))
-  }
+  const entries: string[] = filenames.map((name) =>
+    sitemapEntry(
+      `${BASE_URL}/sitemaps/${name}`,
+      lastmodForFile(name, manifest.sitemapLastmods, genDate),
+    ),
+  )
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries.join('\n')}
+${entries.join("\n")}
 </sitemapindex>`
 
   return new NextResponse(xml, {
     headers: {
-      'Content-Type': 'application/xml',
+      "Content-Type": "application/xml",
       // Short CDN TTL so rebuilds that shrink chunk counts don't advertise missing files for hours.
-      'Cache-Control': 'public, max-age=0, s-maxage=300, must-revalidate',
+      "Cache-Control": "public, max-age=0, s-maxage=300, must-revalidate",
       ETag: `"${manifest.generatedAt || today}"`,
     },
   })

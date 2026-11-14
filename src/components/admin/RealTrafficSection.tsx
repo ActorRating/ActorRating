@@ -14,6 +14,14 @@ function formatCount(value: number): string {
   return value.toLocaleString()
 }
 
+function formatRatio(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) return "n/a"
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  })
+}
+
 type Props = {
   data: QualifiedTrafficMetrics
   valuableRaters: ValuableRaterMetrics
@@ -99,13 +107,15 @@ export function RealTrafficSection({ data, valuableRaters, hrefForDays }: Props)
           First-touch utm_source / source. Preferred channels always listed (zeros when empty).
         </p>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left">
+          <table className="w-full min-w-[880px] border-separate border-spacing-0 text-left">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="border-b border-border px-3 py-3 font-medium">Source</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Engaged</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Qualified</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Ratings</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Distinct raters</th>
+                <th className="border-b border-border px-3 py-3 font-medium">Ratings / rater</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Signups</th>
                 <th className="border-b border-border px-3 py-3 font-medium">Repeat raters</th>
               </tr>
@@ -124,6 +134,12 @@ export function RealTrafficSection({ data, valuableRaters, hrefForDays }: Props)
                   </td>
                   <td className="border-b border-border/60 px-3 py-3 tabular-nums">
                     {formatCount(row.ratings)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums">
+                    {formatCount(row.distinctRaters)}
+                  </td>
+                  <td className="border-b border-border/60 px-3 py-3 tabular-nums">
+                    {formatRatio(row.ratingsPerRater)}
                   </td>
                   <td className="border-b border-border/60 px-3 py-3 tabular-nums">
                     {formatCount(row.signups)}

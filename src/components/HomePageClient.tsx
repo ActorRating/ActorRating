@@ -193,6 +193,12 @@ function HeroPrimaryCta({ faceoffEnabled = false }: { faceoffEnabled?: boolean }
         <p className="text-sm text-zinc-500">Two performances. One winner.</p>
       ) : null}
       <Link
+        href="/discover"
+        className="text-sm text-zinc-300 hover:text-[#FFD700] transition-colors underline-offset-4 hover:underline"
+      >
+        Browse top-rated performances
+      </Link>
+      <Link
         href="/auth/register"
         className="text-sm text-zinc-400 hover:text-[#FFD700] transition-colors underline-offset-4 hover:underline"
       >
@@ -223,8 +229,7 @@ function HeroSection({
         crawlers and screen readers get exactly one heading in every layout.
       */}
       <h1 className="sr-only">
-        Rate performances you&apos;ve seen. Save the ones that floored you. Tell the
-        internet who deserved it.
+        Actor ratings for performances you&apos;ve seen
       </h1>
       {/*
         Stacked: phone + portrait/square tablets.

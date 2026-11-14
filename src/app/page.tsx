@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { LandingLayout } from "@/components/layout";
 import HomePageClient from "@/components/HomePageClient";
 import HomeSeoLinkSections from "@/components/HomeSeoLinkSections";
+import { HomeTopRatedLinksSection } from "@/components/TopRatedPerformancesSection";
 import { HomeEditorialRails } from "@/components/editorial/HomeEditorialRails";
 import { getPerformancesByLookup } from "@/lib/performances-by-lookup";
 import { buildFixedLandingHero, fixedLandingHeroLookupTarget, HOME_PRIMARY_RATE_HREF } from "@/lib/home-featured-performance";
@@ -27,15 +28,17 @@ import {
 
 // --- SEO Metadata ---
 export const metadata: Metadata = {
-  title: { absolute: "ActorRating — Rate Acting Performances" },
-  description: "Rate 570K+ acting performances and 208K+ actors. Quick single-slider or 5-criteria ratings. Compare performances and see who truly deserved the awards.",
+  title: { absolute: "ActorRating — Actor Ratings for Acting Performances" },
+  description:
+    "Rate acting performances and see community actor ratings. Quick single-slider or five craft criteria — separate the performance from the film.",
   keywords: [
-    "actor rating", "acting performance", "movie ratings", "community-driven ratings",
+    "actor rating", "actor ratings", "acting performance", "movie ratings", "community-driven ratings",
     "Oscar-inspired criteria", "film performance analysis", "rate actors", "cinema", "quick rate"
   ],
   openGraph: {
-    title: "ActorRating — Rate Acting Performances",
-    description: "Rate 570K+ performances and 208K+ actors. Quick rate or 5-criteria breakdown. Compare actors and see who truly deserved the awards.",
+    title: "ActorRating — Actor Ratings for Acting Performances",
+    description:
+      "Rate acting performances and see community actor ratings. Quick single-slider or five craft criteria.",
     url: "https://actorrating.com",
     siteName: "ActorRating",
     images: [DEFAULT_OG_IMAGE],
@@ -44,8 +47,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ActorRating — Rate Acting Performances",
-    description: "Rate 570K+ performances and 208K+ actors. Quick single-slider or 5-criteria. Compare and see who deserved the awards.",
+    title: "ActorRating — Actor Ratings for Acting Performances",
+    description:
+      "Rate acting performances and see community actor ratings. Quick single-slider or five craft criteria.",
     images: [DEFAULT_OG_IMAGE_URL],
     creator: TWITTER_CREATOR,
   },
@@ -217,6 +221,7 @@ export default async function Home() {
           faceoffEnabled={isFaceOffEnabled()}
         />
         <HomeEditorialRails stories={recentStories} news={recentNews} />
+        <HomeTopRatedLinksSection />
         <HomeSeoLinkSections />
       </LandingLayout>
     </>

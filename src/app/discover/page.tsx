@@ -1,9 +1,10 @@
-export const revalidate = 60;
-
 import type { Metadata } from "next";
 import { loadLandingRails } from "@/lib/landing-daily-rails";
 import { getPopularActors } from "@/lib/popular-actors";
 import { DiscoverPageClient } from "./DiscoverPageClient";
+import { DiscoverTopRatedPerformancesSection } from "@/components/TopRatedPerformancesSection";
+// ISR ~1h for top-rated community links (loader cache matches).
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Discover Acting Performances",
@@ -36,11 +37,15 @@ export default async function DiscoverPage() {
   }
 
   return (
-    <DiscoverPageClient
-      initialPopular={initialPopular}
-      initialLegendary={initialLegendary}
-      initialRecent={initialRecent}
-      initialActors={initialActors}
-    />
+    <>
+      <DiscoverPageClient
+        initialPopular={initialPopular}
+        initialLegendary={initialLegendary}
+        initialRecent={initialRecent}
+        initialActors={initialActors}
+      />
+      {/* Throws on DB failure rather than rendering an empty top-rated block. */}
+      <DiscoverTopRatedPerformancesSection />
+    </>
   );
 }

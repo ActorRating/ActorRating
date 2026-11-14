@@ -7,6 +7,7 @@ import {
   countDistinctEngagedHumans,
   mergeQualifiedTrafficChannels,
   pinPreferredTrafficChannels,
+  ratingsPerRaterRatio,
   PREFERRED_TRAFFIC_CHANNELS,
 } from "@/lib/admin/getQualifiedTrafficMetrics"
 
@@ -105,6 +106,18 @@ describe("countDistinctEngagedHumans", () => {
   })
 })
 
+describe("ratingsPerRaterRatio", () => {
+  it("returns null for zero distinct raters", () => {
+    expect(ratingsPerRaterRatio(5, 0)).toBeNull()
+    expect(ratingsPerRaterRatio(0, 0)).toBeNull()
+  })
+
+  it("divides ratings by distinct raters", () => {
+    expect(ratingsPerRaterRatio(10, 4)).toBe(2.5)
+    expect(ratingsPerRaterRatio(3, 3)).toBe(1)
+  })
+})
+
 describe("mergeQualifiedTrafficChannels", () => {
   it("merges engaged humans ahead of noisy human pageviews", () => {
     const rows = mergeQualifiedTrafficChannels(
@@ -120,25 +133,48 @@ describe("mergeQualifiedTrafficChannels", () => {
         { key: "x", count: 3 },
         { key: "google", count: 8 },
       ],
-      [{ key: "google", count: 1 }],
+      [{ key: "google", count: 4 }],
       [{ key: "google", signups: 1, repeatRaters: 0 }],
+      [{ key: "google", count: 2 }],
     )
 
     expect(rows[0]).toMatchObject({
       key: "google",
       engagedHumans: 5,
       qualifiedVisits: 8,
-      ratings: 1,
+      ratings: 4,
+      distinctRaters: 2,
+      ratingsPerRater: 2,
       signups: 1,
     })
     expect(rows.find((r) => r.key === "x")).toMatchObject({
       engagedHumans: 2,
       humanPageviews: 100,
       qualifiedVisits: 3,
+      distinctRaters: 0,
+      ratingsPerRater: null,
     })
     expect(rows.find((r) => r.key === "(none)")).toMatchObject({
       engagedHumans: 0,
       humanPageviews: 9000,
+      distinctRaters: 0,
+      ratingsPerRater: null,
+    })
+  })
+
+  it("shows n/a (null) ratingsPerRater when there are ratings but zero distinct raters", () => {
+    const rows = mergeQualifiedTrafficChannels(
+      [],
+      [],
+      [],
+      [{ key: "bing", count: 2 }],
+      [],
+      [],
+    )
+    expect(rows.find((r) => r.key === "bing")).toMatchObject({
+      ratings: 2,
+      distinctRaters: 0,
+      ratingsPerRater: null,
     })
   })
 })
@@ -152,6 +188,8 @@ describe("pinPreferredTrafficChannels", () => {
         humanPageviews: 10,
         qualifiedVisits: 4,
         ratings: 1,
+        distinctRaters: 1,
+        ratingsPerRater: 1,
         signups: 0,
         repeatRaters: 0,
       },
@@ -161,6 +199,8 @@ describe("pinPreferredTrafficChannels", () => {
         humanPageviews: 2,
         qualifiedVisits: 1,
         ratings: 0,
+        distinctRaters: 0,
+        ratingsPerRater: null,
         signups: 0,
         repeatRaters: 0,
       },
