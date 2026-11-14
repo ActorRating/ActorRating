@@ -517,7 +517,7 @@ export function FaceOffExperience({
         />
       ) : null}
       <div className="relative z-50 shrink-0">
-        <HomeNavbar />
+        <HomeNavbar inFlow />
       </div>
       <FaceOffHeader mode={mode} choiceCount={choiceCount} disabled={status === "submitting"} onMode={(next) => void onMode(next)} />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

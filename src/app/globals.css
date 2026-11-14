@@ -1217,6 +1217,19 @@ video {
     opacity: 1;
   }
 
+  /* Pages without a hero (Face-Off): solid bar that reserves height. */
+  .navbar-cinematic--inflow {
+    position: relative !important;
+    background: rgb(0, 0, 0) !important;
+    background-color: rgb(0, 0, 0) !important;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .navbar-cinematic--inflow:hover::before {
+    opacity: 0;
+  }
+
   .navbar-cinematic .navbar-link-desktop {
     color: #fff !important;
     font-weight: 700 !important;

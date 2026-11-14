@@ -48,7 +48,14 @@ function DesktopNavLink({
   )
 }
 
-export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?: string }) {
+export function HomeNavbar({
+  primaryRateHref = '/discover',
+  /** Keep the bar in document flow (e.g. Face-Off) instead of overlaying a hero. */
+  inFlow = false,
+}: {
+  primaryRateHref?: string
+  inFlow?: boolean
+}) {
   // primaryRateHref kept for LandingLayout API compat; Rate Now CTA removed from nav.
   void primaryRateHref
   const { user, loading, isInitialized } = useSession()
@@ -137,7 +144,7 @@ export function HomeNavbar({ primaryRateHref = '/discover' }: { primaryRateHref?
   )
 
   return (
-    <div className="navbar-cinematic">
+    <div className={inFlow ? "navbar-cinematic navbar-cinematic--inflow" : "navbar-cinematic"}>
       <nav className="relative w-full z-[1]" suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex items-center gap-2 sm:gap-3 h-16 sm:h-20">
