@@ -76,4 +76,23 @@ try {
 }
 fs.symlinkSync("../prisma/build/index.js", binPath)
 console.log(`staged .bin/prisma -> ../prisma/build/index.js`)
+
+# Alpine runner only needs linux-musl OpenSSL 3 engines. Drop other platform
+# binaries so the Coolify image merge stays smaller (disk + copy time).
+const enginesDir = path.join(destRoot, "@prisma", "engines")
+if (fs.existsSync(enginesDir)) {
+  const keep = /linux-musl-openssl-3|schema-engine-linux-musl|libquery_engine-linux-musl/
+  for (const name of fs.readdirSync(enginesDir)) {
+    if (name === "package.json" || name.startsWith(".")) continue
+    if (keep.test(name)) continue
+    const full = path.join(enginesDir, name)
+    try {
+      fs.rmSync(full, { recursive: true, force: true })
+      console.log(`stripped engine artifact ${name}`)
+    } catch (e) {
+      console.warn(`could not strip ${name}:`, e && e.message)
+    }
+  }
+}
+
 console.log(`done: ${packages.length} packages -> ${destRoot}`)

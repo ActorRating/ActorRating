@@ -167,15 +167,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-generate-sitemaps-cro
 
 # Merge Prisma CLI into standalone node_modules (does not replace traced @prisma/client).
 # Coolify pre-deploy hooks can then use: ./node_modules/.bin/prisma migrate deploy
-COPY --from=builder /opt/prisma-cli/node_modules /tmp/prisma-cli-modules
-RUN cp -a /tmp/prisma-cli-modules/. ./node_modules/ \
-  && rm -rf /tmp/prisma-cli-modules \
-  && mkdir -p ./node_modules/.bin \
-  && ln -sfn ../prisma/build/index.js ./node_modules/.bin/prisma \
-  && chown -R nextjs:nodejs ./node_modules \
-  && test -d ./node_modules/prisma \
-  && test -x ./node_modules/.bin/prisma \
-  && ./node_modules/.bin/prisma -v
+#
+# Use a bind mount from the builder instead of COPY→/tmp→cp: avoids a second full
+# layer of Prisma engines on disk (Coolify VPS builds often fail around this step
+# under disk pressure). BuildKit is required (Dockerfile syntax line above).
+RUN --mount=type=bind,from=builder,source=/opt/prisma-cli/node_modules,target=/prisma-cli-nm,ro \
+    cp -a /prisma-cli-nm/. ./node_modules/ \
+    && mkdir -p ./node_modules/.bin \
+    && ln -sfn ../prisma/build/index.js ./node_modules/.bin/prisma \
+    && chown -R nextjs:nodejs ./node_modules \
+    && test -d ./node_modules/prisma \
+    && test -x ./node_modules/.bin/prisma \
+    && ./node_modules/.bin/prisma -v
 
 # Writable dirs for atomic sitemap publish (live + temp during generation).
 RUN mkdir -p /app/public/sitemaps /app/public/sitemaps-temp && chown -R nextjs:nodejs /app/public/sitemaps /app/public/sitemaps-temp
